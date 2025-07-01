@@ -38,7 +38,7 @@ const TypedHeader: React.FC<TypedHeaderProps> = ({ name }) => {
             return intervalId;
         };
 
-        const intervalsToClear: number[] = [];
+        const intervalsToClear: ReturnType<typeof setTimeout>[] = [];
 
         const part1Interval = typeWithFunctionalUpdate(text1, setPart1, () => {
             setShowCursor1(false);
@@ -62,9 +62,9 @@ const TypedHeader: React.FC<TypedHeaderProps> = ({ name }) => {
         <>
             {part1}
             {showCursor1 && <span className="typing-cursor">|</span>}
-            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-500">
+            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-red-500 dark:to-rose-500 ml-3">
                 {part2}
-                {showCursor2 && <span className="typing-cursor text-sky-500">|</span>}
+                {showCursor2 && <span className="typing-cursor text-cyan-500 dark:text-red-500">|</span>}
             </span>
         </>
     );

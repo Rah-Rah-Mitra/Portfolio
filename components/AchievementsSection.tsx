@@ -15,7 +15,7 @@ const AchievementsSection: React.FC<AchievementsSectionProps> = ({ id, achieveme
       id={id} 
       title="My Achievements" 
       subtitle="A showcase of projects I've built, problems I've solved, and milestones I've reached."
-      className="bg-gray-800"
+      className="bg-gray-800 dark:bg-gray-900"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
         {achievements.map((achievement, index) => (
@@ -27,4 +27,3 @@ const AchievementsSection: React.FC<AchievementsSectionProps> = ({ id, achieveme
 };
 
 export default AchievementsSection;
-    

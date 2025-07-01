@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ExperienceItem } from '../types';
 import SectionContainer from './SectionContainer';
@@ -12,9 +11,9 @@ interface ExperienceSectionProps {
 
 const ExperienceItemCard: React.FC<{ item: ExperienceItem }> = ({ item }) => {
   return (
-    <div className="relative pl-12 md:pl-16 pb-10 border-l-2 border-emerald-500 last:border-l-transparent last:pb-0">
+    <div className="relative pl-12 md:pl-16 pb-10 border-l-2 border-blue-500 dark:border-red-500 last:border-l-transparent last:pb-0">
       {/* Timeline Dot */}
-      <div className="absolute -left-[9px] top-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-gray-900"></div>
+      <div className="absolute -left-[9px] top-1 w-4 h-4 bg-blue-500 dark:bg-red-500 rounded-full border-2 border-gray-800 dark:border-gray-900"></div>
       
       <div className="flex items-start mb-2">
         {item.logoUrl && (
@@ -22,7 +21,7 @@ const ExperienceItemCard: React.FC<{ item: ExperienceItem }> = ({ item }) => {
         )}
         <div>
           <h3 className="text-xl font-semibold text-white"><BreakableText text={item.role}/></h3>
-          <p className="text-emerald-400 font-medium"><BreakableText text={item.company}/></p>
+          <p className="text-blue-400 dark:text-red-400 font-medium"><BreakableText text={item.company}/></p>
         </div>
       </div>
       
@@ -47,7 +46,7 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ id, experiences }
       id={id} 
       title="Career Journey"
       subtitle="Tracing my professional path, highlighting key roles and contributions that have shaped my expertise."
-      className="bg-gray-800"
+      className="bg-gray-800 dark:bg-gray-900"
     >
       <div className="max-w-3xl mx-auto">
         {experiences.map((exp) => (

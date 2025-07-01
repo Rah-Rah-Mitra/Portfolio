@@ -4,6 +4,8 @@ import { SECTION_IDS } from '../constants';
 import { LinkedInIcon, GithubIcon, TwitterIcon } from './icons/SocialIcons';
 import BreakableText from './BreakableText';
 import TypedHeader from './TypedHeader';
+import { useTheme } from '../contexts/ThemeContext';
+import GlitchHeader from './GlitchHeader';
 
 interface HeroSectionProps {
   id: string;
@@ -11,16 +13,22 @@ interface HeroSectionProps {
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
+  const { theme } = useTheme();
+
   return (
-    <section id={id} className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-slate-900 text-white relative overflow-hidden pt-20">
+    <section id={id} className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-slate-900 dark:from-black dark:via-gray-900 dark:to-black text-white relative overflow-hidden pt-20">
       <div className="absolute inset-0 opacity-10">
         {/* Subtle background pattern or animation if desired */}
       </div>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 z-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-12">
           <div className="md:w-3/5 text-center md:text-left">
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold mb-4">
-              <TypedHeader name={data.name} />
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold mb-4 h-24 flex items-center justify-center md:justify-start">
+              {theme === 'light' ? (
+                <TypedHeader name={data.name} />
+              ) : (
+                <GlitchHeader name={data.name} />
+              )}
             </h1>
             <div className="text-xl sm:text-2xl lg:text-3xl text-gray-300 mb-6 font-medium">
               <BreakableText text={data.tagline}/>
@@ -31,24 +39,24 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
 
             <div className="flex justify-center md:justify-start space-x-4 mb-8">
               {data.linkedinUrl && (
-                <a href={data.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition-colors duration-300">
+                <a href={data.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300">
                   <LinkedInIcon className="w-8 h-8" />
                 </a>
               )}
               {data.githubUrl && (
-                <a href={data.githubUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition-colors duration-300">
+                <a href={data.githubUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300">
                   <GithubIcon className="w-8 h-8" />
                 </a>
               )}
               {data.twitterUrl && (
-                <a href={data.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition-colors duration-300">
+                <a href={data.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300">
                   <TwitterIcon className="w-8 h-8" />
                 </a>
               )}
             </div>
             <a
               href={`#${SECTION_IDS.ACHIEVEMENTS}`}
-              className="inline-block bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-600 hover:to-sky-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+              className="inline-block bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 dark:from-red-600 dark:to-rose-700 dark:hover:from-red-700 dark:hover:to-rose-800 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
             >
               View My Work
             </a>
@@ -57,7 +65,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
             <img
               src={data.profileImageUrl}
               alt={data.name}
-              className="rounded-full w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 object-cover border-4 border-emerald-500 shadow-2xl"
+              className="rounded-full w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 object-cover border-4 border-blue-500 dark:border-red-500 shadow-2xl"
             />
           </div>
         </div>

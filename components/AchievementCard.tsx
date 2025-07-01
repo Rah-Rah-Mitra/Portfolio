@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AchievementItem } from '../types';
 import { CalendarDaysIcon, TagIcon } from './icons/GenericIcons';
@@ -14,7 +13,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, index })
 
   return (
     <div 
-      className="bg-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-emerald-500/30 hover:transform hover:-translate-y-2 group"
+      className="bg-gray-800 dark:bg-gray-800/50 rounded-xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-blue-500/30 dark:hover:shadow-red-500/30 hover:transform hover:-translate-y-2 group"
       style={{ animationDelay: `${index * 100}ms` }} // Staggered animation
     >
       {imageUrl && (
@@ -28,7 +27,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, index })
       )}
       <div className="p-6 flex flex-col flex-grow">
         {category && (
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2 flex items-center">
+          <p className="text-xs font-semibold text-blue-400 dark:text-red-400 uppercase tracking-wider mb-2 flex items-center">
             <TagIcon className="w-4 h-4 mr-1.5" />
             {category}
           </p>

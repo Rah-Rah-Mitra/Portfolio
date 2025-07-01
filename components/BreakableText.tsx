@@ -1,27 +1,31 @@
-
 import React, { useRef, useEffect, useMemo } from 'react';
 import { usePhysics } from '../contexts/PhysicsContext';
 
 interface BreakableTextProps {
   text: string;
   className?: string;
+  physicsEnabled?: boolean;
 }
 
-const BreakableText: React.FC<BreakableTextProps> = ({ text, className }) => {
+const BreakableText: React.FC<BreakableTextProps> = ({ text, className, physicsEnabled = true }) => {
   const { registerWords } = usePhysics();
   const containerRef = useRef<HTMLSpanElement>(null);
 
   const parts = useMemo(() => text.split(/(\s+)/), [text]);
 
   useEffect(() => {
-    if (containerRef.current) {
+    if (physicsEnabled && containerRef.current) {
       const wordElements = Array.from(containerRef.current.querySelectorAll('span[data-word]')) as HTMLElement[];
       if (wordElements.length > 0) {
         const unregister = registerWords(wordElements);
         return unregister;
       }
     }
-  }, [parts, registerWords]);
+  }, [parts, registerWords, physicsEnabled]);
+  
+  if (!physicsEnabled) {
+    return <span className={className}>{text}</span>;
+  }
 
   return (
     <span ref={containerRef} className={className}>

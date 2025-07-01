@@ -1,4 +1,3 @@
-
 import React from 'react';
 import SectionContainer from './SectionContainer';
 import { EnvelopeIcon } from './icons/GenericIcons';
@@ -18,15 +17,15 @@ const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl,
       id={id} 
       title="Get In Touch"
       subtitle="I'm always open to discussing new projects, creative ideas, or opportunities to be part of something great. Feel free to reach out!"
-      className="bg-gray-900"
+      className="bg-gray-900 dark:bg-black"
     >
       <div className="max-w-lg mx-auto text-center">
-        <div className="bg-gray-800 p-8 md:p-10 rounded-xl shadow-2xl">
-          <div className="flex items-center justify-center mb-6 text-emerald-400">
+        <div className="bg-gray-800 dark:bg-gray-900 p-8 md:p-10 rounded-xl shadow-2xl">
+          <div className="flex items-center justify-center mb-6 text-blue-400 dark:text-red-400">
             <EnvelopeIcon className="w-10 h-10 mr-3" />
             <a 
               href={`mailto:${email}`} 
-              className="text-xl md:text-2xl font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+              className="text-xl md:text-2xl font-semibold text-blue-400 hover:text-blue-300 dark:text-red-400 dark:hover:text-red-300 transition-colors"
             >
               {email}
             </a>
@@ -36,17 +35,17 @@ const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl,
           </p>
           <div className="flex justify-center space-x-6">
             {linkedinUrl && (
-              <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition-colors duration-300 transform hover:scale-110">
+              <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110">
                 <LinkedInIcon className="w-8 h-8" />
               </a>
             )}
             {githubUrl && (
-              <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition-colors duration-300 transform hover:scale-110">
+              <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110">
                 <GithubIcon className="w-8 h-8" />
               </a>
             )}
             {twitterUrl && (
-              <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition-colors duration-300 transform hover:scale-110">
+              <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110">
                 <TwitterIcon className="w-8 h-8" />
               </a>
             )}
@@ -58,4 +57,3 @@ const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl,
 };
 
 export default ContactSection;
-    

@@ -1,6 +1,9 @@
 
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import Matter from 'matter-js';
+import { Theme } from './ThemeContext';
+import { useSmashInteraction } from '../hooks/useSmashInteraction';
+import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
 
 type BodyRef = {
   body: Matter.Body;
@@ -13,8 +16,8 @@ type BodyRef = {
 };
 
 interface PhysicsContextType {
-  isHammerMode: boolean;
-  toggleHammerMode: () => void;
+  isInteractionActive: boolean;
+  toggleInteraction: () => void;
   restoreAll: () => void;
   registerWords: (elements: HTMLElement[]) => () => void;
 }
@@ -29,19 +32,42 @@ export const usePhysics = () => {
   return context;
 };
 
-const { Engine, Runner, Bodies, Composite, World, Body, Vector } = Matter;
+const { Engine, Runner, Bodies, Composite, World, Body } = Matter;
 
-export const PhysicsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isHammerMode, setIsHammerMode] = useState(false);
+export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = ({ children, theme }) => {
+  const [isInteractionActive, setIsInteractionActive] = useState(false);
   const engineRef = useRef(Engine.create());
   const runnerRef = useRef(Runner.create());
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
   const boundariesRef = useRef<Matter.Body[]>([]);
 
+  const restoreAll = useCallback(() => {
+    // Ensure default gravity is restored when resetting all bodies
+    engineRef.current.gravity.y = 0.4;
+    
+    bodiesRef.current.forEach((ref) => {
+      ref.element.classList.add('word-restoring');
+      ref.element.style.transform = 'translate(0px, 0px) rotate(0rad)';
+
+      Body.setStatic(ref.body, true);
+      Body.setPosition(ref.body, { x: ref.initial.x, y: ref.initial.y });
+      Body.setVelocity(ref.body, { x: 0, y: 0 });
+      Body.setAngle(ref.body, 0);
+      Body.setAngularVelocity(ref.body, 0);
+      
+      setTimeout(() => {
+        ref.element.classList.remove('word-restoring');
+      }, 500);
+    });
+  }, []);
+
+  // Initialize engine, runner, and world
   useEffect(() => {
     const engine = engineRef.current;
-    engine.gravity.y = 0.4;
     const runner = runnerRef.current;
+    
+    // Set default gravity
+    engine.gravity.y = 0.4;
 
     const setupBoundaries = () => {
         if (boundariesRef.current.length > 0) {
@@ -87,35 +113,21 @@ export const PhysicsProvider: React.FC<{ children: ReactNode }> = ({ children })
       Engine.clear(engine);
       window.removeEventListener('resize', handleResize);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
+
+  // Conditionally activate the appropriate interaction hook based on theme and state
+  useSmashInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'light');
+  useGravityWellInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'dark');
+
+  const toggleInteraction = useCallback(() => {
+    setIsInteractionActive(prev => !prev);
   }, []);
 
-  const toggleHammerMode = useCallback(() => {
-    setIsHammerMode(prev => !prev);
-  }, []);
-
+  // Deactivate interaction when theme changes
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (!isHammerMode) return;
-      const mousePosition = Vector.create(e.pageX, e.pageY);
-      bodiesRef.current.forEach(({ body }) => {
-        const distance = Vector.magnitude(Vector.sub(mousePosition, body.position));
-        if (distance < 100) { // Interaction radius
-            Body.setStatic(body, false);
-            const forceMagnitude = 0.05 * body.mass;
-            const force = Vector.mult(Vector.normalise(Vector.sub(body.position, mousePosition)), forceMagnitude);
-            Body.applyForce(body, mousePosition, force);
-        }
-      });
-    };
-    if (isHammerMode) {
-      document.body.classList.add('hammer-cursor');
-      document.addEventListener('mousedown', handleClick);
-    }
-    return () => {
-      document.body.classList.remove('hammer-cursor');
-      document.removeEventListener('mousedown', handleClick);
-    };
-  }, [isHammerMode]);
+    setIsInteractionActive(false);
+  }, [theme]);
 
   const registerWords = useCallback((elements: HTMLElement[]) => {
     const wordIds: string[] = [];
@@ -149,26 +161,9 @@ export const PhysicsProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
   }, []);
 
-  const restoreAll = useCallback(() => {
-    bodiesRef.current.forEach((ref) => {
-      ref.element.classList.add('word-restoring');
-      ref.element.style.transform = 'translate(0px, 0px) rotate(0rad)';
-
-      Body.setStatic(ref.body, true);
-      Body.setPosition(ref.body, { x: ref.initial.x, y: ref.initial.y });
-      Body.setVelocity(ref.body, { x: 0, y: 0 });
-      Body.setAngle(ref.body, 0);
-      Body.setAngularVelocity(ref.body, 0);
-      
-      setTimeout(() => {
-        ref.element.classList.remove('word-restoring');
-      }, 500);
-    });
-  }, []);
-
   const value = {
-    isHammerMode,
-    toggleHammerMode,
+    isInteractionActive,
+    toggleInteraction,
     registerWords,
     restoreAll,
   };

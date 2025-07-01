@@ -2,6 +2,7 @@
 import React from 'react';
 import { PortfolioData } from './types';
 import { CodeBracketIcon, AcademicCapIcon, CommandLineIcon, DevicePhoneMobileIcon, ServerStackIcon, PaintBrushIcon } from './components/icons/TechIcons';
+import * as assets from './assets';
 
 /**
  * Data for the "Innovative Software Engineer" profile (Light Theme).
@@ -10,7 +11,7 @@ export const softwareEngineerData: PortfolioData = {
   name: "Rahul Mitra",
   tagline: "Innovative Software Engineer & Creative Problem Solver",
   bio: "Driven by a passion for technology and a keen eye for detail, I specialize in crafting high-quality software solutions that are both user-friendly and impactful. My journey in tech has been fueled by continuous learning and a desire to build things that make a difference.",
-  profileImageUrl: "https://picsum.photos/seed/morganprofile/400/400",
+  profileImageUrl: assets.SE_PROFILE_IMAGE,
   contactEmail: "rahul.mitra.dev@example.com",
   linkedinUrl: "https://linkedin.com/in/rahulmitra-dev",
   githubUrl: "https://github.com/rahulmitra-dev",
@@ -21,7 +22,7 @@ export const softwareEngineerData: PortfolioData = {
       title: "AI-Powered Customer Support Chatbot", 
       description: "Developed and deployed an AI chatbot that reduced customer service response times by 40% and improved user satisfaction scores by 25%. Integrated with existing CRM systems.",
       date: "2023 Q4", 
-      imageUrl: "https://picsum.photos/seed/chatbot/600/400", 
+      imageUrl: assets.SE_ACHIEVEMENT_CHATBOT, 
       category: "AI & Machine Learning",
       tags: ["Python", "NLP", "Dialogflow", "API Integration"]
     },
@@ -30,7 +31,7 @@ export const softwareEngineerData: PortfolioData = {
       title: "Global E-commerce Platform Optimization", 
       description: "Led the performance optimization initiative for a global e-commerce site, resulting in a 2s reduction in average page load time and a 15% conversion rate increase.", 
       date: "2022 - 2023", 
-      imageUrl: "https://picsum.photos/seed/ecommerce/600/400", 
+      imageUrl: assets.SE_ACHIEVEMENT_ECOMMERCE, 
       category: "Web Development",
       tags: ["React", "Node.js", "AWS", "Performance Tuning"]
     },
@@ -39,7 +40,7 @@ export const softwareEngineerData: PortfolioData = {
       title: "Published Research on Quantum Computing Algorithms", 
       description: "Co-authored and published a paper in a peer-reviewed journal on novel algorithms for quantum simulations, contributing to advancements in the field.", 
       date: "2021", 
-      imageUrl: "https://picsum.photos/seed/quantum/600/400", 
+      imageUrl: assets.SE_ACHIEVEMENT_QUANTUM, 
       category: "Research",
       tags: ["Quantum Computing", "Algorithm Design", "Scientific Publication"]
     },
@@ -48,7 +49,7 @@ export const softwareEngineerData: PortfolioData = {
       title: "Community Coding Bootcamp Mentor", 
       description: "Volunteered as a mentor for a local coding bootcamp, guiding aspiring developers and contributing to curriculum development for web fundamentals.", 
       date: "Ongoing", 
-      imageUrl: "https://picsum.photos/seed/bootcamp/600/400", 
+      imageUrl: assets.SE_ACHIEVEMENT_BOOTCAMP, 
       category: "Community",
       tags: ["Mentorship", "Education", "JavaScript", "HTML/CSS"]
     }
@@ -75,7 +76,7 @@ export const softwareEngineerData: PortfolioData = {
         "Driving adoption of best practices in code quality, testing, and CI/CD pipelines.",
         "Collaborating with product managers and designers to translate requirements into technical solutions."
       ],
-      logoUrl: "https://picsum.photos/seed/innovatechlogo/100/100"
+      logoUrl: assets.SE_EXP_LOGO_INNOVATECH
     },
     { 
       id: 2, 
@@ -88,7 +89,7 @@ export const softwareEngineerData: PortfolioData = {
         "Participated in full software development lifecycle, from concept to deployment.",
         "Contributed to database design and optimization."
       ],
-      logoUrl: "https://picsum.photos/seed/digitalco/100/100"
+      logoUrl: assets.SE_EXP_LOGO_DIGITALCO
     },
     { 
       id: 3, 
@@ -100,7 +101,7 @@ export const softwareEngineerData: PortfolioData = {
         "Gained experience with version control (Git) and agile development processes.",
         "Provided technical support and bug fixes for existing applications."
       ],
-      logoUrl: "https://picsum.photos/seed/startuphubx/100/100"
+      logoUrl: assets.SE_EXP_LOGO_STARTUPHUBX
     },
   ],
 };
@@ -112,7 +113,7 @@ export const cybersecurityData: PortfolioData = {
   name: "R. Mitra",
   tagline: "Cybersecurity Analyst & Digital Guardian",
   bio: "Specializing in threat detection, penetration testing, and digital forensics. I'm dedicated to protecting digital assets and fortifying networks against emerging cyber threats. My mission is to build a more secure digital future, one vulnerability at a time.",
-  profileImageUrl: "https://picsum.photos/seed/hackerprofile/400/400",
+  profileImageUrl: assets.CS_PROFILE_IMAGE,
   contactEmail: "rahul.mitra.sec@example.com",
   linkedinUrl: "https://linkedin.com/in/rahulmitra-sec",
   githubUrl: "https://github.com/rahulmitra-sec",
@@ -123,7 +124,7 @@ export const cybersecurityData: PortfolioData = {
       title: "Critical Vulnerability Disclosure", 
       description: "Identified and reported a critical RCE vulnerability in a major financial services application, preventing potential data breaches. Acknowledged in their Hall of Fame.",
       date: "2023 Q3", 
-      imageUrl: "https://picsum.photos/seed/bugbounty/600/400", 
+      imageUrl: assets.CS_ACHIEVEMENT_BUG_BOUNTY, 
       category: "Bug Bounty",
       tags: ["RCE", "WebApp Pentesting", "Responsible Disclosure"]
     },
@@ -132,7 +133,7 @@ export const cybersecurityData: PortfolioData = {
       title: "1st Place - National CTF Competition", 
       description: "Led a team to victory in the 'Defend the Flag' 2022 national cybersecurity competition, excelling in cryptography and reverse engineering challenges.", 
       date: "2022", 
-      imageUrl: "https://picsum.photos/seed/ctf/600/400", 
+      imageUrl: assets.CS_ACHIEVEMENT_CTF, 
       category: "Competition",
       tags: ["CTF", "Teamwork", "Problem Solving"]
     },
@@ -141,7 +142,7 @@ export const cybersecurityData: PortfolioData = {
       title: "Open-Source Forensics Tool", 
       description: "Developed 'MemTrace', an open-source memory forensics tool for analyzing RAM dumps, now used by investigators to trace malicious activity.", 
       date: "2021", 
-      imageUrl: "https://picsum.photos/seed/forensics/600/400", 
+      imageUrl: assets.CS_ACHIEVEMENT_FORENSICS, 
       category: "Tool Development",
       tags: ["Python", "Forensics", "Open Source", "Memory Analysis"]
     },
@@ -150,7 +151,7 @@ export const cybersecurityData: PortfolioData = {
       title: "Security Conference Speaker", 
       description: "Presented research on IoT device exploitation techniques at the 'SecureCon' conference, sharing insights with industry professionals.", 
       date: "2023", 
-      imageUrl: "https://picsum.photos/seed/conference/600/400", 
+      imageUrl: assets.CS_ACHIEVEMENT_CONFERENCE, 
       category: "Public Speaking",
       tags: ["IoT Security", "Research", "Exploit Development"]
     }
@@ -177,7 +178,7 @@ export const cybersecurityData: PortfolioData = {
         "Analyzing threat intelligence to proactively identify and mitigate risks.",
         "Mentoring junior analysts and improving team's technical capabilities."
       ],
-      logoUrl: "https://picsum.photos/seed/securenetlogo/100/100"
+      logoUrl: assets.CS_EXP_LOGO_SECURENET
     },
     { 
       id: 2, 
@@ -190,7 +191,7 @@ export const cybersecurityData: PortfolioData = {
         "Developed custom security scripts and tools for automation.",
         "Authored detailed reports on findings for technical and executive audiences."
       ],
-      logoUrl: "https://picsum.photos/seed/cyberdefend/100/100"
+      logoUrl: assets.CS_EXP_LOGO_CYBERDEFEND
     },
     { 
       id: 3, 
@@ -202,7 +203,7 @@ export const cybersecurityData: PortfolioData = {
         "Responded to and investigated initial security alerts.",
         "Educated employees on security best practices and phishing awareness.",
       ],
-      logoUrl: "https://picsum.photos/seed/datasystems/100/100"
+      logoUrl: assets.CS_EXP_LOGO_DATASYSTEMS
     },
   ],
 };

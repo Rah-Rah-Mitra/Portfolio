@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import Matter from 'matter-js';
 
@@ -34,8 +33,10 @@ export const useGravityWellInteraction = (
 
     const handleMouseDown = (e: MouseEvent) => {
       const mousePosition = Vector.create(e.pageX, e.pageY);
+      const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * 0.4;
+
       bodiesRef.current?.forEach(({ body }) => {
-        if (Vector.magnitude(Vector.sub(mousePosition, body.position)) < 300) {
+        if (Vector.magnitude(Vector.sub(mousePosition, body.position)) < gravityRadius) {
           Body.setStatic(body, false);
         }
       });
@@ -76,8 +77,8 @@ export const useGravityWellInteraction = (
     }
 
     const applyGravityForce = () => {
-      const GRAVITY_RADIUS = 200;
-      const GRAVITY_ACCELERATION = 0.01;
+      const GRAVITY_RADIUS = Math.min(window.innerWidth, window.innerHeight) * 0.4;
+      const GRAVITY_ACCELERATION = 0.02;
 
       bodiesRef.current?.forEach(({ body }) => {
         if (body.isStatic) return;

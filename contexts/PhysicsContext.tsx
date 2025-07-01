@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import Matter from 'matter-js';
 import { Theme } from './ThemeContext';
@@ -40,24 +39,61 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   const runnerRef = useRef(Runner.create());
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
   const boundariesRef = useRef<Matter.Body[]>([]);
+  // Use a Set to track timers to prevent memory leaks from multiple restore calls
+  const restoreTimers = useRef(new Set<number>());
 
   const restoreAll = useCallback(() => {
-    // Ensure default gravity is restored when resetting all bodies
+    setIsInteractionActive(false);
     engineRef.current.gravity.y = 0.4;
     
-    bodiesRef.current.forEach((ref) => {
-      ref.element.classList.add('word-restoring');
-      ref.element.style.transform = 'translate(0px, 0px) rotate(0rad)';
+    // Clear any existing fallback timers
+    restoreTimers.current.forEach(timerId => clearTimeout(timerId));
+    restoreTimers.current.clear();
 
-      Body.setStatic(ref.body, true);
-      Body.setPosition(ref.body, { x: ref.initial.x, y: ref.initial.y });
-      Body.setVelocity(ref.body, { x: 0, y: 0 });
-      Body.setAngle(ref.body, 0);
-      Body.setAngularVelocity(ref.body, 0);
+    bodiesRef.current.forEach((ref) => {
+      const { element, body, initial } = ref;
       
-      setTimeout(() => {
-        ref.element.classList.remove('word-restoring');
-      }, 500);
+      if (body.isStatic) {
+        return;
+      }
+
+      let fallbackTimeoutId: number | undefined;
+
+      // This function performs the final "snap" to the original position.
+      const snapToFinalPosition = () => {
+        // Clean up to prevent this function being called multiple times for one element
+        element.removeEventListener('transitionend', snapToFinalPosition);
+        if (fallbackTimeoutId) {
+            restoreTimers.current.delete(fallbackTimeoutId);
+            clearTimeout(fallbackTimeoutId);
+        }
+
+        // Forcefully reset the element to its original CSS state
+        element.classList.remove('word-restoring', 'physics-active');
+        element.style.transform = ''; // The key change: resets all transforms
+
+        // Re-assert the body's static state and position for perfect sync
+        Body.setStatic(body, true);
+        Body.setPosition(body, { x: initial.x, y: initial.y });
+        Body.setAngle(body, 0);
+        Body.setVelocity(body, { x: 0, y: 0 });
+        Body.setAngularVelocity(body, 0);
+      };
+
+      // Listen for the transition to end
+      element.addEventListener('transitionend', snapToFinalPosition, { once: true });
+      
+      // Add a robust fallback timer in case 'transitionend' doesn't fire
+      fallbackTimeoutId = window.setTimeout(snapToFinalPosition, 600); // 500ms transition + 100ms buffer
+      restoreTimers.current.add(fallbackTimeoutId);
+
+      // Start the CSS transition by adding the class
+      element.classList.add('word-restoring');
+      // Set an explicit transform target for the transition to animate towards
+      element.style.transform = 'translate(0px, 0px) rotate(0rad)';
+
+      // Immediately set the physics body to static so it doesn't interfere with the CSS transition
+      Body.setStatic(body, true);
     });
   }, []);
 
@@ -66,7 +102,6 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     const engine = engineRef.current;
     const runner = runnerRef.current;
     
-    // Set default gravity
     engine.gravity.y = 0.4;
 
     const setupBoundaries = () => {
@@ -97,6 +132,22 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     const renderLoop = () => {
       bodiesRef.current.forEach((ref) => {
         if (!ref.element) return;
+
+        const isRestoring = ref.element.classList.contains('word-restoring');
+
+        if (!ref.body.isStatic) {
+            ref.element.classList.add('physics-active');
+        } else if (!isRestoring) {
+            ref.element.classList.remove('physics-active');
+        }
+        
+        // Let CSS handle the transform for restoring elements,
+        // and do nothing for static elements.
+        if (isRestoring || ref.body.isStatic) {
+          return;
+        }
+
+        // Only apply physics-driven transforms to active, non-static bodies.
         const { x, y } = ref.body.position;
         const angle = ref.body.angle;
         ref.element.style.transform = `translate(${x - ref.initial.x}px, ${y - ref.initial.y}px) rotate(${angle}rad)`;
@@ -112,11 +163,22 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
       World.clear(engine.world, false);
       Engine.clear(engine);
       window.removeEventListener('resize', handleResize);
+      restoreTimers.current.forEach(timerId => clearTimeout(timerId));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
-  // Conditionally activate the appropriate interaction hook based on theme and state
+  useEffect(() => {
+    if (isInteractionActive) {
+      document.body.classList.add('no-select');
+    } else {
+      document.body.classList.remove('no-select');
+    }
+    return () => {
+      document.body.classList.remove('no-select');
+    };
+  }, [isInteractionActive]);
+
   useSmashInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'light');
   useGravityWellInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'dark');
 
@@ -124,7 +186,6 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     setIsInteractionActive(prev => !prev);
   }, []);
 
-  // Deactivate interaction when theme changes
   useEffect(() => {
     setIsInteractionActive(false);
   }, [theme]);
@@ -140,7 +201,11 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
       const initialX = rect.left + window.scrollX + rect.width / 2;
       const initialY = rect.top + window.scrollY + rect.height / 2;
       
-      const body = Bodies.rectangle(initialX, initialY, rect.width, rect.height, { isStatic: true });
+      const body = Bodies.rectangle(initialX, initialY, rect.width, rect.height, { 
+        isStatic: true,
+        restitution: 0.3,
+        friction: 0.2,
+      });
       
       bodiesRef.current.set(id, {
         body,

@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import Matter from 'matter-js';
 
@@ -30,10 +29,16 @@ export const useSmashInteraction = (
 
     const handleMouseDown = (e: MouseEvent) => {
       const mousePosition = Vector.create(e.pageX, e.pageY);
+      const boxWidth = window.innerWidth * 0.4;
+      const boxHeight = window.innerHeight * 0.4;
 
       bodiesRef.current?.forEach(({ body }) => {
-        const distance = Vector.magnitude(Vector.sub(mousePosition, body.position));
-        if (distance < 100) {
+        const isInside = body.position.x > mousePosition.x - boxWidth / 2 &&
+                         body.position.x < mousePosition.x + boxWidth / 2 &&
+                         body.position.y > mousePosition.y - boxHeight / 2 &&
+                         body.position.y < mousePosition.y + boxHeight / 2;
+
+        if (isInside) {
             Body.setStatic(body, false);
             const forceMagnitude = 0.05 * body.mass;
             const force = Vector.mult(Vector.normalise(Vector.sub(body.position, mousePosition)), forceMagnitude);

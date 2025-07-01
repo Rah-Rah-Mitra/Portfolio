@@ -1,0 +1,3 @@
+This placeholder file creates the 'images' directory.
+Please add your project's image assets (e.g., profile.jpg, logo.png) here. Then, reference them in `assets.ts`.
+The web server will serve files from this directory at the root path (e.g., /images/profile.jpg).

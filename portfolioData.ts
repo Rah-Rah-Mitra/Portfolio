@@ -18,6 +18,24 @@ export const softwareEngineerData: PortfolioData = {
   twitterUrl: "https://twitter.com/rahulmitra_dev",
   achievements: [
     { 
+      id: 5, 
+      title: "SmartExam @ GovTech x NTUPC Hackathon 2025", 
+      description: "Built 'SmartExam', an advanced, multi-agent autonomous system for generating customized exams from various sources. The project, developed for the GovTech x NTUPC Product Hackathon, features a sophisticated RAG pipeline to automate the entire exam creation lifecycle. Explore the repository at github.com/Rah-Rah-Mitra/SmartExam.",
+      date: "2025", 
+      imageUrl: assets.SE_ACHIEVEMENT_SMARTEXAM, 
+      category: "AI & Full-Stack Development",
+      tags: ["AI Agents", "RAG", "System Design", "Hackathon", "Next.js"]
+    },
+    { 
+      id: 6, 
+      title: "EthosLens: AI-Powered Sustainability Analysis", 
+      description: "Contributed as a backend developer to 'EthosLens,' an automated research engine that analyzes and scores brands on ethical practices. The platform leverages advanced web search, data processing, and AI-powered analysis to score companies across five ethical pillars. The repository is available at github.com/Rah-Rah-Mitra/EthosLens.",
+      date: "2024", 
+      imageUrl: assets.SE_ACHIEVEMENT_ETHOSLENS, 
+      category: "AI & Sustainability Tech",
+      tags: ["FastAPI", "Python", "LangChain", "Backend", "Sustainability"]
+    },
+    { 
       id: 1, 
       title: "AI-Powered Customer Support Chatbot", 
       description: "Developed and deployed an AI chatbot that reduced customer service response times by 40% and improved user satisfaction scores by 25%. Integrated with existing CRM systems.",

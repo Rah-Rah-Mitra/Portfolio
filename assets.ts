@@ -9,6 +9,8 @@ export const SE_ACHIEVEMENT_CHATBOT = '/images/se-achievement-chatbot.jpg';
 export const SE_ACHIEVEMENT_ECOMMERCE = '/images/se-achievement-ecommerce.jpg';
 export const SE_ACHIEVEMENT_QUANTUM = '/images/se-achievement-quantum.jpg';
 export const SE_ACHIEVEMENT_BOOTCAMP = '/images/se-achievement-bootcamp.jpg';
+export const SE_ACHIEVEMENT_SMARTEXAM = '/images/se-achievement-smartexam.jpg';
+export const SE_ACHIEVEMENT_ETHOSLENS = '/images/se-achievement-ethoslens.jpg';
 
 // Experience Logos
 export const SE_EXP_LOGO_INNOVATECH = '/images/se-logo-innovatech.png';

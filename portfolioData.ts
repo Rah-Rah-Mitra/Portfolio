@@ -28,12 +28,12 @@ export const softwareEngineerData: PortfolioData = {
     },
     { 
       id: 6, 
-      title: "EthosLens: AI-Powered Sustainability Analysis", 
-      description: "Contributed as a backend developer to 'EthosLens,' an automated research engine that analyzes and scores brands on ethical practices. The platform leverages advanced web search, data processing, and AI-powered analysis to score companies across five ethical pillars. The repository is available at github.com/Rah-Rah-Mitra/EthosLens.",
-      date: "2024", 
+      title: "EthosLens @ LifeHack 2025", 
+      description: "As a backend developer for the LifeHack 2025 hackathon, I helped build 'EthosLens,' an automated research engine for sustainability. It analyzes and scores brands on ethical practices using AI. View our project on Devpost (devpost.com/software/ethoslens) or explore the code on GitHub (github.com/Rah-Rah-Mitra/EthosLens).",
+      date: "2025", 
       imageUrl: assets.SE_ACHIEVEMENT_ETHOSLENS, 
       category: "AI & Sustainability Tech",
-      tags: ["FastAPI", "Python", "LangChain", "Backend", "Sustainability"]
+      tags: ["FastAPI", "Python", "LangChain", "Backend", "Hackathon", "Sustainability"]
     },
     { 
       id: 1, 

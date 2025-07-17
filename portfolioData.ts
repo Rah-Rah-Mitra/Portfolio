@@ -18,7 +18,7 @@ export const softwareEngineerData: PortfolioData = {
   twitterUrl: "https://twitter.com/rahulmitra_dev",
   achievements: [
     { 
-      id: 5, 
+      id: 3, 
       title: "SmartExam @ GovTech x NTUPC Hackathon 2025", 
       description: "Built 'SmartExam', an advanced, multi-agent autonomous system for generating customized exams from various sources. The project, developed for the GovTech x NTUPC Product Hackathon, features a sophisticated RAG pipeline to automate the entire exam creation lifecycle. Explore the repository at github.com/Rah-Rah-Mitra/SmartExam.",
       date: "2025", 
@@ -27,7 +27,7 @@ export const softwareEngineerData: PortfolioData = {
       tags: ["AI Agents", "RAG", "System Design", "Hackathon", "Next.js"]
     },
     { 
-      id: 6, 
+      id: 2, 
       title: "EthosLens @ LifeHack 2025", 
       description: "As a backend developer for the LifeHack 2025 hackathon, I helped build 'EthosLens,' an automated research engine for sustainability. It analyzes and scores brands on ethical practices using AI. View our project on Devpost (devpost.com/software/ethoslens) or explore the code on GitHub (github.com/Rah-Rah-Mitra/EthosLens).",
       date: "2025", 
@@ -37,39 +37,12 @@ export const softwareEngineerData: PortfolioData = {
     },
     { 
       id: 1, 
-      title: "AI-Powered Customer Support Chatbot", 
-      description: "Developed and deployed an AI chatbot that reduced customer service response times by 40% and improved user satisfaction scores by 25%. Integrated with existing CRM systems.",
-      date: "2023 Q4", 
-      imageUrl: assets.SE_ACHIEVEMENT_CHATBOT, 
-      category: "AI & Machine Learning",
-      tags: ["Python", "NLP", "Dialogflow", "API Integration"]
-    },
-    { 
-      id: 2, 
-      title: "Global E-commerce Platform Optimization", 
-      description: "Led the performance optimization initiative for a global e-commerce site, resulting in a 2s reduction in average page load time and a 15% conversion rate increase.", 
-      date: "2022 - 2023", 
-      imageUrl: assets.SE_ACHIEVEMENT_ECOMMERCE, 
-      category: "Web Development",
-      tags: ["React", "Node.js", "AWS", "Performance Tuning"]
-    },
-    { 
-      id: 3, 
-      title: "Published Research on Quantum Computing Algorithms", 
-      description: "Co-authored and published a paper in a peer-reviewed journal on novel algorithms for quantum simulations, contributing to advancements in the field.", 
-      date: "2021", 
-      imageUrl: assets.SE_ACHIEVEMENT_QUANTUM, 
-      category: "Research",
-      tags: ["Quantum Computing", "Algorithm Design", "Scientific Publication"]
-    },
-     { 
-      id: 4, 
-      title: "Community Coding Bootcamp Mentor", 
-      description: "Volunteered as a mentor for a local coding bootcamp, guiding aspiring developers and contributing to curriculum development for web fundamentals.", 
-      date: "Ongoing", 
-      imageUrl: assets.SE_ACHIEVEMENT_BOOTCAMP, 
-      category: "Community",
-      tags: ["Mentorship", "Education", "JavaScript", "HTML/CSS"]
+      title: "AgeWellLah.AI @ HealthHack 2025", 
+      description: "Contributed to 'AgeWellLah.AI' for HealthHack 2025, an AI chatbot enhancing value-based healthcare with personalized planners and support. The project leverages InterSystems IRIS and OpenAI for intelligent health management. View the project on GitHub (github.com/ZulfaqarHafez/AgeWellLah.AI).",
+      date: "2025", 
+      imageUrl: assets.SE_ACHIEVEMENT_AGEWELLAI, 
+      category: "AI & HealthTech",
+      tags: ["AI Chatbot", "HealthTech", "InterSystems IRIS", "Python", "Hackathon"]
     }
   ],
   skills: [
@@ -138,40 +111,22 @@ export const cybersecurityData: PortfolioData = {
   twitterUrl: "https://twitter.com/rahulmitra_sec",
   achievements: [
     { 
-      id: 1, 
-      title: "Critical Vulnerability Disclosure", 
-      description: "Identified and reported a critical RCE vulnerability in a major financial services application, preventing potential data breaches. Acknowledged in their Hall of Fame.",
-      date: "2023 Q3", 
-      imageUrl: assets.CS_ACHIEVEMENT_BUG_BOUNTY, 
-      category: "Bug Bounty",
-      tags: ["RCE", "WebApp Pentesting", "Responsible Disclosure"]
-    },
-    { 
       id: 2, 
-      title: "1st Place - National CTF Competition", 
-      description: "Led a team to victory in the 'Defend the Flag' 2022 national cybersecurity competition, excelling in cryptography and reverse engineering challenges.", 
-      date: "2022", 
-      imageUrl: assets.CS_ACHIEVEMENT_CTF, 
-      category: "Competition",
-      tags: ["CTF", "Teamwork", "Problem Solving"]
+      title: "Active Bug Bounty Hunter", 
+      description: "Regularly participate in bug bounty programs on the YesWeHack platform. Key engagements include Singapore's GOVTECH Bug Bounty Programs (VDP-12, VDP-13) and over 13 other private/public programs, identifying and reporting vulnerabilities.",
+      date: "Present - 2023", 
+      imageUrl: assets.CS_ACHIEVEMENT_BUG_BOUNTY, 
+      category: "Vulnerability Disclosure",
+      tags: ["Bug Bounty", "YesWeHack", "GovTech", "Security Research"]
     },
     { 
-      id: 3, 
-      title: "Open-Source Forensics Tool", 
-      description: "Developed 'MemTrace', an open-source memory forensics tool for analyzing RAM dumps, now used by investigators to trace malicious activity.", 
-      date: "2021", 
-      imageUrl: assets.CS_ACHIEVEMENT_FORENSICS, 
-      category: "Tool Development",
-      tags: ["Python", "Forensics", "Open Source", "Memory Analysis"]
-    },
-     { 
-      id: 4, 
-      title: "Security Conference Speaker", 
-      description: "Presented research on IoT device exploitation techniques at the 'SecureCon' conference, sharing insights with industry professionals.", 
-      date: "2023", 
-      imageUrl: assets.CS_ACHIEVEMENT_CONFERENCE, 
-      category: "Public Speaking",
-      tags: ["IoT Security", "Research", "Exploit Development"]
+      id: 1, 
+      title: "CTF @ DSTA BRINHACK 2025 Debut", 
+      description: "Made my CTF debut at DSTA BRINHACK 2025. Our team secured a commendable top-quartile finish, placing around 90th among more than 400 fiercely competing teams.",
+      date: "2025", 
+      imageUrl: assets.CS_ACHIEVEMENT_BRAINHACK_2025, 
+      category: "Competition",
+      tags: ["CTF", "Teamwork", "DSTA", "First-Time"]
     }
   ],
   skills: [

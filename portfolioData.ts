@@ -45,13 +45,13 @@ export const softwareEngineerData: PortfolioData = {
       tags: ["AI Chatbot", "HealthTech", "InterSystems IRIS", "Python", "Hackathon"]
     },
     {
-    id: 1,
-    title: "Disaster Risk Monitoring Using Satellite Imagery",
-    description: "Completed an NVIDIA Deep Learning Institute course focused on applying AI techniques to monitor and assess disaster risks using satellite imagery. Gained hands-on experience with data processing, model training, and analysis of geospatial datasets. (https://learn.nvidia.com/certificates?id=15f34263397c4584b947c5d6b449139a)",
-    date: "2023 Dec",
-    imageUrl: assets.SE_ACHIEVEMENT_NVIDIA_DIL_DRM,
-    category: "AI & HealthTech",
-    tags: ["NVIDIA", "Deep Learning", "Geospatial", "Python", "Satellite Imagery"]
+      id: 1,
+      title: "Disaster Risk Monitoring Using Satellite Imagery",
+      description: "Completed an NVIDIA Deep Learning Institute course focused on applying AI techniques to monitor and assess disaster risks using satellite imagery. Gained hands-on experience with data processing, model training, and analysis of geospatial datasets. (https://learn.nvidia.com/certificates?id=15f34263397c4584b947c5d6b449139a)",
+      date: "2023 Dec",
+      imageUrl: assets.SE_ACHIEVEMENT_NVIDIA_DIL_DRM,
+      category: "AI & HealthTech",
+      tags: ["NVIDIA", "Deep Learning", "Geospatial", "Python", "Satellite Imagery"]
     }
   ],
   skills: [

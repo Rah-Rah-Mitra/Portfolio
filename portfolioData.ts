@@ -14,11 +14,11 @@ export const softwareEngineerData: PortfolioData = {
   profileImageUrl: assets.SE_PROFILE_IMAGE,
   contactEmail: "rahul.mitra.dev@example.com",
   linkedinUrl: "https://linkedin.com/in/rahulmitra-dev",
-  githubUrl: "https://github.com/rahulmitra-dev",
+  githubUrl: "https://github.com/Rah-Rah-Mitra",
   twitterUrl: "https://twitter.com/rahulmitra_dev",
   achievements: [
     { 
-      id: 3, 
+      id: 4, 
       title: "SmartExam @ GovTech x NTUPC Hackathon 2025", 
       description: "Built 'SmartExam', an advanced, multi-agent autonomous system for generating customized exams from various sources. The project, developed for the GovTech x NTUPC Product Hackathon, features a sophisticated RAG pipeline to automate the entire exam creation lifecycle. Explore the repository at github.com/Rah-Rah-Mitra/SmartExam.",
       date: "2025", 
@@ -27,7 +27,7 @@ export const softwareEngineerData: PortfolioData = {
       tags: ["AI Agents", "RAG", "System Design", "Hackathon", "Next.js"]
     },
     { 
-      id: 2, 
+      id: 3, 
       title: "EthosLens @ LifeHack 2025", 
       description: "As a backend developer for the LifeHack 2025 hackathon, I helped build 'EthosLens,' an automated research engine for sustainability. It analyzes and scores brands on ethical practices using AI. View our project on Devpost (devpost.com/software/ethoslens) or explore the code on GitHub (github.com/Rah-Rah-Mitra/EthosLens).",
       date: "2025", 
@@ -36,13 +36,22 @@ export const softwareEngineerData: PortfolioData = {
       tags: ["FastAPI", "Python", "LangChain", "Backend", "Hackathon", "Sustainability"]
     },
     { 
-      id: 1, 
+      id: 2, 
       title: "AgeWellLah.AI @ HealthHack 2025", 
       description: "Contributed to 'AgeWellLah.AI' for HealthHack 2025, an AI chatbot enhancing value-based healthcare with personalized planners and support. The project leverages InterSystems IRIS and OpenAI for intelligent health management. View the project on GitHub (github.com/ZulfaqarHafez/AgeWellLah.AI).",
       date: "2025", 
       imageUrl: assets.SE_ACHIEVEMENT_AGEWELLAI, 
       category: "AI & HealthTech",
       tags: ["AI Chatbot", "HealthTech", "InterSystems IRIS", "Python", "Hackathon"]
+    },
+    {
+    id: 1,
+    title: "Disaster Risk Monitoring Using Satellite Imagery",
+    description: "Completed an NVIDIA Deep Learning Institute course focused on applying AI techniques to monitor and assess disaster risks using satellite imagery. Gained hands-on experience with data processing, model training, and analysis of geospatial datasets. (https://learn.nvidia.com/certificates?id=15f34263397c4584b947c5d6b449139a)",
+    date: "2023 Dec",
+    imageUrl: assets.SE_ACHIEVEMENT_NVIDIA_DIL_DRM,
+    category: "AI & HealthTech",
+    tags: ["NVIDIA", "Deep Learning", "Geospatial", "Python", "Satellite Imagery"]
     }
   ],
   skills: [
@@ -106,8 +115,8 @@ export const cybersecurityData: PortfolioData = {
   bio: "Specializing in threat detection, penetration testing, and digital forensics. I'm dedicated to protecting digital assets and fortifying networks against emerging cyber threats. My mission is to build a more secure digital future, one vulnerability at a time.",
   profileImageUrl: assets.CS_PROFILE_IMAGE,
   contactEmail: "rahul.mitra.sec@example.com",
-  linkedinUrl: "https://linkedin.com/in/rahulmitra-sec",
-  githubUrl: "https://github.com/rahulmitra-sec",
+  linkedinUrl: "https://linkedin.com/in/rahulmitra-dev",
+  githubUrl: "https://github.com/Rah-Rah-Mitra",
   twitterUrl: "https://twitter.com/rahulmitra_sec",
   achievements: [
     { 

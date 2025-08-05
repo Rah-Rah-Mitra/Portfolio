@@ -9,6 +9,7 @@ export const SE_PROFILE_IMAGE = '/images/se-profile.jpg';
 export const SE_ACHIEVEMENT_SMARTEXAM = '/images/se-achievement-smartexam.jpg';
 export const SE_ACHIEVEMENT_ETHOSLENS = '/images/se-achievement-ethoslens.jpg';
 export const SE_ACHIEVEMENT_AGEWELLAI = '/images/se-achievement-agewell.jpg';
+export const SE_ACHIEVEMENT_NVIDIA_DIL_DRM = '/images/se-achievement-nvidia-dil-drm.png';
 
 // Experience Logos
 export const SE_EXP_LOGO_INNOVATECH = '/images/se-logo-innovatech.png';

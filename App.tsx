@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PortfolioData } from './types';
 import Navbar from './components/Navbar';
@@ -31,7 +30,7 @@ const AppContent: React.FC = () => {
           <AchievementsSection id={SECTION_IDS.ACHIEVEMENTS} achievements={portfolioData.achievements} />
           <SkillsSection id={SECTION_IDS.SKILLS} skills={portfolioData.skills} />
           <ExperienceSection id={SECTION_IDS.EXPERIENCE} experiences={portfolioData.experiences} />
-          <ContactSection id={SECTION_IDS.CONTACT} email={portfolioData.contactEmail} linkedinUrl={portfolioData.linkedinUrl} githubUrl={portfolioData.githubUrl} twitterUrl={portfolioData.twitterUrl} />
+          <ContactSection id={SECTION_IDS.CONTACT} email={portfolioData.contactEmail} linkedinUrl={portfolioData.linkedinUrl} githubUrl={portfolioData.githubUrl} instagramUrl={portfolioData.instagramUrl} />
         </main>
         <Footer name={portfolioData.name} />
         <PhysicsControls />

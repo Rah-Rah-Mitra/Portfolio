@@ -1,7 +1,7 @@
 import React from 'react';
 import { PortfolioData } from '../types';
 import { SECTION_IDS } from '../constants';
-import { LinkedInIcon, GithubIcon, TwitterIcon } from './icons/SocialIcons';
+import { LinkedInIcon, GithubIcon, InstagramIcon } from './icons/SocialIcons';
 import BreakableText from './BreakableText';
 import TypedHeader from './TypedHeader';
 import { useTheme } from '../contexts/ThemeContext';
@@ -9,7 +9,7 @@ import GlitchHeader from './GlitchHeader';
 
 interface HeroSectionProps {
   id: string;
-  data: Pick<PortfolioData, 'name' | 'tagline' | 'bio' | 'profileImageUrl' | 'linkedinUrl' | 'githubUrl' | 'twitterUrl'>;
+  data: Pick<PortfolioData, 'name' | 'tagline' | 'bio' | 'profileImageUrl' | 'linkedinUrl' | 'githubUrl' | 'instagramUrl'>;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
@@ -48,9 +48,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
                   <GithubIcon className="w-8 h-8" />
                 </a>
               )}
-              {data.twitterUrl && (
-                <a href={data.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300">
-                  <TwitterIcon className="w-8 h-8" />
+              {data.instagramUrl && (
+                <a href={data.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300">
+                  <InstagramIcon className="w-8 h-8" />
                 </a>
               )}
             </div>

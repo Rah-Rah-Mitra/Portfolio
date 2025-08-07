@@ -1,17 +1,17 @@
 import React from 'react';
 import SectionContainer from './SectionContainer';
 import { EnvelopeIcon } from './icons/GenericIcons';
-import { LinkedInIcon, GithubIcon, TwitterIcon } from './icons/SocialIcons';
+import { LinkedInIcon, GithubIcon, InstagramIcon } from './icons/SocialIcons';
 
 interface ContactSectionProps {
   id: string;
   email: string;
   linkedinUrl?: string;
   githubUrl?: string;
-  twitterUrl?: string;
+  instagramUrl?: string;
 }
 
-const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl, githubUrl, twitterUrl }) => {
+const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl, githubUrl, instagramUrl }) => {
   return (
     <SectionContainer 
       id={id} 
@@ -44,9 +44,9 @@ const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl,
                 <GithubIcon className="w-8 h-8" />
               </a>
             )}
-            {twitterUrl && (
-              <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110">
-                <TwitterIcon className="w-8 h-8" />
+            {instagramUrl && (
+              <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110">
+                <InstagramIcon className="w-8 h-8" />
               </a>
             )}
           </div>

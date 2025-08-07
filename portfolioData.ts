@@ -15,7 +15,7 @@ export const softwareEngineerData: PortfolioData = {
   contactEmail: "mitrarahul2002@gmail.com",
   linkedinUrl: "https://linkedin.com/in/rahulmitra-dev",
   githubUrl: "https://github.com/Rah-Rah-Mitra",
-  twitterUrl: "https://twitter.com/rahulmitra_dev",
+  instagramUrl: "https://instagram.com/rahulmitra.sec",
   achievements: [
     { 
       id: 4, 
@@ -117,7 +117,7 @@ export const cybersecurityData: PortfolioData = {
   contactEmail: "mitrarahul2002@gmail.com",
   linkedinUrl: "https://linkedin.com/in/rahulmitra-dev",
   githubUrl: "https://github.com/Rah-Rah-Mitra",
-  twitterUrl: "https://twitter.com/rahulmitra_sec",
+  instagramUrl: "https://instagram.com/rahulmitra.sec",
   achievements: [
     { 
       id: 2, 

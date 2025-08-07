@@ -1,4 +1,3 @@
-
 export interface AchievementItem {
   id: string | number;
   title: string;
@@ -32,7 +31,7 @@ export interface PortfolioData {
   contactEmail: string;
   linkedinUrl?: string;
   githubUrl?: string;
-  twitterUrl?: string;
+  instagramUrl?: string;
   achievements: AchievementItem[];
   skills: SkillItem[];
   experiences: ExperienceItem[];
@@ -42,4 +41,3 @@ export interface NavLink {
   href: string;
   label: string;
 }
-    

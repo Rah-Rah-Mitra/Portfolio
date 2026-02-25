@@ -3,36 +3,104 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Personal Portfolio</title>
+    <title>Rahul Mitra — Portfolio</title>
+
+    <!-- Preconnect to trim font load latency (moved before Tailwind) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
-        darkMode: 'class',
-      }
+      tailwind.config = { darkMode: 'class' }
     </script>
     <style>
-      body {
-        font-family: 'Inter', sans-serif; /* A nice default sans-serif font */
+      /* ─────────────────────────────────────────
+         BASE
+      ───────────────────────────────────────── */
+      *, *::before, *::after { box-sizing: border-box; }
+      body { font-family: 'Inter', sans-serif; }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #1f2937; }
+      ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+      html.dark ::-webkit-scrollbar-thumb { background: #ef4444; }
+      html.dark ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
+
+      /* ─────────────────────────────────────────
+         PERFORMANCE — GPU LAYER HINTS
+         will-change is applied dynamically via JS
+         on hover targets to avoid layer bloat.
+      ───────────────────────────────────────── */
+      .card-3d, .orb-3d {
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
       }
-      /* For custom scrollbar styling (optional, but enhances aesthetics) */
-      ::-webkit-scrollbar {
-        width: 8px;
+
+      /* Paint containment keeps each section's
+         repaints isolated from the rest of the page */
+      section { contain: layout style; }
+
+      /* ─────────────────────────────────────────
+         HERO — GRADIENT BACKGROUND
+      ───────────────────────────────────────── */
+      .hero-bg {
+        background: linear-gradient(135deg, #111827 0%, #1e293b 50%, #0f172a 100%);
       }
-      ::-webkit-scrollbar-track {
-        background: #1f2937; /* dark-gray-800 */
+      html.dark .hero-bg {
+        background: linear-gradient(135deg, #000000 0%, #111827 50%, #000000 100%);
       }
-      ::-webkit-scrollbar-thumb {
-        background: #3b82f6; /* blue-500 */
+
+      /* ─────────────────────────────────────────
+         HERO — 3D PERSPECTIVE GRID BACKGROUND
+      ───────────────────────────────────────── */
+      .hero-grid-bg {
+        background-image:
+          linear-gradient(rgba(59,130,246,0.07) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(59,130,246,0.07) 1px, transparent 1px);
+        background-size: 60px 60px;
+        transform: perspective(600px) rotateX(35deg) scale(2.5) translateY(10%);
+        transform-origin: center bottom;
+        opacity: 0.6;
+        animation: grid-drift 20s linear infinite;
       }
-      html.dark ::-webkit-scrollbar-thumb {
-        background: #ef4444; /* red-500 */
+      html.dark .hero-grid-bg {
+        background-image:
+          linear-gradient(rgba(239,68,68,0.07) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(239,68,68,0.07) 1px, transparent 1px);
       }
-      html.dark ::-webkit-scrollbar-thumb:hover {
-        background: #dc2626; /* red-600 */
+
+      @keyframes grid-drift {
+        0%   { background-position: 0 0; }
+        100% { background-position: 0 60px; }
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #2563eb; /* blue-600 */
+
+      /* ─────────────────────────────────────────
+         HERO — 3D FLOATING ORB ANIMATION
+      ───────────────────────────────────────── */
+      .float-3d-container {
+        animation: float-3d 6s ease-in-out infinite;
       }
+
+      @keyframes float-3d {
+        0%   { transform: translateY(0px)   rotateZ(0deg); }
+        25%  { transform: translateY(-14px) rotateZ(0.6deg); }
+        50%  { transform: translateY(-20px) rotateZ(0deg); }
+        75%  { transform: translateY(-10px) rotateZ(-0.6deg); }
+        100% { transform: translateY(0px)   rotateZ(0deg); }
+      }
+
+      /* ─────────────────────────────────────────
+         ACCESSIBILITY — REDUCED MOTION
+      ───────────────────────────────────────── */
+      @media (prefers-reduced-motion: reduce) {
+        .float-3d-container { animation: none; }
+        .card-3d, .orb-3d { transition: none !important; }
+        @keyframes grid-drift { 0%, 100% { background-position: 0 0; } }
+      }
+
       .hammer-cursor {
         cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" stroke-width="1.5" stroke="black" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 6.089l-2.034-2.034a.75.75 0 00-1.06 0l-1.5 1.5a.75.75 0 000 1.06l2.033 2.034-3.24 3.241a4.5 4.5 0 000 6.364l1.89 1.89a4.5 4.5 0 006.364 0l3.24-3.241 2.035 2.035a.75.75 0 001.06 0l1.5-1.5a.75.75 0 000-1.06l-2.035-2.035-7.253-7.254z" /></svg>'), auto;
       }
@@ -131,9 +199,6 @@
         100% { clip-path: inset(78% 0 15% 0); }
       }
     </style>
-     <link rel="preconnect" href="https://fonts.googleapis.com">
-     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {
@@ -144,7 +209,7 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+<link rel="stylesheet" href="/index.css" />
 </head>
   <body>
     <div id="root"></div>

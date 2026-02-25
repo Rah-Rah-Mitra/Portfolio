@@ -44,32 +44,36 @@ export type AnalyticsEvent =
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Public write-only key — safe to embed in client code.
+// PostHog project keys only allow event ingestion, not data retrieval.
+const POSTHOG_KEY  = import.meta.env.VITE_POSTHOG_KEY  ?? 'phc_Du7oytV0G71MoNKsFMGluZCLle9EofUcEDPeINSvzPR';
+const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST ?? 'https://us.i.posthog.com';
+
 export function initAnalytics(): void {
-  const key  = import.meta.env.VITE_POSTHOG_KEY  as string | undefined;
-  const host = import.meta.env.VITE_POSTHOG_HOST as string | undefined;
-
-  if (!key) {
-    console.warn('[analytics] VITE_POSTHOG_KEY not set — tracking disabled.');
-    return;
-  }
-
-  posthog.init(key, {
-    api_host: host ?? 'https://us.i.posthog.com',
+  posthog.init(POSTHOG_KEY, {
+    api_host: POSTHOG_HOST,
 
     // Capture an automatic $pageview on init
     capture_pageview: true,
 
-    // Respect DNT headers and cookie consent
-    respect_dnt: true,
+    // Do NOT respect DNT — this silently disables all tracking if the browser
+    // has "Do Not Track" enabled (common in dev browsers like Chrome).
+    respect_dnt: false,
 
     // Use localStorage instead of cookies for the anonymous ID
     persistence: 'localStorage',
 
-    // Disable session recording — we only want event analytics
+    // Disable session recording — event analytics only
     disable_session_recording: true,
 
-    // Autocapture clicks/inputs off — we fire explicit events only
+    // Autocapture off — we fire explicit typed events only
     autocapture: false,
+
+    loaded(ph) {
+      if (import.meta.env.DEV) {
+        console.log('[analytics] PostHog ready. Distinct ID:', ph.get_distinct_id());
+      }
+    },
   });
 }
 

@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { HammerIcon } from './icons/HammerIcon';
 import { RestoreIcon } from './icons/RestoreIcon';
 import { GravityIcon } from './icons/GravityIcon';
+import { track } from '../lib/analytics';
 
 const PhysicsControls: React.FC = () => {
   const { isInteractionActive, toggleInteraction, restoreAll } = usePhysics();
@@ -53,7 +54,12 @@ const PhysicsControls: React.FC = () => {
 
       <div className="relative group flex items-center">
         <button
-          onClick={toggleInteraction}
+          onClick={() => {
+            toggleInteraction();
+            const mode = isLightMode ? 'hammer' : 'gravity_well';
+            const action = isInteractionActive ? 'deactivated' : 'activated';
+            track('physics_mode_toggled', { mode, action });
+          }}
           aria-label={interactionButtonLabel}
           className={`p-3 ${interactionButtonBg} ${interactionButtonHoverBg} text-white rounded-full shadow-lg transition-all transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${interactionButtonRing}`}
         >

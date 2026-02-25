@@ -6,6 +6,7 @@ import BreakableText from './BreakableText';
 import TypedHeader from './TypedHeader';
 import { useTheme } from '../contexts/ThemeContext';
 import GlitchHeader from './GlitchHeader';
+import { track, themeToProfile } from '../lib/analytics';
 
 interface HeroSectionProps {
   id: string;
@@ -130,6 +131,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
                   href={data.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => track('social_link_clicked', { platform: 'linkedin', location: 'hero' })}
                   className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110"
                 >
                   <LinkedInIcon className="w-8 h-8" />
@@ -140,6 +142,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
                   href={data.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => track('social_link_clicked', { platform: 'github', location: 'hero' })}
                   className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110"
                 >
                   <GithubIcon className="w-8 h-8" />
@@ -150,6 +153,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
                   href={data.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => track('social_link_clicked', { platform: 'instagram', location: 'hero' })}
                   className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110"
                 >
                   <InstagramIcon className="w-8 h-8" />
@@ -159,6 +163,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
 
             <a
               href={`#${SECTION_IDS.ACHIEVEMENTS}`}
+              onClick={() => track('cta_clicked', { label: 'View My Work', profile: themeToProfile(theme) })}
               className="inline-block bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 dark:from-red-600 dark:to-rose-700 dark:hover:from-red-700 dark:hover:to-rose-800 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
             >
               View My Work

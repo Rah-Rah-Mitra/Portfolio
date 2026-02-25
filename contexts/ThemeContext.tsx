@@ -1,5 +1,6 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { track, themeToProfile } from '../lib/analytics';
 
 export type Theme = 'light' | 'dark';
 
@@ -27,6 +28,15 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return 'light';
   });
 
+  // Track which profile a visitor first lands on (fires once)
+  const hasTrackedInitialView = useRef(false);
+  useEffect(() => {
+    if (hasTrackedInitialView.current) return;
+    hasTrackedInitialView.current = true;
+    track('profile_viewed', { profile: themeToProfile(theme) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const root = window.document.documentElement;
     if (theme === 'dark') {
@@ -38,7 +48,11 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    setTheme(prevTheme => {
+      const next = prevTheme === 'light' ? 'dark' : 'light';
+      track('profile_switched', { from: themeToProfile(prevTheme), to: themeToProfile(next) });
+      return next;
+    });
   };
 
   const value = { theme, toggleTheme };

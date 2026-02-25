@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NAVIGATION_LINKS } from '../constants';
 import { Bars3Icon, XMarkIcon } from './icons/GenericIcons';
 import ThemeToggle from './ThemeToggle';
+import { track } from '../lib/analytics';
 
 interface NavbarProps {
   name: string;
@@ -44,6 +45,7 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
                 <a
                   key={link.label}
                   href={link.href}
+                  onClick={() => track('nav_link_clicked', { destination: link.label })}
                   className="text-gray-300 hover:bg-gray-700 hover:text-blue-400 dark:hover:text-red-500 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   {link.label}
@@ -80,7 +82,7 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
               <a
                 key={link.label}
                 href={link.href}
-                onClick={() => setIsOpen(false)} // Close menu on click
+                onClick={() => { setIsOpen(false); track('nav_link_clicked', { destination: link.label }); }}
                 className="text-gray-300 hover:bg-gray-700 hover:text-blue-400 dark:hover:text-red-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               >
                 {link.label}

@@ -2,6 +2,7 @@ import React from 'react';
 import SectionContainer from './SectionContainer';
 import { EnvelopeIcon } from './icons/GenericIcons';
 import { LinkedInIcon, GithubIcon, InstagramIcon } from './icons/SocialIcons';
+import { track } from '../lib/analytics';
 
 interface ContactSectionProps {
   id: string;
@@ -13,8 +14,8 @@ interface ContactSectionProps {
 
 const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl, githubUrl, instagramUrl }) => {
   return (
-    <SectionContainer 
-      id={id} 
+    <SectionContainer
+      id={id}
       title="Get In Touch"
       subtitle="I'm always open to discussing new projects, creative ideas, or opportunities to be part of something great. Feel free to reach out!"
       className="bg-gray-900 dark:bg-black"
@@ -23,8 +24,9 @@ const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl,
         <div className="bg-gray-800 dark:bg-gray-900 p-8 md:p-10 rounded-xl shadow-2xl">
           <div className="flex items-center justify-center mb-6 text-blue-400 dark:text-red-400">
             <EnvelopeIcon className="w-10 h-10 mr-3" />
-            <a 
-              href={`mailto:${email}`} 
+            <a
+              href={`mailto:${email}`}
+              onClick={() => track('contact_email_clicked', {})}
               className="text-xl md:text-2xl font-semibold text-blue-400 hover:text-blue-300 dark:text-red-400 dark:hover:text-red-300 transition-colors"
             >
               {email}
@@ -35,17 +37,35 @@ const ContactSection: React.FC<ContactSectionProps> = ({ id, email, linkedinUrl,
           </p>
           <div className="flex justify-center space-x-6">
             {linkedinUrl && (
-              <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110">
+              <a
+                href={linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track('social_link_clicked', { platform: 'linkedin', location: 'contact' })}
+                className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110"
+              >
                 <LinkedInIcon className="w-8 h-8" />
               </a>
             )}
             {githubUrl && (
-              <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110">
+              <a
+                href={githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track('social_link_clicked', { platform: 'github', location: 'contact' })}
+                className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110"
+              >
                 <GithubIcon className="w-8 h-8" />
               </a>
             )}
             {instagramUrl && (
-              <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110">
+              <a
+                href={instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track('social_link_clicked', { platform: 'instagram', location: 'contact' })}
+                className="text-gray-400 hover:text-blue-400 dark:hover:text-red-500 transition-colors duration-300 transform hover:scale-110"
+              >
                 <InstagramIcon className="w-8 h-8" />
               </a>
             )}

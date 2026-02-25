@@ -1,8 +1,10 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { AchievementItem } from '../types';
 import { CalendarDaysIcon, TagIcon } from './icons/GenericIcons';
 import BreakableText from './BreakableText';
 import { useCardTilt } from '../hooks/useCardTilt';
+import { useTheme } from '../contexts/ThemeContext';
+import { track, themeToProfile } from '../lib/analytics';
 
 interface AchievementCardProps {
   achievement: AchievementItem;
@@ -11,17 +13,65 @@ interface AchievementCardProps {
 
 const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, index }) => {
   const { title, description, date, imageUrl, category, tags } = achievement;
+  const { theme } = useTheme();
   const cardRef = useCardTilt(10);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const hasViewFired = useRef(false);
+  const hoverStartRef = useRef<number | null>(null);
+
+  // Fire `achievement_viewed` once when the card enters the viewport (≥ 60%)
+  useEffect(() => {
+    hasViewFired.current = false; // reset on theme/profile change
+  }, [theme]);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasViewFired.current) {
+          hasViewFired.current = true;
+          track('achievement_viewed', {
+            title,
+            category: category ?? 'Uncategorised',
+            index,
+            profile: themeToProfile(theme),
+          });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.6 },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  // Re-observe on theme change so we capture both profiles' data
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, category, index, theme]);
+
+  // Track how long the user hovers — signals genuine interest
+  const handleMouseEnter = () => {
+    hoverStartRef.current = Date.now();
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverStartRef.current === null) return;
+    const duration = Date.now() - hoverStartRef.current;
+    hoverStartRef.current = null;
+    // Only track hovers > 800ms — filters accidental passes
+    if (duration > 800) {
+      track('achievement_hovered', { title, hover_duration_ms: duration });
+    }
+  };
 
   return (
-    /*
-     * transform-style: preserve-3d  lets child elements live at different Z depths.
-     * contain: layout style          tells the browser card repaints stay isolated.
-     * The outer wrapper holds the perspective; cardRef gets the actual 3D rotation.
-     */
     <div
+      ref={wrapperRef}
       className="card-3d-wrapper"
       style={{ perspective: '900px', contain: 'layout style' }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div
         ref={cardRef}
@@ -33,7 +83,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, index })
           transition: 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.3s ease',
         }}
       >
-        {/* Shimmer highlight overlay — tracks mouse via CSS vars set by the tilt hook parent */}
+        {/* Shimmer highlight overlay */}
         <div
           className="card-3d-sheen pointer-events-none absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 z-10"
           style={{

@@ -31,14 +31,27 @@ export const usePhysics = () => {
   return context;
 };
 
-const { Engine, Runner, Bodies, Composite, World, Body } = Matter;
+const { Engine, Runner, Bodies, Composite, World, Body, Events } = Matter;
+
+const POSITION_EPSILON = 0.25;
+const ANGLE_EPSILON = 0.01;
+
+type RenderState = {
+  x: number;
+  y: number;
+  angle: number;
+  isStatic: boolean;
+  isSleeping: boolean;
+};
 
 export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = ({ children, theme }) => {
   const [isInteractionActive, setIsInteractionActive] = useState(false);
   const engineRef = useRef(Engine.create());
   const runnerRef = useRef(Runner.create());
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
+  const renderStateRef = useRef<Map<string, RenderState>>(new Map());
   const boundariesRef = useRef<Matter.Body[]>([]);
+  const fluidCanvasRef = useRef<HTMLCanvasElement | null>(null);
   // Use a Set to track timers to prevent memory leaks from multiple restore calls
   const restoreTimers = useRef(new Set<number>());
 
@@ -71,6 +84,16 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
         // Forcefully reset the element to its original CSS state
         element.classList.remove('word-restoring', 'physics-active');
         element.style.transform = ''; // The key change: resets all transforms
+        const id = element.dataset.physicsId;
+        if (id) {
+          renderStateRef.current.set(id, {
+            x: initial.x,
+            y: initial.y,
+            angle: 0,
+            isStatic: true,
+            isSleeping: body.isSleeping,
+          });
+        }
 
         // Re-assert the body's static state and position for perfect sync
         Body.setStatic(body, true);
@@ -103,6 +126,7 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     const runner = runnerRef.current;
     
     engine.gravity.y = 0.4;
+    engine.enableSleeping = true;
 
     const setupBoundaries = () => {
         if (boundariesRef.current.length > 0) {
@@ -119,46 +143,95 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
         ];
         Composite.add(engine.world, boundariesRef.current);
     };
+
+    const syncFluidCanvas = () => {
+      if (!fluidCanvasRef.current) return;
+      fluidCanvasRef.current.width = window.innerWidth;
+      fluidCanvasRef.current.height = window.innerHeight;
+    };
     
     setupBoundaries();
+    syncFluidCanvas();
     
     const handleResize = () => {
         setupBoundaries();
+        syncFluidCanvas();
         restoreAll();
     };
 
     window.addEventListener('resize', handleResize);
 
-    const renderLoop = () => {
-      bodiesRef.current.forEach((ref) => {
-        if (!ref.element) return;
+    const handleAfterUpdate = () => {
+      const transformWrites: Array<{ element: HTMLElement; transform: string }> = [];
+      const classWrites: Array<{ element: HTMLElement; addActive: boolean }> = [];
 
-        const isRestoring = ref.element.classList.contains('word-restoring');
+      bodiesRef.current.forEach((ref, id) => {
+        const { element, body, initial } = ref;
+        if (!element) return;
 
-        if (!ref.body.isStatic) {
-            ref.element.classList.add('physics-active');
-        } else if (!isRestoring) {
-            ref.element.classList.remove('physics-active');
+        const isRestoring = element.classList.contains('word-restoring');
+        const shouldBeActive = !body.isStatic;
+        const hasActiveClass = element.classList.contains('physics-active');
+        if (!isRestoring && hasActiveClass !== shouldBeActive) {
+          classWrites.push({ element, addActive: shouldBeActive });
         }
-        
-        // Let CSS handle the transform for restoring elements,
-        // and do nothing for static elements.
-        if (isRestoring || ref.body.isStatic) {
+
+        // Only text bodies should receive transform writes.
+        // Restoring/static/sleeping bodies avoid unnecessary frame writes.
+        if (isRestoring || body.isStatic || body.isSleeping) {
+          renderStateRef.current.set(id, {
+            x: body.position.x,
+            y: body.position.y,
+            angle: body.angle,
+            isStatic: body.isStatic,
+            isSleeping: body.isSleeping,
+          });
           return;
         }
 
-        // Only apply physics-driven transforms to active, non-static bodies.
-        const { x, y } = ref.body.position;
-        const angle = ref.body.angle;
-        ref.element.style.transform = `translate(${x - ref.initial.x}px, ${y - ref.initial.y}px) rotate(${angle}rad)`;
+        const previous = renderStateRef.current.get(id);
+        const dx = previous ? Math.abs(body.position.x - previous.x) : Number.POSITIVE_INFINITY;
+        const dy = previous ? Math.abs(body.position.y - previous.y) : Number.POSITIVE_INFINITY;
+        const dAngle = previous ? Math.abs(body.angle - previous.angle) : Number.POSITIVE_INFINITY;
+
+        if (dx < POSITION_EPSILON && dy < POSITION_EPSILON && dAngle < ANGLE_EPSILON) {
+          return;
+        }
+
+        transformWrites.push({
+          element,
+          transform: `translate(${body.position.x - initial.x}px, ${body.position.y - initial.y}px) rotate(${body.angle}rad)`,
+        });
+
+        renderStateRef.current.set(id, {
+          x: body.position.x,
+          y: body.position.y,
+          angle: body.angle,
+          isStatic: body.isStatic,
+          isSleeping: body.isSleeping,
+        });
       });
-      requestAnimationFrame(renderLoop);
+
+      for (let i = 0; i < classWrites.length; i += 1) {
+        const { element, addActive } = classWrites[i];
+        if (addActive) {
+          element.classList.add('physics-active');
+        } else {
+          element.classList.remove('physics-active');
+        }
+      }
+
+      for (let i = 0; i < transformWrites.length; i += 1) {
+        const { element, transform } = transformWrites[i];
+        element.style.transform = transform;
+      }
     };
 
     Runner.run(runner, engine);
-    renderLoop();
+    Events.on(engine, 'afterUpdate', handleAfterUpdate);
 
     return () => {
+      Events.off(engine, 'afterUpdate', handleAfterUpdate);
       Runner.stop(runner);
       World.clear(engine.world, false);
       Engine.clear(engine);
@@ -205,12 +278,20 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
         isStatic: true,
         restitution: 0.3,
         friction: 0.2,
+        sleepThreshold: 40,
       });
       
       bodiesRef.current.set(id, {
         body,
         element,
         initial: { x: initialX, y: initialY, angle: 0 }
+      });
+      renderStateRef.current.set(id, {
+        x: initialX,
+        y: initialY,
+        angle: 0,
+        isStatic: true,
+        isSleeping: body.isSleeping,
       });
       Composite.add(engineRef.current.world, body);
     });
@@ -221,6 +302,7 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
         if (ref) {
           Composite.remove(engineRef.current.world, ref.body);
           bodiesRef.current.delete(id);
+          renderStateRef.current.delete(id);
         }
       });
     };
@@ -235,7 +317,17 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
 
   return (
     <PhysicsContext.Provider value={value}>
-        {children}
+      <canvas
+        ref={fluidCanvasRef}
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 40,
+        }}
+      />
+      {children}
     </PhysicsContext.Provider>
   );
 };

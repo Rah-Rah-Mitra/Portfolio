@@ -38,7 +38,10 @@ export type AnalyticsEvent =
   | { event: 'achievement_hovered';  props: { title: string; hover_duration_ms: number } }
 
   // ── Easter egg: physics mode ───────────────────────────────────────────────
-  | { event: 'physics_mode_toggled'; props: { mode: 'hammer' | 'gravity_well'; action: 'activated' | 'deactivated' } };
+  | { event: 'physics_mode_toggled'; props: { mode: 'hammer' | 'gravity_well'; action: 'activated' | 'deactivated' } }
+  | { event: 'ability_changed'; props: { ability: 'smash' | 'gravity_well' | 'fluid' } }
+  | { event: 'ability_param_changed'; props: { ability: 'smash' | 'gravity_well' | 'fluid'; param: string; value: number } }
+  | { event: 'ability_preset_applied'; props: { ability: 'smash' | 'gravity_well' | 'fluid'; preset: 'gentle' | 'balanced' | 'intense' } };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT

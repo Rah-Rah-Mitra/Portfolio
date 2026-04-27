@@ -13,46 +13,47 @@ type BodyRef = {
   };
 };
 
-interface GravityWellConfig {
+interface FluidConfig {
   radiusFactor: number;
-  acceleration: number;
+  flowStrength: number;
+  damping: number;
 }
 
-export const useGravityWellInteraction = (
+export const useFluidInteraction = (
   engineRef: React.RefObject<Matter.Engine>,
   bodiesRef: React.RefObject<Map<string, BodyRef>>,
   isActive: boolean,
-  config: GravityWellConfig,
+  config: FluidConfig,
 ) => {
-  const [gravityWellPosition, setGravityWellPosition] = useState<Matter.Vector | null>(null);
+  const [fluidCenter, setFluidCenter] = useState<Matter.Vector | null>(null);
 
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine || !isActive) {
-      setGravityWellPosition(null);
+      setFluidCenter(null);
       return;
     }
 
     engine.gravity.y = 0;
 
     const handleMouseDown = (e: MouseEvent) => {
-      const mousePosition = Vector.create(e.pageX, e.pageY);
-      const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * config.radiusFactor;
+      const position = Vector.create(e.pageX, e.pageY);
+      setFluidCenter(position);
 
+      const radius = Math.min(window.innerWidth, window.innerHeight) * config.radiusFactor;
       bodiesRef.current?.forEach(({ body }) => {
-        if (Vector.magnitude(Vector.sub(mousePosition, body.position)) < gravityRadius) {
+        if (Vector.magnitude(Vector.sub(position, body.position)) <= radius) {
           Body.setStatic(body, false);
         }
       });
-      setGravityWellPosition(mousePosition);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      setGravityWellPosition(currentPos => currentPos ? Vector.create(e.pageX, e.pageY) : null);
+      setFluidCenter((current) => (current ? Vector.create(e.pageX, e.pageY) : null));
     };
 
     const handleMouseUp = () => {
-      setGravityWellPosition(null);
+      setFluidCenter(null);
     };
 
     document.body.classList.add('gravity-cursor');
@@ -73,31 +74,40 @@ export const useGravityWellInteraction = (
 
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine || !isActive || !gravityWellPosition) {
+    if (!engine || !isActive || !fluidCenter) {
       return;
     }
 
-    const applyGravityForce = () => {
+    const applyFluidForces = () => {
       const radius = Math.min(window.innerWidth, window.innerHeight) * config.radiusFactor;
 
       bodiesRef.current?.forEach(({ body }) => {
-        if (body.isStatic) return;
-
-        const distanceVector = Vector.sub(gravityWellPosition, body.position);
-        const distance = Vector.magnitude(distanceVector);
-
-        if (distance < radius) {
-          const pullAcceleration = (1 - distance / radius) * config.acceleration;
-          const force = Vector.mult(Vector.normalise(distanceVector), pullAcceleration * body.mass);
-          Body.applyForce(body, body.position, force);
+        if (body.isStatic) {
+          return;
         }
+
+        const offset = Vector.sub(fluidCenter, body.position);
+        const distance = Vector.magnitude(offset);
+        if (distance === 0 || distance > radius) {
+          return;
+        }
+
+        const normalized = Vector.normalise(offset);
+        const tangential = Vector.create(-normalized.y, normalized.x);
+        const pullStrength = (1 - distance / radius) * config.flowStrength * body.mass;
+        const pullForce = Vector.mult(normalized, pullStrength);
+        const swirlForce = Vector.mult(tangential, pullStrength * 0.6);
+
+        Body.applyForce(body, body.position, pullForce);
+        Body.applyForce(body, body.position, swirlForce);
+        Body.setVelocity(body, Vector.mult(body.velocity, 1 - config.damping));
       });
     };
 
-    Events.on(engine, 'beforeUpdate', applyGravityForce);
+    Events.on(engine, 'beforeUpdate', applyFluidForces);
 
     return () => {
-      Events.off(engine, 'beforeUpdate', applyGravityForce);
+      Events.off(engine, 'beforeUpdate', applyFluidForces);
     };
-  }, [isActive, gravityWellPosition, engineRef, bodiesRef, config.acceleration, config.radiusFactor]);
+  }, [isActive, fluidCenter, engineRef, bodiesRef, config.damping, config.flowStrength, config.radiusFactor]);
 };

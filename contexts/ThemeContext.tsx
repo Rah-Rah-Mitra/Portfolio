@@ -7,6 +7,7 @@ export type Theme = 'light' | 'dark';
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  setTheme: (nextTheme: Theme) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -55,7 +56,15 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     });
   };
 
-  const value = { theme, toggleTheme };
+  const setThemeExplicit = (nextTheme: Theme) => {
+    setTheme((prevTheme) => {
+      if (prevTheme === nextTheme) return prevTheme;
+      track('profile_switched', { from: themeToProfile(prevTheme), to: themeToProfile(nextTheme) });
+      return nextTheme;
+    });
+  };
+
+  const value = { theme, toggleTheme, setTheme: setThemeExplicit };
 
   return (
     <ThemeContext.Provider value={value}>

@@ -3,8 +3,9 @@ import Matter from 'matter-js';
 import { Theme } from './ThemeContext';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
+import { useFluidInteraction } from '../hooks/useFluidInteraction';
 
-type BodyRef = {
+export type BodyRef = {
   body: Matter.Body;
   element: HTMLElement;
   initial: {
@@ -38,6 +39,7 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   const engineRef = useRef(Engine.create());
   const runnerRef = useRef(Runner.create());
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
+  const fluidCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const boundariesRef = useRef<Matter.Body[]>([]);
   // Use a Set to track timers to prevent memory leaks from multiple restore calls
   const restoreTimers = useRef(new Set<number>());
@@ -181,6 +183,12 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
 
   useSmashInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'light');
   useGravityWellInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'dark');
+  useFluidInteraction({
+    canvasRef: fluidCanvasRef,
+    bodiesRef,
+    isActive: isInteractionActive,
+    theme,
+  });
 
   const toggleInteraction = useCallback(() => {
     setIsInteractionActive(prev => !prev);
@@ -236,6 +244,11 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   return (
     <PhysicsContext.Provider value={value}>
         {children}
+        <canvas
+          ref={fluidCanvasRef}
+          className="pointer-events-none fixed inset-0 z-40"
+          aria-hidden="true"
+        />
     </PhysicsContext.Provider>
   );
 };

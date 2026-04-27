@@ -11,7 +11,7 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ name }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
+
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -55,13 +55,13 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
             </div>
           </div>
           <div className="md:hidden flex items-center">
-             <ThemeToggle />
+            <ThemeToggle />
             <button
               onClick={toggleMenu}
               type="button"
               className="ml-2 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400 dark:focus:ring-red-500"
               aria-controls="mobile-menu"
-              aria-expanded="false"
+              aria-expanded={isOpen}
             >
               <span className="sr-only">Open main menu</span>
               {isOpen ? (
@@ -74,10 +74,12 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
         </div>
       </div>
 
-      {/* Mobile menu, show/hide based on menu state. */}
       {isOpen && (
         <div className="md:hidden bg-gray-800 dark:bg-gray-900" id="mobile-menu">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <div className="px-3 py-2">
+              <ThemeToggle />
+            </div>
             {NAVIGATION_LINKS.map((link) => (
               <a
                 key={link.label}

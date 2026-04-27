@@ -16,7 +16,8 @@ type BodyRef = {
 export const useSmashInteraction = (
   engineRef: React.RefObject<Matter.Engine>,
   bodiesRef: React.RefObject<Map<string, BodyRef>>,
-  isActive: boolean
+  isActive: boolean,
+  forceMultiplier: number
 ) => {
   useEffect(() => {
     const engine = engineRef.current;
@@ -40,7 +41,7 @@ export const useSmashInteraction = (
 
         if (isInside) {
             Body.setStatic(body, false);
-            const forceMagnitude = 0.05 * body.mass;
+            const forceMagnitude = forceMultiplier * body.mass;
             const force = Vector.mult(Vector.normalise(Vector.sub(body.position, mousePosition)), forceMagnitude);
             Body.applyForce(body, mousePosition, force);
         }
@@ -55,5 +56,5 @@ export const useSmashInteraction = (
       document.body.classList.remove('hammer-cursor');
       document.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [isActive, engineRef, bodiesRef]);
+  }, [isActive, engineRef, bodiesRef, forceMultiplier]);
 };

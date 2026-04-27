@@ -16,7 +16,9 @@ type BodyRef = {
 export const useGravityWellInteraction = (
   engineRef: React.RefObject<Matter.Engine>,
   bodiesRef: React.RefObject<Map<string, BodyRef>>,
-  isActive: boolean
+  isActive: boolean,
+  radiusFactor: number,
+  acceleration: number
 ) => {
   const [gravityWellPosition, setGravityWellPosition] = useState<Matter.Vector | null>(null);
 
@@ -33,7 +35,7 @@ export const useGravityWellInteraction = (
 
     const handleMouseDown = (e: MouseEvent) => {
       const mousePosition = Vector.create(e.pageX, e.pageY);
-      const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * 0.4;
+      const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * radiusFactor;
 
       bodiesRef.current?.forEach(({ body }) => {
         if (Vector.magnitude(Vector.sub(mousePosition, body.position)) < gravityRadius) {
@@ -67,7 +69,7 @@ export const useGravityWellInteraction = (
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isActive, engineRef, bodiesRef]);
+  }, [isActive, engineRef, bodiesRef, radiusFactor]);
 
   // Effect to apply continuous gravity well force based on position
   useEffect(() => {
@@ -77,8 +79,7 @@ export const useGravityWellInteraction = (
     }
 
     const applyGravityForce = () => {
-      const GRAVITY_RADIUS = Math.min(window.innerWidth, window.innerHeight) * 0.4;
-      const GRAVITY_ACCELERATION = 0.02;
+      const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * radiusFactor;
 
       bodiesRef.current?.forEach(({ body }) => {
         if (body.isStatic) return;
@@ -86,8 +87,8 @@ export const useGravityWellInteraction = (
         const distanceVector = Vector.sub(gravityWellPosition, body.position);
         const distance = Vector.magnitude(distanceVector);
 
-        if (distance < GRAVITY_RADIUS) {
-          const pullAcceleration = (1 - distance / GRAVITY_RADIUS) * GRAVITY_ACCELERATION;
+        if (distance < gravityRadius) {
+          const pullAcceleration = (1 - distance / gravityRadius) * acceleration;
           const force = Vector.mult(Vector.normalise(distanceVector), pullAcceleration * body.mass);
           Body.applyForce(body, body.position, force);
         }
@@ -99,5 +100,5 @@ export const useGravityWellInteraction = (
     return () => {
       Events.off(engine, 'beforeUpdate', applyGravityForce);
     };
-  }, [isActive, gravityWellPosition, engineRef, bodiesRef]);
+  }, [isActive, gravityWellPosition, engineRef, bodiesRef, radiusFactor, acceleration]);
 };

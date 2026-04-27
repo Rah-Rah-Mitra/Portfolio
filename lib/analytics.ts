@@ -20,7 +20,7 @@ export type Profile = 'software_engineer' | 'cybersecurity';
 export type AnalyticsEvent =
   // ── Profile / theme ────────────────────────────────────────────────────────
   | { event: 'profile_viewed';    props: { profile: Profile } }
-  | { event: 'profile_switched';  props: { from: Profile; to: Profile } }
+  | { event: 'profile_switched';  props: { from: Profile; to: Profile; trigger_location: 'navbar_desktop' | 'navbar_mobile' | 'unknown' } }
 
   // ── Navigation / scroll depth ──────────────────────────────────────────────
   | { event: 'section_viewed';    props: { section: string; profile: Profile } }

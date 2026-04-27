@@ -6,7 +6,9 @@ export type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme: () => void;
+  toggleTheme: (triggerLocation?: 'navbar_desktop' | 'navbar_mobile' | 'unknown') => void;
+  currentProfile: 'software_engineer' | 'cybersecurity';
+  switchProfile: (triggerLocation?: 'navbar_desktop' | 'navbar_mobile' | 'unknown') => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -47,15 +49,18 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
+  const toggleTheme = (triggerLocation: 'navbar_desktop' | 'navbar_mobile' | 'unknown' = 'unknown') => {
     setTheme(prevTheme => {
       const next = prevTheme === 'light' ? 'dark' : 'light';
-      track('profile_switched', { from: themeToProfile(prevTheme), to: themeToProfile(next) });
+      track('profile_switched', { from: themeToProfile(prevTheme), to: themeToProfile(next), trigger_location: triggerLocation });
       return next;
     });
   };
 
-  const value = { theme, toggleTheme };
+  const currentProfile = themeToProfile(theme);
+  const switchProfile = toggleTheme;
+
+  const value = { theme, toggleTheme, currentProfile, switchProfile };
 
   return (
     <ThemeContext.Provider value={value}>

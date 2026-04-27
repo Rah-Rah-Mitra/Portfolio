@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NAVIGATION_LINKS } from '../constants';
 import { Bars3Icon, XMarkIcon } from './icons/GenericIcons';
-import ThemeToggle from './ThemeToggle';
+import ProfileSwitcher from './ProfileSwitcher';
 import { track } from '../lib/analytics';
 
 interface NavbarProps {
@@ -51,11 +51,11 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
                   {link.label}
                 </a>
               ))}
-              <ThemeToggle />
+              <ProfileSwitcher triggerLocation="navbar_desktop" />
             </div>
           </div>
           <div className="md:hidden flex items-center">
-             <ThemeToggle />
+             <ProfileSwitcher triggerLocation="navbar_mobile" />
             <button
               onClick={toggleMenu}
               type="button"

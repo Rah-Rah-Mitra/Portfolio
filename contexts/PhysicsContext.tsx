@@ -3,6 +3,7 @@ import Matter from 'matter-js';
 import { Theme } from './ThemeContext';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
+import { usePhysicsInputController } from '../hooks/usePhysicsInputController';
 
 type BodyRef = {
   body: Matter.Body;
@@ -179,8 +180,10 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     };
   }, [isInteractionActive]);
 
-  useSmashInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'light');
-  useGravityWellInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'dark');
+  const inputState = usePhysicsInputController();
+
+  useSmashInteraction(engineRef, bodiesRef, inputState, isInteractionActive && theme === 'light');
+  useGravityWellInteraction(engineRef, bodiesRef, inputState, isInteractionActive && theme === 'dark');
 
   const toggleInteraction = useCallback(() => {
     setIsInteractionActive(prev => !prev);

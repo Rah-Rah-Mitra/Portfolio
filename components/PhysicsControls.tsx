@@ -8,10 +8,12 @@ import { GravityIcon } from './icons/GravityIcon';
 import { track } from '../lib/analytics';
 
 const PhysicsControls: React.FC = () => {
-  const { isInteractionActive, toggleInteraction, restoreAll } = usePhysics();
+  const { activeAbility, setActiveAbility, restoreAll } = usePhysics();
   const { theme } = useTheme();
 
   const isLightMode = theme === 'light';
+  const selectedAbility = isLightMode ? 'smash' : 'gravityWell';
+  const isInteractionActive = activeAbility === selectedAbility;
 
   const interactionButtonLabel = isLightMode
     ? (isInteractionActive ? 'Deactivate hammer mode' : 'Activate hammer mode')
@@ -55,7 +57,7 @@ const PhysicsControls: React.FC = () => {
       <div className="relative group flex items-center">
         <button
           onClick={() => {
-            toggleInteraction();
+            setActiveAbility(isInteractionActive ? 'none' : selectedAbility);
             const mode = isLightMode ? 'hammer' : 'gravity_well';
             const action = isInteractionActive ? 'deactivated' : 'activated';
             track('physics_mode_toggled', { mode, action });

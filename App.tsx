@@ -22,7 +22,7 @@ const AppContent: React.FC = () => {
     : 'dark bg-black text-gray-300';
 
   return (
-    <PhysicsProvider theme={theme}>
+    <PhysicsProvider>
       <div className={`min-h-screen flex flex-col ${backgroundClass}`}>
         <Navbar name={portfolioData.name} />
         <main className="flex-grow">

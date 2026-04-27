@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import Matter from 'matter-js';
-import { Theme } from './ThemeContext';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
 
@@ -14,9 +13,22 @@ type BodyRef = {
   };
 };
 
+export type PhysicsAbility = 'smash' | 'gravityWell' | 'fluid' | 'none';
+
+export interface PhysicsTuning {
+  smashForceMultiplier: number;
+  gravityWellRadiusFactor: number;
+  gravityWellAcceleration: number;
+  fluidDrag: number;
+}
+
 interface PhysicsContextType {
-  isInteractionActive: boolean;
-  toggleInteraction: () => void;
+  activeAbility: PhysicsAbility;
+  setActiveAbility: (ability: PhysicsAbility) => void;
+  isAbilityEnabled: boolean;
+  setAbilityEnabled: (enabled: boolean) => void;
+  tuning: PhysicsTuning;
+  setTuning: React.Dispatch<React.SetStateAction<PhysicsTuning>>;
   restoreAll: () => void;
   registerWords: (elements: HTMLElement[]) => () => void;
 }
@@ -33,8 +45,15 @@ export const usePhysics = () => {
 
 const { Engine, Runner, Bodies, Composite, World, Body } = Matter;
 
-export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = ({ children, theme }) => {
-  const [isInteractionActive, setIsInteractionActive] = useState(false);
+export const PhysicsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [activeAbility, setActiveAbilityState] = useState<PhysicsAbility>('none');
+  const [tuning, setTuning] = useState<PhysicsTuning>({
+    smashForceMultiplier: 0.05,
+    gravityWellRadiusFactor: 0.4,
+    gravityWellAcceleration: 0.02,
+    fluidDrag: 0.03,
+  });
+  const lastEnabledAbility = useRef<PhysicsAbility>('smash');
   const engineRef = useRef(Engine.create());
   const runnerRef = useRef(Runner.create());
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
@@ -43,7 +62,6 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   const restoreTimers = useRef(new Set<number>());
 
   const restoreAll = useCallback(() => {
-    setIsInteractionActive(false);
     engineRef.current.gravity.y = 0.4;
     
     // Clear any existing fallback timers
@@ -168,8 +186,29 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
+  const isAbilityEnabled = activeAbility !== 'none';
+
+  const setActiveAbility = useCallback((ability: PhysicsAbility) => {
+    if (ability !== 'none') {
+      lastEnabledAbility.current = ability;
+    }
+    setActiveAbilityState(ability);
+  }, []);
+
+  const setAbilityEnabled = useCallback((enabled: boolean) => {
+    setActiveAbilityState((currentAbility) => {
+      if (enabled) {
+        if (currentAbility !== 'none') {
+          return currentAbility;
+        }
+        return lastEnabledAbility.current === 'none' ? 'smash' : lastEnabledAbility.current;
+      }
+      return 'none';
+    });
+  }, []);
+
   useEffect(() => {
-    if (isInteractionActive) {
+    if (isAbilityEnabled) {
       document.body.classList.add('no-select');
     } else {
       document.body.classList.remove('no-select');
@@ -177,18 +216,16 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     return () => {
       document.body.classList.remove('no-select');
     };
-  }, [isInteractionActive]);
+  }, [isAbilityEnabled]);
 
-  useSmashInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'light');
-  useGravityWellInteraction(engineRef, bodiesRef, isInteractionActive && theme === 'dark');
-
-  const toggleInteraction = useCallback(() => {
-    setIsInteractionActive(prev => !prev);
-  }, []);
-
-  useEffect(() => {
-    setIsInteractionActive(false);
-  }, [theme]);
+  useSmashInteraction(engineRef, bodiesRef, activeAbility === 'smash', tuning.smashForceMultiplier);
+  useGravityWellInteraction(
+    engineRef,
+    bodiesRef,
+    activeAbility === 'gravityWell',
+    tuning.gravityWellRadiusFactor,
+    tuning.gravityWellAcceleration
+  );
 
   const registerWords = useCallback((elements: HTMLElement[]) => {
     const wordIds: string[] = [];
@@ -227,8 +264,12 @@ export const PhysicsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   }, []);
 
   const value = {
-    isInteractionActive,
-    toggleInteraction,
+    activeAbility,
+    setActiveAbility,
+    isAbilityEnabled,
+    setAbilityEnabled,
+    tuning,
+    setTuning,
     registerWords,
     restoreAll,
   };

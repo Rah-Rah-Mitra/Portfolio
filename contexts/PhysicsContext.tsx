@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import Matter from 'matter-js';
+import { Theme } from './ThemeContext';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
 
@@ -15,6 +16,7 @@ type BodyRef = {
 
 export type TextEffectMode = 'decode' | 'scan' | 'pulse';
 export type WorldQuality = 'balanced' | 'high';
+export type FluidQuality = 'balanced' | 'high';
 
 export type EffectSettings = {
   smash: {
@@ -31,6 +33,10 @@ export type EffectSettings = {
     enabled: boolean;
     speed: number;
     intensity: number;
+    opacity: number;
+    splatRadius: number;
+    curl: number;
+    quality: FluidQuality;
   };
   pretext: {
     enabled: boolean;
@@ -55,6 +61,7 @@ interface EffectsContextType {
   setEffectParam: (id: NumericEffectId, param: string, value: number) => void;
   setPretextMode: (mode: TextEffectMode) => void;
   setWorldQuality: (quality: WorldQuality) => void;
+  setFluidQuality: (quality: FluidQuality) => void;
   openWorld: () => void;
   closeWorld: () => void;
   restoreAll: () => void;
@@ -64,7 +71,7 @@ interface EffectsContextType {
 const defaultSettings: EffectSettings = {
   smash: { enabled: false, intensity: 60, radius: 42 },
   gravity: { enabled: false, strength: 45, radius: 48 },
-  fluid: { enabled: true, speed: 1.2, intensity: 58 },
+  fluid: { enabled: true, speed: 1.15, intensity: 62, opacity: 48, splatRadius: 46, curl: 34, quality: 'balanced' },
   pretext: { enabled: true, intensity: 42, mode: 'decode' },
   world: { enabled: true, quality: 'high' },
 };
@@ -81,6 +88,9 @@ const PARAM_LIMITS: Record<NumericEffectId, Record<string, [number, number]>> = 
   fluid: {
     speed: [0.2, 2.4],
     intensity: [0, 100],
+    opacity: [0, 80],
+    splatRadius: [10, 85],
+    curl: [0, 90],
   },
   pretext: {
     intensity: [0, 100],
@@ -114,13 +124,11 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   const restoreTimers = useRef(new Set<number>());
 
   const restoreAll = useCallback(() => {
-<<<<<<< HEAD
     setSettings((prev) => ({
       ...prev,
       smash: { ...prev.smash, enabled: false },
       gravity: { ...prev.gravity, enabled: false },
     }));
-
 
     engineRef.current.gravity.y = 0.4;
 
@@ -194,6 +202,7 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
 
     window.addEventListener('resize', handleResize);
 
+    let animationId = 0;
     const renderLoop = () => {
       bodiesRef.current.forEach((ref) => {
         if (!ref.element) return;
@@ -214,13 +223,14 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
         const angle = ref.body.angle;
         ref.element.style.transform = `translate(${x - ref.initial.x}px, ${y - ref.initial.y}px) rotate(${angle}rad)`;
       });
-      requestAnimationFrame(renderLoop);
+      animationId = requestAnimationFrame(renderLoop);
     };
 
     Runner.run(runner, engine);
     renderLoop();
 
     return () => {
+      cancelAnimationFrame(animationId);
       Runner.stop(runner);
       World.clear(engine.world, false);
       Engine.clear(engine);
@@ -229,29 +239,7 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     };
   }, [restoreAll]);
 
-  const isAbilityEnabled = activeAbility !== 'none';
-
-  const setActiveAbility = useCallback((ability: PhysicsAbility) => {
-    if (ability !== 'none') {
-      lastEnabledAbility.current = ability;
-    }
-    setActiveAbilityState(ability);
-  }, []);
-
-  const setAbilityEnabled = useCallback((enabled: boolean) => {
-    setActiveAbilityState((currentAbility) => {
-      if (enabled) {
-        if (currentAbility !== 'none') {
-          return currentAbility;
-        }
-        return lastEnabledAbility.current === 'none' ? 'smash' : lastEnabledAbility.current;
-      }
-      return 'none';
-    });
-  }, []);
-
   useEffect(() => {
-<<<<<<< HEAD
     engineRef.current.gravity.y = settings.gravity.enabled ? 0 : 0.4;
   }, [settings.gravity.enabled]);
 
@@ -270,26 +258,6 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
       gravity: { ...prev.gravity, enabled: false },
     }));
   }, [theme]);
-=======
-    if (isAbilityEnabled) {
-      document.body.classList.add('no-select');
-    } else {
-      document.body.classList.remove('no-select');
-    }
-    return () => {
-      document.body.classList.remove('no-select');
-    };
-  }, [isAbilityEnabled]);
-
-  useSmashInteraction(engineRef, bodiesRef, activeAbility === 'smash', tuning.smashForceMultiplier);
-  useGravityWellInteraction(
-    engineRef,
-    bodiesRef,
-    activeAbility === 'gravityWell',
-    tuning.gravityWellRadiusFactor,
-    tuning.gravityWellAcceleration
-  );
->>>>>>> 4ec19bb263874bc028737bf03e3c90f51fcede20
 
   useSmashInteraction(engineRef, bodiesRef, settings.smash.enabled, {
     intensity: settings.smash.intensity,
@@ -301,10 +269,7 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   });
 
   const setEffectEnabled = useCallback((id: EffectId, enabled: boolean) => {
-    setSettings((prev) => {
-      const next = { ...prev, [id]: { ...prev[id], enabled } } as EffectSettings;
-      return next;
-    });
+    setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
     if (id === 'world' && !enabled) {
       setWorldOpen(false);
     }
@@ -345,6 +310,13 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     setSettings((prev) => ({
       ...prev,
       world: { ...prev.world, quality },
+    }));
+  }, []);
+
+  const setFluidQuality = useCallback((quality: FluidQuality) => {
+    setSettings((prev) => ({
+      ...prev,
+      fluid: { ...prev.fluid, quality },
     }));
   }, []);
 
@@ -396,7 +368,6 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     };
   }, []);
 
-<<<<<<< HEAD
   const value: EffectsContextType = {
     settings,
     isInteractionActive: settings.smash.enabled || settings.gravity.enabled,
@@ -406,17 +377,9 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     setEffectParam,
     setPretextMode,
     setWorldQuality,
+    setFluidQuality,
     openWorld,
     closeWorld,
-=======
-  const value = {
-    activeAbility,
-    setActiveAbility,
-    isAbilityEnabled,
-    setAbilityEnabled,
-    tuning,
-    setTuning,
->>>>>>> 4ec19bb263874bc028737bf03e3c90f51fcede20
     registerWords,
     restoreAll,
   };

@@ -39,7 +39,7 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
               {initials}
             </a>
           </div>
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <div className="ml-10 flex items-center space-x-4">
               {NAVIGATION_LINKS.map((link) => (
                 <a
@@ -54,7 +54,7 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
               <ThemeToggle />
             </div>
           </div>
-          <div className="md:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
              <ThemeToggle />
             <button
               onClick={toggleMenu}
@@ -76,7 +76,7 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
 
       {/* Mobile menu, show/hide based on menu state. */}
       {isOpen && (
-        <div className="md:hidden bg-gray-800 dark:bg-gray-900" id="mobile-menu">
+        <div className="lg:hidden bg-gray-800 dark:bg-gray-900" id="mobile-menu">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {NAVIGATION_LINKS.map((link) => (
               <a

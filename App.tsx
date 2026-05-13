@@ -31,7 +31,7 @@ const AppContent: React.FC = () => {
       <div className={`min-h-screen flex flex-col ${backgroundClass}`}>
         <FluidBackground />
         <Navbar name={portfolioData.name} />
-        <main className="flex-grow relative z-10 xl:pr-[400px]">
+        <main className="flex-grow relative z-10">
           <HeroSection id={SECTION_IDS.HOME} data={portfolioData} />
           <ProjectsSection id={SECTION_IDS.PROJECTS} projects={projectHighlights} />
           <EventsTimeline id={SECTION_IDS.EVENTS} events={eventHighlights} projects={projectHighlights} />
@@ -39,7 +39,7 @@ const AppContent: React.FC = () => {
           <ExperienceSection id={SECTION_IDS.EXPERIENCE} experiences={portfolioData.experiences} />
           <ContactSection id={SECTION_IDS.CONTACT} email={portfolioData.contactEmail} linkedinUrl={portfolioData.linkedinUrl} githubUrl={portfolioData.githubUrl} instagramUrl={portfolioData.instagramUrl} />
         </main>
-        <div className="relative z-10 xl:pr-[400px]">
+        <div className="relative z-10">
           <Footer name={portfolioData.name} />
         </div>
         <EffectsLabPanel />

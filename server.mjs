@@ -5,8 +5,6 @@ import { fileURLToPath } from 'node:url';
 import { GoogleGenAI } from '@google/genai';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = Number(process.env.PORT || process.env.API_PORT || 5174);
-const MODEL = process.env.GEMINI_MODEL || 'gemma-3-27b-it';
 
 const loadEnvFile = (filePath) => {
   if (!fs.existsSync(filePath)) return;
@@ -26,12 +24,21 @@ const loadEnvFile = (filePath) => {
 loadEnvFile(path.join(__dirname, '.env'));
 loadEnvFile(path.join(__dirname, '.env.local'));
 
+const PORT = Number(process.env.PORT || process.env.API_PORT || 5174);
+const MODEL = process.env.GEMINI_MODEL || 'gemma-4-26b-a4b-it';
+
 const effectIds = new Set(['smash', 'gravity', 'fluid', 'pretext', 'world']);
 const numericParams = {
   smash: new Set(['intensity', 'radius']),
   gravity: new Set(['strength', 'radius']),
-  fluid: new Set(['speed', 'intensity']),
+  fluid: new Set(['speed', 'intensity', 'opacity', 'splatRadius', 'curl']),
   pretext: new Set(['intensity']),
+};
+const numericRanges = {
+  smash: { intensity: [0, 100], radius: [20, 240] },
+  gravity: { strength: [0, 100], radius: [20, 180] },
+  fluid: { speed: [0.2, 2.5], intensity: [0, 100], opacity: [10, 85], splatRadius: [12, 90], curl: [0, 80] },
+  pretext: { intensity: [0, 100] },
 };
 const sectionIds = new Set(['home', 'projects', 'events', 'skills', 'experience', 'contact']);
 const eventIds = new Set([
@@ -107,7 +114,11 @@ const sanitizeCommands = (commands) => {
       numericParams[command.effect]?.has(command.param) &&
       Number.isFinite(command.value)
     ) {
-      sanitized.push({ type: command.type, effect: command.effect, param: command.param, value: Number(command.value) });
+      const [min, max] = numericRanges[command.effect]?.[command.param] || [-Infinity, Infinity];
+      const rawValue = command.effect === 'fluid' && command.param === 'opacity' && Number(command.value) > 0 && Number(command.value) <= 1
+        ? Number(command.value) * 100
+        : Number(command.value);
+      sanitized.push({ type: command.type, effect: command.effect, param: command.param, value: Math.min(max, Math.max(min, rawValue)) });
     }
 
     if (command.type === 'switchProfile' && ['software', 'cybersecurity'].includes(command.profile)) {
@@ -139,10 +150,32 @@ const localAgent = (message, reason = 'model_unavailable') => {
   const commands = [];
   const enabled = !(text.includes('disable') || text.includes('off'));
 
-  if (text.includes('fluid')) {
+  const wantsFluid = text.includes('fluid') || text.includes('cfd') || (text.includes('background') && (text.includes('ripple') || text.includes('translucent') || text.includes('cursor')));
+  if (wantsFluid) {
     commands.push({ type: 'setEffectEnabled', effect: 'fluid', enabled });
     if (text.includes('faster') || text.includes('speed')) {
       commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 1.8 });
+    }
+    if (text.includes('slower') || text.includes('calm')) {
+      commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 0.72 });
+    }
+    if (text.includes('translucent') || text.includes('transparent') || text.includes('subtle')) {
+      commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'opacity', value: 34 });
+    }
+    if (text.includes('opaque') || text.includes('brighter')) {
+      commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'opacity', value: 68 });
+    }
+    if (text.includes('colorful') || text.includes('vivid') || text.includes('intense')) {
+      commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'intensity', value: 82 });
+    }
+    if (text.includes('ripple') || text.includes('curl') || text.includes('swirl')) {
+      commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'curl', value: 58 });
+    }
+    if (text.includes('wide') || text.includes('larger') || text.includes('bigger')) {
+      commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'splatRadius', value: 64 });
+    }
+    if (text.includes('tight') || text.includes('smaller')) {
+      commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'splatRadius', value: 28 });
     }
   }
   if (text.includes('gravity')) commands.push({ type: 'setEffectEnabled', effect: 'gravity', enabled });
@@ -171,7 +204,9 @@ Return strict JSON only, with this shape:
 
 Allowed command types:
 - {"type":"setEffectEnabled","effect":"smash|gravity|fluid|pretext|world","enabled":true|false}
-- {"type":"setEffectParam","effect":"smash|gravity|fluid|pretext","param":"intensity|radius|strength|speed","value":number}
+- {"type":"setEffectParam","effect":"smash|gravity|fluid|pretext","param":"intensity|radius|strength|speed|opacity|splatRadius|curl","value":number}
+- Numeric ranges: smash intensity 0-100 radius 20-240; gravity strength 0-100 radius 20-180; fluid speed 0.2-2.5 intensity 0-100 opacity 10-85 splatRadius 12-90 curl 0-80; pretext intensity 0-100.
+- For fluid opacity, return a percentage value between 10 and 85, not a 0-1 decimal.
 - {"type":"switchProfile","profile":"software|cybersecurity"}
 - {"type":"focusSection","sectionId":"home|projects|events|skills|experience|contact"}
 - {"type":"focusEvent","eventId":"smu-hack-for-cities-2026|january-gauntlet-2026|waaah-comics|abbott-internship|sparks-by-pa-churp|nvidia-disaster-risk|certification-trail"}

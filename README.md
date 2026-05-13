@@ -8,7 +8,7 @@ Interactive portfolio with configurable text effects, a fluid background, a Thre
 
 1. Install dependencies:
    `npm install`
-2. Create `.env.local` and set `GEMINI_API_KEY` or `GOOGLE_API_KEY` for the local `/api/page-agent` server. Optional: set `GEMINI_MODEL` to override the hosted Gemma model.
+2. Create `.env` or `.env.local` and set `GEMINI_API_KEY` or `GOOGLE_API_KEY` for the local `/api/page-agent` server. Optional: set `GEMINI_MODEL` to override the hosted Gemma model.
 3. Run the app and private API together:
    `npm run dev`
 

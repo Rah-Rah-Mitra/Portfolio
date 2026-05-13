@@ -72,8 +72,8 @@ export const useGravityWellInteraction = (
     }
 
     const applyGravityForce = () => {
-      const GRAVITY_RADIUS = Math.min(window.innerWidth, window.innerHeight) * (options.radius / 100);
-      const GRAVITY_ACCELERATION = 0.004 + (options.strength / 100) * 0.04;
+      const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * (options.radius / 100);
+      const acceleration = 0.004 + (options.strength / 100) * 0.04;
 
       bodiesRef.current?.forEach(({ body }) => {
         if (body.isStatic) return;
@@ -94,9 +94,5 @@ export const useGravityWellInteraction = (
     return () => {
       Events.off(engine, 'beforeUpdate', applyGravityForce);
     };
-<<<<<<< HEAD
   }, [isActive, gravityWellPosition, engineRef, bodiesRef, options.radius, options.strength]);
-=======
-  }, [isActive, gravityWellPosition, engineRef, bodiesRef, radiusFactor, acceleration]);
->>>>>>> 4ec19bb263874bc028737bf03e3c90f51fcede20
 };

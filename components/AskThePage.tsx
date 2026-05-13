@@ -1,4 +1,4 @@
-import React, { FormEvent, useMemo, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { SECTION_IDS } from '../constants';
 import { eventHighlights, projectHighlights } from '../portfolioData';
 import { EffectId, NumericEffectId, TextEffectMode, useEffects } from '../contexts/PhysicsContext';
@@ -30,13 +30,20 @@ type AgentResponse = {
 const numericParams: Record<NumericEffectId, Set<string>> = {
   smash: new Set(['intensity', 'radius']),
   gravity: new Set(['strength', 'radius']),
-  fluid: new Set(['speed', 'intensity']),
+  fluid: new Set(['speed', 'intensity', 'opacity', 'splatRadius', 'curl']),
   pretext: new Set(['intensity']),
 };
 
 const effectIds = new Set<EffectId>(['smash', 'gravity', 'fluid', 'pretext', 'world']);
 const sectionIds = new Set(Object.values(SECTION_IDS));
 const eventIds = new Set(eventHighlights.map((event) => event.id));
+
+const getInitialCollapsed = () => {
+  if (typeof window === 'undefined') return false;
+  const stored = window.localStorage.getItem('ask-page-collapsed');
+  if (stored) return stored === 'true';
+  return window.innerWidth < 640;
+};
 
 const parseAgentResponse = (value: unknown): AgentResponse | null => {
   if (!value || typeof value !== 'object') return null;
@@ -45,6 +52,7 @@ const parseAgentResponse = (value: unknown): AgentResponse | null => {
   return {
     reply: response.reply,
     commands: Array.isArray(response.commands) ? response.commands : [],
+    modelUsed: response.modelUsed === true,
   };
 };
 
@@ -52,9 +60,17 @@ const localAgent = (message: string): AgentResponse => {
   const text = message.toLowerCase();
   const commands: PageCommand[] = [];
 
-  if (text.includes('fluid')) {
+  const wantsFluid = text.includes('fluid') || text.includes('cfd') || (text.includes('background') && (text.includes('ripple') || text.includes('translucent') || text.includes('cursor')));
+  if (wantsFluid) {
     commands.push({ type: 'setEffectEnabled', effect: 'fluid', enabled: !text.includes('disable') && !text.includes('off') });
     if (text.includes('faster') || text.includes('speed')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 1.8 });
+    if (text.includes('slower') || text.includes('calm')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 0.72 });
+    if (text.includes('translucent') || text.includes('transparent') || text.includes('subtle')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'opacity', value: 34 });
+    if (text.includes('opaque') || text.includes('brighter')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'opacity', value: 68 });
+    if (text.includes('colorful') || text.includes('vivid') || text.includes('intense')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'intensity', value: 82 });
+    if (text.includes('ripple') || text.includes('curl') || text.includes('swirl')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'curl', value: 58 });
+    if (text.includes('wide') || text.includes('larger') || text.includes('bigger')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'splatRadius', value: 64 });
+    if (text.includes('tight') || text.includes('smaller')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'splatRadius', value: 28 });
   }
   if (text.includes('gravity')) commands.push({ type: 'setEffectEnabled', effect: 'gravity', enabled: !text.includes('disable') && !text.includes('off') });
   if (text.includes('smash')) commands.push({ type: 'setEffectEnabled', effect: 'smash', enabled: !text.includes('disable') && !text.includes('off') });
@@ -74,6 +90,7 @@ const localAgent = (message: string): AgentResponse => {
 };
 
 const AskThePage: React.FC = () => {
+  const [collapsed, setCollapsed] = useState(getInitialCollapsed);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -84,6 +101,20 @@ const AskThePage: React.FC = () => {
   ]);
   const effects = useEffects();
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    window.localStorage.setItem('ask-page-collapsed', String(collapsed));
+  }, [collapsed]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setCollapsed(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const pageState = useMemo(() => ({
     profile: theme === 'dark' ? 'cybersecurity' : 'software',
@@ -177,19 +208,74 @@ const AskThePage: React.FC = () => {
     void submitMessage(input);
   };
 
-  const quickActions = [
-    'Increase fluid speed',
-    'Enable gravity',
-    'Disable smash',
-    'Open 3D world',
-    'Show events',
+  const quickActions: Array<{ label: string; reply: string; commands: PageCommand[] }> = [
+    {
+      label: 'Increase fluid speed',
+      reply: 'Fluid motion is faster now.',
+      commands: [
+        { type: 'setEffectEnabled', effect: 'fluid', enabled: true },
+        { type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 1.8 },
+      ],
+    },
+    {
+      label: 'Enable gravity',
+      reply: 'Gravity text interaction is active.',
+      commands: [{ type: 'setEffectEnabled', effect: 'gravity', enabled: true }],
+    },
+    {
+      label: 'Disable smash',
+      reply: 'Smash interaction is disabled.',
+      commands: [{ type: 'setEffectEnabled', effect: 'smash', enabled: false }],
+    },
+    {
+      label: 'Open 3D world',
+      reply: 'Opening the 3D portfolio world.',
+      commands: [{ type: 'openWorld' }],
+    },
+    {
+      label: 'Show events',
+      reply: 'Jumping to the event timeline.',
+      commands: [{ type: 'focusSection', sectionId: SECTION_IDS.EVENTS }],
+    },
   ];
+
+  const runQuickAction = (action: { label: string; reply: string; commands: PageCommand[] }) => {
+    if (isSending) return;
+    setMessages((current) => [...current, { role: 'user', content: action.label }]);
+    action.commands.forEach(applyCommand);
+    setMessages((current) => [...current, { role: 'assistant', content: action.reply }]);
+    track('chatbot_quick_action_clicked', { action: action.label, command_count: String(action.commands.length) });
+  };
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setCollapsed(false)}
+        className="ask-dock fixed bottom-5 left-5 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-lg border border-cyan-300/40 bg-gray-950/90 text-cyan-200 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-transform hover:-translate-y-0.5 hover:border-cyan-200 dark:border-red-400/40 dark:text-red-200 dark:shadow-red-950/40"
+        aria-label="Open Ask The Page"
+        title="Open Ask The Page"
+      >
+        <span className="text-sm font-black tracking-widest">AI</span>
+      </button>
+    );
+  }
 
   return (
     <section className="ask-page fixed bottom-5 left-5 z-[70] w-[min(360px,calc(100vw-1.5rem))] rounded-lg border border-cyan-400/30 bg-gray-950/92 p-4 text-white shadow-2xl shadow-cyan-950/40 backdrop-blur-xl dark:border-red-500/35 dark:shadow-red-950/40">
-      <div className="mb-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300 dark:text-red-300">Ask the page</p>
-        <h2 className="text-lg font-bold">Page Control Chat</h2>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300 dark:text-red-300">Ask the page</p>
+          <h2 className="text-lg font-bold">Page Control Chat</h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-gray-300 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
+          aria-label="Hide Ask The Page"
+        >
+          Hide
+        </button>
       </div>
       <div className="mb-3 max-h-36 space-y-2 overflow-y-auto pr-1">
         {messages.slice(-4).map((message, index) => (
@@ -201,12 +287,12 @@ const AskThePage: React.FC = () => {
       <div className="mb-3 flex flex-wrap gap-2">
         {quickActions.map((action) => (
           <button
-            key={action}
+            key={action.label}
             type="button"
-            onClick={() => submitMessage(action)}
+            onClick={() => runQuickAction(action)}
             className="rounded border border-white/10 px-2.5 py-1.5 text-xs text-gray-300 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
           >
-            {action}
+            {action.label}
           </button>
         ))}
       </div>

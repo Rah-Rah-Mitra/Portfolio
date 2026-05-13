@@ -19,14 +19,22 @@ body {
 .fluid-background {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 40;
   pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 1;
+  transition: opacity 220ms ease;
 }
 
 .effects-lab,
 .ask-page {
   max-height: calc(100vh - 7rem);
   overflow: auto;
+}
+
+.effects-dock,
+.ask-dock {
+  transform: translateZ(0);
 }
 
 .effects-lab-card {
@@ -138,6 +146,18 @@ html.dark .pretext-decode [data-word]:hover {
   }
 
   .ask-page {
-    display: none;
+    left: 0.75rem;
+    top: 5.5rem;
+    max-height: 52vh;
+  }
+
+  .ask-dock {
+    left: 0.75rem;
+    bottom: 0.75rem;
+  }
+
+  .effects-dock {
+    right: 0.75rem;
+    bottom: 0.75rem;
   }
 }

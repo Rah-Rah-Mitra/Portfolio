@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { EffectId, TextEffectMode, useEffects, WorldQuality } from '../contexts/PhysicsContext';
+import React, { useEffect, useState } from 'react';
+import { EffectId, FluidQuality, TextEffectMode, useEffects, WorldQuality } from '../contexts/PhysicsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { GravityIcon } from './icons/GravityIcon';
 import { HammerIcon } from './icons/HammerIcon';
@@ -56,24 +56,60 @@ const RangeField: React.FC<{
   </label>
 );
 
+const getInitialCollapsed = () => {
+  if (typeof window === 'undefined') return false;
+  const stored = window.localStorage.getItem('effects-lab-collapsed');
+  if (stored) return stored === 'true';
+  return window.innerWidth < 640;
+};
+
 const EffectsLabPanel: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
+  const [collapsed, setCollapsed] = useState(getInitialCollapsed);
   const {
     settings,
     toggleEffect,
     setEffectParam,
     setPretextMode,
     setWorldQuality,
+    setFluidQuality,
     openWorld,
     restoreAll,
   } = useEffects();
   const { theme } = useTheme();
+
+  useEffect(() => {
+    window.localStorage.setItem('effects-lab-collapsed', String(collapsed));
+  }, [collapsed]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setCollapsed(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleToggle = (effect: EffectId) => {
     toggleEffect(effect);
     const next = !settings[effect].enabled;
     track('effect_control_changed', { effect, control: 'enabled', value: String(next) });
   };
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setCollapsed(false)}
+        className="effects-dock fixed bottom-5 right-5 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-lg border border-cyan-300/40 bg-gray-950/90 text-cyan-200 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-transform hover:-translate-y-0.5 hover:border-cyan-200 dark:border-red-400/40 dark:text-red-200 dark:shadow-red-950/40"
+        aria-label="Open Effects Lab"
+        title="Open Effects Lab"
+      >
+        <span className="text-sm font-black tracking-widest">FX</span>
+      </button>
+    );
+  }
 
   return (
     <aside className="effects-lab fixed bottom-5 right-5 z-[70] w-[min(380px,calc(100vw-1.5rem))] rounded-lg border border-cyan-400/30 bg-gray-950/92 p-4 text-white shadow-2xl shadow-cyan-950/40 backdrop-blur-xl dark:border-red-500/35 dark:shadow-red-950/40">
@@ -88,8 +124,9 @@ const EffectsLabPanel: React.FC = () => {
             onClick={() => setCollapsed((current) => !current)}
             className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-gray-300 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
             aria-expanded={!collapsed}
+            aria-label="Hide Effects Lab"
           >
-            {collapsed ? 'Open' : 'Hide'}
+            Hide
           </button>
           <button
             type="button"
@@ -153,12 +190,26 @@ const EffectsLabPanel: React.FC = () => {
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
               <h3 className="font-semibold text-white">Fluid</h3>
-              <p className="text-xs text-gray-400">Shader-style background motion</p>
+              <p className="text-xs text-gray-400">Translucent cursor-driven CFD overlay</p>
             </div>
             <ToggleButton enabled={settings.fluid.enabled} label="Toggle fluid background" onClick={() => handleToggle('fluid')} />
           </div>
           <RangeField label="Speed" value={settings.fluid.speed} min={0.2} max={2.4} step={0.1} suffix="x" onChange={(value) => setEffectParam('fluid', 'speed', value)} />
           <RangeField label="Intensity" value={settings.fluid.intensity} min={0} max={100} onChange={(value) => setEffectParam('fluid', 'intensity', value)} />
+          <RangeField label="Opacity" value={settings.fluid.opacity} min={0} max={80} onChange={(value) => setEffectParam('fluid', 'opacity', value)} />
+          <RangeField label="Ripple curl" value={settings.fluid.curl} min={0} max={90} onChange={(value) => setEffectParam('fluid', 'curl', value)} />
+          <RangeField label="Splat radius" value={settings.fluid.splatRadius} min={10} max={85} onChange={(value) => setEffectParam('fluid', 'splatRadius', value)} />
+          <label className="mt-3 block">
+            <span className="mb-1.5 block text-xs font-medium text-gray-400">Simulation quality</span>
+            <select
+              value={settings.fluid.quality}
+              onChange={(event) => setFluidQuality(event.target.value as FluidQuality)}
+              className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition-colors focus:border-cyan-300 dark:focus:border-red-300"
+            >
+              <option value="balanced">Balanced</option>
+              <option value="high">High quality</option>
+            </select>
+          </label>
         </section>
 
         <section className="effects-lab-card">

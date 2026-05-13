@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import Matter from 'matter-js';
-import { Theme } from './ThemeContext';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
 
@@ -115,11 +114,13 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   const restoreTimers = useRef(new Set<number>());
 
   const restoreAll = useCallback(() => {
+<<<<<<< HEAD
     setSettings((prev) => ({
       ...prev,
       smash: { ...prev.smash, enabled: false },
       gravity: { ...prev.gravity, enabled: false },
     }));
+
 
     engineRef.current.gravity.y = 0.4;
 
@@ -228,7 +229,29 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     };
   }, [restoreAll]);
 
+  const isAbilityEnabled = activeAbility !== 'none';
+
+  const setActiveAbility = useCallback((ability: PhysicsAbility) => {
+    if (ability !== 'none') {
+      lastEnabledAbility.current = ability;
+    }
+    setActiveAbilityState(ability);
+  }, []);
+
+  const setAbilityEnabled = useCallback((enabled: boolean) => {
+    setActiveAbilityState((currentAbility) => {
+      if (enabled) {
+        if (currentAbility !== 'none') {
+          return currentAbility;
+        }
+        return lastEnabledAbility.current === 'none' ? 'smash' : lastEnabledAbility.current;
+      }
+      return 'none';
+    });
+  }, []);
+
   useEffect(() => {
+<<<<<<< HEAD
     engineRef.current.gravity.y = settings.gravity.enabled ? 0 : 0.4;
   }, [settings.gravity.enabled]);
 
@@ -247,6 +270,26 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
       gravity: { ...prev.gravity, enabled: false },
     }));
   }, [theme]);
+=======
+    if (isAbilityEnabled) {
+      document.body.classList.add('no-select');
+    } else {
+      document.body.classList.remove('no-select');
+    }
+    return () => {
+      document.body.classList.remove('no-select');
+    };
+  }, [isAbilityEnabled]);
+
+  useSmashInteraction(engineRef, bodiesRef, activeAbility === 'smash', tuning.smashForceMultiplier);
+  useGravityWellInteraction(
+    engineRef,
+    bodiesRef,
+    activeAbility === 'gravityWell',
+    tuning.gravityWellRadiusFactor,
+    tuning.gravityWellAcceleration
+  );
+>>>>>>> 4ec19bb263874bc028737bf03e3c90f51fcede20
 
   useSmashInteraction(engineRef, bodiesRef, settings.smash.enabled, {
     intensity: settings.smash.intensity,
@@ -353,6 +396,7 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     };
   }, []);
 
+<<<<<<< HEAD
   const value: EffectsContextType = {
     settings,
     isInteractionActive: settings.smash.enabled || settings.gravity.enabled,
@@ -364,6 +408,15 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     setWorldQuality,
     openWorld,
     closeWorld,
+=======
+  const value = {
+    activeAbility,
+    setActiveAbility,
+    isAbilityEnabled,
+    setAbilityEnabled,
+    tuning,
+    setTuning,
+>>>>>>> 4ec19bb263874bc028737bf03e3c90f51fcede20
     registerWords,
     restoreAll,
   };

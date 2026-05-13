@@ -81,8 +81,8 @@ export const useGravityWellInteraction = (
         const distanceVector = Vector.sub(gravityWellPosition, body.position);
         const distance = Vector.magnitude(distanceVector);
 
-        if (distance < GRAVITY_RADIUS) {
-          const pullAcceleration = (1 - distance / GRAVITY_RADIUS) * GRAVITY_ACCELERATION;
+        if (distance < gravityRadius) {
+          const pullAcceleration = (1 - distance / gravityRadius) * acceleration;
           const force = Vector.mult(Vector.normalise(distanceVector), pullAcceleration * body.mass);
           Body.applyForce(body, body.position, force);
         }
@@ -94,5 +94,9 @@ export const useGravityWellInteraction = (
     return () => {
       Events.off(engine, 'beforeUpdate', applyGravityForce);
     };
+<<<<<<< HEAD
   }, [isActive, gravityWellPosition, engineRef, bodiesRef, options.radius, options.strength]);
+=======
+  }, [isActive, gravityWellPosition, engineRef, bodiesRef, radiusFactor, acceleration]);
+>>>>>>> 4ec19bb263874bc028737bf03e3c90f51fcede20
 };

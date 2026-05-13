@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { EventHighlight, FieldNote, PortfolioData, ProjectHighlight } from './types';
+import { EventHighlight, FieldNote, FieldNoteLink, PortfolioData, ProjectHighlight } from './types';
 import { CodeBracketIcon, AcademicCapIcon, CommandLineIcon, DevicePhoneMobileIcon, ServerStackIcon } from './components/icons/TechIcons';
 import * as assets from './assets';
 
@@ -617,6 +617,7 @@ const projectToFieldNote = (project: ProjectHighlight): FieldNote => ({
   id: `project-${project.id}`,
   title: project.title,
   kind: 'project',
+  kinds: ['project'],
   dateLabel: project.dateLabel ?? 'Project',
   sortDate: projectSortDates[project.id] ?? '2025-01-01',
   source: project.repoUrl ? 'GitHub' : 'Portfolio',
@@ -651,6 +652,7 @@ const achievementToFieldNote = (
   id: `${profile}-achievement-${achievement.id}`,
   title: achievement.title,
   kind: 'achievement',
+  kinds: ['achievement'],
   dateLabel: achievement.date,
   sortDate: achievementSortDates[achievement.title] ?? '2025-01-01',
   source: 'Portfolio',
@@ -667,11 +669,13 @@ const eventToFieldNote = (event: EventHighlight): FieldNote => {
     'nvidia-disaster-risk': 'certification',
     'certification-trail': 'certification',
   };
+  const kind = kindByEvent[event.id] ?? 'event';
 
   return {
     id: event.id,
     title: event.title,
-    kind: kindByEvent[event.id] ?? 'event',
+    kind,
+    kinds: [kind],
     dateLabel: event.dateLabel,
     sortDate: event.exactDateRange?.slice(0, 10) ?? (
       event.id === 'waaah-comics' ? '2026-01-18' :
@@ -697,6 +701,7 @@ const careerAndEducationNotes: FieldNote[] = [
     id: 'nus-education',
     title: 'National University of Singapore',
     kind: 'education',
+    kinds: ['education'],
     dateLabel: '2024-Present',
     sortDate: '2026-01-01',
     source: 'Education',
@@ -708,6 +713,7 @@ const careerAndEducationNotes: FieldNote[] = [
     id: 'career-yeswehack-independent-researcher',
     title: 'Independent Bug Bounty Researcher - YesWeHack',
     kind: 'career',
+    kinds: ['career'],
     dateLabel: '2023-Present',
     sortDate: '2026-01-01',
     source: 'Portfolio',
@@ -719,6 +725,7 @@ const careerAndEducationNotes: FieldNote[] = [
     id: 'career-singapore-navy',
     title: 'Singapore Navy - Base Support Assistant',
     kind: 'career',
+    kinds: ['career'],
     dateLabel: 'Jan 2022-Jan 2023',
     sortDate: '2023-01-01',
     source: 'Portfolio',
@@ -730,6 +737,7 @@ const careerAndEducationNotes: FieldNote[] = [
     id: 'education-asrjc-stem',
     title: 'ASRJC STEM Inc. - Robotics & Astronomy',
     kind: 'education',
+    kinds: ['education'],
     dateLabel: '2019-2020',
     sortDate: '2020-08-01',
     source: 'Education',
@@ -744,6 +752,7 @@ const certificationNotes: FieldNote[] = [
     id: 'cert-docker-absolute-beginner',
     title: 'Docker for the Absolute Beginner - Hands-On',
     kind: 'certification',
+    kinds: ['certification'],
     dateLabel: '2024',
     sortDate: '2024-08-01',
     source: 'LinkedIn',
@@ -755,6 +764,7 @@ const certificationNotes: FieldNote[] = [
     id: 'cert-reverse-engineering-windows',
     title: 'Reverse Engineering Windows Executables',
     kind: 'certification',
+    kinds: ['certification'],
     dateLabel: '2024',
     sortDate: '2024-07-01',
     source: 'LinkedIn',
@@ -766,6 +776,7 @@ const certificationNotes: FieldNote[] = [
     id: 'cert-cnn-python',
     title: 'Deep Learning CNN with Python',
     kind: 'certification',
+    kinds: ['certification'],
     dateLabel: '2023',
     sortDate: '2023-10-01',
     source: 'LinkedIn',
@@ -777,6 +788,7 @@ const certificationNotes: FieldNote[] = [
     id: 'cert-rnn-python',
     title: 'Deep Learning RNN with Python',
     kind: 'certification',
+    kinds: ['certification'],
     dateLabel: '2023',
     sortDate: '2023-09-01',
     source: 'LinkedIn',
@@ -788,6 +800,7 @@ const certificationNotes: FieldNote[] = [
     id: 'cert-unity-csharp-games',
     title: 'Learning C# by Developing Games with Unity',
     kind: 'certification',
+    kinds: ['certification'],
     dateLabel: '2023',
     sortDate: '2023-08-01',
     source: 'LinkedIn',
@@ -799,6 +812,7 @@ const certificationNotes: FieldNote[] = [
     id: 'cert-excel-advanced',
     title: 'Excel 2019 Advanced',
     kind: 'certification',
+    kinds: ['certification'],
     dateLabel: '2023',
     sortDate: '2023-07-01',
     source: 'LinkedIn',
@@ -810,6 +824,7 @@ const certificationNotes: FieldNote[] = [
     id: 'cert-reinforcement-learning',
     title: 'Reinforcement Learning and Deep RL Python',
     kind: 'certification',
+    kinds: ['certification'],
     dateLabel: '2023',
     sortDate: '2023-06-01',
     source: 'LinkedIn',
@@ -819,11 +834,118 @@ const certificationNotes: FieldNote[] = [
   },
 ];
 
-export const fieldNotes: FieldNote[] = [
+const fieldNoteMergeKeyById: Record<string, string> = {
+  'project-maritime-deficiency-severity': 'project:maritime-deficiency-severity',
+  'software-achievement-5': 'project:maritime-deficiency-severity',
+  'nvidia-disaster-risk': 'certification:nvidia-disaster-risk',
+  'software-achievement-1': 'certification:nvidia-disaster-risk',
+  'career-yeswehack-independent-researcher': 'career:bug-bounty',
+  'cyber-achievement-3': 'career:bug-bounty',
+};
+
+const normalizeMergeText = (value: string) => (
+  value
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '')
+);
+
+const normalizeTagText = (value: string) => normalizeMergeText(value);
+
+const projectTitleById = new Map(projectHighlights.map((project) => [project.id, normalizeMergeText(project.title)]));
+
+const stableUnique = <T,>(values: T[], getKey: (value: T) => string): T[] => {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = getKey(value);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const mergeLinks = (current?: FieldNoteLink[], next?: FieldNoteLink[]) => {
+  const links = stableUnique([...(current ?? []), ...(next ?? [])], (link) => link.url);
+  return links.length ? links : undefined;
+};
+
+const getFieldNoteMergeKey = (note: FieldNote) => {
+  const explicitKey = fieldNoteMergeKeyById[note.id];
+  if (explicitKey) return explicitKey;
+
+  const primaryProjectId = note.linkedProjectIds?.length === 1 ? note.linkedProjectIds[0] : undefined;
+  const projectTitle = primaryProjectId ? projectTitleById.get(primaryProjectId) : undefined;
+  const noteTitle = normalizeMergeText(note.title);
+
+  if (primaryProjectId && projectTitle && (noteTitle.includes(projectTitle) || projectTitle.includes(noteTitle))) {
+    return `project:${primaryProjectId}`;
+  }
+
+  return `title:${noteTitle}`;
+};
+
+const mergeFieldNotes = (notes: FieldNote[]) => {
+  const mergedByKey = new Map<string, FieldNote>();
+
+  notes.forEach((note) => {
+    const key = getFieldNoteMergeKey(note);
+    const existing = mergedByKey.get(key);
+    if (!existing) {
+      mergedByKey.set(key, { ...note, aliases: note.aliases ?? [] });
+      return;
+    }
+
+    const aliases = stableUnique(
+      [existing.id, ...(existing.aliases ?? []), note.id, ...(note.aliases ?? [])],
+      (alias) => alias,
+    ).filter((alias) => alias !== existing.id);
+    const kinds = stableUnique([...existing.kinds, ...note.kinds], (kind) => kind);
+    const tags = stableUnique([...existing.tags, ...note.tags], normalizeTagText);
+    const linkedProjectIds = stableUnique(
+      [...(existing.linkedProjectIds ?? []), ...(note.linkedProjectIds ?? [])],
+      (projectId) => projectId,
+    );
+    const people = stableUnique([...(existing.people ?? []), ...(note.people ?? [])], (person) => person);
+    const organizations = stableUnique(
+      [...(existing.organizations ?? []), ...(note.organizations ?? [])],
+      (organization) => organization,
+    );
+    const nextIsNewer = note.sortDate.localeCompare(existing.sortDate) > 0;
+
+    mergedByKey.set(key, {
+      ...existing,
+      sortDate: nextIsNewer ? note.sortDate : existing.sortDate,
+      summary: note.summary.length > existing.summary.length ? note.summary : existing.summary,
+      tags,
+      kinds,
+      aliases,
+      linkedProjectIds: linkedProjectIds.length ? linkedProjectIds : undefined,
+      people: people.length ? people : undefined,
+      organizations: organizations.length ? organizations : undefined,
+      links: mergeLinks(existing.links, note.links),
+      imageUrl: existing.imageUrl ?? note.imageUrl,
+      npcDialogue: (note.npcDialogue?.length ?? 0) > (existing.npcDialogue?.length ?? 0)
+        ? note.npcDialogue
+        : existing.npcDialogue,
+    });
+  });
+
+  return Array.from(mergedByKey.values()).sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+};
+
+const rawFieldNotes: FieldNote[] = [
   ...eventHighlights.map(eventToFieldNote),
   ...projectHighlights.map(projectToFieldNote),
   ...softwareEngineerData.achievements.map((achievement) => achievementToFieldNote('software', achievement)),
   ...cybersecurityData.achievements.map((achievement) => achievementToFieldNote('cyber', achievement)),
   ...careerAndEducationNotes,
   ...certificationNotes,
-].sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+];
+
+export const fieldNotes: FieldNote[] = mergeFieldNotes(rawFieldNotes);
+
+export const fieldNoteByIdOrAlias = new Map<string, FieldNote>(
+  fieldNotes.flatMap((note) => (
+    [note.id, ...(note.aliases ?? [])].map((id) => [id, note] as const)
+  )),
+);

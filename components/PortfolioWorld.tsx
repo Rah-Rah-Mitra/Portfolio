@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneModel } from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { fieldNotes, projectHighlights } from '../portfolioData';
+import { fieldNoteByIdOrAlias, projectHighlights } from '../portfolioData';
 import { useEffects } from '../contexts/PhysicsContext';
 
 type NpcDefinition = {
@@ -147,6 +147,16 @@ const selectClip = (clips: THREE.AnimationClip[], preferred: string[]) => (
   preferred.map((name) => clips.find((clip) => clip.name === name)).find(Boolean) ?? clips[0]
 );
 
+const uniqueTags = (tags: string[]) => {
+  const seen = new Set<string>();
+  return tags.filter((tag) => {
+    const key = tag.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '');
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const PortfolioWorld: React.FC = () => {
   const { worldOpen, closeWorld, settings } = useEffects();
   const mountRef = useRef<HTMLDivElement>(null);
@@ -158,11 +168,10 @@ const PortfolioWorld: React.FC = () => {
 
   const npcCopy = useMemo(() => {
     const projects = new Map(projectHighlights.map((project) => [project.id, project]));
-    const events = new Map(fieldNotes.map((event) => [event.id, event]));
 
     return new Map(npcDefinitions.map((npc) => {
       const project = projects.get(npc.projectId);
-      const event = events.get(npc.eventId);
+      const event = fieldNoteByIdOrAlias.get(npc.eventId);
       return [npc.id, {
         title: project?.title ?? npc.name,
         role: project?.npcRole ?? 'project guide',
@@ -170,7 +179,7 @@ const PortfolioWorld: React.FC = () => {
         eventTitle: event?.title ?? '',
         dialogue: event?.npcDialogue ?? event?.summary ?? project?.description ?? '',
         url: project?.repoUrl ?? project?.liveUrl ?? event?.links?.[0]?.url,
-        tags: project?.tags ?? event?.tags ?? [],
+        tags: uniqueTags([...(event?.tags ?? []), ...(project?.tags ?? [])]),
       }];
     }));
   }, []);
@@ -243,6 +252,7 @@ const PortfolioWorld: React.FC = () => {
     const mixers: THREE.AnimationMixer[] = [];
     const disposables: THREE.Object3D[] = [floor, grid, portalRing];
     const raycaster = new THREE.Raycaster();
+    const centerPointer = new THREE.Vector2(0, 0);
     const pointer = new THREE.Vector2();
     runtimeNpcs.current = [];
 
@@ -320,19 +330,25 @@ const PortfolioWorld: React.FC = () => {
       camera.rotation.set(pitch, yaw, 0);
     };
 
-    const updateActiveNpc = () => {
-      let nearest: RuntimeNpc | null = null;
-      let nearestDistance = Number.POSITIVE_INFINITY;
-      for (const npc of runtimeNpcs.current) {
-        const npcPosition = npc.group.position.clone();
-        npcPosition.y = camera.position.y;
-        const distance = npcPosition.distanceTo(camera.position);
-        if (distance < nearestDistance) {
-          nearest = npc;
-          nearestDistance = distance;
-        }
+    const findTargetedNpc = (targetPointer: THREE.Vector2) => {
+      raycaster.setFromCamera(targetPointer, camera);
+      const intersections = raycaster.intersectObjects(runtimeNpcs.current.map((npc) => npc.group), true);
+      for (const intersection of intersections) {
+        const targetedNpc = runtimeNpcs.current.find((npc) => {
+          let current: THREE.Object3D | null = intersection.object;
+          while (current) {
+            if (current === npc.group) return true;
+            current = current.parent;
+          }
+          return false;
+        });
+        if (targetedNpc) return targetedNpc;
       }
-      const nextActiveNpcId = nearestDistance < 5.4 ? nearest?.definition.id ?? null : null;
+      return null;
+    };
+
+    const updateActiveNpc = () => {
+      const nextActiveNpcId = findTargetedNpc(centerPointer)?.definition.id ?? null;
       if (activeNpcIdRef.current !== nextActiveNpcId) {
         activeNpcIdRef.current = nextActiveNpcId;
         setActiveNpcId(nextActiveNpcId);
@@ -388,17 +404,7 @@ const PortfolioWorld: React.FC = () => {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-      raycaster.setFromCamera(pointer, camera);
-      const intersections = raycaster.intersectObjects(runtimeNpcs.current.map((npc) => npc.group), true);
-      if (!intersections.length) return null;
-      return runtimeNpcs.current.find((npc) => {
-        let current: THREE.Object3D | null = intersections[0].object;
-        while (current) {
-          if (current === npc.group) return true;
-          current = current.parent;
-        }
-        return false;
-      }) ?? null;
+      return findTargetedNpc(pointer);
     };
     const handlePointerDown = (event: PointerEvent) => {
       isPointerDown = true;
@@ -408,7 +414,10 @@ const PortfolioWorld: React.FC = () => {
       if (clickedNpc) {
         setSelectedNpcId(clickedNpc.definition.id);
       }
-      renderer.domElement.requestPointerLock?.();
+      const pointerLockRequest = renderer.domElement.requestPointerLock?.();
+      if (pointerLockRequest) {
+        void pointerLockRequest.catch(() => undefined);
+      }
     };
     const handlePointerUp = () => {
       isPointerDown = false;
@@ -420,7 +429,7 @@ const PortfolioWorld: React.FC = () => {
       const dy = pointerLocked ? event.movementY : event.clientY - lastY;
       lastX = event.clientX;
       lastY = event.clientY;
-      yaw += dx * 0.0026;
+      yaw -= dx * 0.0026;
       pitch -= dy * 0.0022;
       setCameraRotation();
     };
@@ -475,11 +484,26 @@ const PortfolioWorld: React.FC = () => {
   return (
     <div className="portfolio-world fixed inset-0 z-[90] bg-black text-white">
       <div ref={mountRef} className="h-full w-full" aria-label="Playable 3D portfolio world" />
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 z-[1] flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+        role="status"
+        aria-live="polite"
+      >
+        <div
+          aria-hidden="true"
+          className={`absolute h-2 w-2 rounded-full border transition-colors ${
+            activeNpc ? 'border-cyan-200 bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.8)]' : 'border-white/70 bg-white/30'
+          }`}
+        />
+        <div aria-hidden="true" className={`absolute h-px w-12 transition-colors ${activeNpc ? 'bg-cyan-200' : 'bg-white/70'}`} />
+        <div aria-hidden="true" className={`absolute h-12 w-px transition-colors ${activeNpc ? 'bg-cyan-200' : 'bg-white/70'}`} />
+        <span className="sr-only">{activeNpc ? `Aiming at ${activeNpc.title}` : 'Center crosshair'}</span>
+      </div>
       <div className="absolute left-4 right-32 top-4 max-w-sm rounded-lg border border-cyan-400/30 bg-gray-950/85 p-4 shadow-2xl backdrop-blur sm:right-auto">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Portfolio World</p>
         <h2 className="text-xl font-bold">Explore Rahul's Build Map</h2>
         <p className="mt-2 text-sm text-gray-300">
-          Click the world to lock mouse look. WASD follows the camera. Press E or click a guide to talk.
+          Click the world to lock mouse look. WASD follows the camera. Aim at a guide and press E, or click a guide to talk.
         </p>
         <p className="mt-2 text-xs font-semibold text-cyan-200">
           {isPointerLocked ? 'Mouse look active. Press Esc to release.' : 'Mouse look ready.'}

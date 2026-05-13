@@ -42,6 +42,20 @@ const kindClasses: Record<FieldNoteKind, string> = {
   certification: 'border-red-400/30 bg-red-400/10 text-red-200',
 };
 
+const getNoteKinds = (note: FieldNote) => note.kinds.length ? note.kinds : [note.kind];
+
+const normalizeTag = (tag: string) => tag.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '');
+
+const uniqueTags = (tags: string[]) => {
+  const seen = new Set<string>();
+  return tags.filter((tag) => {
+    const key = normalizeTag(tag);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const noteMatchesSearch = (note: FieldNote, query: string) => {
   if (!query) return true;
   const haystack = [
@@ -49,7 +63,8 @@ const noteMatchesSearch = (note: FieldNote, query: string) => {
     note.dateLabel,
     note.source,
     note.summary,
-    note.kind,
+    ...getNoteKinds(note),
+    ...(note.aliases ?? []),
     ...(note.tags ?? []),
     ...(note.organizations ?? []),
     ...(note.people ?? []),
@@ -69,7 +84,9 @@ const EventsTimeline: React.FC<EventsTimelineProps> = ({ id, notes, projects, ar
   const counts = useMemo(() => (
     notes.reduce<Record<'all' | FieldNoteKind, number>>((acc, note) => {
       acc.all += 1;
-      acc[note.kind] += 1;
+      getNoteKinds(note).forEach((kind) => {
+        acc[kind] += 1;
+      });
       return acc;
     }, { all: 0, event: 0, achievement: 0, project: 0, career: 0, education: 0, certification: 0 })
   ), [notes]);
@@ -77,7 +94,7 @@ const EventsTimeline: React.FC<EventsTimelineProps> = ({ id, notes, projects, ar
   const filteredNotes = useMemo(() => {
     const query = search.trim().toLowerCase();
     return notes.filter((note) => (
-      (activeFilter === 'all' || note.kind === activeFilter) &&
+      (activeFilter === 'all' || getNoteKinds(note).includes(activeFilter)) &&
       noteMatchesSearch(note, query)
     ));
   }, [activeFilter, notes, search]);
@@ -138,6 +155,8 @@ const EventsTimeline: React.FC<EventsTimelineProps> = ({ id, notes, projects, ar
 
         <div className="relative border-l border-cyan-400/25 pl-5 md:pl-10">
           {visibleNotes.map((note) => {
+            const noteKinds = getNoteKinds(note);
+            const tags = uniqueTags(note.tags);
             const linkedProjects = (note.linkedProjectIds ?? [])
               .map((projectId) => projectById.get(projectId))
               .filter((project): project is ProjectHighlight => Boolean(project));
@@ -150,9 +169,11 @@ const EventsTimeline: React.FC<EventsTimelineProps> = ({ id, notes, projects, ar
                     <CalendarDaysIcon className="h-4 w-4" />
                     {note.dateLabel}
                   </span>
-                  <span className={`rounded border px-2.5 py-1 text-xs font-semibold ${kindClasses[note.kind]}`}>
-                    {kindLabels[note.kind]}
-                  </span>
+                  {noteKinds.map((kind) => (
+                    <span key={kind} className={`rounded border px-2.5 py-1 text-xs font-semibold ${kindClasses[kind]}`}>
+                      {kindLabels[kind]}
+                    </span>
+                  ))}
                   <span className="rounded border border-white/10 bg-white/5 px-2.5 py-1">{note.source}</span>
                 </div>
                 <h3 className="mb-3 text-2xl font-bold text-white">
@@ -181,7 +202,7 @@ const EventsTimeline: React.FC<EventsTimelineProps> = ({ id, notes, projects, ar
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2">
-                  {note.tags.map((tag) => (
+                  {tags.map((tag) => (
                     <span key={tag} className="rounded bg-white/5 px-2.5 py-1 text-xs font-medium text-gray-300">
                       {tag}
                     </span>

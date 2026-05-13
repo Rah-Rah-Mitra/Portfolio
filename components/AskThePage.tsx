@@ -1,6 +1,6 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { SECTION_IDS } from '../constants';
-import { fieldNotes, projectHighlights } from '../portfolioData';
+import { fieldNoteByIdOrAlias, fieldNotes, projectHighlights } from '../portfolioData';
 import { EffectId, NumericEffectId, useEffects } from '../contexts/PhysicsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { track } from '../lib/analytics';
@@ -36,7 +36,7 @@ const numericParams: Record<NumericEffectId, Set<string>> = {
 
 const effectIds = new Set<EffectId>(['smash', 'gravity', 'fluid', 'pretext', 'world']);
 const sectionIds = new Set(Object.values(SECTION_IDS));
-const eventIds = new Set(fieldNotes.map((note) => note.id));
+const eventIds = new Set(fieldNoteByIdOrAlias.keys());
 
 const getInitialCollapsed = () => {
   if (typeof window === 'undefined') return false;
@@ -121,7 +121,7 @@ const AskThePage: React.FC = () => {
     effects: effects.settings,
     sections: Object.values(SECTION_IDS),
     projects: projectHighlights.map(({ id, title, tags }) => ({ id, title, tags })),
-    events: fieldNotes.map(({ id, title, kind, tags }) => ({ id, title, kind, tags })),
+    events: fieldNotes.map(({ id, aliases, title, kind, kinds, tags }) => ({ id, aliases, title, kind, kinds, tags })),
   }), [theme, effects.settings]);
 
   const applyCommand = (command: PageCommand) => {
@@ -147,7 +147,10 @@ const AskThePage: React.FC = () => {
     }
 
     if (command.type === 'focusEvent' && eventIds.has(command.eventId)) {
-      document.getElementById(`event-${command.eventId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const canonicalNote = fieldNoteByIdOrAlias.get(command.eventId);
+      if (canonicalNote) {
+        document.getElementById(`event-${canonicalNote.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 

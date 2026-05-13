@@ -53,6 +53,8 @@ export interface FieldNote {
   id: string;
   title: string;
   kind: FieldNoteKind;
+  kinds: FieldNoteKind[];
+  aliases?: string[];
   dateLabel: string;
   sortDate: string;
   source: 'LinkedIn' | 'GitHub' | 'Portfolio' | 'Education';

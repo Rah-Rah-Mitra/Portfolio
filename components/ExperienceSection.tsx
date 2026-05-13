@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExperienceItem } from '../types';
 import SectionContainer from './SectionContainer';
-import { BriefcaseIcon, CalendarDaysIcon } from './icons/GenericIcons';
+import { CalendarDaysIcon } from './icons/GenericIcons';
 import BreakableText from './BreakableText';
 
 interface ExperienceSectionProps {

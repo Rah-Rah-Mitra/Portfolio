@@ -31,10 +31,39 @@ export interface ProjectHighlight {
   tags: string[];
   repoUrl?: string;
   liveUrl?: string;
+  dateLabel?: string;
+  links?: Array<{
+    label: string;
+    url: string;
+  }>;
   imageUrl?: string;
   accent: 'cyan' | 'red' | 'violet' | 'green' | 'amber' | 'blue';
   linkedEventIds?: string[];
   npcRole?: string;
+}
+
+export type FieldNoteKind = 'event' | 'achievement' | 'project' | 'career' | 'education' | 'certification';
+
+export interface FieldNoteLink {
+  label: string;
+  url: string;
+}
+
+export interface FieldNote {
+  id: string;
+  title: string;
+  kind: FieldNoteKind;
+  dateLabel: string;
+  sortDate: string;
+  source: 'LinkedIn' | 'GitHub' | 'Portfolio' | 'Education';
+  summary: string;
+  tags: string[];
+  people?: string[];
+  organizations?: string[];
+  linkedProjectIds?: string[];
+  links?: FieldNoteLink[];
+  imageUrl?: string;
+  npcDialogue?: string;
 }
 
 export interface EventHighlight {

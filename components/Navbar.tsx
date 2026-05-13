@@ -61,9 +61,9 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
               type="button"
               className="ml-2 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400 dark:focus:ring-red-500"
               aria-controls="mobile-menu"
-              aria-expanded="false"
+              aria-expanded={isOpen}
             >
-              <span className="sr-only">Open main menu</span>
+              <span className="sr-only">{isOpen ? 'Close main menu' : 'Open main menu'}</span>
               {isOpen ? (
                 <XMarkIcon className="block h-6 w-6" />
               ) : (

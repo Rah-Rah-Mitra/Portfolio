@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneModel } from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { eventHighlights, projectHighlights } from '../portfolioData';
+import { fieldNotes, projectHighlights } from '../portfolioData';
 import { useEffects } from '../contexts/PhysicsContext';
 
 type NpcDefinition = {
@@ -82,6 +82,36 @@ const npcDefinitions: NpcDefinition[] = [
     position: [4.8, 0, 2.4],
     color: '#86efac',
   },
+  {
+    id: 'asyncddgs-guide',
+    name: 'AsyncDDGS Guide',
+    projectId: 'asyncddgs',
+    eventId: 'software-achievement-6',
+    modelUrl: '/models/toon-blaster-runner.glb',
+    preferredClip: ['Walk_InPlace', 'Idle_Stationary'],
+    position: [-4.8, 0, 3.8],
+    color: '#67e8f9',
+  },
+  {
+    id: 'geometry-guide',
+    name: 'Geometry Guide',
+    projectId: 'geometry',
+    eventId: 'nus-education',
+    modelUrl: '/models/forest-ranger-npc.glb',
+    preferredClip: ['Idle_Stationary', 'Walk_InPlace'],
+    position: [0, 0, 3.9],
+    color: '#93c5fd',
+  },
+  {
+    id: 'agewell-guide',
+    name: 'AgeWellLah Guide',
+    projectId: 'agewelllah-ai',
+    eventId: 'software-achievement-2',
+    modelUrl: '/models/village-blacksmith-npc.glb',
+    preferredClip: ['Talking_Gesture', 'Idle_Stationary'],
+    position: [2.8, 0, 4],
+    color: '#86efac',
+  },
 ];
 
 const createLabel = (text: string, color: string) => {
@@ -121,12 +151,14 @@ const PortfolioWorld: React.FC = () => {
   const { worldOpen, closeWorld, settings } = useEffects();
   const mountRef = useRef<HTMLDivElement>(null);
   const runtimeNpcs = useRef<RuntimeNpc[]>([]);
+  const activeNpcIdRef = useRef<string | null>(null);
   const [activeNpcId, setActiveNpcId] = useState<string | null>(null);
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
+  const [isPointerLocked, setIsPointerLocked] = useState(false);
 
   const npcCopy = useMemo(() => {
     const projects = new Map(projectHighlights.map((project) => [project.id, project]));
-    const events = new Map(eventHighlights.map((event) => [event.id, event]));
+    const events = new Map(fieldNotes.map((event) => [event.id, event]));
 
     return new Map(npcDefinitions.map((npc) => {
       const project = projects.get(npc.projectId);
@@ -136,8 +168,8 @@ const PortfolioWorld: React.FC = () => {
         role: project?.npcRole ?? 'project guide',
         description: project?.description ?? '',
         eventTitle: event?.title ?? '',
-        dialogue: event?.npcDialogue ?? project?.description ?? '',
-        url: project?.repoUrl ?? project?.liveUrl ?? event?.linkUrl,
+        dialogue: event?.npcDialogue ?? event?.summary ?? project?.description ?? '',
+        url: project?.repoUrl ?? project?.liveUrl ?? event?.links?.[0]?.url,
         tags: project?.tags ?? event?.tags ?? [],
       }];
     }));
@@ -210,6 +242,8 @@ const PortfolioWorld: React.FC = () => {
     const loader = new GLTFLoader();
     const mixers: THREE.AnimationMixer[] = [];
     const disposables: THREE.Object3D[] = [floor, grid, portalRing];
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
     runtimeNpcs.current = [];
 
     const loadModel = async (definition: NpcDefinition) => {
@@ -279,6 +313,7 @@ const PortfolioWorld: React.FC = () => {
     let lastX = 0;
     let lastY = 0;
     let animationId = 0;
+    const up = new THREE.Vector3(0, 1, 0);
 
     const setCameraRotation = () => {
       pitch = Math.max(-0.85, Math.min(0.55, pitch));
@@ -288,14 +323,20 @@ const PortfolioWorld: React.FC = () => {
     const updateActiveNpc = () => {
       let nearest: RuntimeNpc | null = null;
       let nearestDistance = Number.POSITIVE_INFINITY;
-      runtimeNpcs.current.forEach((npc) => {
-        const distance = npc.group.position.distanceTo(camera.position);
+      for (const npc of runtimeNpcs.current) {
+        const npcPosition = npc.group.position.clone();
+        npcPosition.y = camera.position.y;
+        const distance = npcPosition.distanceTo(camera.position);
         if (distance < nearestDistance) {
           nearest = npc;
           nearestDistance = distance;
         }
-      });
-      setActiveNpcId(nearest && nearestDistance < 2.8 ? nearest.definition.id : null);
+      }
+      const nextActiveNpcId = nearestDistance < 5.4 ? nearest?.definition.id ?? null : null;
+      if (activeNpcIdRef.current !== nextActiveNpcId) {
+        activeNpcIdRef.current = nextActiveNpcId;
+        setActiveNpcId(nextActiveNpcId);
+      }
     };
 
     const animate = () => {
@@ -305,8 +346,11 @@ const PortfolioWorld: React.FC = () => {
       mixers.forEach((mixer) => mixer.update(delta));
       portalRing.rotation.z += delta * 0.45;
 
-      const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw) * -1).normalize();
-      const right = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw)).normalize();
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      forward.normalize();
+      const right = new THREE.Vector3().crossVectors(forward, up).normalize();
       const movement = new THREE.Vector3();
       if (keys.has('KeyW') || keys.has('ArrowUp')) movement.add(forward);
       if (keys.has('KeyS') || keys.has('ArrowDown')) movement.sub(forward);
@@ -331,29 +375,59 @@ const PortfolioWorld: React.FC = () => {
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === 'KeyE' && activeNpcId) {
-        setSelectedNpcId(activeNpcId);
+      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyE'].includes(event.code)) {
+        event.preventDefault();
+      }
+      if (event.code === 'KeyE' && activeNpcIdRef.current) {
+        setSelectedNpcId(activeNpcIdRef.current);
       }
       keys.add(event.code);
     };
     const handleKeyUp = (event: KeyboardEvent) => keys.delete(event.code);
+    const findClickedNpc = (event: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(pointer, camera);
+      const intersections = raycaster.intersectObjects(runtimeNpcs.current.map((npc) => npc.group), true);
+      if (!intersections.length) return null;
+      return runtimeNpcs.current.find((npc) => {
+        let current: THREE.Object3D | null = intersections[0].object;
+        while (current) {
+          if (current === npc.group) return true;
+          current = current.parent;
+        }
+        return false;
+      }) ?? null;
+    };
     const handlePointerDown = (event: PointerEvent) => {
       isPointerDown = true;
       lastX = event.clientX;
       lastY = event.clientY;
+      const clickedNpc = findClickedNpc(event);
+      if (clickedNpc) {
+        setSelectedNpcId(clickedNpc.definition.id);
+      }
+      renderer.domElement.requestPointerLock?.();
     };
     const handlePointerUp = () => {
       isPointerDown = false;
     };
     const handlePointerMove = (event: PointerEvent) => {
-      if (!isPointerDown) return;
-      const dx = event.clientX - lastX;
-      const dy = event.clientY - lastY;
+      const pointerLocked = document.pointerLockElement === renderer.domElement;
+      if (!pointerLocked && !isPointerDown) return;
+      const dx = pointerLocked ? event.movementX : event.clientX - lastX;
+      const dy = pointerLocked ? event.movementY : event.clientY - lastY;
       lastX = event.clientX;
       lastY = event.clientY;
-      yaw -= dx * 0.004;
-      pitch -= dy * 0.003;
+      yaw += dx * 0.0026;
+      pitch -= dy * 0.0022;
       setCameraRotation();
+    };
+    const handlePointerLockChange = () => {
+      const locked = document.pointerLockElement === renderer.domElement;
+      setIsPointerLocked(locked);
+      isPointerDown = locked;
     };
 
     setCameraRotation();
@@ -364,19 +438,25 @@ const PortfolioWorld: React.FC = () => {
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
 
     return () => {
       cancelAnimationFrame(animationId);
       runtimeNpcs.current = [];
+      activeNpcIdRef.current = null;
+      if (document.pointerLockElement === renderer.domElement) {
+        document.exitPointerLock?.();
+      }
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
       mixers.forEach((mixer) => mixer.stopAllAction());
       disposables.forEach((object) => {
-        object.traverse((child) => {
+        object.traverse((child: THREE.Object3D) => {
           const mesh = child as THREE.Mesh;
           if (mesh.geometry) mesh.geometry.dispose();
           const material = mesh.material;
@@ -398,7 +478,12 @@ const PortfolioWorld: React.FC = () => {
       <div className="absolute left-4 right-32 top-4 max-w-sm rounded-lg border border-cyan-400/30 bg-gray-950/85 p-4 shadow-2xl backdrop-blur sm:right-auto">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Portfolio World</p>
         <h2 className="text-xl font-bold">Explore Rahul's Build Map</h2>
-        <p className="mt-2 text-sm text-gray-300">WASD or arrow keys to move. Drag to look. Press E near a guide.</p>
+        <p className="mt-2 text-sm text-gray-300">
+          Click the world to lock mouse look. WASD follows the camera. Press E or click a guide to talk.
+        </p>
+        <p className="mt-2 text-xs font-semibold text-cyan-200">
+          {isPointerLocked ? 'Mouse look active. Press Esc to release.' : 'Mouse look ready.'}
+        </p>
         {activeNpc && (
           <button
             type="button"

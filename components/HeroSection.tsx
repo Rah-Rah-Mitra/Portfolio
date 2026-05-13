@@ -102,7 +102,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
   return (
     <section
       id={id}
-      className="min-h-screen flex items-center justify-center text-white relative overflow-hidden pt-20 hero-bg"
+      className="relative flex min-h-screen items-start justify-center overflow-hidden pb-28 pt-24 text-white hero-bg md:items-center md:pb-0 md:pt-20"
     >
       {/* 3D perspective grid background */}
       <div className="hero-grid-bg absolute inset-0 pointer-events-none" aria-hidden="true" />
@@ -111,7 +111,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-12">
           {/* Text column */}
           <div className="md:w-3/5 text-center md:text-left">
-            <h1 className="mb-4 flex min-h-32 items-center justify-center text-4xl font-extrabold leading-tight sm:text-5xl md:justify-start lg:text-6xl">
+            <h1 className="mb-4 flex min-h-28 flex-wrap items-baseline justify-center gap-x-3 gap-y-1 text-4xl font-extrabold leading-tight sm:min-h-32 sm:text-5xl md:justify-start lg:text-6xl">
               {theme === 'light' ? (
                 <TypedHeader name={data.name} />
               ) : (

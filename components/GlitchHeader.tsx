@@ -8,7 +8,7 @@ const GlitchHeader: React.FC<GlitchHeaderProps> = ({ name }) => {
     return (
         <>
             <span className="glitch-intro">Hi, I'm </span>
-            <span className="glitch ml-3" data-text={name}>
+            <span className="glitch" data-text={name}>
                 {name}
             </span>
         </>

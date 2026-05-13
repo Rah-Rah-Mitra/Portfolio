@@ -1,7 +1,7 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { SECTION_IDS } from '../constants';
-import { eventHighlights, projectHighlights } from '../portfolioData';
-import { EffectId, NumericEffectId, TextEffectMode, useEffects } from '../contexts/PhysicsContext';
+import { fieldNotes, projectHighlights } from '../portfolioData';
+import { EffectId, NumericEffectId, useEffects } from '../contexts/PhysicsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { track } from '../lib/analytics';
 
@@ -36,7 +36,7 @@ const numericParams: Record<NumericEffectId, Set<string>> = {
 
 const effectIds = new Set<EffectId>(['smash', 'gravity', 'fluid', 'pretext', 'world']);
 const sectionIds = new Set(Object.values(SECTION_IDS));
-const eventIds = new Set(eventHighlights.map((event) => event.id));
+const eventIds = new Set(fieldNotes.map((note) => note.id));
 
 const getInitialCollapsed = () => {
   if (typeof window === 'undefined') return false;
@@ -77,7 +77,7 @@ const localAgent = (message: string): AgentResponse => {
   if (text.includes('cyber')) commands.push({ type: 'switchProfile', profile: 'cybersecurity' });
   if (text.includes('software')) commands.push({ type: 'switchProfile', profile: 'software' });
   if (text.includes('world') || text.includes('3d')) commands.push({ type: 'openWorld' });
-  if (text.includes('event')) commands.push({ type: 'focusSection', sectionId: SECTION_IDS.EVENTS });
+  if (text.includes('event') || text.includes('career') || text.includes('education') || text.includes('achievement') || text.includes('certification')) commands.push({ type: 'focusSection', sectionId: SECTION_IDS.EVENTS });
   if (text.includes('project')) commands.push({ type: 'focusSection', sectionId: SECTION_IDS.PROJECTS });
   if (text.includes('restore') || text.includes('reset')) commands.push({ type: 'restoreText' });
 
@@ -121,7 +121,7 @@ const AskThePage: React.FC = () => {
     effects: effects.settings,
     sections: Object.values(SECTION_IDS),
     projects: projectHighlights.map(({ id, title, tags }) => ({ id, title, tags })),
-    events: eventHighlights.map(({ id, title, tags }) => ({ id, title, tags })),
+    events: fieldNotes.map(({ id, title, kind, tags }) => ({ id, title, kind, tags })),
   }), [theme, effects.settings]);
 
   const applyCommand = (command: PageCommand) => {
@@ -234,7 +234,7 @@ const AskThePage: React.FC = () => {
     },
     {
       label: 'Show events',
-      reply: 'Jumping to the event timeline.',
+      reply: 'Jumping to Field Notes.',
       commands: [{ type: 'focusSection', sectionId: SECTION_IDS.EVENTS }],
     },
   ];

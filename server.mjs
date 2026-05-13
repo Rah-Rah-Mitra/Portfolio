@@ -40,7 +40,7 @@ const numericRanges = {
   fluid: { speed: [0.2, 2.5], intensity: [0, 100], opacity: [10, 85], splatRadius: [12, 90], curl: [0, 80] },
   pretext: { intensity: [0, 100] },
 };
-const sectionIds = new Set(['home', 'projects', 'events', 'skills', 'experience', 'contact']);
+const sectionIds = new Set(['home', 'projects', 'events', 'skills', 'contact']);
 const eventIds = new Set([
   'smu-hack-for-cities-2026',
   'january-gauntlet-2026',
@@ -49,6 +49,41 @@ const eventIds = new Set([
   'sparks-by-pa-churp',
   'nvidia-disaster-risk',
   'certification-trail',
+  'software-achievement-6',
+  'software-achievement-5',
+  'software-achievement-4',
+  'software-achievement-3',
+  'software-achievement-2',
+  'software-achievement-1',
+  'cyber-achievement-3',
+  'cyber-achievement-2',
+  'cyber-achievement-1',
+  'nus-education',
+  'career-yeswehack-independent-researcher',
+  'career-singapore-navy',
+  'education-asrjc-stem',
+  'cert-docker-absolute-beginner',
+  'cert-reverse-engineering-windows',
+  'cert-cnn-python',
+  'cert-rnn-python',
+  'cert-unity-csharp-games',
+  'cert-excel-advanced',
+  'cert-reinforcement-learning',
+  'project-on-the-spectrum',
+  'project-geometry',
+  'project-information-lab',
+  'project-arcane',
+  'project-hailo-training',
+  'project-project-utopia',
+  'project-volt-pulse-sg',
+  'project-waaah-comics',
+  'project-smart-exam',
+  'project-ethos-lens',
+  'project-agewelllah-ai',
+  'project-maritime-deficiency-severity',
+  'project-churp',
+  'project-kaogenie',
+  'project-asyncddgs',
 ]);
 const npcIds = new Set([
   'volt-pulse-guide',
@@ -57,6 +92,9 @@ const npcIds = new Set([
   'arcane-guide',
   'utopia-guide',
   'churp-guide',
+  'asyncddgs-guide',
+  'geometry-guide',
+  'agewell-guide',
 ]);
 
 const readJsonBody = (request) => new Promise((resolve, reject) => {
@@ -183,7 +221,9 @@ const localAgent = (message, reason = 'model_unavailable') => {
   if (text.includes('cyber')) commands.push({ type: 'switchProfile', profile: 'cybersecurity' });
   if (text.includes('software')) commands.push({ type: 'switchProfile', profile: 'software' });
   if (text.includes('world') || text.includes('3d')) commands.push({ type: 'openWorld' });
-  if (text.includes('event')) commands.push({ type: 'focusSection', sectionId: 'events' });
+  if (text.includes('event') || text.includes('career') || text.includes('education') || text.includes('achievement') || text.includes('certification')) {
+    commands.push({ type: 'focusSection', sectionId: 'events' });
+  }
   if (text.includes('project')) commands.push({ type: 'focusSection', sectionId: 'projects' });
   if (text.includes('restore') || text.includes('reset')) commands.push({ type: 'restoreText' });
 
@@ -208,11 +248,11 @@ Allowed command types:
 - Numeric ranges: smash intensity 0-100 radius 20-240; gravity strength 0-100 radius 20-180; fluid speed 0.2-2.5 intensity 0-100 opacity 10-85 splatRadius 12-90 curl 0-80; pretext intensity 0-100.
 - For fluid opacity, return a percentage value between 10 and 85, not a 0-1 decimal.
 - {"type":"switchProfile","profile":"software|cybersecurity"}
-- {"type":"focusSection","sectionId":"home|projects|events|skills|experience|contact"}
-- {"type":"focusEvent","eventId":"smu-hack-for-cities-2026|january-gauntlet-2026|waaah-comics|abbott-internship|sparks-by-pa-churp|nvidia-disaster-risk|certification-trail"}
+- {"type":"focusSection","sectionId":"home|projects|events|skills|contact"}
+- {"type":"focusEvent","eventId":"any visible Field Notes id, such as smu-hack-for-cities-2026, abbott-internship, nus-education, software-achievement-6, cyber-achievement-3, cert-docker-absolute-beginner"}
 - {"type":"openWorld"}
 - {"type":"closeWorld"}
-- {"type":"startNpcDialogue","npcId":"volt-pulse-guide|waaah-comics-guide|spectrum-guide|arcane-guide|utopia-guide|churp-guide"}
+- {"type":"startNpcDialogue","npcId":"volt-pulse-guide|waaah-comics-guide|spectrum-guide|arcane-guide|utopia-guide|churp-guide|asyncddgs-guide|geometry-guide|agewell-guide"}
 - {"type":"restoreText"}
 
 Never produce JavaScript, CSS, selectors, arbitrary URLs, or commands outside the allowlist.

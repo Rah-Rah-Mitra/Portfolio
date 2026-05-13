@@ -30,8 +30,8 @@ export type AnalyticsEvent =
   | { event: 'cta_clicked';       props: { label: string; profile: Profile } }
 
   // ── Social / contact ───────────────────────────────────────────────────────
-  | { event: 'social_link_clicked';  props: { platform: 'linkedin' | 'github' | 'instagram'; location: 'hero' | 'contact' } }
-  | { event: 'contact_email_clicked'; props: Record<string, never> }
+  | { event: 'social_link_clicked';  props: { platform: 'linkedin' | 'github' | 'instagram'; location: 'hero' | 'contact' | 'footer' } }
+  | { event: 'contact_email_clicked'; props: Partial<{ location: 'contact' | 'footer' }> }
 
   // ── Achievements ───────────────────────────────────────────────────────────
   | { event: 'achievement_viewed';   props: { title: string; category: string; index: number; profile: Profile } }
@@ -43,6 +43,9 @@ export type AnalyticsEvent =
   | { event: 'project_link_clicked'; props: { title: string; destination: string } }
   | { event: 'event_project_link_clicked'; props: { event: string; project: string } }
   | { event: 'event_link_clicked'; props: { event: string; destination: string } }
+  | { event: 'field_notes_filter_changed'; props: { filter: string } }
+  | { event: 'effect_preset_applied'; props: { effect: string; preset: string } }
+  | { event: 'chatbot_quick_action_clicked'; props: { action: string; command_count: string } }
   | { event: 'chatbot_command_submitted'; props: { used_model: string; command_count: string } };
 
 // ─────────────────────────────────────────────────────────────────────────────

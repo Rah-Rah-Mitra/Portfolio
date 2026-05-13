@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { EffectId, FluidQuality, TextEffectMode, useEffects, WorldQuality } from '../contexts/PhysicsContext';
+import { EffectId, FluidQuality, NumericEffectId, TextEffectMode, useEffects, WorldQuality } from '../contexts/PhysicsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { GravityIcon } from './icons/GravityIcon';
 import { HammerIcon } from './icons/HammerIcon';
 import { RestoreIcon } from './icons/RestoreIcon';
+import { CodeBracketIcon, PaintBrushIcon, ServerStackIcon } from './icons/TechIcons';
 import { track } from '../lib/analytics';
 
 const formatPercent = (value: number) => `${Math.round(value)}%`;
@@ -18,13 +19,13 @@ const ToggleButton: React.FC<{
     onClick={onClick}
     aria-pressed={enabled}
     aria-label={label}
-    className={`relative h-7 w-12 rounded-full border transition-colors ${
+    className={`inline-flex h-7 w-12 shrink-0 items-center rounded-full border p-1 transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:focus:ring-red-300 ${
       enabled ? 'border-cyan-300 bg-cyan-400/80 dark:border-red-300 dark:bg-red-500/80' : 'border-white/15 bg-gray-700'
     }`}
   >
     <span
-      className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-        enabled ? 'translate-x-5' : 'translate-x-1'
+      className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
+        enabled ? 'translate-x-5' : 'translate-x-0'
       }`}
     />
   </button>
@@ -40,9 +41,9 @@ const RangeField: React.FC<{
   onChange: (value: number) => void;
 }> = ({ label, value, min, max, step = 1, suffix = '%', onChange }) => (
   <label className="block">
-    <span className="mb-1.5 flex items-center justify-between text-xs font-medium text-gray-400">
+    <span className="mb-1.5 grid grid-cols-[1fr,4rem] items-center gap-3 text-xs font-medium text-gray-400">
       <span>{label}</span>
-      <span className="text-gray-300">{suffix === '%' ? formatPercent(value) : `${value.toFixed(1)}${suffix}`}</span>
+      <span className="text-right tabular-nums text-gray-300">{suffix === '%' ? formatPercent(value) : `${value.toFixed(1)}${suffix}`}</span>
     </span>
     <input
       type="range"
@@ -55,6 +56,71 @@ const RangeField: React.FC<{
     />
   </label>
 );
+
+const PresetButtons: React.FC<{
+  effect: NumericEffectId;
+  onPreset: (effect: NumericEffectId, preset: 'gentle' | 'balanced' | 'intense') => void;
+}> = ({ effect, onPreset }) => (
+  <div className="mb-3 grid grid-cols-3 gap-2">
+    {(['gentle', 'balanced', 'intense'] as const).map((preset) => (
+      <button
+        key={`${effect}-${preset}`}
+        type="button"
+        onClick={() => onPreset(effect, preset)}
+        className="rounded border border-white/10 bg-white/[0.03] px-2 py-1.5 text-xs font-semibold capitalize text-gray-300 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
+      >
+        {preset}
+      </button>
+    ))}
+  </div>
+);
+
+const CardHeader: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  enabled: boolean;
+  label: string;
+  onToggle: () => void;
+}> = ({ icon, title, description, enabled, label, onToggle }) => (
+  <div className="mb-3 grid grid-cols-[1fr,3rem] items-start gap-3">
+    <div className="flex min-w-0 items-start gap-3">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-cyan-300 dark:text-red-300">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <h3 className="font-semibold leading-tight text-white">{title}</h3>
+        <p className="mt-0.5 text-xs leading-snug text-gray-400">{description}</p>
+      </div>
+    </div>
+    <div className="flex justify-end">
+      <ToggleButton enabled={enabled} label={label} onClick={onToggle} />
+    </div>
+  </div>
+);
+
+const effectPresets: Record<NumericEffectId, Record<'gentle' | 'balanced' | 'intense', Record<string, number>>> = {
+  smash: {
+    gentle: { intensity: 28, radius: 32 },
+    balanced: { intensity: 60, radius: 42 },
+    intense: { intensity: 88, radius: 68 },
+  },
+  gravity: {
+    gentle: { strength: 22, radius: 36 },
+    balanced: { strength: 45, radius: 48 },
+    intense: { strength: 78, radius: 72 },
+  },
+  fluid: {
+    gentle: { speed: 0.7, intensity: 38, opacity: 28, curl: 18, splatRadius: 28 },
+    balanced: { speed: 1.15, intensity: 62, opacity: 48, curl: 34, splatRadius: 46 },
+    intense: { speed: 1.9, intensity: 86, opacity: 72, curl: 68, splatRadius: 72 },
+  },
+  pretext: {
+    gentle: { intensity: 24 },
+    balanced: { intensity: 42 },
+    intense: { intensity: 82 },
+  },
+};
 
 const getInitialCollapsed = () => {
   if (typeof window === 'undefined') return false;
@@ -97,6 +163,13 @@ const EffectsLabPanel: React.FC = () => {
     track('effect_control_changed', { effect, control: 'enabled', value: String(next) });
   };
 
+  const applyPreset = (effect: NumericEffectId, preset: 'gentle' | 'balanced' | 'intense') => {
+    Object.entries(effectPresets[effect][preset]).forEach(([param, value]) => {
+      setEffectParam(effect, param, value);
+    });
+    track('effect_preset_applied', { effect, preset });
+  };
+
   if (collapsed) {
     return (
       <button
@@ -112,7 +185,7 @@ const EffectsLabPanel: React.FC = () => {
   }
 
   return (
-    <aside className="effects-lab fixed bottom-5 right-5 z-[70] w-[min(380px,calc(100vw-1.5rem))] rounded-lg border border-cyan-400/30 bg-gray-950/92 p-4 text-white shadow-2xl shadow-cyan-950/40 backdrop-blur-xl dark:border-red-500/35 dark:shadow-red-950/40">
+    <aside className="effects-lab fixed bottom-5 right-5 z-[70] w-[min(400px,calc(100vw-1.5rem))] rounded-lg border border-cyan-400/30 bg-gray-950/92 p-4 text-white shadow-2xl shadow-cyan-950/40 backdrop-blur-xl dark:border-red-500/35 dark:shadow-red-950/40">
       <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300 dark:text-red-300">Effects Lab</p>
@@ -142,16 +215,15 @@ const EffectsLabPanel: React.FC = () => {
 
       {!collapsed && <div className="space-y-3">
         <section className="effects-lab-card">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <HammerIcon className="mt-0.5 h-6 w-6 text-cyan-300" />
-              <div>
-                <h3 className="font-semibold text-white">Smash</h3>
-                <p className="text-xs text-gray-400">Cursor impact distortion</p>
-              </div>
-            </div>
-            <ToggleButton enabled={settings.smash.enabled} label="Toggle smash effect" onClick={() => handleToggle('smash')} />
-          </div>
+          <CardHeader
+            icon={<HammerIcon className="h-6 w-6" />}
+            title="Smash"
+            description="Cursor impact distortion"
+            enabled={settings.smash.enabled}
+            label="Toggle smash effect"
+            onToggle={() => handleToggle('smash')}
+          />
+          <PresetButtons effect="smash" onPreset={applyPreset} />
           <RangeField
             label="Intensity"
             value={settings.smash.intensity}
@@ -172,28 +244,29 @@ const EffectsLabPanel: React.FC = () => {
         </section>
 
         <section className="effects-lab-card">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <GravityIcon className="mt-0.5 h-6 w-6 text-violet-300" />
-              <div>
-                <h3 className="font-semibold text-white">Gravity</h3>
-                <p className="text-xs text-gray-400">Cursor gravity well</p>
-              </div>
-            </div>
-            <ToggleButton enabled={settings.gravity.enabled} label="Toggle gravity effect" onClick={() => handleToggle('gravity')} />
-          </div>
+          <CardHeader
+            icon={<GravityIcon className="h-6 w-6" />}
+            title="Gravity"
+            description="Cursor gravity well"
+            enabled={settings.gravity.enabled}
+            label="Toggle gravity effect"
+            onToggle={() => handleToggle('gravity')}
+          />
+          <PresetButtons effect="gravity" onPreset={applyPreset} />
           <RangeField label="Strength" value={settings.gravity.strength} min={0} max={100} onChange={(value) => setEffectParam('gravity', 'strength', value)} />
           <RangeField label="Radius" value={settings.gravity.radius} min={20} max={75} onChange={(value) => setEffectParam('gravity', 'radius', value)} />
         </section>
 
         <section className="effects-lab-card">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div>
-              <h3 className="font-semibold text-white">Fluid</h3>
-              <p className="text-xs text-gray-400">Translucent cursor-driven CFD overlay</p>
-            </div>
-            <ToggleButton enabled={settings.fluid.enabled} label="Toggle fluid background" onClick={() => handleToggle('fluid')} />
-          </div>
+          <CardHeader
+            icon={<PaintBrushIcon className="h-6 w-6" />}
+            title="Fluid"
+            description="Translucent cursor-driven CFD overlay"
+            enabled={settings.fluid.enabled}
+            label="Toggle fluid background"
+            onToggle={() => handleToggle('fluid')}
+          />
+          <PresetButtons effect="fluid" onPreset={applyPreset} />
           <RangeField label="Speed" value={settings.fluid.speed} min={0.2} max={2.4} step={0.1} suffix="x" onChange={(value) => setEffectParam('fluid', 'speed', value)} />
           <RangeField label="Intensity" value={settings.fluid.intensity} min={0} max={100} onChange={(value) => setEffectParam('fluid', 'intensity', value)} />
           <RangeField label="Opacity" value={settings.fluid.opacity} min={0} max={80} onChange={(value) => setEffectParam('fluid', 'opacity', value)} />
@@ -213,13 +286,15 @@ const EffectsLabPanel: React.FC = () => {
         </section>
 
         <section className="effects-lab-card">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div>
-              <h3 className="font-semibold text-white">Pretext</h3>
-              <p className="text-xs text-gray-400">Line-aware text effects</p>
-            </div>
-            <ToggleButton enabled={settings.pretext.enabled} label="Toggle Pretext effects" onClick={() => handleToggle('pretext')} />
-          </div>
+          <CardHeader
+            icon={<CodeBracketIcon className="h-6 w-6" />}
+            title="Pretext"
+            description="Line-aware text effects"
+            enabled={settings.pretext.enabled}
+            label="Toggle Pretext effects"
+            onToggle={() => handleToggle('pretext')}
+          />
+          <PresetButtons effect="pretext" onPreset={applyPreset} />
           <label className="mb-3 block">
             <span className="mb-1.5 block text-xs font-medium text-gray-400">Mode</span>
             <select
@@ -236,13 +311,14 @@ const EffectsLabPanel: React.FC = () => {
         </section>
 
         <section className="effects-lab-card">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div>
-              <h3 className="font-semibold text-white">3D World</h3>
-              <p className="text-xs text-gray-400">Playable portfolio hub</p>
-            </div>
-            <ToggleButton enabled={settings.world.enabled} label="Toggle 3D world" onClick={() => handleToggle('world')} />
-          </div>
+          <CardHeader
+            icon={<ServerStackIcon className="h-6 w-6" />}
+            title="3D World"
+            description="Playable portfolio hub"
+            enabled={settings.world.enabled}
+            label="Toggle 3D world"
+            onToggle={() => handleToggle('world')}
+          />
           <div className="mb-3 grid grid-cols-2 gap-2">
             <select
               value={settings.world.quality}

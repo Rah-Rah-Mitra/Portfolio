@@ -71,7 +71,7 @@ interface EffectsContextType {
 const defaultSettings: EffectSettings = {
   smash: { enabled: false, intensity: 60, radius: 42 },
   gravity: { enabled: false, strength: 45, radius: 48 },
-  fluid: { enabled: true, speed: 1.15, intensity: 62, opacity: 48, splatRadius: 46, curl: 34, quality: 'balanced' },
+  fluid: { enabled: true, speed: 0.7, intensity: 38, opacity: 28, splatRadius: 28, curl: 18, quality: 'balanced' },
   pretext: { enabled: true, intensity: 42, mode: 'decode' },
   world: { enabled: true, quality: 'high' },
 };

@@ -1,0 +1,249 @@
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { GoogleGenAI } from '@google/genai';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PORT = Number(process.env.PORT || process.env.API_PORT || 5174);
+const MODEL = process.env.GEMINI_MODEL || 'gemma-3-27b-it';
+
+const loadEnvFile = (filePath) => {
+  if (!fs.existsSync(filePath)) return;
+  const content = fs.readFileSync(filePath, 'utf8');
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
+    const index = trimmed.indexOf('=');
+    const key = trimmed.slice(0, index).trim();
+    const value = trimmed.slice(index + 1).trim().replace(/^["']|["']$/g, '');
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+};
+
+loadEnvFile(path.join(__dirname, '.env'));
+loadEnvFile(path.join(__dirname, '.env.local'));
+
+const effectIds = new Set(['smash', 'gravity', 'fluid', 'pretext', 'world']);
+const numericParams = {
+  smash: new Set(['intensity', 'radius']),
+  gravity: new Set(['strength', 'radius']),
+  fluid: new Set(['speed', 'intensity']),
+  pretext: new Set(['intensity']),
+};
+const sectionIds = new Set(['home', 'projects', 'events', 'skills', 'experience', 'contact']);
+const eventIds = new Set([
+  'smu-hack-for-cities-2026',
+  'january-gauntlet-2026',
+  'waaah-comics',
+  'abbott-internship',
+  'sparks-by-pa-churp',
+  'nvidia-disaster-risk',
+  'certification-trail',
+]);
+const npcIds = new Set([
+  'volt-pulse-guide',
+  'waaah-comics-guide',
+  'spectrum-guide',
+  'arcane-guide',
+  'utopia-guide',
+  'churp-guide',
+]);
+
+const readJsonBody = (request) => new Promise((resolve, reject) => {
+  let body = '';
+  request.on('data', (chunk) => {
+    body += chunk;
+    if (body.length > 64_000) {
+      reject(new Error('Request too large'));
+      request.destroy();
+    }
+  });
+  request.on('end', () => {
+    try {
+      resolve(JSON.parse(body || '{}'));
+    } catch {
+      reject(new Error('Invalid JSON'));
+    }
+  });
+  request.on('error', reject);
+});
+
+const writeJson = (response, status, payload) => {
+  response.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': 'http://127.0.0.1:5173',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  });
+  response.end(JSON.stringify(payload));
+};
+
+const extractJson = (text) => {
+  const cleaned = String(text || '').trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    return match ? JSON.parse(match[0]) : null;
+  }
+};
+
+const sanitizeCommands = (commands) => {
+  if (!Array.isArray(commands)) return [];
+  const sanitized = [];
+
+  for (const command of commands.slice(0, 6)) {
+    if (!command || typeof command !== 'object' || typeof command.type !== 'string') continue;
+
+    if (command.type === 'setEffectEnabled' && effectIds.has(command.effect) && typeof command.enabled === 'boolean') {
+      sanitized.push({ type: command.type, effect: command.effect, enabled: command.enabled });
+    }
+
+    if (
+      command.type === 'setEffectParam' &&
+      numericParams[command.effect]?.has(command.param) &&
+      Number.isFinite(command.value)
+    ) {
+      sanitized.push({ type: command.type, effect: command.effect, param: command.param, value: Number(command.value) });
+    }
+
+    if (command.type === 'switchProfile' && ['software', 'cybersecurity'].includes(command.profile)) {
+      sanitized.push({ type: command.type, profile: command.profile });
+    }
+
+    if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) {
+      sanitized.push({ type: command.type, sectionId: command.sectionId });
+    }
+
+    if (command.type === 'focusEvent' && eventIds.has(command.eventId)) {
+      sanitized.push({ type: command.type, eventId: command.eventId });
+    }
+
+    if (command.type === 'startNpcDialogue' && npcIds.has(command.npcId)) {
+      sanitized.push({ type: command.type, npcId: command.npcId });
+    }
+
+    if (['openWorld', 'closeWorld', 'restoreText'].includes(command.type)) {
+      sanitized.push({ type: command.type });
+    }
+  }
+
+  return sanitized;
+};
+
+const localAgent = (message, reason = 'model_unavailable') => {
+  const text = String(message || '').toLowerCase();
+  const commands = [];
+  const enabled = !(text.includes('disable') || text.includes('off'));
+
+  if (text.includes('fluid')) {
+    commands.push({ type: 'setEffectEnabled', effect: 'fluid', enabled });
+    if (text.includes('faster') || text.includes('speed')) {
+      commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 1.8 });
+    }
+  }
+  if (text.includes('gravity')) commands.push({ type: 'setEffectEnabled', effect: 'gravity', enabled });
+  if (text.includes('smash')) commands.push({ type: 'setEffectEnabled', effect: 'smash', enabled });
+  if (text.includes('cyber')) commands.push({ type: 'switchProfile', profile: 'cybersecurity' });
+  if (text.includes('software')) commands.push({ type: 'switchProfile', profile: 'software' });
+  if (text.includes('world') || text.includes('3d')) commands.push({ type: 'openWorld' });
+  if (text.includes('event')) commands.push({ type: 'focusSection', sectionId: 'events' });
+  if (text.includes('project')) commands.push({ type: 'focusSection', sectionId: 'projects' });
+  if (text.includes('restore') || text.includes('reset')) commands.push({ type: 'restoreText' });
+
+  return {
+    reply: commands.length
+      ? 'I adjusted the page with a local command fallback while the live model is unavailable.'
+      : 'I can adjust effects, switch profiles, open the world, or focus project and event sections.',
+    commands: sanitizeCommands(commands),
+    modelUsed: false,
+    reason,
+  };
+};
+
+const buildPrompt = ({ message, pageState }) => `
+You control Rahul Mitra's interactive portfolio page.
+Return strict JSON only, with this shape:
+{"reply":"short user-facing sentence","commands":[...]}
+
+Allowed command types:
+- {"type":"setEffectEnabled","effect":"smash|gravity|fluid|pretext|world","enabled":true|false}
+- {"type":"setEffectParam","effect":"smash|gravity|fluid|pretext","param":"intensity|radius|strength|speed","value":number}
+- {"type":"switchProfile","profile":"software|cybersecurity"}
+- {"type":"focusSection","sectionId":"home|projects|events|skills|experience|contact"}
+- {"type":"focusEvent","eventId":"smu-hack-for-cities-2026|january-gauntlet-2026|waaah-comics|abbott-internship|sparks-by-pa-churp|nvidia-disaster-risk|certification-trail"}
+- {"type":"openWorld"}
+- {"type":"closeWorld"}
+- {"type":"startNpcDialogue","npcId":"volt-pulse-guide|waaah-comics-guide|spectrum-guide|arcane-guide|utopia-guide|churp-guide"}
+- {"type":"restoreText"}
+
+Never produce JavaScript, CSS, selectors, arbitrary URLs, or commands outside the allowlist.
+If the user asks a portfolio question, answer briefly and optionally focus the relevant section, event, or NPC.
+
+Current page state:
+${JSON.stringify(pageState).slice(0, 9000)}
+
+User message:
+${message}
+`;
+
+const server = http.createServer(async (request, response) => {
+  if (request.method === 'OPTIONS') {
+    writeJson(response, 204, {});
+    return;
+  }
+
+  if (request.method !== 'POST' || request.url !== '/api/page-agent') {
+    writeJson(response, 404, { error: 'Not found' });
+    return;
+  }
+
+  let userMessage = '';
+
+  try {
+    const body = await readJsonBody(request);
+    const message = typeof body.message === 'string' ? body.message.slice(0, 1000) : '';
+    userMessage = message;
+    if (!message.trim()) {
+      writeJson(response, 400, { error: 'message is required' });
+      return;
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      writeJson(response, 200, localAgent(message, 'missing_api_key'));
+      return;
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const result = await ai.models.generateContent({
+      model: MODEL,
+      contents: buildPrompt({ message, pageState: body.pageState ?? {} }),
+      config: {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const parsed = extractJson(result.text);
+    const reply = typeof parsed?.reply === 'string'
+      ? parsed.reply.slice(0, 360)
+      : 'I can help tune this portfolio page.';
+
+    writeJson(response, 200, {
+      reply,
+      commands: sanitizeCommands(parsed?.commands),
+      modelUsed: true,
+      model: MODEL,
+    });
+  } catch (error) {
+    writeJson(response, 200, localAgent(userMessage, 'model_error'));
+  }
+});
+
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`[portfolio-api] listening on http://127.0.0.1:${PORT}`);
+});

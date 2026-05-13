@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { initAnalytics } from './lib/analytics';
+import './index.css';
 
 // Initialise PostHog before the React tree mounts so the
 // automatic $pageview fires before any component-level events.

@@ -2,16 +2,21 @@ import React from 'react';
 import { PortfolioData } from './types';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-import AchievementsSection from './components/AchievementsSection';
 import SkillsSection from './components/SkillsSection';
 import ExperienceSection from './components/ExperienceSection';
 import ContactSection from './components/ContactSection';
 import Footer from './components/Footer';
 import { SECTION_IDS } from './constants';
-import { PhysicsProvider } from './contexts/PhysicsContext';
-import PhysicsControls from './components/PhysicsControls';
+import { EffectsProvider } from './contexts/PhysicsContext';
+import EffectsLabPanel from './components/EffectsLabPanel';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-import { softwareEngineerData, cybersecurityData } from './portfolioData';
+import { cybersecurityData, eventHighlights, projectHighlights, softwareEngineerData } from './portfolioData';
+import FluidBackground from './components/FluidBackground';
+import ProjectsSection from './components/ProjectsSection';
+import EventsTimeline from './components/EventsTimeline';
+import AskThePage from './components/AskThePage';
+
+const PortfolioWorld = React.lazy(() => import('./components/PortfolioWorld'));
 
 const AppContent: React.FC = () => {
   const { theme } = useTheme();
@@ -22,20 +27,28 @@ const AppContent: React.FC = () => {
     : 'dark bg-black text-gray-300';
 
   return (
-    <PhysicsProvider theme={theme}>
+    <EffectsProvider theme={theme}>
       <div className={`min-h-screen flex flex-col ${backgroundClass}`}>
+        <FluidBackground />
         <Navbar name={portfolioData.name} />
-        <main className="flex-grow">
+        <main className="flex-grow relative z-10 xl:pr-[400px]">
           <HeroSection id={SECTION_IDS.HOME} data={portfolioData} />
-          <AchievementsSection id={SECTION_IDS.ACHIEVEMENTS} achievements={portfolioData.achievements} />
+          <ProjectsSection id={SECTION_IDS.PROJECTS} projects={projectHighlights} />
+          <EventsTimeline id={SECTION_IDS.EVENTS} events={eventHighlights} projects={projectHighlights} />
           <SkillsSection id={SECTION_IDS.SKILLS} skills={portfolioData.skills} />
           <ExperienceSection id={SECTION_IDS.EXPERIENCE} experiences={portfolioData.experiences} />
           <ContactSection id={SECTION_IDS.CONTACT} email={portfolioData.contactEmail} linkedinUrl={portfolioData.linkedinUrl} githubUrl={portfolioData.githubUrl} instagramUrl={portfolioData.instagramUrl} />
         </main>
-        <Footer name={portfolioData.name} />
-        <PhysicsControls />
+        <div className="relative z-10 xl:pr-[400px]">
+          <Footer name={portfolioData.name} />
+        </div>
+        <EffectsLabPanel />
+        <AskThePage />
+        <React.Suspense fallback={null}>
+          <PortfolioWorld />
+        </React.Suspense>
       </div>
-    </PhysicsProvider>
+    </EffectsProvider>
   );
 }
 

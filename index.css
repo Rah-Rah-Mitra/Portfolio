@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: #020617;
+}
+
+.fluid-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.effects-lab,
+.ask-page {
+  max-height: calc(100vh - 7rem);
+  overflow: auto;
+}
+
+.effects-lab-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(2, 6, 23, 0.72);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.effect-range {
+  accent-color: #22d3ee;
+}
+
+html.dark .effect-range {
+  accent-color: #ef4444;
+}
+
+.project-card,
+.event-node {
+  transform: translateZ(0);
+}
+
+.pretext-effect [data-word] {
+  transition:
+    color 180ms ease,
+    text-shadow 180ms ease,
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+.pretext-decode [data-word]:hover {
+  color: #67e8f9;
+  text-shadow:
+    0 0 8px rgba(34, 211, 238, 0.75),
+    calc(var(--pretext-intensity, 40) * 0.03px) 0 0 rgba(248, 113, 113, 0.45);
+}
+
+html.dark .pretext-decode [data-word]:hover {
+  color: #fecaca;
+  text-shadow:
+    0 0 8px rgba(248, 113, 113, 0.75),
+    calc(var(--pretext-intensity, 40) * 0.03px) 0 0 rgba(34, 211, 238, 0.45);
+}
+
+.pretext-scan [data-word] {
+  background-image: linear-gradient(90deg, currentColor, #67e8f9, currentColor);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pretext-scan 3.2s linear infinite;
+}
+
+.pretext-pulse [data-word]:nth-child(4n + 1) {
+  animation: pretext-pulse 2.2s ease-in-out infinite;
+}
+
+.pretext-pulse [data-word]:nth-child(4n + 3) {
+  animation: pretext-pulse 2.2s ease-in-out 0.45s infinite;
+}
+
+@keyframes pretext-scan {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 220% 0;
+  }
+}
+
+@keyframes pretext-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: translateY(0);
+  }
+  50% {
+    filter: brightness(1.35);
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pretext-scan [data-word],
+  .pretext-pulse [data-word] {
+    animation: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .effects-lab {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    max-height: 46vh;
+  }
+
+  .ask-page {
+    left: 0.75rem;
+    top: 5.5rem;
+    bottom: auto;
+    max-height: 34vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .effects-lab,
+  .ask-page {
+    width: calc(100vw - 1.5rem);
+  }
+
+  .ask-page {
+    display: none;
+  }
+}

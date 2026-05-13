@@ -7,6 +7,7 @@ import TypedHeader from './TypedHeader';
 import { useTheme } from '../contexts/ThemeContext';
 import GlitchHeader from './GlitchHeader';
 import { track, themeToProfile } from '../lib/analytics';
+import { useEffects } from '../contexts/PhysicsContext';
 
 interface HeroSectionProps {
   id: string;
@@ -96,6 +97,7 @@ const ProfileOrb: React.FC<{ src: string; name: string }> = ({ src, name }) => {
 
 const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
   const { theme } = useTheme();
+  const { openWorld } = useEffects();
 
   return (
     <section
@@ -109,7 +111,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-12">
           {/* Text column */}
           <div className="md:w-3/5 text-center md:text-left">
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold mb-4 h-24 flex items-center justify-center md:justify-start">
+            <h1 className="mb-4 flex min-h-32 items-center justify-center text-4xl font-extrabold leading-tight sm:text-5xl md:justify-start lg:text-6xl">
               {theme === 'light' ? (
                 <TypedHeader name={data.name} />
               ) : (
@@ -161,13 +163,25 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
               )}
             </div>
 
-            <a
-              href={`#${SECTION_IDS.ACHIEVEMENTS}`}
-              onClick={() => track('cta_clicked', { label: 'View My Work', profile: themeToProfile(theme) })}
-              className="inline-block bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 dark:from-red-600 dark:to-rose-700 dark:hover:from-red-700 dark:hover:to-rose-800 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-            >
-              View My Work
-            </a>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <a
+                href={`#${SECTION_IDS.PROJECTS}`}
+                onClick={() => track('cta_clicked', { label: 'View My Work', profile: themeToProfile(theme) })}
+                className="inline-block rounded-md bg-gradient-to-r from-blue-600 to-cyan-500 px-8 py-3 text-center font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-cyan-600 hover:shadow-lg dark:from-red-600 dark:to-rose-700 dark:hover:from-red-700 dark:hover:to-rose-800"
+              >
+                View My Work
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  openWorld();
+                  track('cta_clicked', { label: 'Explore Portfolio World', profile: themeToProfile(theme) });
+                }}
+                className="inline-block rounded-md border border-cyan-300/50 bg-cyan-300/10 px-8 py-3 text-center font-semibold text-cyan-100 transition-all duration-300 hover:scale-105 hover:bg-cyan-300/20 dark:border-red-300/50 dark:bg-red-500/10 dark:text-red-100 dark:hover:bg-red-500/20"
+              >
+                Explore Portfolio World
+              </button>
+            </div>
           </div>
 
           {/* 3D floating profile orb */}
@@ -181,7 +195,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
 
       {/* Scroll cue */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
-        <a href={`#${SECTION_IDS.ACHIEVEMENTS}`} aria-label="Scroll to achievements">
+        <a href={`#${SECTION_IDS.PROJECTS}`} aria-label="Scroll to projects">
           <svg
             className="w-8 h-8 text-gray-500 animate-bounce"
             fill="none"

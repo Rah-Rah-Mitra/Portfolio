@@ -16,33 +16,30 @@ type BodyRef = {
 export const useSmashInteraction = (
   engineRef: React.RefObject<Matter.Engine>,
   bodiesRef: React.RefObject<Map<string, BodyRef>>,
-  isActive: boolean
+  isActive: boolean,
+  options: { intensity: number; radius: number }
 ) => {
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine || !isActive) {
       return;
     }
-    
-    // Smash mode requires default downward gravity
-    engine.gravity.y = 0.4;
 
     const handleMouseDown = (e: MouseEvent) => {
       const mousePosition = Vector.create(e.pageX, e.pageY);
-      const boxWidth = window.innerWidth * 0.4;
-      const boxHeight = window.innerHeight * 0.4;
+      const radius = Math.min(window.innerWidth, window.innerHeight) * (options.radius / 100);
+      const forceMagnitudeBase = 0.015 + (options.intensity / 100) * 0.075;
 
       bodiesRef.current?.forEach(({ body }) => {
-        const isInside = body.position.x > mousePosition.x - boxWidth / 2 &&
-                         body.position.x < mousePosition.x + boxWidth / 2 &&
-                         body.position.y > mousePosition.y - boxHeight / 2 &&
-                         body.position.y < mousePosition.y + boxHeight / 2;
+        const distance = Vector.magnitude(Vector.sub(body.position, mousePosition));
+        const isInside = distance < radius;
 
         if (isInside) {
-            Body.setStatic(body, false);
-            const forceMagnitude = 0.05 * body.mass;
-            const force = Vector.mult(Vector.normalise(Vector.sub(body.position, mousePosition)), forceMagnitude);
-            Body.applyForce(body, mousePosition, force);
+          Body.setStatic(body, false);
+          const falloff = 1 - distance / radius;
+          const forceMagnitude = forceMagnitudeBase * Math.max(0.25, falloff) * body.mass;
+          const force = Vector.mult(Vector.normalise(Vector.sub(body.position, mousePosition)), forceMagnitude);
+          Body.applyForce(body, mousePosition, force);
         }
       });
     };
@@ -55,5 +52,5 @@ export const useSmashInteraction = (
       document.body.classList.remove('hammer-cursor');
       document.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [isActive, engineRef, bodiesRef]);
+  }, [isActive, engineRef, bodiesRef, options.intensity, options.radius]);
 };

@@ -59,14 +59,16 @@ const TypedHeader: React.FC<TypedHeaderProps> = ({ name }) => {
     }, [name]);
 
     return (
-        <>
-            {part1}
-            {showCursor1 && <span className="typing-cursor">|</span>}
-            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-red-500 dark:to-rose-500 ml-3">
+        <span className="inline-flex flex-wrap items-baseline justify-center gap-x-3 md:justify-start">
+            <span className="whitespace-nowrap">
+                {part1}
+                {showCursor1 && <span className="typing-cursor">|</span>}
+            </span>
+            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-red-500 dark:to-rose-500">
                 {part2}
                 {showCursor2 && <span className="typing-cursor text-cyan-500 dark:text-red-500">|</span>}
             </span>
-        </>
+        </span>
     );
 };
 

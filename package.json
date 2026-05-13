@@ -4,18 +4,26 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node dev.mjs",
+    "dev:vite": "vite",
+    "api": "node server.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chenglou/pretext": "^0.0.7",
+    "@google/genai": "^2.2.0",
     "matter-js": "0.19.0",
     "posthog-js": "^1.353.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^3.4.19",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
   }

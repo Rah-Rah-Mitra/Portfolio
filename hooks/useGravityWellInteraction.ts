@@ -16,7 +16,8 @@ type BodyRef = {
 export const useGravityWellInteraction = (
   engineRef: React.RefObject<Matter.Engine>,
   bodiesRef: React.RefObject<Map<string, BodyRef>>,
-  isActive: boolean
+  isActive: boolean,
+  options: { strength: number; radius: number }
 ) => {
   const [gravityWellPosition, setGravityWellPosition] = useState<Matter.Vector | null>(null);
 
@@ -28,12 +29,9 @@ export const useGravityWellInteraction = (
       return;
     }
 
-    // Gravity well mode requires zero world gravity
-    engine.gravity.y = 0;
-
     const handleMouseDown = (e: MouseEvent) => {
       const mousePosition = Vector.create(e.pageX, e.pageY);
-      const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * 0.4;
+      const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * (options.radius / 100);
 
       bodiesRef.current?.forEach(({ body }) => {
         if (Vector.magnitude(Vector.sub(mousePosition, body.position)) < gravityRadius) {
@@ -59,15 +57,12 @@ export const useGravityWellInteraction = (
 
     return () => {
       // Restore default gravity when this interaction is deactivated
-      if (engine) {
-        engine.gravity.y = 0.4;
-      }
       document.body.classList.remove('gravity-cursor');
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isActive, engineRef, bodiesRef]);
+  }, [isActive, engineRef, bodiesRef, options.radius]);
 
   // Effect to apply continuous gravity well force based on position
   useEffect(() => {
@@ -77,8 +72,8 @@ export const useGravityWellInteraction = (
     }
 
     const applyGravityForce = () => {
-      const GRAVITY_RADIUS = Math.min(window.innerWidth, window.innerHeight) * 0.4;
-      const GRAVITY_ACCELERATION = 0.02;
+      const GRAVITY_RADIUS = Math.min(window.innerWidth, window.innerHeight) * (options.radius / 100);
+      const GRAVITY_ACCELERATION = 0.004 + (options.strength / 100) * 0.04;
 
       bodiesRef.current?.forEach(({ body }) => {
         if (body.isStatic) return;
@@ -99,5 +94,5 @@ export const useGravityWellInteraction = (
     return () => {
       Events.off(engine, 'beforeUpdate', applyGravityForce);
     };
-  }, [isActive, gravityWellPosition, engineRef, bodiesRef]);
+  }, [isActive, gravityWellPosition, engineRef, bodiesRef, options.radius, options.strength]);
 };

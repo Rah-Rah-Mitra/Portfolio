@@ -38,7 +38,12 @@ export type AnalyticsEvent =
   | { event: 'achievement_hovered';  props: { title: string; hover_duration_ms: number } }
 
   // ── Easter egg: physics mode ───────────────────────────────────────────────
-  | { event: 'physics_mode_toggled'; props: { mode: 'hammer' | 'gravity_well'; action: 'activated' | 'deactivated' } };
+  | { event: 'physics_mode_toggled'; props: { mode: 'hammer' | 'gravity_well'; action: 'activated' | 'deactivated' } }
+  | { event: 'effect_control_changed'; props: { effect: string; control: string; value: string } }
+  | { event: 'project_link_clicked'; props: { title: string; destination: string } }
+  | { event: 'event_project_link_clicked'; props: { event: string; project: string } }
+  | { event: 'event_link_clicked'; props: { event: string; destination: string } }
+  | { event: 'chatbot_command_submitted'; props: { used_model: string; command_count: string } };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT
@@ -48,8 +53,14 @@ export type AnalyticsEvent =
 // PostHog project keys only allow event ingestion, not data retrieval.
 const POSTHOG_KEY  = import.meta.env.VITE_POSTHOG_KEY  ?? 'phc_Du7oytV0G71MoNKsFMGluZCLle9EofUcEDPeINSvzPR';
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST ?? 'https://us.i.posthog.com';
+let analyticsEnabled = false;
 
 export function initAnalytics(): void {
+  if (import.meta.env.DEV) {
+    return;
+  }
+
+  analyticsEnabled = true;
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
 
@@ -85,6 +96,10 @@ export function track<E extends AnalyticsEvent['event']>(
   event: E,
   props: Extract<AnalyticsEvent, { event: E }>['props'],
 ): void {
+  if (!analyticsEnabled) {
+    return;
+  }
+
   try {
     posthog.capture(event, props as Record<string, unknown>);
   } catch {

@@ -23,6 +23,36 @@ export interface ExperienceItem {
   logoUrl?: string;
 }
 
+export interface ProjectHighlight {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  repoUrl?: string;
+  liveUrl?: string;
+  imageUrl?: string;
+  accent: 'cyan' | 'red' | 'violet' | 'green' | 'amber' | 'blue';
+  linkedEventIds?: string[];
+  npcRole?: string;
+}
+
+export interface EventHighlight {
+  id: string;
+  title: string;
+  dateLabel: string;
+  exactDateRange?: string;
+  source: 'LinkedIn' | 'GitHub' | 'Portfolio';
+  summary: string;
+  tags: string[];
+  people?: string[];
+  organizations?: string[];
+  linkedProjectIds?: string[];
+  linkUrl?: string;
+  imageUrl?: string;
+  npcDialogue: string;
+}
+
 export interface PortfolioData {
   name: string;
   tagline: string;

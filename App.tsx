@@ -7,11 +7,13 @@ import { SECTION_IDS } from './constants';
 import { EffectsProvider } from './contexts/PhysicsContext';
 import EffectsLabPanel from './components/EffectsLabPanel';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-import { cybersecurityData, fieldNotes, projectArchive, projectHighlights, softwareEngineerData } from './portfolioData';
+import { coreCompetencies, cybersecurityData, fieldNotes, projectArchive, projectHighlights, resumeProfiles, softwareEngineerData } from './portfolioData';
 import FluidBackground from './components/FluidBackground';
 import ProjectsSection from './components/ProjectsSection';
 import EventsTimeline from './components/EventsTimeline';
 import AskThePage from './components/AskThePage';
+import ResumesSection from './components/ResumesSection';
+import ToolsSection from './components/ToolsSection';
 
 const PortfolioWorld = React.lazy(() => import('./components/PortfolioWorld'));
 
@@ -32,7 +34,9 @@ const AppContent: React.FC = () => {
           <HeroSection id={SECTION_IDS.HOME} data={portfolioData} />
           <ProjectsSection id={SECTION_IDS.PROJECTS} projects={projectHighlights} archiveProjects={projectArchive} />
           <EventsTimeline id={SECTION_IDS.EVENTS} notes={fieldNotes} projects={projectHighlights} archiveProjects={projectArchive} />
-          <SkillsSection id={SECTION_IDS.SKILLS} skills={portfolioData.skills} />
+          <SkillsSection id={SECTION_IDS.SKILLS} clusters={coreCompetencies} />
+          <ResumesSection id={SECTION_IDS.RESUMES} resumes={resumeProfiles} />
+          <ToolsSection id={SECTION_IDS.TOOLS} />
         </main>
         <div className="relative z-10">
           <Footer

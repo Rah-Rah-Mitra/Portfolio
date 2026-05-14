@@ -32,6 +32,7 @@ export interface ProjectHighlight {
   repoUrl?: string;
   liveUrl?: string;
   dateLabel?: string;
+  sortDate?: string;
   links?: Array<{
     label: string;
     url: string;
@@ -40,6 +41,25 @@ export interface ProjectHighlight {
   accent: 'cyan' | 'red' | 'violet' | 'green' | 'amber' | 'blue';
   linkedEventIds?: string[];
   npcRole?: string;
+}
+
+export interface ResumeProfile {
+  id: string;
+  role: string;
+  headline: string;
+  keywords: string[];
+  docxUrl: string;
+  pdfUrl: string;
+  accent: ProjectHighlight['accent'];
+}
+
+export interface CompetencyCluster {
+  id: string;
+  title: string;
+  summary: string;
+  tools: string[];
+  proof: string[];
+  accent: ProjectHighlight['accent'];
 }
 
 export type FieldNoteKind = 'event' | 'achievement' | 'project' | 'career' | 'education' | 'certification';

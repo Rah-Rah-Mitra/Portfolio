@@ -41,6 +41,10 @@ export type AnalyticsEvent =
   | { event: 'physics_mode_toggled'; props: { mode: 'hammer' | 'gravity_well'; action: 'activated' | 'deactivated' } }
   | { event: 'effect_control_changed'; props: { effect: string; control: string; value: string } }
   | { event: 'project_link_clicked'; props: { title: string; destination: string } }
+  | { event: 'resume_download_clicked'; props: { role: string; format: 'docx' | 'pdf' } }
+  | { event: 'qr_target_selected'; props: { label: string; target: string } }
+  | { event: 'qr_code_clicked'; props: { target: string } }
+  | { event: 'qr_code_downloaded'; props: { format: 'png' | 'svg'; target: string } }
   | { event: 'event_project_link_clicked'; props: { event: string; project: string } }
   | { event: 'event_link_clicked'; props: { event: string; destination: string } }
   | { event: 'field_notes_filter_changed'; props: { filter: string } }

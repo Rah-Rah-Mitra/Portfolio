@@ -123,10 +123,10 @@ const effectPresets: Record<NumericEffectId, Record<'gentle' | 'balanced' | 'int
 };
 
 const getInitialCollapsed = () => {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') return true;
   const stored = window.localStorage.getItem('effects-lab-collapsed');
   if (stored) return stored === 'true';
-  return window.innerWidth < 640;
+  return true;
 };
 
 const EffectsLabPanel: React.FC = () => {

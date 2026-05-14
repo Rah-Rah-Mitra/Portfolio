@@ -40,13 +40,13 @@ const Navbar: React.FC<NavbarProps> = ({ name }) => {
             </a>
           </div>
           <div className="hidden lg:block">
-            <div className="ml-10 flex items-center space-x-4">
+            <div className="ml-10 flex items-center gap-2">
               {NAVIGATION_LINKS.map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
                   onClick={() => track('nav_link_clicked', { destination: link.label })}
-                  className="text-gray-300 hover:bg-gray-700 hover:text-blue-400 dark:hover:text-red-500 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-gray-300 hover:bg-gray-700 hover:text-blue-400 dark:hover:text-red-500 px-2.5 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   {link.label}
                 </a>

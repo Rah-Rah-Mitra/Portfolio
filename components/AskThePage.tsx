@@ -39,10 +39,10 @@ const sectionIds = new Set(Object.values(SECTION_IDS));
 const eventIds = new Set(fieldNoteByIdOrAlias.keys());
 
 const getInitialCollapsed = () => {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') return true;
   const stored = window.localStorage.getItem('ask-page-collapsed');
   if (stored) return stored === 'true';
-  return window.innerWidth < 640;
+  return true;
 };
 
 const parseAgentResponse = (value: unknown): AgentResponse | null => {

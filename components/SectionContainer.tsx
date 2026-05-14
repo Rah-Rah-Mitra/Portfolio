@@ -19,7 +19,7 @@ const SectionContainer: React.FC<SectionContainerProps> = ({ id, children, class
   useSectionView(id ?? title ?? 'unknown', theme, sectionRef);
 
   return (
-    <section ref={sectionRef} id={id} className={`py-16 md:py-24 ${className}`}>
+    <section ref={sectionRef} id={id} className={`scroll-mt-24 py-16 md:scroll-mt-28 md:py-24 ${className}`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {title && (
           <div className="text-center mb-12 md:mb-16">

@@ -11,7 +11,18 @@ interface ProjectsSectionProps {
   archiveProjects?: ProjectHighlight[];
 }
 
-const FEATURED_PROJECT_COUNT = 8;
+const FEATURED_PROJECT_COUNT = 10;
+const FALLBACK_SORT_DATE = '0000-00-00';
+
+const sortProjectsByDate = (projects: ProjectHighlight[]) => (
+  projects
+    .map((project, index) => ({ project, index }))
+    .sort((a, b) => {
+      const dateCompare = (b.project.sortDate ?? FALLBACK_SORT_DATE).localeCompare(a.project.sortDate ?? FALLBACK_SORT_DATE);
+      return dateCompare || a.index - b.index;
+    })
+    .map(({ project }) => project)
+);
 
 const accentClasses: Record<ProjectHighlight['accent'], string> = {
   cyan: 'border-cyan-400/50 hover:border-cyan-300 hover:shadow-cyan-500/20 text-cyan-300',
@@ -26,6 +37,7 @@ const ProjectCard: React.FC<{ project: ProjectHighlight; compact?: boolean }> = 
   const href = project.liveUrl ?? project.repoUrl;
   return (
     <article
+      id={`project-${project.id}`}
       className={`project-card group relative overflow-hidden rounded-lg border bg-gray-950/78 p-5 shadow-2xl backdrop-blur transition-all duration-300 ${accentClasses[project.accent]}`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.10),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.04),transparent)] opacity-80" aria-hidden="true" />
@@ -91,16 +103,17 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
   const [showArchive, setShowArchive] = useState(false);
   const [archiveSearch, setArchiveSearch] = useState('');
 
-  const visibleFeatured = showAllFeatured ? projects : projects.slice(0, FEATURED_PROJECT_COUNT);
+  const sortedProjects = useMemo(() => sortProjectsByDate(projects), [projects]);
+  const visibleFeatured = showAllFeatured ? sortedProjects : sortedProjects.slice(0, FEATURED_PROJECT_COUNT);
   const filteredArchive = useMemo(() => {
     const query = archiveSearch.trim().toLowerCase();
-    if (!query) return archiveProjects;
-    return archiveProjects.filter((project) => (
+    const filteredProjects = query ? archiveProjects.filter((project) => (
       [project.title, project.description, project.category, project.dateLabel, ...project.tags]
         .join(' ')
         .toLowerCase()
         .includes(query)
-    ));
+    )) : archiveProjects;
+    return sortProjectsByDate(filteredProjects);
   }, [archiveProjects, archiveSearch]);
 
   return (

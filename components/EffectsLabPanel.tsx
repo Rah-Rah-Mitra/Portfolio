@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { EffectId, FluidQuality, NumericEffectId, TextEffectMode, useEffects, WorldQuality } from '../contexts/PhysicsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { GravityIcon } from './icons/GravityIcon';
@@ -131,6 +131,7 @@ const getInitialCollapsed = () => {
 
 const EffectsLabPanel: React.FC = () => {
   const [collapsed, setCollapsed] = useState(getInitialCollapsed);
+  const openedAtRef = useRef<number | null>(collapsed ? null : performance.now());
   const {
     settings,
     toggleEffect,
@@ -150,12 +151,25 @@ const EffectsLabPanel: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setCollapsed(true);
+        closePanel('escape_key');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const openPanel = (source: string) => {
+    openedAtRef.current = performance.now();
+    setCollapsed(false);
+    track('panel_opened', { panel: 'effects_lab', source });
+  };
+
+  const closePanel = (reason: string) => {
+    const duration = openedAtRef.current ? Math.round(performance.now() - openedAtRef.current) : 0;
+    openedAtRef.current = null;
+    setCollapsed(true);
+    track('panel_closed', { panel: 'effects_lab', reason, duration_ms: duration });
+  };
 
   const handleToggle = (effect: EffectId) => {
     toggleEffect(effect);
@@ -174,7 +188,8 @@ const EffectsLabPanel: React.FC = () => {
     return (
       <button
         type="button"
-        onClick={() => setCollapsed(false)}
+        onClick={() => openPanel('dock')}
+        data-analytics-id="effects-lab-open"
         className="effects-dock fixed bottom-5 right-5 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-lg border border-cyan-300/40 bg-gray-950/90 text-cyan-200 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-transform hover:-translate-y-0.5 hover:border-cyan-200 dark:border-red-400/40 dark:text-red-200 dark:shadow-red-950/40"
         aria-label="Open Effects Lab"
         title="Open Effects Lab"
@@ -194,7 +209,8 @@ const EffectsLabPanel: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setCollapsed((current) => !current)}
+            onClick={() => closePanel('hide_button')}
+            data-analytics-id="effects-lab-close"
             className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-gray-300 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
             aria-expanded={!collapsed}
             aria-label="Hide Effects Lab"
@@ -331,7 +347,8 @@ const EffectsLabPanel: React.FC = () => {
             <button
               type="button"
               disabled={!settings.world.enabled}
-              onClick={openWorld}
+              onClick={() => openWorld('effects_lab')}
+              data-analytics-id="effects-lab-enter-world"
               className="rounded-md bg-cyan-400 px-3 py-2 text-sm font-bold text-black transition-colors hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400 dark:bg-red-500 dark:text-white dark:hover:bg-red-400"
             >
               Enter world

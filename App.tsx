@@ -14,12 +14,14 @@ import EventsTimeline from './components/EventsTimeline';
 import AskThePage from './components/AskThePage';
 import ResumesSection from './components/ResumesSection';
 import ToolsSection from './components/ToolsSection';
+import { useScrollDepth } from './hooks/useScrollDepth';
 
 const PortfolioWorld = React.lazy(() => import('./components/PortfolioWorld'));
 
 const AppContent: React.FC = () => {
   const { theme } = useTheme();
   const portfolioData = theme === 'light' ? softwareEngineerData : cybersecurityData;
+  useScrollDepth(theme);
 
   const backgroundClass = theme === 'light' 
     ? 'bg-gray-900 text-gray-200'

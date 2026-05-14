@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ProjectHighlight } from '../types';
 import BreakableText from './BreakableText';
 import SectionContainer from './SectionContainer';
@@ -38,6 +38,7 @@ const ProjectCard: React.FC<{ project: ProjectHighlight; compact?: boolean }> = 
   return (
     <article
       id={`project-${project.id}`}
+      data-analytics-id={`project-card-${project.id}`}
       className={`project-card group relative overflow-hidden rounded-lg border bg-gray-950/78 p-5 shadow-2xl backdrop-blur transition-all duration-300 ${accentClasses[project.accent]}`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.10),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.04),transparent)] opacity-80" aria-hidden="true" />
@@ -74,6 +75,7 @@ const ProjectCard: React.FC<{ project: ProjectHighlight; compact?: boolean }> = 
               href={href}
               target="_blank"
               rel="noopener noreferrer"
+              data-analytics-id={`project-open-${project.id}`}
               onClick={() => track('project_link_clicked', { title: project.title, destination: href })}
               className="inline-flex w-fit items-center gap-2 rounded-md border border-current/45 px-3 py-2 text-sm font-semibold text-current transition-colors hover:bg-white/10"
             >
@@ -86,6 +88,7 @@ const ProjectCard: React.FC<{ project: ProjectHighlight; compact?: boolean }> = 
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
+              data-analytics-id={`project-link-${project.id}`}
               onClick={() => track('project_link_clicked', { title: project.title, destination: link.url })}
               className="inline-flex w-fit items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-current hover:text-current"
             >
@@ -102,6 +105,7 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
   const [showAllFeatured, setShowAllFeatured] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [archiveSearch, setArchiveSearch] = useState('');
+  const archiveSearchTouched = useRef(false);
 
   const sortedProjects = useMemo(() => sortProjectsByDate(projects), [projects]);
   const visibleFeatured = showAllFeatured ? sortedProjects : sortedProjects.slice(0, FEATURED_PROJECT_COUNT);
@@ -116,6 +120,37 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
     return sortProjectsByDate(filteredProjects);
   }, [archiveProjects, archiveSearch]);
 
+  useEffect(() => {
+    if (!showArchive || !archiveSearchTouched.current) return;
+
+    const timeoutId = window.setTimeout(() => {
+      track('archive_search_changed', {
+        query_length: archiveSearch.trim().length,
+        result_count: filteredArchive.length,
+      });
+    }, 600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [archiveSearch, filteredArchive.length, showArchive]);
+
+  const toggleFeatured = () => {
+    const expanded = !showAllFeatured;
+    setShowAllFeatured(expanded);
+    track('featured_projects_toggled', {
+      expanded,
+      visible_count: expanded ? sortedProjects.length : FEATURED_PROJECT_COUNT,
+    });
+  };
+
+  const toggleArchive = () => {
+    const expanded = !showArchive;
+    setShowArchive(expanded);
+    track('project_archive_toggled', {
+      expanded,
+      visible_count: expanded ? filteredArchive.length : 0,
+    });
+  };
+
   return (
     <SectionContainer
       id={id}
@@ -129,7 +164,8 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
           {projects.length > FEATURED_PROJECT_COUNT && (
             <button
               type="button"
-              onClick={() => setShowAllFeatured((current) => !current)}
+              onClick={toggleFeatured}
+              data-analytics-id="projects-toggle-featured"
               className="rounded-md border border-cyan-300/35 px-3 py-2 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/10 dark:border-red-400/35 dark:text-red-100 dark:hover:bg-red-500/10"
             >
               {showAllFeatured ? 'Show fewer featured' : `See more featured (${projects.length - FEATURED_PROJECT_COUNT})`}
@@ -138,7 +174,8 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
           {archiveProjects.length > 0 && (
             <button
               type="button"
-              onClick={() => setShowArchive((current) => !current)}
+              onClick={toggleArchive}
+              data-analytics-id="projects-toggle-archive"
               className="rounded-md border border-white/15 px-3 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
             >
               {showArchive ? 'Hide repo archive' : `Open repo archive (${archiveProjects.length})`}
@@ -165,8 +202,12 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
               <input
                 type="search"
                 value={archiveSearch}
-                onChange={(event) => setArchiveSearch(event.target.value)}
+                onChange={(event) => {
+                  archiveSearchTouched.current = true;
+                  setArchiveSearch(event.target.value);
+                }}
                 placeholder="Search archive..."
+                data-analytics-id="projects-archive-search"
                 className="h-10 w-full rounded-md border border-white/10 bg-gray-950/80 px-3 text-sm text-white outline-none transition-colors placeholder:text-gray-500 focus:border-cyan-300 dark:focus:border-red-300"
               />
             </label>

@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneModel } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { fieldNoteByIdOrAlias, projectHighlights } from '../portfolioData';
 import { useEffects } from '../contexts/PhysicsContext';
+import { captureAnalyticsException, summarizeUrlTarget, track, triggerSessionReplay } from '../lib/analytics';
 
 type NpcDefinition = {
   id: string;
@@ -162,6 +163,7 @@ const PortfolioWorld: React.FC = () => {
   const mountRef = useRef<HTMLDivElement>(null);
   const runtimeNpcs = useRef<RuntimeNpc[]>([]);
   const activeNpcIdRef = useRef<string | null>(null);
+  const pointerLockedRef = useRef(false);
   const [activeNpcId, setActiveNpcId] = useState<string | null>(null);
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
@@ -187,17 +189,28 @@ const PortfolioWorld: React.FC = () => {
   const selectedNpc = selectedNpcId ? npcCopy.get(selectedNpcId) : null;
   const activeNpc = activeNpcId ? npcCopy.get(activeNpcId) : null;
 
+  const openNpcDialogue = useCallback((npcId: string, method: string) => {
+    const npc = npcCopy.get(npcId);
+    setSelectedNpcId(npcId);
+    track('npc_dialogue_opened', {
+      npc_id: npcId,
+      title: npc?.title ?? npcId,
+      method,
+    });
+    triggerSessionReplay('npc_dialogue_opened', { source: npcId });
+  }, [npcCopy]);
+
   useEffect(() => {
     const handleNpcDialogue = (event: Event) => {
       const detail = (event as CustomEvent<{ npcId: string }>).detail;
       if (detail?.npcId) {
-        setSelectedNpcId(detail.npcId);
+        openNpcDialogue(detail.npcId, 'assistant');
       }
     };
 
     window.addEventListener('portfolio:npcDialogue', handleNpcDialogue);
     return () => window.removeEventListener('portfolio:npcDialogue', handleNpcDialogue);
-  }, []);
+  }, [openNpcDialogue]);
 
   useEffect(() => {
     if (!worldOpen || !mountRef.current) return;
@@ -257,41 +270,48 @@ const PortfolioWorld: React.FC = () => {
     runtimeNpcs.current = [];
 
     const loadModel = async (definition: NpcDefinition) => {
-      const gltf = await loader.loadAsync(definition.modelUrl);
-      const model = cloneModel(gltf.scene);
-      const group = new THREE.Group();
-      group.position.set(...definition.position);
-      group.scale.setScalar(definition.modelUrl.includes('chibi') ? 1.2 : 0.9);
-      group.add(model);
+      try {
+        const gltf = await loader.loadAsync(definition.modelUrl);
+        const model = cloneModel(gltf.scene);
+        const group = new THREE.Group();
+        group.position.set(...definition.position);
+        group.scale.setScalar(definition.modelUrl.includes('chibi') ? 1.2 : 0.9);
+        group.add(model);
 
-      const box = new THREE.Box3().setFromObject(model);
-      const center = box.getCenter(new THREE.Vector3());
-      model.position.sub(center);
-      model.position.y -= box.min.y - center.y;
-      group.lookAt(0, 0, 1);
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        model.position.y -= box.min.y - center.y;
+        group.lookAt(0, 0, 1);
 
-      const label = createLabel(definition.name, definition.color);
-      label.position.set(0, 2.7, 0);
-      group.add(label);
+        const label = createLabel(definition.name, definition.color);
+        label.position.set(0, 2.7, 0);
+        group.add(label);
 
-      const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.85, 1.05, 0.08, 48),
-        new THREE.MeshStandardMaterial({ color: new THREE.Color(definition.color), emissive: new THREE.Color(definition.color), emissiveIntensity: 0.75 }),
-      );
-      base.position.y = 0.04;
-      group.add(base);
+        const base = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.85, 1.05, 0.08, 48),
+          new THREE.MeshStandardMaterial({ color: new THREE.Color(definition.color), emissive: new THREE.Color(definition.color), emissiveIntensity: 0.75 }),
+        );
+        base.position.y = 0.04;
+        group.add(base);
 
-      scene.add(group);
-      disposables.push(group);
-      runtimeNpcs.current.push({ definition, group });
+        scene.add(group);
+        disposables.push(group);
+        runtimeNpcs.current.push({ definition, group });
 
-      if (gltf.animations.length) {
-        const mixer = new THREE.AnimationMixer(model);
-        const clip = selectClip(gltf.animations, definition.preferredClip);
-        if (clip) {
-          mixer.clipAction(clip).play();
-          mixers.push(mixer);
+        if (gltf.animations.length) {
+          const mixer = new THREE.AnimationMixer(model);
+          const clip = selectClip(gltf.animations, definition.preferredClip);
+          if (clip) {
+            mixer.clipAction(clip).play();
+            mixers.push(mixer);
+          }
         }
+      } catch (error) {
+        captureAnalyticsException(error, {
+          area: 'portfolio_world_npc_model',
+          npc_id: definition.id,
+        });
       }
     };
 
@@ -304,7 +324,11 @@ const PortfolioWorld: React.FC = () => {
         model.rotation.y = rotationY;
         scene.add(model);
         disposables.push(model);
-      } catch {
+      } catch (error) {
+        captureAnalyticsException(error, {
+          area: 'portfolio_world_static_asset',
+          asset_path: url,
+        });
         // Decorative assets are non-critical; the core hub remains usable without them.
       }
     };
@@ -395,7 +419,7 @@ const PortfolioWorld: React.FC = () => {
         event.preventDefault();
       }
       if (event.code === 'KeyE' && activeNpcIdRef.current) {
-        setSelectedNpcId(activeNpcIdRef.current);
+        openNpcDialogue(activeNpcIdRef.current, 'keyboard');
       }
       keys.add(event.code);
     };
@@ -412,7 +436,7 @@ const PortfolioWorld: React.FC = () => {
       lastY = event.clientY;
       const clickedNpc = findClickedNpc(event);
       if (clickedNpc) {
-        setSelectedNpcId(clickedNpc.definition.id);
+        openNpcDialogue(clickedNpc.definition.id, 'click');
       }
       const pointerLockRequest = renderer.domElement.requestPointerLock?.();
       if (pointerLockRequest) {
@@ -435,6 +459,10 @@ const PortfolioWorld: React.FC = () => {
     };
     const handlePointerLockChange = () => {
       const locked = document.pointerLockElement === renderer.domElement;
+      if (pointerLockedRef.current !== locked) {
+        pointerLockedRef.current = locked;
+        track('pointer_lock_changed', { locked });
+      }
       setIsPointerLocked(locked);
       isPointerDown = locked;
     };
@@ -453,6 +481,7 @@ const PortfolioWorld: React.FC = () => {
       cancelAnimationFrame(animationId);
       runtimeNpcs.current = [];
       activeNpcIdRef.current = null;
+      pointerLockedRef.current = false;
       if (document.pointerLockElement === renderer.domElement) {
         document.exitPointerLock?.();
       }
@@ -477,7 +506,7 @@ const PortfolioWorld: React.FC = () => {
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
-  }, [worldOpen, settings.world.quality]);
+  }, [openNpcDialogue, settings.world.quality, worldOpen]);
 
   if (!worldOpen) return null;
 
@@ -511,7 +540,8 @@ const PortfolioWorld: React.FC = () => {
         {activeNpc && (
           <button
             type="button"
-            onClick={() => setSelectedNpcId(activeNpcId)}
+            onClick={() => activeNpcId && openNpcDialogue(activeNpcId, 'cta')}
+            data-analytics-id="world-talk-active-npc"
             className="mt-3 rounded-md bg-cyan-400 px-3 py-2 text-sm font-bold text-black hover:bg-cyan-300"
           >
             Talk to {activeNpc.title}
@@ -520,7 +550,8 @@ const PortfolioWorld: React.FC = () => {
       </div>
       <button
         type="button"
-        onClick={closeWorld}
+        onClick={() => closeWorld('exit_button')}
+        data-analytics-id="world-close"
         className="absolute right-4 top-4 rounded-md border border-white/15 bg-gray-950/85 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition-colors hover:border-cyan-300 hover:text-cyan-200"
       >
         Exit world
@@ -544,7 +575,18 @@ const PortfolioWorld: React.FC = () => {
             ))}
           </div>
           {selectedNpc.url && (
-            <a href={selectedNpc.url} target="_blank" rel="noopener noreferrer" className="inline-flex rounded-md border border-cyan-300/40 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10">
+            <a
+              href={selectedNpc.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-analytics-id="world-open-linked-work"
+              onClick={() => track('world_link_clicked', {
+                npc_id: selectedNpcId ?? 'unknown',
+                title: selectedNpc.title,
+                destination_host: summarizeUrlTarget(selectedNpc.url ?? '').target_host,
+              })}
+              className="inline-flex rounded-md border border-cyan-300/40 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
+            >
               Open linked work
             </a>
           )}

@@ -3,7 +3,7 @@ import * as QRCode from 'qrcode';
 import SectionContainer from './SectionContainer';
 import { ArrowDownTrayIcon, QrCodeIcon } from './icons/GenericIcons';
 import { useTheme } from '../contexts/ThemeContext';
-import { track } from '../lib/analytics';
+import { summarizeUrlTarget, track } from '../lib/analytics';
 
 interface ToolsSectionProps {
   id: string;
@@ -40,7 +40,9 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
   ), [theme]);
 
   const cleanedTarget = targetUrl.trim() || DEFAULT_PORTFOLIO_URL;
-  const selectedPresetId = QR_TARGETS.find((target) => target.url === cleanedTarget)?.id;
+  const selectedPreset = QR_TARGETS.find((target) => target.url === cleanedTarget);
+  const selectedPresetId = selectedPreset?.id;
+  const targetSummary = summarizeUrlTarget(cleanedTarget, selectedPreset?.label);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,7 +74,7 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    track('qr_code_downloaded', { format: 'png', target: cleanedTarget });
+    track('qr_code_downloaded', { format: 'png', ...targetSummary });
   };
 
   const handleSvgDownload = async () => {
@@ -83,12 +85,12 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
       color: qrColors,
     });
     downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), 'rahul-mitra-portfolio-qr.svg');
-    track('qr_code_downloaded', { format: 'svg', target: cleanedTarget });
+    track('qr_code_downloaded', { format: 'svg', ...targetSummary });
   };
 
   const selectTarget = (target: (typeof QR_TARGETS)[number]) => {
     setTargetUrl(target.url);
-    track('qr_target_selected', { label: target.label, target: target.url });
+    track('qr_target_selected', summarizeUrlTarget(target.url, target.label));
   };
 
   return (
@@ -118,6 +120,7 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
                   key={target.id}
                   type="button"
                   onClick={() => selectTarget(target)}
+                  data-analytics-id={`qr-target-${target.id}`}
                   aria-pressed={active}
                   className={`rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
                     active
@@ -137,7 +140,9 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
               type="url"
               value={targetUrl}
               onChange={(event) => setTargetUrl(event.target.value)}
-              className="mt-2 h-11 w-full rounded-md border border-white/10 bg-black/40 px-3 text-sm text-white outline-none transition-colors placeholder:text-gray-500 focus:border-cyan-300 dark:focus:border-red-300"
+              data-private="true"
+              data-block-replay="true"
+              className="ph-no-capture mt-2 h-11 w-full rounded-md border border-white/10 bg-black/40 px-3 text-sm text-white outline-none transition-colors placeholder:text-gray-500 focus:border-cyan-300 dark:focus:border-red-300"
             />
           </label>
 
@@ -170,11 +175,11 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
                 href={cleanedTarget}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => track('qr_code_clicked', { target: cleanedTarget })}
+                onClick={() => track('qr_code_clicked', targetSummary)}
                 className="block rounded-md outline-none ring-offset-2 ring-offset-gray-950 transition-transform hover:scale-[1.015] focus:ring-2 focus:ring-cyan-300 dark:focus:ring-red-300"
-                aria-label={`Open ${cleanedTarget}`}
+                aria-label="Open QR target"
               >
-                <img src={qrDataUrl} alt={`QR code for ${cleanedTarget}`} className="h-64 w-64 rounded-md" />
+                <img src={qrDataUrl} alt="QR code for selected target" className="h-64 w-64 rounded-md" />
               </a>
             ) : (
               <div className="flex h-64 w-64 items-center justify-center rounded-md border border-white/10 text-sm text-gray-400">

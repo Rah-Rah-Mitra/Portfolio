@@ -1,9 +1,9 @@
-import React, { FormEvent, useEffect, useMemo, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { SECTION_IDS } from '../constants';
 import { fieldNoteByIdOrAlias, fieldNotes, projectHighlights } from '../portfolioData';
 import { EffectId, NumericEffectId, useEffects } from '../contexts/PhysicsContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { track } from '../lib/analytics';
+import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/analytics';
 
 type ChatMessage = {
   role: 'assistant' | 'user';
@@ -25,6 +25,8 @@ type AgentResponse = {
   reply: string;
   commands?: PageCommand[];
   modelUsed?: boolean;
+  model?: string;
+  reason?: string;
 };
 
 const numericParams: Record<NumericEffectId, Set<string>> = {
@@ -53,6 +55,8 @@ const parseAgentResponse = (value: unknown): AgentResponse | null => {
     reply: response.reply,
     commands: Array.isArray(response.commands) ? response.commands : [],
     modelUsed: response.modelUsed === true,
+    model: typeof response.model === 'string' ? response.model : undefined,
+    reason: typeof response.reason === 'string' ? response.reason : undefined,
   };
 };
 
@@ -86,11 +90,13 @@ const localAgent = (message: string): AgentResponse => {
       ? 'I adjusted the page with a local command fallback while the live model is unavailable.'
       : 'I can adjust effects, switch profiles, open the world, or focus project and event sections.',
     commands,
+    reason: 'client_local_fallback',
   };
 };
 
 const AskThePage: React.FC = () => {
   const [collapsed, setCollapsed] = useState(getInitialCollapsed);
+  const openedAtRef = useRef<number | null>(collapsed ? null : performance.now());
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -109,12 +115,25 @@ const AskThePage: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setCollapsed(true);
+        closePanel('escape_key');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const openPanel = (source: string) => {
+    openedAtRef.current = performance.now();
+    setCollapsed(false);
+    track('panel_opened', { panel: 'ask_the_page', source });
+  };
+
+  const closePanel = (reason: string) => {
+    const duration = openedAtRef.current ? Math.round(performance.now() - openedAtRef.current) : 0;
+    openedAtRef.current = null;
+    setCollapsed(true);
+    track('panel_closed', { panel: 'ask_the_page', reason, duration_ms: duration });
+  };
 
   const pageState = useMemo(() => ({
     profile: theme === 'dark' ? 'cybersecurity' : 'software',
@@ -155,12 +174,12 @@ const AskThePage: React.FC = () => {
     }
 
     if (command.type === 'openWorld') {
-      effects.openWorld();
+      effects.openWorld('ask_the_page');
       return;
     }
 
     if (command.type === 'closeWorld') {
-      effects.closeWorld();
+      effects.closeWorld('ask_the_page');
       return;
     }
 
@@ -170,7 +189,7 @@ const AskThePage: React.FC = () => {
     }
 
     if (command.type === 'startNpcDialogue') {
-      effects.openWorld();
+      effects.openWorld('ask_the_page');
       window.setTimeout(() => {
         window.dispatchEvent(new CustomEvent('portfolio:npcDialogue', { detail: { npcId: command.npcId } }));
       }, 100);
@@ -184,26 +203,51 @@ const AskThePage: React.FC = () => {
     setInput('');
     setIsSending(true);
     setMessages((current) => [...current, { role: 'user', content: trimmed }]);
+    triggerSessionReplay('ask_page_command', { source: 'ask_the_page' });
 
     let response: AgentResponse | null = null;
+    let requestStatus: number | 'network_error' = 'network_error';
+    let responseSource = 'client_local_fallback';
+    const startedAt = performance.now();
     try {
       const apiResponse = await fetch('/api/page-agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: trimmed, pageState }),
       });
+      requestStatus = apiResponse.status;
       if (apiResponse.ok) {
         response = parseAgentResponse(await apiResponse.json());
+        responseSource = response?.modelUsed ? 'model' : response?.reason ? 'server_fallback' : 'server_response';
+      } else {
+        captureAnalyticsException(new Error(`Page agent returned ${apiResponse.status}`), {
+          area: 'ask_page_api',
+          status: apiResponse.status,
+        });
       }
-    } catch {
+    } catch (error) {
+      captureAnalyticsException(error, { area: 'ask_page_network' });
       response = null;
     }
 
     const agent = response ?? localAgent(trimmed);
+    const durationMs = Math.round(performance.now() - startedAt);
     agent.commands?.forEach(applyCommand);
     setMessages((current) => [...current, { role: 'assistant', content: agent.reply }]);
     setIsSending(false);
-    track('chatbot_command_submitted', { used_model: String(Boolean(agent.modelUsed)), command_count: String(agent.commands?.length ?? 0) });
+    track('api_request_completed', {
+      route: '/api/page-agent',
+      status: requestStatus,
+      ok: response !== null,
+      duration_ms: durationMs,
+      response_source: responseSource,
+    });
+    track('chatbot_command_submitted', {
+      used_model: String(Boolean(agent.modelUsed)),
+      command_count: String(agent.commands?.length ?? 0),
+      status: responseSource,
+      fallback_reason: agent.reason,
+    });
   };
 
   const handleSubmit = (event: FormEvent) => {
@@ -254,7 +298,8 @@ const AskThePage: React.FC = () => {
     return (
       <button
         type="button"
-        onClick={() => setCollapsed(false)}
+        onClick={() => openPanel('dock')}
+        data-analytics-id="ask-page-open"
         className="ask-dock fixed bottom-5 left-5 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-lg border border-cyan-300/40 bg-gray-950/90 text-cyan-200 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-transform hover:-translate-y-0.5 hover:border-cyan-200 dark:border-red-400/40 dark:text-red-200 dark:shadow-red-950/40"
         aria-label="Open Ask The Page"
         title="Open Ask The Page"
@@ -273,14 +318,15 @@ const AskThePage: React.FC = () => {
         </div>
         <button
           type="button"
-          onClick={() => setCollapsed(true)}
+          onClick={() => closePanel('hide_button')}
+          data-analytics-id="ask-page-close"
           className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-gray-300 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
           aria-label="Hide Ask The Page"
         >
           Hide
         </button>
       </div>
-      <div className="mb-3 max-h-36 space-y-2 overflow-y-auto pr-1">
+      <div className="mb-3 max-h-36 space-y-2 overflow-y-auto pr-1" data-private="true">
         {messages.slice(-4).map((message, index) => (
           <p key={`${message.role}-${index}`} className={`rounded-md px-3 py-2 text-sm ${message.role === 'assistant' ? 'bg-white/5 text-gray-300' : 'bg-cyan-400/15 text-cyan-100 dark:bg-red-500/15 dark:text-red-100'}`}>
             {message.content}
@@ -304,7 +350,9 @@ const AskThePage: React.FC = () => {
           value={input}
           onChange={(event) => setInput(event.target.value)}
           placeholder="Ask anything about this page..."
-          className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/45 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-gray-500 focus:border-cyan-300 dark:focus:border-red-300"
+          data-private="true"
+          data-block-replay="true"
+          className="ph-no-capture min-w-0 flex-1 rounded-md border border-white/10 bg-black/45 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-gray-500 focus:border-cyan-300 dark:focus:border-red-300"
         />
         <button
           type="submit"

@@ -3,6 +3,7 @@ import Matter from 'matter-js';
 import { Theme } from './ThemeContext';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
+import { track, triggerSessionReplay } from '../lib/analytics';
 
 type BodyRef = {
   body: Matter.Body;
@@ -62,8 +63,8 @@ interface EffectsContextType {
   setPretextMode: (mode: TextEffectMode) => void;
   setWorldQuality: (quality: WorldQuality) => void;
   setFluidQuality: (quality: FluidQuality) => void;
-  openWorld: () => void;
-  closeWorld: () => void;
+  openWorld: (source?: string) => void;
+  closeWorld: (reason?: string) => void;
   restoreAll: () => void;
   registerWords: (elements: HTMLElement[]) => () => void;
 }
@@ -122,6 +123,7 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
   const boundariesRef = useRef<Matter.Body[]>([]);
   const restoreTimers = useRef(new Set<number>());
+  const worldOpenedAtRef = useRef<number | null>(null);
 
   const restoreAll = useCallback(() => {
     setSettings((prev) => ({
@@ -268,23 +270,46 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     radius: settings.gravity.radius,
   });
 
+  const openWorld = useCallback((source = 'unknown') => {
+    setSettings((prev) => ({
+      ...prev,
+      world: { ...prev.world, enabled: true },
+    }));
+    setWorldOpen((current) => {
+      if (!current) {
+        worldOpenedAtRef.current = performance.now();
+        track('world_opened', { source });
+        triggerSessionReplay('world_opened', { source });
+      }
+      return true;
+    });
+  }, []);
+
+  const closeWorld = useCallback((reason = 'unknown') => {
+    setWorldOpen((current) => {
+      if (current) {
+        const duration = worldOpenedAtRef.current ? Math.round(performance.now() - worldOpenedAtRef.current) : 0;
+        track('world_closed', { reason, duration_ms: duration });
+        worldOpenedAtRef.current = null;
+      }
+      return false;
+    });
+  }, []);
+
   const setEffectEnabled = useCallback((id: EffectId, enabled: boolean) => {
     setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
     if (id === 'world' && !enabled) {
-      setWorldOpen(false);
+      closeWorld('effect_disabled');
     }
-  }, []);
+  }, [closeWorld]);
 
   const toggleEffect = useCallback((id: EffectId) => {
-    setSettings((prev) => {
-      const enabled = !prev[id].enabled;
-      const next = { ...prev, [id]: { ...prev[id], enabled } } as EffectSettings;
-      if (id === 'world' && !enabled) {
-        setWorldOpen(false);
-      }
-      return next;
-    });
-  }, []);
+    const enabled = !settings[id].enabled;
+    setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
+    if (id === 'world' && !enabled) {
+      closeWorld('effect_disabled');
+    }
+  }, [closeWorld, settings]);
 
   const setEffectParam = useCallback((id: NumericEffectId, param: string, value: number) => {
     const limits = PARAM_LIMITS[id][param];
@@ -318,18 +343,6 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
       ...prev,
       fluid: { ...prev.fluid, quality },
     }));
-  }, []);
-
-  const openWorld = useCallback(() => {
-    setSettings((prev) => ({
-      ...prev,
-      world: { ...prev.world, enabled: true },
-    }));
-    setWorldOpen(true);
-  }, []);
-
-  const closeWorld = useCallback(() => {
-    setWorldOpen(false);
   }, []);
 
   const registerWords = useCallback((elements: HTMLElement[]) => {

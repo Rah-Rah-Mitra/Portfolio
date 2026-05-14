@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import GlitchHeader from './GlitchHeader';
 import { track, themeToProfile } from '../lib/analytics';
 import { useEffects } from '../contexts/PhysicsContext';
+import { useFeatureFlagVariantKey } from '@posthog/react';
 
 interface HeroSectionProps {
   id: string;
@@ -98,6 +99,12 @@ const ProfileOrb: React.FC<{ src: string; name: string }> = ({ src, name }) => {
 const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
   const { theme } = useTheme();
   const { openWorld } = useEffects();
+  const worldCtaVariant = useFeatureFlagVariantKey('portfolio-world-cta');
+  const worldCtaLabel = worldCtaVariant === 'build-map'
+    ? 'Explore Build Map'
+    : worldCtaVariant === 'guides'
+      ? 'Meet the Guides'
+      : 'Explore Portfolio World';
 
   return (
     <section
@@ -166,6 +173,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
                 href={`#${SECTION_IDS.PROJECTS}`}
+                data-analytics-id="hero-view-work"
                 onClick={() => track('cta_clicked', { label: 'View My Work', profile: themeToProfile(theme) })}
                 className="inline-block rounded-md bg-gradient-to-r from-blue-600 to-cyan-500 px-8 py-3 text-center font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-cyan-600 hover:shadow-lg dark:from-red-600 dark:to-rose-700 dark:hover:from-red-700 dark:hover:to-rose-800"
               >
@@ -173,13 +181,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({ id, data }) => {
               </a>
               <button
                 type="button"
+                data-analytics-id="hero-open-world"
                 onClick={() => {
-                  openWorld();
-                  track('cta_clicked', { label: 'Explore Portfolio World', profile: themeToProfile(theme) });
+                  openWorld('hero_cta');
+                  track('cta_clicked', { label: worldCtaLabel, profile: themeToProfile(theme) });
                 }}
                 className="inline-block rounded-md border border-cyan-300/50 bg-cyan-300/10 px-8 py-3 text-center font-semibold text-cyan-100 transition-all duration-300 hover:scale-105 hover:bg-cyan-300/20 dark:border-red-300/50 dark:bg-red-500/10 dark:text-red-100 dark:hover:bg-red-500/20"
               >
-                Explore Portfolio World
+                {worldCtaLabel}
               </button>
             </div>
           </div>

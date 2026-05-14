@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { emitServerLog } from './posthogTelemetry.mjs';
 
 export const DEFAULT_GEMINI_MODEL = 'gemma-4-26b-a4b-it';
 
@@ -215,24 +216,42 @@ User message:
 ${message}
 `;
 
+const logPageAgentResult = (startedAt, status, payload, attributes = {}) => {
+  emitServerLog(status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info', 'page_agent_request_completed', {
+    route: '/api/page-agent',
+    status,
+    duration_ms: Date.now() - startedAt,
+    command_count: Array.isArray(payload?.commands) ? payload.commands.length : 0,
+    model_used: payload?.modelUsed === true,
+    fallback_reason: payload?.reason,
+    model: payload?.model,
+    ...attributes,
+  });
+};
+
 export const createPageAgentResponse = async (body) => {
+  const startedAt = Date.now();
   let userMessage = '';
 
   try {
     const message = typeof body?.message === 'string' ? body.message.slice(0, 1000) : '';
     userMessage = message;
     if (!message.trim()) {
-      return { status: 400, payload: { error: 'message is required' } };
+      const result = { status: 400, payload: { error: 'message is required' } };
+      logPageAgentResult(startedAt, result.status, result.payload, { error_type: 'validation_error' });
+      return result;
     }
 
     const apiKey = getGeminiApiKey();
     if (!apiKey) {
-      return { status: 200, payload: localAgent(message, 'missing_api_key') };
+      const result = { status: 200, payload: localAgent(message, 'missing_api_key') };
+      logPageAgentResult(startedAt, result.status, result.payload);
+      return result;
     }
 
     const model = getGeminiModel();
     const ai = new GoogleGenAI({ apiKey });
-    const result = await ai.models.generateContent({
+    const generation = await ai.models.generateContent({
       model,
       contents: buildPrompt({ message, pageState: body?.pageState ?? {} }),
       config: {
@@ -241,12 +260,12 @@ export const createPageAgentResponse = async (body) => {
       },
     });
 
-    const parsed = extractJson(result.text);
+    const parsed = extractJson(generation.text);
     const reply = typeof parsed?.reply === 'string'
       ? parsed.reply.slice(0, 360)
       : 'I can help tune this portfolio page.';
 
-    return {
+    const result = {
       status: 200,
       payload: {
         reply,
@@ -255,7 +274,11 @@ export const createPageAgentResponse = async (body) => {
         model,
       },
     };
+    logPageAgentResult(startedAt, result.status, result.payload);
+    return result;
   } catch {
-    return { status: 200, payload: localAgent(userMessage, 'model_error') };
+    const result = { status: 200, payload: localAgent(userMessage, 'model_error') };
+    logPageAgentResult(startedAt, result.status, result.payload, { error_type: 'model_error' });
+    return result;
   }
 };

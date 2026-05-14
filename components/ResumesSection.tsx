@@ -2,7 +2,7 @@ import React from 'react';
 import { ResumeProfile } from '../types';
 import SectionContainer from './SectionContainer';
 import { ArrowDownTrayIcon, DocumentTextIcon } from './icons/GenericIcons';
-import { track } from '../lib/analytics';
+import { track, triggerSessionReplay } from '../lib/analytics';
 
 interface ResumesSectionProps {
   id: string;
@@ -44,7 +44,11 @@ const ResumeCard: React.FC<{ resume: ResumeProfile }> = ({ resume }) => {
         <a
           href={resume.pdfUrl}
           download
-          onClick={() => track('resume_download_clicked', { role: resume.role, format: 'pdf' })}
+          data-analytics-id={`resume-pdf-${resume.id}`}
+          onClick={() => {
+            triggerSessionReplay('resume_download', { source: resume.id });
+            track('resume_download_clicked', { role: resume.role, format: 'pdf' });
+          }}
           className="inline-flex items-center gap-2 rounded-md border border-current/45 px-3 py-2 text-sm font-semibold text-current transition-colors hover:bg-white/10"
         >
           <ArrowDownTrayIcon className="h-4 w-4" />
@@ -53,7 +57,11 @@ const ResumeCard: React.FC<{ resume: ResumeProfile }> = ({ resume }) => {
         <a
           href={resume.docxUrl}
           download
-          onClick={() => track('resume_download_clicked', { role: resume.role, format: 'docx' })}
+          data-analytics-id={`resume-docx-${resume.id}`}
+          onClick={() => {
+            triggerSessionReplay('resume_download', { source: resume.id });
+            track('resume_download_clicked', { role: resume.role, format: 'docx' });
+          }}
           className="inline-flex items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-current hover:text-current"
         >
           <ArrowDownTrayIcon className="h-4 w-4" />

@@ -24,6 +24,7 @@ loadEnvFile(path.join(__dirname, '.env'));
 loadEnvFile(path.join(__dirname, '.env.local'));
 
 const { createPageAgentResponse } = await import('./server/pageAgent.mjs');
+const { emitServerLog } = await import('./server/posthogTelemetry.mjs');
 
 const PORT = Number(process.env.PORT || process.env.API_PORT || 5174);
 
@@ -67,12 +68,19 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  const startedAt = Date.now();
   try {
     const body = await readJsonBody(request);
     const { status, payload } = await createPageAgentResponse(body);
     writeJson(response, status, payload);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid request';
+    emitServerLog('warn', 'page_agent_request_rejected', {
+      route: '/api/page-agent',
+      status: 400,
+      duration_ms: Date.now() - startedAt,
+      error_type: message === 'Invalid JSON' ? 'invalid_json' : 'request_error',
+    });
     writeJson(response, 400, { error: message });
   }
 });

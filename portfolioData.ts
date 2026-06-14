@@ -84,6 +84,37 @@ export const softwareEngineerData: PortfolioData = {
   ],
   experiences: [
     {
+      id: "abbott-contract",
+      role: "Operational AI Systems & Data Engineer (Contract)",
+      company: "Abbott",
+      duration: "Jun 2026 – Present",
+      responsibilities: [
+        "Build AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation.",
+        "Strengthen monitoring and process structure across healthcare supply chains with AI — helping ensure reliable product availability for vulnerable patient groups."
+      ]
+    },
+    {
+      id: "abbott-intern",
+      role: "Data Analytics & Project/Product Management Intern",
+      company: "Abbott",
+      duration: "Jan 2026 – Jun 2026",
+      responsibilities: [
+        "Built a Python digital-twin simulation and constraint-programming optimizer for an NP-hard hybrid flow-shop scheduling problem, translating production complexity into decision-ready schedules.",
+        "Architected an Azure-based web simulator for Advanced Process Control across global manufacturing plants, using Docker containerization and Bitbucket CI/CD for repeatable releases."
+      ]
+    },
+    {
+      id: "pa-churp",
+      role: "Software Engineer (Citizen Developer)",
+      company: "People's Association",
+      duration: "Sep 2025 – Present",
+      responsibilities: [
+        "Built an end-to-end digital garden-plot balloting platform (admin and public-facing frontends, backend, GIS mapping, and deployment), now production-ready for national rollout across Singapore.",
+        "Integrated Singpass Login (OIDC) and Myinfo for passwordless authentication and consent-based retrieval of verified identity and registered address, automating resident eligibility checks.",
+        "Led deployment planning, multi-repo coordination, and technical project management across product, engineering, and operations stakeholders; awarded the S$20,000 Sparks Community Innovation Fund."
+      ]
+    },
+    {
       id: 1,
       role: "Base Support Assistant",
       company: "Singapore Navy",
@@ -210,17 +241,17 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Software Engineer',
     headline: 'Python, TypeScript, React, CI/CD, and open-source systems for product-facing engineering roles.',
     keywords: ['Python', 'TypeScript', 'React', 'FastAPI', 'Docker', 'CI/CD', 'System Design'],
-    docxUrl: '/resume/generated/rahul-mitra-software-engineer.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-software-engineer.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-software-engineer-2026-06.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-software-engineer-2026-06.pdf',
     accent: 'cyan',
   },
   {
     id: 'solution-architect',
     role: 'Solution Architect',
     headline: 'Cloud, product, and stakeholder architecture across Azure simulators, civic tech, and agentic AI.',
-    keywords: ['Azure', 'Docker', 'Bitbucket', 'RAG', 'APIs', 'Stakeholders', 'Manufacturing'],
-    docxUrl: '/resume/generated/rahul-mitra-solution-architect.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-solution-architect.pdf',
+    keywords: ['Azure', 'Docker', 'Bitbucket', 'RAG', 'APIs', 'Singpass', 'Stakeholders'],
+    docxUrl: '/resume/generated/rahul-mitra-solution-architect-2026-06.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-solution-architect-2026-06.pdf',
     accent: 'blue',
   },
   {
@@ -228,8 +259,8 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'AI Engineer',
     headline: 'Applied AI profile spanning BERT, RAG, vector search, agents, HPC, and model deployment.',
     keywords: ['BERT', 'RAG', 'AI Agents', 'Vector Search', 'OpenAI', 'HPC', 'Model Evaluation'],
-    docxUrl: '/resume/generated/rahul-mitra-ai-engineer.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-ai-engineer.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-ai-engineer-2026-06.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-ai-engineer-2026-06.pdf',
     accent: 'violet',
   },
   {
@@ -237,8 +268,8 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Operations Research Engineer',
     headline: 'Scheduling, simulation, graph optimization, analytics automation, and decision-support engineering.',
     keywords: ['Constraint Programming', 'Scheduling', 'Simulation', 'Dijkstra', 'Statistics', 'Excel VBA'],
-    docxUrl: '/resume/generated/rahul-mitra-operations-research-engineer.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-operations-research-engineer.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-operations-research-engineer-2026-06.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-operations-research-engineer-2026-06.pdf',
     accent: 'amber',
   },
   {
@@ -246,9 +277,18 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Cyber Security',
     headline: 'Bug bounty, web application security, custom exploit scripting, and secure system design.',
     keywords: ['Burp Suite', 'Wireshark', 'SSRF', 'CSRF', 'SQLi', 'OAuth2/JWT', 'Rust'],
-    docxUrl: '/resume/generated/rahul-mitra-cyber-security.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-cyber-security.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-cyber-security-2026-06.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-cyber-security-2026-06.pdf',
     accent: 'red',
+  },
+  {
+    id: 'civic-tech-solution-architect',
+    role: 'Solution Architect · Civic Tech',
+    headline: 'Technology for social good: Singpass-integrated civic platforms, cloud architecture, and AI that reaches vulnerable communities.',
+    keywords: ['Civic Tech', 'Social Impact', 'Singpass/Myinfo', 'Solution Architecture', 'Full-Stack', 'GIS', 'Accessibility'],
+    docxUrl: '/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-06.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-06.pdf',
+    accent: 'green',
   },
 ];
 
@@ -265,7 +305,7 @@ export const coreCompetencies: CompetencyCluster[] = [
     id: 'solution-architecture',
     title: 'Solution Architecture',
     summary: 'Turns ambiguous operational and civic problems into deployable architectures with cloud hosting, containerization, product requirements, and stakeholder feedback loops.',
-    tools: ['Azure', 'Docker', 'Bitbucket CI/CD', 'API Design', 'OAuth2', 'Supabase', 'Manufacturing Systems'],
+    tools: ['Azure', 'Docker', 'Bitbucket CI/CD', 'API Design', 'Singpass/Myinfo', 'OAuth2', 'Supabase', 'Manufacturing Systems'],
     proof: ['Azure APC Web Simulator', 'Churp', 'Project Utopia', 'Volt Pulse SG'],
     accent: 'blue',
   },
@@ -499,9 +539,9 @@ export const projectHighlights: ProjectHighlight[] = [
     id: 'churp',
     title: 'Churp',
     category: 'Citizen Developer Platform',
-    description: 'A Sparks by PA continuation project for Tengah community gardening: smarter plot management and feedback workflows.',
-    tags: ['Smart Nation', 'Community', 'Product', 'Civic Tech'],
-    dateLabel: '2025',
+    description: 'An end-to-end digital garden-plot balloting platform for People\'s Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.',
+    tags: ['Civic Tech', 'Singpass', 'GIS', 'Balloting', 'Smart Nation'],
+    dateLabel: '2025 - Present',
     sortDate: '2025-01-01',
     imageUrl: '/images/generated/churp-community.png',
     accent: 'green',
@@ -689,11 +729,11 @@ export const eventHighlights: EventHighlight[] = [
   },
   {
     id: 'abbott-internship',
-    title: 'Abbott Internship',
-    dateLabel: 'Posted Jan 2026',
+    title: 'Abbott - Data Analytics to Operational AI',
+    dateLabel: 'Jan 2026 - Present',
     exactDateRange: '2026-01-01 to Present',
     source: 'LinkedIn',
-    summary: 'Data analytics and product management work spanning a Python digital twin optimizer for hybrid flow shop scheduling, an Azure APC web simulator, Dockerized releases, and a follow-on Data Engineer, Operational AI Systems contract offer.',
+    summary: 'Data analytics and product management work - a Python digital twin optimizer for hybrid flow shop scheduling, an Azure APC web simulator, and Dockerized releases - that converted into an Operational AI Systems & Data Engineer contract building AI-enabled supply-chain and manufacturing analytics that help vulnerable patient groups.',
     tags: ['Data Analytics', 'Product Management', 'Operational AI', 'Digital Twin', 'Azure'],
     organizations: ['Abbott'],
     linkedProjectIds: ['hybrid-flow-shop-digital-twin', 'azure-apc-web-simulator'],
@@ -702,10 +742,10 @@ export const eventHighlights: EventHighlight[] = [
   {
     id: 'sparks-by-pa-churp',
     title: 'Sparks by PA - Churp',
-    dateLabel: '2025',
+    dateLabel: '2025 - Present',
     source: 'LinkedIn',
-    summary: 'Continued Churp as a Citizen Developer effort after Sparks by PA, focused on smarter plot management and feedback solutions for Tengah community gardening.',
-    tags: ['Citizen Developer', 'Smart Nation', 'Community Innovation'],
+    summary: 'Built Churp into an end-to-end digital garden-plot balloting platform - admin and public frontends, GIS mapping, and Singpass Login + Myinfo identity verification - now production-ready for national rollout across Singapore. Awarded the S$20,000 Sparks Community Innovation Fund.',
+    tags: ['Citizen Developer', 'Singpass', 'GIS', 'Balloting', 'Smart Nation'],
     organizations: ['PA', 'Tengah Town'],
     linkedProjectIds: ['churp'],
     npcDialogue: 'Churp is the community systems corner: it treats gardening plots like a civic product problem, with feedback loops and smarter allocation for residents.',

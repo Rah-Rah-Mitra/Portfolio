@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ExperienceItem } from '../types';
 import SectionContainer from './SectionContainer';
 import { CalendarDaysIcon } from './icons/GenericIcons';
@@ -10,14 +10,15 @@ interface ExperienceSectionProps {
 }
 
 const ExperienceItemCard: React.FC<{ item: ExperienceItem }> = ({ item }) => {
+  const [logoFailed, setLogoFailed] = useState(false);
   return (
     <div className="relative pl-12 md:pl-16 pb-10 border-l-2 border-blue-500 dark:border-red-500 last:border-l-transparent last:pb-0">
       {/* Timeline Dot */}
       <div className="absolute -left-[9px] top-1 w-4 h-4 bg-blue-500 dark:bg-red-500 rounded-full border-2 border-gray-800 dark:border-gray-900"></div>
       
       <div className="flex items-start mb-2">
-        {item.logoUrl && (
-          <img src={item.logoUrl} alt={`${item.company} logo`} className="w-10 h-10 rounded-full mr-4 object-contain bg-white p-0.5" />
+        {item.logoUrl && !logoFailed && (
+          <img src={item.logoUrl} alt={`${item.company} logo`} className="w-10 h-10 rounded-full mr-4 object-contain bg-white p-0.5" onError={() => setLogoFailed(true)} />
         )}
         <div>
           <h3 className="text-xl font-semibold text-white"><BreakableText text={item.role}/></h3>

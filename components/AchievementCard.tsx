@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { AchievementItem } from '../types';
 import { CalendarDaysIcon, TagIcon } from './icons/GenericIcons';
 import BreakableText from './BreakableText';
@@ -16,6 +16,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, index })
   const { theme } = useTheme();
   const cardRef = useCardTilt(10);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [imageFailed, setImageFailed] = useState(false);
   const hasViewFired = useRef(false);
   const hoverStartRef = useRef<number | null>(null);
 
@@ -93,7 +94,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, index })
           aria-hidden="true"
         />
 
-        {imageUrl && (
+        {imageUrl && !imageFailed && (
           <div className="w-full h-56 overflow-hidden" style={{ transform: 'translateZ(20px)' }}>
             <img
               src={imageUrl}
@@ -101,6 +102,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, index })
               loading="lazy"
               decoding="async"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              onError={() => setImageFailed(true)}
             />
           </div>
         )}

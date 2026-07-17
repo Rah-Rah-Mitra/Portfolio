@@ -35,6 +35,7 @@ const accentClasses: Record<ProjectHighlight['accent'], string> = {
 
 const ProjectCard: React.FC<{ project: ProjectHighlight; compact?: boolean }> = ({ project, compact = false }) => {
   const href = project.liveUrl ?? project.repoUrl;
+  const [imageFailed, setImageFailed] = useState(false);
   return (
     <article
       id={`project-${project.id}`}
@@ -43,9 +44,9 @@ const ProjectCard: React.FC<{ project: ProjectHighlight; compact?: boolean }> = 
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.10),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.04),transparent)] opacity-80" aria-hidden="true" />
       <div className="relative z-10 flex h-full flex-col">
-        {project.imageUrl ? (
+        {project.imageUrl && !imageFailed ? (
           <div className={`${compact ? 'h-28' : 'h-36'} mb-4 overflow-hidden rounded-md border border-white/10 bg-black/40`}>
-            <img src={project.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+            <img src={project.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" onError={() => setImageFailed(true)} />
           </div>
         ) : (
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-md border border-current/40 bg-current/10">

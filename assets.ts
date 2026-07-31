@@ -6,12 +6,12 @@
 export const SE_PROFILE_IMAGE = '/images/se-profile.jpg';
 
 // Achievements
-export const SE_ACHIEVEMENT_ASYNCDDGS = '/images/se-achievement-asyncddgs.jpg';
 export const SE_ACHIEVEMENT_MARITIME = '/images/se-achievement-maritime.jpg';
 export const SE_ACHIEVEMENT_SMARTEXAM = '/images/se-achievement-smartexam.jpg';
 export const SE_ACHIEVEMENT_ETHOSLENS = '/images/se-achievement-ethoslens.jpg';
 export const SE_ACHIEVEMENT_AGEWELLAI = '/images/se-achievement-agewell.jpg';
 export const SE_ACHIEVEMENT_NVIDIA_DIL_DRM = '/images/se-achievement-nvidia-dil-drm.png';
+export const SE_ACHIEVEMENT_3DCV = '/images/se-achievement-3dcv.jpg';
 
 // Experience Logos
 export const SE_EXP_LOGO_NAVY = '/images/se-logo-navy.png';

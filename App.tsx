@@ -10,6 +10,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { coreCompetencies, cybersecurityData, fieldNotes, projectArchive, projectHighlights, resumeProfiles, softwareEngineerData } from './portfolioData';
 import FluidBackground from './components/FluidBackground';
 import ProjectsSection from './components/ProjectsSection';
+import AchievementsSection from './components/AchievementsSection';
 import EventsTimeline from './components/EventsTimeline';
 import AskThePage from './components/AskThePage';
 import ResumesSection from './components/ResumesSection';
@@ -35,6 +36,7 @@ const AppContent: React.FC = () => {
         <main className="flex-grow relative z-10">
           <HeroSection id={SECTION_IDS.HOME} data={portfolioData} />
           <ProjectsSection id={SECTION_IDS.PROJECTS} projects={projectHighlights} archiveProjects={projectArchive} />
+          <AchievementsSection id={SECTION_IDS.ACHIEVEMENTS} achievements={portfolioData.achievements} />
           <EventsTimeline id={SECTION_IDS.EVENTS} notes={fieldNotes} projects={projectHighlights} archiveProjects={projectArchive} />
           <SkillsSection id={SECTION_IDS.SKILLS} clusters={coreCompetencies} />
           <ResumesSection id={SECTION_IDS.RESUMES} resumes={resumeProfiles} />

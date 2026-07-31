@@ -18,11 +18,19 @@ export const softwareEngineerData: PortfolioData = {
   instagramUrl: "https://www.instagram.com/rah.rah.mitra/",
   achievements: [
     {
+      id: 7,
+      title: "Top Student — 3D Computer Vision @ NUS School of Computing",
+      description: "Awarded the NUS School of Computing Certificate of Outstanding Performance in 3D Computer Vision (CS4277), placed as the top student in a class of 24 for AY2025/26 Semester 2. The course covers projective geometry, camera models, fundamental and essential matrices, absolute pose estimation, three-view geometry, structure-from-motion with bundle adjustment, two-view and multi-view stereo, and generalized cameras.",
+      date: "2026 Jul",
+      imageUrl: assets.SE_ACHIEVEMENT_3DCV,
+      category: "Academic Distinction",
+      tags: ["3D Vision", "Multi-View Geometry", "Structure-from-Motion", "Bundle Adjustment", "NUS", "Top Student"]
+    },
+    {
       id: 6,
       title: "AsyncDDGS — Open-Source PyPI Library",
       description: "Engineered and maintain AsyncDDGS, an asyncio-first, aiohttp-based DuckDuckGo search client on PyPI. Achieves sub-100ms query responses via Python's event loop, bypassing the GIL bottleneck. Actively referenced in starred AI projects (SearchGPT, Auto-Photoshop-StableDiffusion-Plugin) and Discord bot frameworks. Maintained with pytest CI/CD via GitHub Actions.",
       date: "2024 – Present",
-      imageUrl: assets.SE_ACHIEVEMENT_ASYNCDDGS,
       category: "Open-Source Engineering",
       tags: ["Python", "asyncio", "aiohttp", "PyPI", "Open-Source", "CI/CD"]
     },
@@ -241,8 +249,8 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Software Engineer',
     headline: 'Python, TypeScript, React, CI/CD, and open-source systems for product-facing engineering roles.',
     keywords: ['Python', 'TypeScript', 'React', 'FastAPI', 'Docker', 'CI/CD', 'System Design'],
-    docxUrl: '/resume/generated/rahul-mitra-software-engineer-2026-06.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-software-engineer-2026-06.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-software-engineer-2026-07.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-software-engineer-2026-07.pdf',
     accent: 'cyan',
   },
   {
@@ -250,8 +258,8 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Solution Architect',
     headline: 'Cloud, product, and stakeholder architecture across Azure simulators, civic tech, and agentic AI.',
     keywords: ['Azure', 'Docker', 'Bitbucket', 'RAG', 'APIs', 'Singpass', 'Stakeholders'],
-    docxUrl: '/resume/generated/rahul-mitra-solution-architect-2026-06.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-solution-architect-2026-06.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-solution-architect-2026-07.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-solution-architect-2026-07.pdf',
     accent: 'blue',
   },
   {
@@ -259,8 +267,8 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'AI Engineer',
     headline: 'Applied AI profile spanning BERT, RAG, vector search, agents, HPC, and model deployment.',
     keywords: ['BERT', 'RAG', 'AI Agents', 'Vector Search', 'OpenAI', 'HPC', 'Model Evaluation'],
-    docxUrl: '/resume/generated/rahul-mitra-ai-engineer-2026-06.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-ai-engineer-2026-06.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-ai-engineer-2026-07.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-ai-engineer-2026-07.pdf',
     accent: 'violet',
   },
   {
@@ -268,8 +276,8 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Operations Research Engineer',
     headline: 'Scheduling, simulation, graph optimization, analytics automation, and decision-support engineering.',
     keywords: ['Constraint Programming', 'Scheduling', 'Simulation', 'Dijkstra', 'Statistics', 'Excel VBA'],
-    docxUrl: '/resume/generated/rahul-mitra-operations-research-engineer-2026-06.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-operations-research-engineer-2026-06.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-operations-research-engineer-2026-07.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-operations-research-engineer-2026-07.pdf',
     accent: 'amber',
   },
   {
@@ -277,8 +285,8 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Cyber Security',
     headline: 'Bug bounty, web application security, custom exploit scripting, and secure system design.',
     keywords: ['Burp Suite', 'Wireshark', 'SSRF', 'CSRF', 'SQLi', 'OAuth2/JWT', 'Rust'],
-    docxUrl: '/resume/generated/rahul-mitra-cyber-security-2026-06.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-cyber-security-2026-06.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-cyber-security-2026-07.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-cyber-security-2026-07.pdf',
     accent: 'red',
   },
   {
@@ -286,9 +294,18 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Solution Architect · Civic Tech',
     headline: 'Technology for social good: Singpass-integrated civic platforms, cloud architecture, and AI that reaches vulnerable communities.',
     keywords: ['Civic Tech', 'Social Impact', 'Singpass/Myinfo', 'Solution Architecture', 'Full-Stack', 'GIS', 'Accessibility'],
-    docxUrl: '/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-06.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-06.pdf',
+    docxUrl: '/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-07.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-07.pdf',
     accent: 'green',
+  },
+  {
+    id: 'general',
+    role: 'General / Master CV',
+    headline: 'Two-page cross-disciplinary CV unifying every profile — software, AI/ML, operations research, architecture, and security — for broad job search.',
+    keywords: ['Full Stack', 'AI/ML', 'Operations Research', 'Solution Architecture', 'Security', 'Two Pages'],
+    docxUrl: '/resume/generated/rahul-mitra-general-2026-07.docx',
+    pdfUrl: '/resume/generated/rahul-mitra-general-2026-07.pdf',
+    accent: 'amber',
   },
 ];
 
@@ -530,6 +547,9 @@ export const projectHighlights: ProjectHighlight[] = [
     tags: ['BERT', 'DNN', 'NLP', 'HPC', 'Maritime'],
     dateLabel: '2025',
     sortDate: '2025-01-01',
+    links: [
+      { label: 'Certificate of submission', url: '/certificates/maritime-hackathon-2025-submission.pdf' },
+    ],
     imageUrl: assets.SE_ACHIEVEMENT_MARITIME,
     accent: 'blue',
     linkedEventIds: ['january-gauntlet-2026'],
@@ -569,7 +589,6 @@ export const projectHighlights: ProjectHighlight[] = [
     tags: ['Python', 'asyncio', 'aiohttp', 'PyPI', 'Open Source'],
     dateLabel: '2024-Present',
     sortDate: '2026-05-14',
-    imageUrl: assets.SE_ACHIEVEMENT_ASYNCDDGS,
     accent: 'cyan',
     linkedEventIds: ['software-achievement-6'],
     npcRole: 'open-source systems guide',
@@ -690,6 +709,19 @@ export const projectArchive: ProjectHighlight[] = [
 ];
 
 export const eventHighlights: EventHighlight[] = [
+  {
+    id: 'nus-3d-cv-award',
+    title: 'NUS 3D Computer Vision - Certificate of Outstanding Performance',
+    dateLabel: 'Jul 2026',
+    exactDateRange: '2026-07-03',
+    source: 'Portfolio',
+    summary: 'Awarded the NUS School of Computing Certificate of Outstanding Performance in 3D Computer Vision (CS4277) as the top student in a class of 24 for AY2025/26 Semester 2, covering projective geometry, camera models, epipolar geometry, absolute pose estimation, structure-from-motion with bundle adjustment, and multi-view stereo.',
+    tags: ['3D Vision', 'Multi-View Geometry', 'Structure-from-Motion', 'Bundle Adjustment', 'NUS', 'Top Student'],
+    organizations: ['NUS School of Computing'],
+    linkedProjectIds: ['on-the-spectrum', 'geometry'],
+    linkUrl: '/certificates/nus-3d-computer-vision-outstanding-performance-2026.pdf',
+    npcDialogue: 'This is the geometry bench: cameras, epipolar lines, and bundle adjustment. Top of a class of 24 - the maths behind the spatial and digital-twin work everywhere else on this map.',
+  },
   {
     id: 'smu-hack-for-cities-2026',
     title: 'SMU Hack For Cities 2026 - Volt Pulse SG',
@@ -825,6 +857,7 @@ const projectToFieldNote = (project: ProjectHighlight): FieldNote => ({
 });
 
 const achievementSortDates: Record<string, string> = {
+  'Top Student — 3D Computer Vision @ NUS School of Computing': '2026-07-03',
   'AsyncDDGS — Open-Source PyPI Library': '2026-05-01',
   'Maritime Hackathon 2025 — Team Lead & Model Trainer': '2025-08-01',
   'SmartExam @ GovTech x NTUPC Hackathon 2025': '2025-07-01',
@@ -857,6 +890,7 @@ const achievementToFieldNote = (
 const eventToFieldNote = (event: EventHighlight): FieldNote => {
   const kindByEvent: Partial<Record<string, FieldNote['kind']>> = {
     'abbott-internship': 'career',
+    'nus-3d-cv-award': 'certification',
     'nvidia-disaster-risk': 'certification',
     'certification-trail': 'certification',
   };
@@ -881,7 +915,9 @@ const eventToFieldNote = (event: EventHighlight): FieldNote => {
     people: event.people,
     organizations: event.organizations,
     linkedProjectIds: event.linkedProjectIds,
-    links: event.linkUrl ? [{ label: 'View linked media', url: event.linkUrl }] : undefined,
+    links: event.linkUrl
+      ? [{ label: kind === 'certification' ? 'View certificate' : 'View linked media', url: event.linkUrl }]
+      : undefined,
     imageUrl: event.imageUrl,
     npcDialogue: event.npcDialogue,
   };

@@ -90,65 +90,6 @@ export const softwareEngineerData: PortfolioData = {
     { id: 7, name: "Mathematical Modeling (Linear Algebra, Probability, Calculus)", icon: React.createElement(AcademicCapIcon, { className: "w-6 h-6" }) },
     { id: 8, name: "Rust (Systems Programming & Digital Twins)", icon: React.createElement(CodeBracketIcon, { className: "w-6 h-6" }) },
   ],
-  experiences: [
-    {
-      id: "abbott-contract",
-      role: "Operational AI Systems & Data Engineer (Contract)",
-      company: "Abbott",
-      duration: "Jun 2026 – Present",
-      responsibilities: [
-        "Build AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation.",
-        "Strengthen monitoring and process structure across healthcare supply chains with AI — helping ensure reliable product availability for vulnerable patient groups."
-      ]
-    },
-    {
-      id: "abbott-intern",
-      role: "Data Analytics & Project/Product Management Intern",
-      company: "Abbott",
-      duration: "Jan 2026 – Jun 2026",
-      responsibilities: [
-        "Built a Python digital-twin simulation and constraint-programming optimizer for an NP-hard hybrid flow-shop scheduling problem, translating production complexity into decision-ready schedules.",
-        "Architected an Azure-based web simulator for Advanced Process Control across global manufacturing plants, using Docker containerization and Bitbucket CI/CD for repeatable releases."
-      ]
-    },
-    {
-      id: "pa-churp",
-      role: "Software Engineer (Citizen Developer)",
-      company: "People's Association",
-      duration: "Sep 2025 – Present",
-      responsibilities: [
-        "Built an end-to-end digital garden-plot balloting platform (admin and public-facing frontends, backend, GIS mapping, and deployment), now production-ready for national rollout across Singapore.",
-        "Integrated Singpass Login (OIDC) and Myinfo for passwordless authentication and consent-based retrieval of verified identity and registered address, automating resident eligibility checks.",
-        "Led deployment planning, multi-repo coordination, and technical project management across product, engineering, and operations stakeholders; awarded the S$20,000 Sparks Community Innovation Fund."
-      ]
-    },
-    {
-      id: 1,
-      role: "Base Support Assistant",
-      company: "Singapore Navy",
-      duration: "Jan 2022 – Jan 2023",
-      responsibilities: [
-        "Analyzed complex food-waste cycles across military units, identifying systemic inefficiencies in manual data aggregation processes.",
-        "Engineered an Excel VBA automation solution that compressed a 6-month manual reporting cycle into a sub-3-minute automated process.",
-        "Delivered operational innovation within a strictly constrained, security-classified environment using only approved legacy tooling.",
-        "Demonstrated a core ISE bias toward process optimization and automation — reducing human error and freeing analyst capacity."
-      ],
-      logoUrl: assets.SE_EXP_LOGO_NAVY
-    },
-    {
-      id: 2,
-      role: "Astronomy Head & Robotics Member",
-      company: "STEM Inc. (ASRJC)",
-      duration: "Mar 2019 – Aug 2020",
-      responsibilities: [
-        "Organized and led weekly stargazing sessions and celestial observation programs, disseminating STEM knowledge to the broader school community.",
-        "Competed in the 7th Singapore Astronomical Olympiad, applying rigorous scientific methodology under competitive conditions.",
-        "Engineered an autonomous robot for the National Robotics Challenge, gaining foundational hands-on experience with autonomous systems.",
-        "Received the ASRJC Outstanding Contribution Award for sustained, high-level commitment to institutional excellence and collaborative leadership."
-      ],
-      logoUrl: assets.SE_EXP_LOGO_STEMINC
-    },
-  ],
 };
 
 /**
@@ -201,45 +142,6 @@ export const cybersecurityData: PortfolioData = {
     { id: 6, name: "OWASP Top 10 & Secure Design", icon: React.createElement(CodeBracketIcon, { className: "w-6 h-6" }) },
     { id: 7, name: "JWT / OAuth2 / Session Analysis", icon: React.createElement(DevicePhoneMobileIcon, { className: "w-6 h-6" }) },
     { id: 8, name: "Cloud Security (AWS IMDSv2, Metadata APIs)", icon: React.createElement(ServerStackIcon, { className: "w-6 h-6" }) },
-  ],
-  experiences: [
-    {
-      id: 1,
-      role: "Independent Bug Bounty Researcher",
-      company: "YesWeHack Platform",
-      duration: "May 2024 – Present",
-      responsibilities: [
-        "Orchestrate full-stack web application assessments against governmental and infrastructural targets (GovTech GBBP12/13, LTA, 13+ programs).",
-        "Discover and responsibly disclose SSRF, CSRF, SQL/NoSQL Injection, and authentication bypass vulnerabilities with detailed technical reports.",
-        "Leverage Burp Suite for granular MitM HTTP interception and Wireshark for OSI Layer 3–4 deep packet inspection and TLS handshake analysis.",
-        "Deploy bespoke Python/Bash scripts to automate endpoint fuzzing, payload delivery, and enumeration at scale."
-      ],
-      logoUrl: assets.CS_EXP_LOGO_YESWEHACK
-    },
-    {
-      id: 2,
-      role: "Base Support Assistant",
-      company: "Singapore Navy",
-      duration: "Jan 2022 – Jan 2023",
-      responsibilities: [
-        "Operated within a security-classified military environment, developing a strong appreciation for operational security and access control.",
-        "Delivered automation tooling (Excel VBA) under strict policy constraints, demonstrating pragmatic engineering in adversarial environments.",
-        "Managed sensitive operational data with strict confidentiality protocols aligned with military security standards."
-      ],
-      logoUrl: assets.CS_EXP_LOGO_NAVY
-    },
-    {
-      id: 3,
-      role: "Robotics Member & Astronomy Head",
-      company: "STEM Inc. (ASRJC)",
-      duration: "Mar 2019 – Aug 2020",
-      responsibilities: [
-        "Engineered autonomous robots for the National Robotics Challenge — foundational experience in autonomous systems and sensor integration.",
-        "Competed in the 7th Singapore Astronomical Olympiad, cultivating rigorous analytical and problem-solving discipline.",
-        "Received the ASRJC Outstanding Contribution Award for leadership and technical contributions."
-      ],
-      logoUrl: assets.CS_EXP_LOGO_STEMINC
-    },
   ],
 };
 

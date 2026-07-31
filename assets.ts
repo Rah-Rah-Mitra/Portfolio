@@ -13,18 +13,9 @@ export const SE_ACHIEVEMENT_AGEWELLAI = '/images/se-achievement-agewell.jpg';
 export const SE_ACHIEVEMENT_NVIDIA_DIL_DRM = '/images/se-achievement-nvidia-dil-drm.png';
 export const SE_ACHIEVEMENT_3DCV = '/images/se-achievement-3dcv.jpg';
 
-// Experience Logos
-export const SE_EXP_LOGO_NAVY = '/images/se-logo-navy.png';
-export const SE_EXP_LOGO_STEMINC = '/images/se-logo-steminc.png';
-
 // == Cybersecurity Analyst Profile (Dark Theme) ==
 export const CS_PROFILE_IMAGE = '/images/cs-profile.jpg';
 
 // Achievements
 export const CS_ACHIEVEMENT_BUG_BOUNTY = '/images/cs-achievement-bug-bounty.jpg';
 export const CS_ACHIEVEMENT_BRAINHACK_2025 = '/images/cs-achievement-brainhack-2025.jpg';
-
-// Experience Logos
-export const CS_EXP_LOGO_YESWEHACK = '/images/cs-logo-yeswehack.png';
-export const CS_EXP_LOGO_NAVY = '/images/cs-logo-navy.png';
-export const CS_EXP_LOGO_STEMINC = '/images/cs-logo-steminc.png';

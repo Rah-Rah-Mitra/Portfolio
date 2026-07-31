@@ -14,15 +14,6 @@ export interface SkillItem {
   icon?: React.ReactNode;
 }
 
-export interface ExperienceItem {
-  id: string | number;
-  role: string;
-  company: string;
-  duration: string;
-  responsibilities: string[];
-  logoUrl?: string;
-}
-
 export interface ProjectHighlight {
   id: string;
   title: string;
@@ -115,7 +106,6 @@ export interface PortfolioData {
   instagramUrl?: string;
   achievements: AchievementItem[];
   skills: SkillItem[];
-  experiences: ExperienceItem[];
 }
 
 export interface NavLink {

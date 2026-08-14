@@ -6,6 +6,8 @@ export interface AchievementItem {
   imageUrl?: string;
   category?: string;
   tags?: string[];
+  proofUrl?: string;
+  proofLabel?: string;
 }
 
 export interface SkillItem {
@@ -32,6 +34,13 @@ export interface ProjectHighlight {
   accent: 'cyan' | 'red' | 'violet' | 'green' | 'amber' | 'blue';
   linkedEventIds?: string[];
   npcRole?: string;
+  featuredPriority?: number;
+  spotlight?: {
+    context: string;
+    contribution: string;
+    approach: string;
+    outcome: string;
+  };
 }
 
 export interface ResumeProfile {
@@ -42,6 +51,7 @@ export interface ResumeProfile {
   docxUrl: string;
   pdfUrl: string;
   accent: ProjectHighlight['accent'];
+  recommendedFor?: Array<'build' | 'secure'>;
 }
 
 export interface CompetencyCluster {

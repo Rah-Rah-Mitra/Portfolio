@@ -23,8 +23,11 @@ export const useTheme = () => {
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') as Theme;
-      return savedTheme || 'light';
+      const savedLens = localStorage.getItem('profile-lens');
+      if (savedLens === 'secure') return 'dark';
+      if (savedLens === 'build') return 'light';
+      const legacyTheme = localStorage.getItem('theme') as Theme | null;
+      return legacyTheme === 'dark' ? 'dark' : 'light';
     }
     return 'light';
   });
@@ -40,12 +43,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
+    root.classList.remove('dark');
+    root.dataset.lens = theme === 'dark' ? 'secure' : 'build';
+    localStorage.setItem('profile-lens', theme === 'dark' ? 'secure' : 'build');
   }, [theme]);
 
   const setThemeMode = (nextTheme: Theme) => {

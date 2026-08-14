@@ -1,213 +1,68 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<!doctype html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rahul Mitra — Portfolio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Rahul Mitra | Intelligent Systems, AI, Optimization &amp; 3D Perception</title>
+    <meta name="description" content="Rahul Mitra is a multidisciplinary engineer working across software systems, AI engineering, operations research, 3D computer vision, solution architecture, and cybersecurity." />
+    <meta name="theme-color" content="#f4f0e6" />
+    <meta name="color-scheme" content="light" />
+    <link rel="canonical" href="https://rahul-mitra.com/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Preconnect to trim font load latency (moved before Tailwind) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Rahul Mitra — Engineering Portfolio" />
+    <meta property="og:title" content="Rahul Mitra | Intelligent Systems Engineer" />
+    <meta property="og:description" content="Software, AI, optimization, 3D perception, solution architecture, and responsible security — connected through evidence-led engineering work." />
+    <meta property="og:url" content="https://rahul-mitra.com/" />
+    <meta property="og:image" content="https://rahul-mitra.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Rahul Mitra intelligent systems engineering portfolio preview" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Rahul Mitra | Intelligent Systems Engineer" />
+    <meta name="twitter:description" content="Engineering across AI, optimization, 3D perception, software systems, architecture, and security." />
+    <meta name="twitter:image" content="https://rahul-mitra.com/og-image.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" />
 
-    <style>
-      /* ─────────────────────────────────────────
-         BASE
-      ───────────────────────────────────────── */
-      *, *::before, *::after { box-sizing: border-box; }
-      body { font-family: 'Inter', sans-serif; }
-
-      /* Custom scrollbar */
-      ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: #1f2937; }
-      ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
-      html.dark ::-webkit-scrollbar-thumb { background: #ef4444; }
-      html.dark ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
-
-      /* ─────────────────────────────────────────
-         PERFORMANCE — GPU LAYER HINTS
-         will-change is applied dynamically via JS
-         on hover targets to avoid layer bloat.
-      ───────────────────────────────────────── */
-      .card-3d, .orb-3d {
-        backface-visibility: hidden;
-        -webkit-backface-visibility: hidden;
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Rahul Mitra",
+        "url": "https://rahul-mitra.com/",
+        "email": "mailto:mitrarahul2002@gmail.com",
+        "homeLocation": { "@type": "Place", "name": "Singapore" },
+        "alumniOf": { "@type": "CollegeOrUniversity", "name": "National University of Singapore" },
+        "sameAs": [
+          "https://www.linkedin.com/in/rahulmitra-dev",
+          "https://github.com/Rah-Rah-Mitra"
+        ],
+        "knowsAbout": [
+          "Software engineering",
+          "Artificial intelligence",
+          "Operations research",
+          "Mathematical optimization",
+          "3D computer vision",
+          "Solution architecture",
+          "Cybersecurity"
+        ]
       }
-
-      /* Paint containment keeps each section's
-         repaints isolated from the rest of the page */
-      section { contain: layout style; }
-
-      /* ─────────────────────────────────────────
-         HERO — GRADIENT BACKGROUND
-      ───────────────────────────────────────── */
-      .hero-bg {
-        background: linear-gradient(135deg, #111827 0%, #1e293b 50%, #0f172a 100%);
-      }
-      html.dark .hero-bg {
-        background: linear-gradient(135deg, #000000 0%, #111827 50%, #000000 100%);
-      }
-
-      /* ─────────────────────────────────────────
-         HERO — 3D PERSPECTIVE GRID BACKGROUND
-      ───────────────────────────────────────── */
-      .hero-grid-bg {
-        background-image:
-          linear-gradient(rgba(59,130,246,0.07) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(59,130,246,0.07) 1px, transparent 1px);
-        background-size: 60px 60px;
-        transform: perspective(600px) rotateX(35deg) scale(2.5) translateY(10%);
-        transform-origin: center bottom;
-        opacity: 0.6;
-        animation: grid-drift 20s linear infinite;
-      }
-      html.dark .hero-grid-bg {
-        background-image:
-          linear-gradient(rgba(239,68,68,0.07) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(239,68,68,0.07) 1px, transparent 1px);
-      }
-
-      @keyframes grid-drift {
-        0%   { background-position: 0 0; }
-        100% { background-position: 0 60px; }
-      }
-
-      /* ─────────────────────────────────────────
-         HERO — 3D FLOATING ORB ANIMATION
-      ───────────────────────────────────────── */
-      .float-3d-container {
-        animation: float-3d 6s ease-in-out infinite;
-      }
-
-      @keyframes float-3d {
-        0%   { transform: translateY(0px)   rotateZ(0deg); }
-        25%  { transform: translateY(-14px) rotateZ(0.6deg); }
-        50%  { transform: translateY(-20px) rotateZ(0deg); }
-        75%  { transform: translateY(-10px) rotateZ(-0.6deg); }
-        100% { transform: translateY(0px)   rotateZ(0deg); }
-      }
-
-      /* ─────────────────────────────────────────
-         ACCESSIBILITY — REDUCED MOTION
-      ───────────────────────────────────────── */
-      @media (prefers-reduced-motion: reduce) {
-        .float-3d-container { animation: none; }
-        .card-3d, .orb-3d { transition: none !important; }
-        @keyframes grid-drift { 0%, 100% { background-position: 0 0; } }
-      }
-
-      .hammer-cursor {
-        cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" stroke-width="1.5" stroke="black" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 6.089l-2.034-2.034a.75.75 0 00-1.06 0l-1.5 1.5a.75.75 0 000 1.06l2.033 2.034-3.24 3.241a4.5 4.5 0 000 6.364l1.89 1.89a4.5 4.5 0 006.364 0l3.24-3.241 2.035 2.035a.75.75 0 001.06 0l1.5-1.5a.75.75 0 000-1.06l-2.035-2.035-7.253-7.254z" /></svg>'), auto;
-      }
-      .gravity-cursor {
-        cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%23ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line></svg>'), auto;
-      }
-      .no-select {
-        -webkit-user-select: none; /* Safari */
-        -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* IE10+/Edge */
-        user-select: none; /* Standard */
-      }
-      .word-restoring {
-        transition: transform 0.5s ease-out;
-      }
-      .physics-active {
-        position: relative;
-        z-index: 60; /* Above section content, below navbar (z-50) */
-      }
-      @keyframes typing-blink {
-        50% { opacity: 0; }
-      }
-      .typing-cursor {
-        animation: typing-blink 1s step-end infinite;
-      }
-      
-      /* Glitch Effect Styles */
-      .glitch-intro {
-        animation: fadeInText 0.8s ease-out forwards;
-        opacity: 0;
-      }
-
-      .glitch {
-        position: relative;
-        display: inline-block;
-        color: #fca5a5; /* rose-300 */
-        text-shadow: 0 0 2px #ef4444, 0 0 5px #ef4444;
-        opacity: 0;
-        animation: fadeInText 1s ease-out 0.5s forwards;
-      }
-
-      .glitch::before,
-      .glitch::after {
-        content: attr(data-text);
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: black; /* Match the dark theme background */
-        overflow: hidden;
-      }
-
-      .glitch::before {
-        left: -2px;
-        text-shadow: -1px 0 #f87171; /* red-400 */
-        animation: glitch-anim-1 3s infinite linear alternate-reverse;
-      }
-
-      .glitch::after {
-        left: 2px;
-        text-shadow: 1px 0 #38bdf8; /* sky-400 for contrast */
-        animation: glitch-anim-2 4s infinite linear alternate-reverse;
-      }
-
-      @keyframes fadeInText {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      @keyframes glitch-anim-1 {
-        0% { clip-path: inset(10% 0 85% 0); }
-        10% { clip-path: inset(80% 0 5% 0); }
-        20% { clip-path: inset(25% 0 70% 0); }
-        30% { clip-path: inset(75% 0 10% 0); }
-        40% { clip-path: inset(40% 0 55% 0); }
-        50% { clip-path: inset(85% 0 2% 0); }
-        60% { clip-path: inset(15% 0 80% 0); }
-        70% { clip-path: inset(60% 0 30% 0); }
-        80% { clip-path: inset(30% 0 65% 0); }
-        90% { clip-path: inset(90% 0 8% 0); }
-        100% { clip-path: inset(5% 0 92% 0); }
-      }
-
-      @keyframes glitch-anim-2 {
-        0% { clip-path: inset(95% 0 2% 0); }
-        10% { clip-path: inset(10% 0 88% 0); }
-        20% { clip-path: inset(70% 0 22% 0); }
-        30% { clip-path: inset(20% 0 75% 0); }
-        40% { clip-path: inset(55% 0 33% 0); }
-        50% { clip-path: inset(2% 0 95% 0); }
-        60% { clip-path: inset(80% 0 12% 0); }
-        70% { clip-path: inset(35% 0 60% 0); }
-        80% { clip-path: inset(65% 0 25% 0); }
-        90% { clip-path: inset(5% 0 90% 0); }
-        100% { clip-path: inset(78% 0 15% 0); }
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "matter-js": "https://esm.sh/matter-js@0.19.0"
-  }
-}
-</script>
-</head>
+    </script>
+  </head>
   <body>
+    <!-- IMPECCABLE DIRECTION CONTRACT
+    seed: 4293f8f6
+    THESIS: A human-centered robotics and intelligent-systems field notebook refined into an editorial engineering portfolio.
+    OWN-WORLD: Warm laboratory paper, ink rules, pose paths, sparse landmarks, uncertainty contours, and evidence ledgers.
+    STORY: Positioning → selected systems → connected domains → field record → proof → role-targeted résumés → contact → optional lab.
+    FIRST VIEWPORT: Rahul's name, precise intelligent-systems position, proof-led actions, Build/Secure lens, and a localisation-inspired visual.
+    FORM: Archivo with IBM Plex Mono; tinted paper and ink; signal teal, amber, violet, and security coral; compact rules over rounded card stacks; subtle motion only.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

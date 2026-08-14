@@ -1,15 +1,14 @@
 import React, { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { SECTION_IDS } from '../constants';
-import { fieldNoteByIdOrAlias, fieldNotes, projectHighlights } from '../portfolioData';
+import { ASSISTANT_STARTERS } from '../siteConfig';
+import { fieldNoteByIdOrAlias, fieldNotes, projectArchive, projectHighlights, resumeProfiles } from '../portfolioData';
 import { EffectId, NumericEffectId, useEffects } from '../contexts/PhysicsContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/analytics';
 
-type ChatMessage = {
-  role: 'assistant' | 'user';
-  content: string;
-};
-
+type Reference = { label: string; href: string };
+type ChatMessage = { role: 'assistant' | 'user'; content: string; references?: Reference[] };
 type PageCommand =
   | { type: 'setEffectEnabled'; effect: EffectId; enabled: boolean }
   | { type: 'setEffectParam'; effect: NumericEffectId; param: string; value: number }
@@ -20,31 +19,31 @@ type PageCommand =
   | { type: 'closeWorld' }
   | { type: 'startNpcDialogue'; npcId: string }
   | { type: 'restoreText' };
-
-type AgentResponse = {
-  reply: string;
-  commands?: PageCommand[];
-  modelUsed?: boolean;
-  model?: string;
-  reason?: string;
-};
+type AgentResponse = { reply: string; references?: Reference[]; commands?: PageCommand[]; modelUsed?: boolean; model?: string; reason?: string };
 
 const numericParams: Record<NumericEffectId, Set<string>> = {
-  smash: new Set(['intensity', 'radius']),
-  gravity: new Set(['strength', 'radius']),
-  fluid: new Set(['speed', 'intensity', 'opacity', 'splatRadius', 'curl']),
-  pretext: new Set(['intensity']),
+  smash: new Set(['intensity', 'radius']), gravity: new Set(['strength', 'radius']),
+  fluid: new Set(['speed', 'intensity', 'opacity', 'splatRadius', 'curl']), pretext: new Set(['intensity']),
 };
-
 const effectIds = new Set<EffectId>(['smash', 'gravity', 'fluid', 'pretext', 'world']);
-const sectionIds = new Set(Object.values(SECTION_IDS));
+const sectionIds = new Set<string>(Object.values(SECTION_IDS));
 const eventIds = new Set(fieldNoteByIdOrAlias.keys());
+const allProjects = [...projectHighlights, ...projectArchive];
+const allowedLinks = new Set([
+  ...Object.values(SECTION_IDS).map((id) => `#${id}`),
+  ...allProjects.flatMap((project) => [`#project-${project.id}`, project.repoUrl, project.liveUrl, ...(project.links ?? []).map((link) => link.url)]).filter((link): link is string => Boolean(link)),
+  ...resumeProfiles.flatMap((resume) => [resume.pdfUrl, resume.docxUrl]),
+  ...fieldNotes.flatMap((note) => (note.links ?? []).map((link) => link.url)),
+]);
 
-const getInitialCollapsed = () => {
-  if (typeof window === 'undefined') return true;
-  const stored = window.localStorage.getItem('ask-page-collapsed');
-  if (stored) return stored === 'true';
-  return true;
+const cleanReferences = (value: unknown): Reference[] => {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 5).flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const candidate = item as Partial<Reference>;
+    if (typeof candidate.label !== 'string' || typeof candidate.href !== 'string' || !allowedLinks.has(candidate.href)) return [];
+    return [{ label: candidate.label.slice(0, 80), href: candidate.href }];
+  });
 };
 
 const parseAgentResponse = (value: unknown): AgentResponse | null => {
@@ -52,317 +51,189 @@ const parseAgentResponse = (value: unknown): AgentResponse | null => {
   const response = value as Partial<AgentResponse>;
   if (typeof response.reply !== 'string') return null;
   return {
-    reply: response.reply,
-    commands: Array.isArray(response.commands) ? response.commands : [],
-    modelUsed: response.modelUsed === true,
+    reply: response.reply.slice(0, 700), references: cleanReferences(response.references),
+    commands: Array.isArray(response.commands) ? response.commands : [], modelUsed: response.modelUsed === true,
     model: typeof response.model === 'string' ? response.model : undefined,
     reason: typeof response.reason === 'string' ? response.reason : undefined,
   };
 };
 
+const projectRef = (id: string, label: string): Reference => ({ label, href: `#project-${id}` });
 const localAgent = (message: string): AgentResponse => {
   const text = message.toLowerCase();
   const commands: PageCommand[] = [];
+  let reply = 'I could not find that in Rahul’s portfolio record. Try asking about optimization, 3D computer vision, security, a résumé, or the spatial map.';
+  let references: Reference[] = [];
 
-  const wantsFluid = text.includes('fluid') || text.includes('cfd') || (text.includes('background') && (text.includes('ripple') || text.includes('translucent') || text.includes('cursor')));
-  if (wantsFluid) {
-    commands.push({ type: 'setEffectEnabled', effect: 'fluid', enabled: !text.includes('disable') && !text.includes('off') });
-    if (text.includes('faster') || text.includes('speed')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 1.8 });
-    if (text.includes('slower') || text.includes('calm')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 0.72 });
-    if (text.includes('translucent') || text.includes('transparent') || text.includes('subtle')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'opacity', value: 34 });
-    if (text.includes('opaque') || text.includes('brighter')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'opacity', value: 68 });
-    if (text.includes('colorful') || text.includes('vivid') || text.includes('intense')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'intensity', value: 82 });
-    if (text.includes('ripple') || text.includes('curl') || text.includes('swirl')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'curl', value: 58 });
-    if (text.includes('wide') || text.includes('larger') || text.includes('bigger')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'splatRadius', value: 64 });
-    if (text.includes('tight') || text.includes('smaller')) commands.push({ type: 'setEffectParam', effect: 'fluid', param: 'splatRadius', value: 28 });
+  if (text.includes('optim') || text.includes('scheduling') || text.includes('operations research')) {
+    reply = 'Rahul’s operations-research evidence connects constraint programming and hybrid flow-shop scheduling to a digital-twin simulator, with graph optimization, network flow, simulation, objective functions, and constraints surfaced across the portfolio.';
+    references = [projectRef('hybrid-flow-shop-digital-twin', 'Hybrid Flow Shop Digital Twin Optimizer'), { label: 'Operations research capability map', href: '#domains' }];
+    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.PROJECTS });
+  } else if (text.includes('3d computer vision') || text.includes('3d cv') || text.includes('epipolar') || text.includes('spatial')) {
+    reply = 'Rahul received the NUS School of Computing Certificate of Outstanding Performance as the top student in CS4277. The recorded foundations include projective geometry, camera models, epipolar geometry, absolute pose, structure from motion, bundle adjustment, and two-view and multi-view stereo.';
+    references = [{ label: '3D perception capability map', href: '#domains' }, { label: 'NUS distinction and proof', href: '#proof' }];
+    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.DOMAINS });
+  } else if (text.includes('resume') || text.includes('résumé') || text.includes('cv')) {
+    reply = 'Choose the role-specific résumé when the vacancy is clear: Software, Solution Architecture, AI, Operations Research, Cyber Security, or Civic Tech. Use the two-page General / Master CV for broad or multidisciplinary applications.';
+    references = [{ label: 'Compare all seven résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: resumeProfiles.find((resume) => resume.id === 'general')!.pdfUrl }];
+    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.RESUMES });
+  } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty') || text.includes('adversarial')) {
+    reply = 'Rahul’s security record includes responsible bug-bounty research for government and transport programs, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';
+    references = [projectRef('arcane', 'Arcane security tooling'), { label: 'Security experience and proof', href: '#proof' }];
+    commands.push({ type: 'switchProfile', profile: 'cybersecurity' }, { type: 'focusSection', sectionId: SECTION_IDS.ACHIEVEMENTS });
+  } else if (text.includes('world') || text.includes('map')) {
+    reply = 'Opening the optional spatial portfolio map. It uses the existing Three.js and GLB environment as an exploratory layer; the main portfolio remains available without it.';
+    references = [{ label: 'Return to selected work', href: '#work' }];
+    commands.push({ type: 'openWorld' });
+  } else if (text.includes('project') || text.includes('work')) {
+    reply = 'The selected work is organized as evidence-led briefs covering operating context, Rahul’s contribution, technical approach, and current result or proof.';
+    references = [{ label: 'Browse selected engineering work', href: '#work' }];
+    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.PROJECTS });
   }
-  if (text.includes('gravity')) commands.push({ type: 'setEffectEnabled', effect: 'gravity', enabled: !text.includes('disable') && !text.includes('off') });
-  if (text.includes('smash')) commands.push({ type: 'setEffectEnabled', effect: 'smash', enabled: !text.includes('disable') && !text.includes('off') });
-  if (text.includes('cyber')) commands.push({ type: 'switchProfile', profile: 'cybersecurity' });
-  if (text.includes('software')) commands.push({ type: 'switchProfile', profile: 'software' });
-  if (text.includes('world') || text.includes('3d')) commands.push({ type: 'openWorld' });
-  if (text.includes('event') || text.includes('career') || text.includes('education') || text.includes('achievement') || text.includes('certification')) commands.push({ type: 'focusSection', sectionId: SECTION_IDS.EVENTS });
-  if (text.includes('project')) commands.push({ type: 'focusSection', sectionId: SECTION_IDS.PROJECTS });
+
+  const enabled = !(text.includes('disable') || text.includes('off'));
+  if (text.includes('fluid')) commands.push({ type: 'setEffectEnabled', effect: 'fluid', enabled });
+  if (text.includes('gravity')) commands.push({ type: 'setEffectEnabled', effect: 'gravity', enabled });
+  if (text.includes('smash')) commands.push({ type: 'setEffectEnabled', effect: 'smash', enabled });
   if (text.includes('restore') || text.includes('reset')) commands.push({ type: 'restoreText' });
 
-  return {
-    reply: commands.length
-      ? 'I adjusted the page with a local command fallback while the live model is unavailable.'
-      : 'I can adjust effects, switch profiles, open the world, or focus project and event sections.',
-    commands,
-    reason: 'client_local_fallback',
-  };
+  return { reply, references, commands, modelUsed: false, reason: 'client_local_fallback' };
 };
 
 const AskThePage: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(getInitialCollapsed);
-  const openedAtRef = useRef<number | null>(collapsed ? null : performance.now());
+  const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: 'Hi Rahul. I can tune effects, switch profiles, focus events, and open the 3D world.',
-    },
-  ]);
+  const [serviceNote, setServiceNote] = useState('Grounded in the visible portfolio record.');
+  const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'assistant', content: 'Ask about Rahul’s work, technical foundations, security record, or which résumé fits a role. I only answer from this portfolio’s data.' }]);
+  const panelRef = useRef<HTMLElement>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
+  const openedAt = useRef<number | null>(null);
   const effects = useEffects();
   const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    window.localStorage.setItem('ask-page-collapsed', String(collapsed));
-  }, [collapsed]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closePanel('escape_key');
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const openPanel = (source: string) => {
-    openedAtRef.current = performance.now();
-    setCollapsed(false);
-    track('panel_opened', { panel: 'ask_the_page', source });
-  };
-
-  const closePanel = (reason: string) => {
-    const duration = openedAtRef.current ? Math.round(performance.now() - openedAtRef.current) : 0;
-    openedAtRef.current = null;
-    setCollapsed(true);
-    track('panel_closed', { panel: 'ask_the_page', reason, duration_ms: duration });
-  };
+  useFocusTrap(open, panelRef, '[data-open-assistant], .ask-dock');
 
   const pageState = useMemo(() => ({
-    profile: theme === 'dark' ? 'cybersecurity' : 'software',
-    effects: effects.settings,
-    sections: Object.values(SECTION_IDS),
-    projects: projectHighlights.map(({ id, title, tags }) => ({ id, title, tags })),
-    events: fieldNotes.map(({ id, aliases, title, kind, kinds, tags }) => ({ id, aliases, title, kind, kinds, tags })),
-  }), [theme, effects.settings]);
+    profile: theme === 'dark' ? 'cybersecurity' : 'software', effects: effects.settings,
+    sections: Object.values(SECTION_IDS), allowedLinks: Array.from(allowedLinks),
+    projects: allProjects.map(({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links }) => ({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links })),
+    events: fieldNotes.map(({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links }) => ({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links })),
+    resumes: resumeProfiles.map(({ id, role, headline, keywords, pdfUrl, docxUrl }) => ({ id, role, headline, keywords, pdfUrl, docxUrl })),
+  }), [effects.settings, theme]);
+
+  const close = (reason: string) => {
+    setOpen(false);
+    track('panel_closed', { panel: 'ask_this_portfolio', reason, duration_ms: openedAt.current ? Math.round(performance.now() - openedAt.current) : 0 });
+    openedAt.current = null;
+  };
+  const openPanel = (source: string, prompt?: string) => {
+    openedAt.current = performance.now();
+    setOpen(true);
+    if (prompt) setInput(prompt);
+    track('panel_opened', { panel: 'ask_this_portfolio', source });
+  };
+
+  useEffect(() => {
+    const handleOpen = (event: Event) => {
+      const prompt = (event as CustomEvent<{ prompt?: string }>).detail?.prompt;
+      openPanel('page_cta', prompt);
+    };
+    window.addEventListener('portfolio:openAssistant', handleOpen);
+    return () => window.removeEventListener('portfolio:openAssistant', handleOpen);
+  }, []);
+  useEffect(() => { transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight }); }, [messages, isSending]);
+  useEffect(() => {
+    if (!open) return undefined;
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') close('escape_key'); };
+    window.addEventListener('keydown', escape);
+    return () => window.removeEventListener('keydown', escape);
+  }, [open]);
 
   const applyCommand = (command: PageCommand) => {
-    if (command.type === 'setEffectEnabled' && effectIds.has(command.effect)) {
-      effects.setEffectEnabled(command.effect, command.enabled);
-      return;
-    }
-
-    if (command.type === 'setEffectParam' && numericParams[command.effect]?.has(command.param) && Number.isFinite(command.value)) {
-      effects.setEffectParam(command.effect, command.param, command.value);
-      return;
-    }
-
-    if (command.type === 'switchProfile') {
+    if (command.type === 'setEffectEnabled' && effectIds.has(command.effect)) effects.setEffectEnabled(command.effect, command.enabled);
+    else if (command.type === 'setEffectParam' && numericParams[command.effect]?.has(command.param) && Number.isFinite(command.value)) effects.setEffectParam(command.effect, command.param, command.value);
+    else if (command.type === 'switchProfile') {
       if (command.profile === 'cybersecurity' && theme !== 'dark') toggleTheme();
       if (command.profile === 'software' && theme !== 'light') toggleTheme();
-      return;
-    }
-
-    if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) {
-      document.getElementById(command.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-
-    if (command.type === 'focusEvent' && eventIds.has(command.eventId)) {
-      const canonicalNote = fieldNoteByIdOrAlias.get(command.eventId);
-      if (canonicalNote) {
-        document.getElementById(`event-${canonicalNote.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-
-    if (command.type === 'openWorld') {
-      effects.openWorld('ask_the_page');
-      return;
-    }
-
-    if (command.type === 'closeWorld') {
-      effects.closeWorld('ask_the_page');
-      return;
-    }
-
-    if (command.type === 'restoreText') {
-      effects.restoreAll();
-      return;
-    }
-
-    if (command.type === 'startNpcDialogue') {
-      effects.openWorld('ask_the_page');
-      window.setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('portfolio:npcDialogue', { detail: { npcId: command.npcId } }));
-      }, 100);
+    } else if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) document.getElementById(command.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (command.type === 'focusEvent' && eventIds.has(command.eventId)) {
+      const note = fieldNoteByIdOrAlias.get(command.eventId);
+      if (note) document.getElementById(`event-${note.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (command.type === 'openWorld') effects.openWorld('ask_this_portfolio');
+    else if (command.type === 'closeWorld') effects.closeWorld('ask_this_portfolio');
+    else if (command.type === 'restoreText') effects.restoreAll();
+    else if (command.type === 'startNpcDialogue') {
+      effects.openWorld('ask_this_portfolio');
+      window.setTimeout(() => window.dispatchEvent(new CustomEvent('portfolio:npcDialogue', { detail: { npcId: command.npcId } })), 150);
     }
   };
 
   const submitMessage = async (message: string) => {
     const trimmed = message.trim();
     if (!trimmed || isSending) return;
-
     setInput('');
     setIsSending(true);
+    setServiceNote(navigator.onLine ? 'Checking the portfolio record…' : 'Offline: using the safe local portfolio index.');
     setMessages((current) => [...current, { role: 'user', content: trimmed }]);
-    triggerSessionReplay('ask_page_command', { source: 'ask_the_page' });
-
+    triggerSessionReplay('ask_page_command', { source: 'ask_this_portfolio' });
     let response: AgentResponse | null = null;
     let requestStatus: number | 'network_error' = 'network_error';
-    let responseSource = 'client_local_fallback';
+    let source = 'client_local_fallback';
     const startedAt = performance.now();
-    try {
-      const apiResponse = await fetch('/api/page-agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, pageState }),
-      });
-      requestStatus = apiResponse.status;
-      if (apiResponse.ok) {
-        response = parseAgentResponse(await apiResponse.json());
-        responseSource = response?.modelUsed ? 'model' : response?.reason ? 'server_fallback' : 'server_response';
-      } else {
-        captureAnalyticsException(new Error(`Page agent returned ${apiResponse.status}`), {
-          area: 'ask_page_api',
-          status: apiResponse.status,
-        });
-      }
-    } catch (error) {
-      captureAnalyticsException(error, { area: 'ask_page_network' });
-      response = null;
+
+    if (navigator.onLine) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 12_500);
+        const apiResponse = await fetch('/api/page-agent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: trimmed, pageState }), signal: controller.signal });
+        window.clearTimeout(timeoutId);
+        requestStatus = apiResponse.status;
+        if (apiResponse.ok) {
+          response = parseAgentResponse(await apiResponse.json());
+          source = response?.modelUsed ? 'model' : response?.reason ? 'server_fallback' : 'server_response';
+        } else captureAnalyticsException(new Error(`Page agent returned ${apiResponse.status}`), { area: 'ask_page_api', status: apiResponse.status });
+      } catch (error) { captureAnalyticsException(error, { area: 'ask_page_network' }); }
     }
 
     const agent = response ?? localAgent(trimmed);
-    const durationMs = Math.round(performance.now() - startedAt);
     agent.commands?.forEach(applyCommand);
-    setMessages((current) => [...current, { role: 'assistant', content: agent.reply }]);
+    setMessages((current) => [...current, { role: 'assistant', content: agent.reply, references: cleanReferences(agent.references) }]);
+    setServiceNote(agent.modelUsed ? 'Answered by the private page agent.' : 'Answered by the safe local portfolio index.');
     setIsSending(false);
-    track('api_request_completed', {
-      route: '/api/page-agent',
-      status: requestStatus,
-      ok: response !== null,
-      duration_ms: durationMs,
-      response_source: responseSource,
-    });
-    track('chatbot_command_submitted', {
-      used_model: String(Boolean(agent.modelUsed)),
-      command_count: String(agent.commands?.length ?? 0),
-      status: responseSource,
-      fallback_reason: agent.reason,
-    });
+    track('api_request_completed', { route: '/api/page-agent', status: requestStatus, ok: response !== null, duration_ms: Math.round(performance.now() - startedAt), response_source: source });
+    track('chatbot_command_submitted', { used_model: String(Boolean(agent.modelUsed)), command_count: String(agent.commands?.length ?? 0), status: source, fallback_reason: agent.reason });
   };
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    void submitMessage(input);
-  };
-
-  const quickActions: Array<{ label: string; reply: string; commands: PageCommand[] }> = [
-    {
-      label: 'Increase fluid speed',
-      reply: 'Fluid motion is faster now.',
-      commands: [
-        { type: 'setEffectEnabled', effect: 'fluid', enabled: true },
-        { type: 'setEffectParam', effect: 'fluid', param: 'speed', value: 1.8 },
-      ],
-    },
-    {
-      label: 'Enable gravity',
-      reply: 'Gravity text interaction is active.',
-      commands: [{ type: 'setEffectEnabled', effect: 'gravity', enabled: true }],
-    },
-    {
-      label: 'Disable smash',
-      reply: 'Smash interaction is disabled.',
-      commands: [{ type: 'setEffectEnabled', effect: 'smash', enabled: false }],
-    },
-    {
-      label: 'Open 3D world',
-      reply: 'Opening the 3D portfolio world.',
-      commands: [{ type: 'openWorld' }],
-    },
-    {
-      label: 'Show events',
-      reply: 'Jumping to Field Notes.',
-      commands: [{ type: 'focusSection', sectionId: SECTION_IDS.EVENTS }],
-    },
-  ];
-
-  const runQuickAction = (action: { label: string; reply: string; commands: PageCommand[] }) => {
-    if (isSending) return;
-    setMessages((current) => [...current, { role: 'user', content: action.label }]);
-    action.commands.forEach(applyCommand);
-    setMessages((current) => [...current, { role: 'assistant', content: action.reply }]);
-    track('chatbot_quick_action_clicked', { action: action.label, command_count: String(action.commands.length) });
-  };
-
-  if (collapsed) {
-    return (
-      <button
-        type="button"
-        onClick={() => openPanel('dock')}
-        data-analytics-id="ask-page-open"
-        className="ask-dock fixed bottom-5 left-5 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-lg border border-cyan-300/40 bg-gray-950/90 text-cyan-200 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-transform hover:-translate-y-0.5 hover:border-cyan-200 dark:border-red-400/40 dark:text-red-200 dark:shadow-red-950/40"
-        aria-label="Open Ask The Page"
-        title="Open Ask The Page"
-      >
-        <span className="text-sm font-black tracking-widest">AI</span>
-      </button>
-    );
-  }
+  if (!open) return <button type="button" className="ask-dock" data-open-assistant onClick={() => openPanel('dock')} aria-label="AI, open Ask this portfolio"><span aria-hidden="true">AI</span><span>Ask portfolio</span></button>;
 
   return (
-    <section className="ask-page fixed bottom-5 left-5 z-[70] w-[min(360px,calc(100vw-1.5rem))] rounded-lg border border-cyan-400/30 bg-gray-950/92 p-4 text-white shadow-2xl shadow-cyan-950/40 backdrop-blur-xl dark:border-red-500/35 dark:shadow-red-950/40">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300 dark:text-red-300">Ask the page</p>
-          <h2 className="text-lg font-bold">Page Control Chat</h2>
+    <div className="panel-backdrop assistant-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close('backdrop'); }}>
+      <section ref={panelRef} className="ask-page" role="dialog" aria-modal="true" aria-labelledby="assistant-title" tabIndex={-1}>
+        <header className="panel-header"><div><h2 id="assistant-title">Ask this portfolio</h2><p className="panel-context">Private · data grounded</p></div><button type="button" onClick={() => close('close_button')}>Close</button></header>
+        <p className="panel-intro">Ask a recruiter-style question or navigate the page. Keys remain server-side; if the service is unavailable, the assistant falls back to a small factual local index.</p>
+        <div className="assistant-starters" aria-label="Starter questions">
+          {ASSISTANT_STARTERS.map((starter) => <button key={starter} type="button" onClick={() => void submitMessage(starter)} aria-disabled={isSending}>{starter}</button>)}
         </div>
-        <button
-          type="button"
-          onClick={() => closePanel('hide_button')}
-          data-analytics-id="ask-page-close"
-          className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-gray-300 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
-          aria-label="Hide Ask The Page"
-        >
-          Hide
-        </button>
-      </div>
-      <div className="mb-3 max-h-36 space-y-2 overflow-y-auto pr-1" data-private="true">
-        {messages.slice(-4).map((message, index) => (
-          <p key={`${message.role}-${index}`} className={`rounded-md px-3 py-2 text-sm ${message.role === 'assistant' ? 'bg-white/5 text-gray-300' : 'bg-cyan-400/15 text-cyan-100 dark:bg-red-500/15 dark:text-red-100'}`}>
-            {message.content}
-          </p>
-        ))}
-      </div>
-      <div className="mb-3 flex flex-wrap gap-2">
-        {quickActions.map((action) => (
-          <button
-            key={action.label}
-            type="button"
-            onClick={() => runQuickAction(action)}
-            className="rounded border border-white/10 px-2.5 py-1.5 text-xs text-gray-300 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
-          >
-            {action.label}
-          </button>
-        ))}
-      </div>
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder="Ask anything about this page..."
-          data-private="true"
-          data-block-replay="true"
-          className="ph-no-capture min-w-0 flex-1 rounded-md border border-white/10 bg-black/45 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-gray-500 focus:border-cyan-300 dark:focus:border-red-300"
-        />
-        <button
-          type="submit"
-          disabled={isSending}
-          className="rounded-md bg-cyan-400 px-3 py-2 text-sm font-bold text-black transition-colors hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400 dark:bg-red-500 dark:text-white dark:hover:bg-red-400"
-        >
-          Send
-        </button>
-      </form>
-    </section>
+        <div ref={transcriptRef} className="assistant-transcript" data-private="true" aria-live="polite" aria-busy={isSending}>
+          {messages.map((message, index) => (
+            <article key={`${message.role}-${index}`} data-role={message.role}>
+              <span>{message.role === 'assistant' ? 'Portfolio' : 'You'}</span>
+              <p>{message.content}</p>
+              {message.references?.length ? <div className="assistant-references">{message.references.map((reference) => {
+                const external = reference.href.startsWith('http');
+                return <a key={`${reference.href}-${reference.label}`} href={reference.href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} onClick={() => { if (reference.href.startsWith('#')) close('reference'); }}>{reference.label}{external && <span className="sr-only"> (opens in a new tab)</span>}</a>;
+              })}</div> : null}
+            </article>
+          ))}
+          {isSending && <p className="assistant-loading" role="status">Tracing relevant portfolio evidence…</p>}
+        </div>
+        <form onSubmit={(event: FormEvent) => { event.preventDefault(); void submitMessage(input); }} className="assistant-form">
+          <label htmlFor="portfolio-question">Question or page command</label>
+          <div><input id="portfolio-question" className="ph-no-capture" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask about optimization, 3D vision, security…" data-private="true" data-block-replay="true" autoComplete="off" /><button type="submit" disabled={isSending || !input.trim()}>Send</button></div>
+        </form>
+        <p className="assistant-status" role="status">{serviceNote}</p>
+      </section>
+    </div>
   );
 };
 

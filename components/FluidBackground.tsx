@@ -248,7 +248,9 @@ const FluidBackground: React.FC = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const constrainedMobile = window.innerWidth < 700 && (navigator.hardwareConcurrency ?? 4) <= 4;
+    if (!canvas || !settings.fluid.enabled || reducedMotion.matches || constrainedMobile) return undefined;
 
     const gl = canvas.getContext('webgl2', {
       alpha: true,
@@ -260,7 +262,6 @@ const FluidBackground: React.FC = () => {
     });
     if (!gl) return;
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const floatRenderable = gl.getExtension('EXT_color_buffer_float');
     const linearFiltering = gl.getExtension('OES_texture_float_linear');
     const internalFormat = floatRenderable ? gl.RGBA16F : gl.RGBA8;
@@ -290,6 +291,7 @@ const FluidBackground: React.FC = () => {
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
+    const allocatedFbos = new Set<Fbo>();
     const createFbo = (width: number, height: number): Fbo => {
       const texture = gl.createTexture();
       const fbo = gl.createFramebuffer();
@@ -304,7 +306,9 @@ const FluidBackground: React.FC = () => {
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
       gl.viewport(0, 0, width, height);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      return { texture, fbo, width, height, texelSizeX: 1 / width, texelSizeY: 1 / height };
+      const target = { texture, fbo, width, height, texelSizeX: 1 / width, texelSizeY: 1 / height };
+      allocatedFbos.add(target);
+      return target;
     };
 
     const createDoubleFbo = (width: number, height: number): DoubleFbo => {
@@ -334,6 +338,13 @@ const FluidBackground: React.FC = () => {
     let divergence: Fbo;
     let curl: Fbo;
 
+    const releaseFbo = (target?: Fbo) => {
+      if (!target) return;
+      gl.deleteTexture(target.texture);
+      gl.deleteFramebuffer(target.fbo);
+      allocatedFbos.delete(target);
+    };
+
     const blit = (target: Fbo | null) => {
       if (target) {
         gl.viewport(0, 0, target.width, target.height);
@@ -359,6 +370,7 @@ const FluidBackground: React.FC = () => {
     };
 
     const initFramebuffers = () => {
+      allocatedFbos.forEach(releaseFbo);
       resizeCanvas();
       const simBase = settings.fluid.quality === 'high' ? 192 : 128;
       const dyeBase = settings.fluid.quality === 'high' ? 1024 : 768;
@@ -433,14 +445,6 @@ const FluidBackground: React.FC = () => {
 
       gl.disable(gl.BLEND);
       gl.clearColor(0, 0, 0, 0);
-
-      if (!settings.fluid.enabled || reducedMotion.matches) {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        animationId = requestAnimationFrame(draw);
-        return;
-      }
 
       idleTime += dt;
       if (idleTime > 0.22) {
@@ -530,7 +534,15 @@ const FluidBackground: React.FC = () => {
       gl.uniform1f(uniforms.display.boost, 0.9 + settings.fluid.intensity / 80);
       blit(null);
 
-      animationId = requestAnimationFrame(draw);
+      if (!document.hidden) animationId = requestAnimationFrame(draw);
+    };
+
+    const handleVisibility = () => {
+      cancelAnimationFrame(animationId);
+      if (!document.hidden) {
+        lastTime = performance.now();
+        animationId = requestAnimationFrame(draw);
+      }
     };
 
     try {
@@ -540,6 +552,7 @@ const FluidBackground: React.FC = () => {
       window.addEventListener('pointerdown', handlePointerDown, { passive: true });
       window.addEventListener('pointerup', handlePointerLeave, { passive: true });
       window.addEventListener('pointercancel', handlePointerLeave, { passive: true });
+      document.addEventListener('visibilitychange', handleVisibility);
       animationId = requestAnimationFrame(draw);
     } catch {
       gl.clearColor(0, 0, 0, 0);
@@ -553,6 +566,12 @@ const FluidBackground: React.FC = () => {
       window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointerup', handlePointerLeave);
       window.removeEventListener('pointercancel', handlePointerLeave);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      allocatedFbos.forEach(releaseFbo);
+      Object.values(programs).forEach((program) => gl.deleteProgram(program));
+      gl.deleteBuffer(quad);
+      gl.deleteVertexArray(vao);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, [
     settings.fluid.enabled,

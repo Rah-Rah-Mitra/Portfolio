@@ -4,7 +4,7 @@ import HeroSection from './components/HeroSection';
 import SkillsSection from './components/SkillsSection';
 import Footer from './components/Footer';
 import { SECTION_IDS } from './constants';
-import { EffectsProvider } from './contexts/PhysicsContext';
+import { EffectsProvider, useEffects } from './contexts/PhysicsContext';
 import EffectsLabPanel from './components/EffectsLabPanel';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { coreCompetencies, cybersecurityData, fieldNotes, projectArchive, projectHighlights, resumeProfiles, softwareEngineerData } from './portfolioData';
@@ -19,26 +19,67 @@ import { useScrollDepth } from './hooks/useScrollDepth';
 
 const PortfolioWorld = React.lazy(() => import('./components/PortfolioWorld'));
 
+const OptionalExperienceLayers: React.FC = () => {
+  const { worldOpen } = useEffects();
+  return (
+    <>
+      <EffectsLabPanel />
+      <AskThePage />
+      {worldOpen && (
+        <React.Suspense fallback={<div className="world-loading" role="status">Preparing the spatial portfolio map...</div>}>
+          <PortfolioWorld />
+        </React.Suspense>
+      )}
+    </>
+  );
+};
+
 const AppContent: React.FC = () => {
   const { theme } = useTheme();
   const portfolioData = theme === 'light' ? softwareEngineerData : cybersecurityData;
   useScrollDepth(theme);
-
-  const backgroundClass = theme === 'light' 
-    ? 'bg-gray-900 text-gray-200'
-    : 'dark bg-black text-gray-300';
+  React.useEffect(() => {
+    const timers = new Set<number>();
+    const alignToHash = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      if (!id) return;
+      document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'auto' });
+    };
+    const scheduleAlignment = () => {
+      if (!window.location.hash) return;
+      document.documentElement.classList.add('hash-target-visible');
+      timers.forEach((timer) => window.clearTimeout(timer));
+      timers.clear();
+      [0, 80, 180, 320, 500, 720, 960].forEach((delay) => {
+        const timer = window.setTimeout(() => {
+          alignToHash();
+          timers.delete(timer);
+        }, delay);
+        timers.add(timer);
+      });
+    };
+    scheduleAlignment();
+    window.addEventListener('hashchange', scheduleAlignment);
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      window.removeEventListener('hashchange', scheduleAlignment);
+    };
+  }, []);
+  const allAchievements = theme === 'light'
+    ? [...softwareEngineerData.achievements, ...cybersecurityData.achievements]
+    : [...cybersecurityData.achievements, ...softwareEngineerData.achievements];
 
   return (
     <EffectsProvider theme={theme}>
-      <div className={`min-h-screen flex flex-col ${backgroundClass}`}>
+      <div className="site-shell min-h-screen flex flex-col" data-lens={theme === 'light' ? 'build' : 'secure'}>
         <FluidBackground />
         <Navbar name={portfolioData.name} />
-        <main className="flex-grow relative z-10">
+        <main id="main-content" className="flex-grow relative z-10">
           <HeroSection id={SECTION_IDS.HOME} data={portfolioData} />
           <ProjectsSection id={SECTION_IDS.PROJECTS} projects={projectHighlights} archiveProjects={projectArchive} />
-          <AchievementsSection id={SECTION_IDS.ACHIEVEMENTS} achievements={portfolioData.achievements} />
-          <EventsTimeline id={SECTION_IDS.EVENTS} notes={fieldNotes} projects={projectHighlights} archiveProjects={projectArchive} />
-          <SkillsSection id={SECTION_IDS.SKILLS} clusters={coreCompetencies} />
+          <SkillsSection id={SECTION_IDS.DOMAINS} clusters={coreCompetencies} />
+          <EventsTimeline id={SECTION_IDS.EXPERIENCE} notes={fieldNotes} projects={projectHighlights} archiveProjects={projectArchive} />
+          <AchievementsSection id={SECTION_IDS.ACHIEVEMENTS} achievements={allAchievements} />
           <ResumesSection id={SECTION_IDS.RESUMES} resumes={resumeProfiles} />
           <ToolsSection id={SECTION_IDS.TOOLS} />
         </main>
@@ -52,11 +93,7 @@ const AppContent: React.FC = () => {
             instagramUrl={portfolioData.instagramUrl}
           />
         </div>
-        <EffectsLabPanel />
-        <AskThePage />
-        <React.Suspense fallback={null}>
-          <PortfolioWorld />
-        </React.Suspense>
+        <OptionalExperienceLayers />
       </div>
     </EffectsProvider>
   );

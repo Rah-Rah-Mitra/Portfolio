@@ -1,6 +1,8 @@
 # Rahul Mitra Portfolio
 
-Interactive portfolio with configurable text effects, a fluid background, a Three.js portfolio world, and a private page-agent API for chatbot-driven UI controls.
+Production: [rahul-mitra.com](https://rahul-mitra.com/)
+
+Evidence-led engineering portfolio spanning software systems, AI, operations research, 3D computer vision, solution architecture, and responsible security. The primary reading experience is intentionally calm; the grounded portfolio assistant, effects lab, and Three.js spatial map remain optional interactive layers.
 
 ## Run Locally
 

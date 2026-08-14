@@ -5,6 +5,7 @@ import { clone as cloneModel } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { fieldNoteByIdOrAlias, projectHighlights } from '../portfolioData';
 import { useEffects } from '../contexts/PhysicsContext';
 import { captureAnalyticsException, summarizeUrlTarget, track, triggerSessionReplay } from '../lib/analytics';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 type NpcDefinition = {
   id: string;
@@ -161,12 +162,25 @@ const uniqueTags = (tags: string[]) => {
 const PortfolioWorld: React.FC = () => {
   const { worldOpen, closeWorld, settings } = useEffects();
   const mountRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const runtimeNpcs = useRef<RuntimeNpc[]>([]);
   const activeNpcIdRef = useRef<string | null>(null);
   const pointerLockedRef = useRef(false);
   const [activeNpcId, setActiveNpcId] = useState<string | null>(null);
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
+  useFocusTrap(worldOpen, dialogRef, '[data-open-world], [data-open-effects], .effects-dock');
+
+  const exitWorld = useCallback((method: 'exit_button' | 'escape_key') => {
+    closeWorld(method);
+  }, [closeWorld]);
+
+  useEffect(() => {
+    if (!worldOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [worldOpen]);
 
   const npcCopy = useMemo(() => {
     const projects = new Map(projectHighlights.map((project) => [project.id, project]));
@@ -216,6 +230,7 @@ const PortfolioWorld: React.FC = () => {
     if (!worldOpen || !mountRef.current) return;
 
     const mount = mountRef.current;
+    let disposed = false;
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020617);
     scene.fog = new THREE.Fog(0x020617, 10, 28);
@@ -269,9 +284,21 @@ const PortfolioWorld: React.FC = () => {
     const pointer = new THREE.Vector2();
     runtimeNpcs.current = [];
 
+    const disposeObject = (object: THREE.Object3D) => object.traverse((child: THREE.Object3D) => {
+      const mesh = child as THREE.Mesh;
+      mesh.geometry?.dispose();
+      const material = mesh.material;
+      if (Array.isArray(material)) material.forEach((item) => item.dispose());
+      else material?.dispose?.();
+    });
+
     const loadModel = async (definition: NpcDefinition) => {
       try {
         const gltf = await loader.loadAsync(definition.modelUrl);
+        if (disposed) {
+          disposeObject(gltf.scene);
+          return;
+        }
         const model = cloneModel(gltf.scene);
         const group = new THREE.Group();
         group.position.set(...definition.position);
@@ -318,6 +345,10 @@ const PortfolioWorld: React.FC = () => {
     const loadStaticAsset = async (url: string, position: THREE.Vector3, scale: number, rotationY = 0) => {
       try {
         const gltf = await loader.loadAsync(url);
+        if (disposed) {
+          disposeObject(gltf.scene);
+          return;
+        }
         const model = gltf.scene;
         model.position.copy(position);
         model.scale.setScalar(scale);
@@ -478,6 +509,7 @@ const PortfolioWorld: React.FC = () => {
     document.addEventListener('pointerlockchange', handlePointerLockChange);
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(animationId);
       runtimeNpcs.current = [];
       activeNpcIdRef.current = null;
@@ -494,25 +526,33 @@ const PortfolioWorld: React.FC = () => {
       document.removeEventListener('pointerlockchange', handlePointerLockChange);
       mixers.forEach((mixer) => mixer.stopAllAction());
       disposables.forEach((object) => {
-        object.traverse((child: THREE.Object3D) => {
-          const mesh = child as THREE.Mesh;
-          if (mesh.geometry) mesh.geometry.dispose();
-          const material = mesh.material;
-          if (Array.isArray(material)) material.forEach((item) => item.dispose());
-          else material?.dispose?.();
-        });
+        disposeObject(object);
         scene.remove(object);
       });
       renderer.dispose();
-      mount.removeChild(renderer.domElement);
+      renderer.forceContextLoss();
+      if (renderer.domElement.parentElement === mount) mount.removeChild(renderer.domElement);
     };
   }, [openNpcDialogue, settings.world.quality, worldOpen]);
 
   if (!worldOpen) return null;
 
   return (
-    <div className="portfolio-world fixed inset-0 z-[90] bg-black text-white">
-      <div ref={mountRef} className="h-full w-full" aria-label="Playable 3D portfolio world" />
+    <div
+      ref={dialogRef}
+      className="portfolio-world fixed inset-0 z-[90] bg-black text-white"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="world-title"
+      tabIndex={-1}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || document.pointerLockElement) return;
+        event.preventDefault();
+        if (selectedNpcId) setSelectedNpcId(null);
+        else exitWorld('escape_key');
+      }}
+    >
+      <div ref={mountRef} className="h-full w-full" aria-label="Interactive spatial portfolio map" />
       <div
         className="pointer-events-none absolute left-1/2 top-1/2 z-[1] flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
         role="status"
@@ -529,10 +569,10 @@ const PortfolioWorld: React.FC = () => {
         <span className="sr-only">{activeNpc ? `Aiming at ${activeNpc.title}` : 'Center crosshair'}</span>
       </div>
       <div className="absolute left-4 right-32 top-4 max-w-sm rounded-lg border border-cyan-400/30 bg-gray-950/85 p-4 shadow-2xl backdrop-blur sm:right-auto">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Portfolio World</p>
-        <h2 className="text-xl font-bold">Explore Rahul's Build Map</h2>
+        <h2 id="world-title" className="text-xl font-bold">Spatial portfolio map</h2>
+        <p className="mt-1 text-xs font-semibold text-cyan-300">Optional Three.js environment</p>
         <p className="mt-2 text-sm text-gray-300">
-          Click the world to lock mouse look. WASD follows the camera. Aim at a guide and press E, or click a guide to talk.
+          Click the map to lock mouse look. Use WASD to move, then aim at a project guide and press E or click to inspect its evidence.
         </p>
         <p className="mt-2 text-xs font-semibold text-cyan-200">
           {isPointerLocked ? 'Mouse look active. Press Esc to release.' : 'Mouse look ready.'}
@@ -550,11 +590,11 @@ const PortfolioWorld: React.FC = () => {
       </div>
       <button
         type="button"
-        onClick={() => closeWorld('exit_button')}
+        onClick={() => exitWorld('exit_button')}
         data-analytics-id="world-close"
         className="absolute right-4 top-4 rounded-md border border-white/15 bg-gray-950/85 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition-colors hover:border-cyan-300 hover:text-cyan-200"
       >
-        Exit world
+        Exit spatial map
       </button>
       {selectedNpc && (
         <div className="absolute bottom-5 left-1/2 w-[min(760px,calc(100vw-2rem))] -translate-x-1/2 rounded-lg border border-cyan-400/30 bg-gray-950/92 p-5 shadow-2xl backdrop-blur">

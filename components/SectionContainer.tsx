@@ -1,5 +1,4 @@
 import React, { useRef } from 'react';
-import BreakableText from './BreakableText';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSectionView } from '../hooks/useSectionView';
 
@@ -19,14 +18,12 @@ const SectionContainer: React.FC<SectionContainerProps> = ({ id, children, class
   useSectionView(id ?? title ?? 'unknown', theme, sectionRef);
 
   return (
-    <section ref={sectionRef} id={id} className={`scroll-mt-24 py-16 md:scroll-mt-28 md:py-24 ${className}`}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section ref={sectionRef} id={id} className={`portfolio-section ${className}`}>
+      <div className="section-frame">
         {title && (
-          <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 dark:from-red-500 dark:to-rose-500 mb-4">
-              <BreakableText text={title} physicsEnabled={false} />
-            </h2>
-            {subtitle && <p className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto"><BreakableText text={subtitle} /></p>}
+          <div className="section-heading">
+            <h2>{title}</h2>
+            {subtitle && <p>{subtitle}</p>}
           </div>
         )}
         {children}

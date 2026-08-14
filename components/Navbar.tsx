@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NAVIGATION_LINKS } from '../constants';
 import { Bars3Icon, XMarkIcon } from './icons/GenericIcons';
 import ThemeToggle from './ThemeToggle';
@@ -11,89 +11,105 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ name }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
-  const initials = name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
+  const [activeHref, setActiveHref] = useState(NAVIGATION_LINKS[0]?.href ?? '#work');
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => setIsScrolled(window.scrollY > 18);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
+  useEffect(() => {
+    const sections = NAVIGATION_LINKS
+      .map((link) => document.querySelector<HTMLElement>(link.href))
+      .filter((section): section is HTMLElement => Boolean(section));
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible?.target.id) setActiveHref(`#${visible.target.id}`);
+    }, { rootMargin: '-18% 0px -68%', threshold: [0, 0.2, 0.6] });
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  const followLink = (label: string) => {
+    setIsOpen(false);
+    track('nav_link_clicked', { destination: label });
   };
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ease-in-out ${isScrolled || isOpen ? 'bg-gray-800 dark:bg-gray-900' : 'bg-transparent'}`}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          <div className="flex-shrink-0">
-            <a href="#home" className="text-2xl font-bold text-white hover:text-blue-400 dark:hover:text-red-500 transition-colors">
-              {initials}
-            </a>
-          </div>
-          <div className="hidden lg:block">
-            <div className="ml-10 flex items-center gap-2">
-              {NAVIGATION_LINKS.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  data-analytics-id={`nav-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                  onClick={() => track('nav_link_clicked', { destination: link.label })}
-                  className="text-gray-300 hover:bg-gray-700 hover:text-blue-400 dark:hover:text-red-500 px-2.5 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-              <ThemeToggle />
-            </div>
-          </div>
-          <div className="lg:hidden flex items-center">
-             <ThemeToggle />
-            <button
-              onClick={toggleMenu}
-              type="button"
-              className="ml-2 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400 dark:focus:ring-red-500"
-              aria-controls="mobile-menu"
-              aria-expanded={isOpen}
-            >
-              <span className="sr-only">{isOpen ? 'Close main menu' : 'Open main menu'}</span>
-              {isOpen ? (
-                <XMarkIcon className="block h-6 w-6" />
-              ) : (
-                <Bars3Icon className="block h-6 w-6" />
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+    <>
+      <a className="skip-link" href="#main-content">Skip to portfolio content</a>
+      <header className={`site-header ${isScrolled || isOpen ? 'is-scrolled' : ''}`}>
+        <nav className="nav-frame" aria-label="Primary navigation">
+          <a href="#home" className="brand-lockup" aria-label={`RM ${name}, home`}>
+            <span className="brand-mark" aria-hidden="true">RM</span>
+            <span className="brand-copy">
+              <strong>{name}</strong>
+              <small>intelligent systems</small>
+            </span>
+          </a>
 
-      {/* Mobile menu, show/hide based on menu state. */}
-      {isOpen && (
-        <div className="lg:hidden bg-gray-800 dark:bg-gray-900" id="mobile-menu">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <div className="desktop-nav">
             {NAVIGATION_LINKS.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
-                data-analytics-id={`mobile-nav-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                onClick={() => { setIsOpen(false); track('nav_link_clicked', { destination: link.label }); }}
-                className="text-gray-300 hover:bg-gray-700 hover:text-blue-400 dark:hover:text-red-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                aria-current={activeHref === link.href ? 'location' : undefined}
+                data-analytics-id={`nav-${link.label.toLowerCase()}`}
+                onClick={() => followLink(link.label)}
               >
                 {link.label}
               </a>
             ))}
           </div>
+
+          <div className="nav-actions">
+            <ThemeToggle />
+            <button
+              ref={menuButtonRef}
+              type="button"
+              className="menu-button"
+              onClick={() => setIsOpen((current) => !current)}
+              aria-controls="mobile-menu"
+              aria-expanded={isOpen}
+            >
+              <span className="sr-only">{isOpen ? 'Close navigation' : 'Open navigation'}</span>
+              {isOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
+            </button>
+          </div>
+        </nav>
+
+        <div id="mobile-menu" className={`mobile-nav ${isOpen ? 'is-open' : ''}`} aria-hidden={!isOpen}>
+          {NAVIGATION_LINKS.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              tabIndex={isOpen ? 0 : -1}
+              aria-current={activeHref === link.href ? 'location' : undefined}
+              onClick={() => followLink(link.label)}
+            >
+              {link.label}
+            </a>
+          ))}
         </div>
-      )}
-    </nav>
+      </header>
+    </>
   );
 };
 

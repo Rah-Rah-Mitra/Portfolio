@@ -1,19 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import * as QRCode from 'qrcode';
 import SectionContainer from './SectionContainer';
-import { ArrowDownTrayIcon, QrCodeIcon } from './icons/GenericIcons';
+import { SITE_CONFIG } from '../siteConfig';
 import { useTheme } from '../contexts/ThemeContext';
 import { summarizeUrlTarget, track } from '../lib/analytics';
 
-interface ToolsSectionProps {
-  id: string;
-}
+interface ToolsSectionProps { id: string; }
 
-const DEFAULT_PORTFOLIO_URL = 'https://rahul-mitra.vercel.app/';
 const QR_TARGETS = [
-  { id: 'portfolio', label: 'Portfolio', url: DEFAULT_PORTFOLIO_URL },
-  { id: 'linkedin', label: 'LinkedIn', url: 'https://www.linkedin.com/in/rahulmitra-dev' },
-  { id: 'github', label: 'GitHub', url: 'https://github.com/Rah-Rah-Mitra' },
+  { id: 'portfolio', label: 'Portfolio', url: SITE_CONFIG.canonicalUrl },
+  { id: 'linkedin', label: 'LinkedIn', url: SITE_CONFIG.social.linkedin },
+  { id: 'github', label: 'GitHub', url: SITE_CONFIG.social.github },
 ] as const;
 
 const downloadBlob = (blob: Blob, filename: string) => {
@@ -29,164 +25,99 @@ const downloadBlob = (blob: Blob, filename: string) => {
 
 const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
   const { theme } = useTheme();
-  const [targetUrl, setTargetUrl] = useState(DEFAULT_PORTFOLIO_URL);
+  const [targetUrl, setTargetUrl] = useState<string>(SITE_CONFIG.canonicalUrl);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [error, setError] = useState('');
-
-  const qrColors = useMemo(() => (
-    theme === 'light'
-      ? { dark: '#031525', light: '#cffafe' }
-      : { dark: '#450a0a', light: '#fee2e2' }
-  ), [theme]);
-
-  const cleanedTarget = targetUrl.trim() || DEFAULT_PORTFOLIO_URL;
+  const [shouldLoadQr, setShouldLoadQr] = useState(false);
+  const cleanedTarget = targetUrl.trim() || SITE_CONFIG.canonicalUrl;
   const selectedPreset = QR_TARGETS.find((target) => target.url === cleanedTarget);
-  const selectedPresetId = selectedPreset?.id;
-  const targetSummary = summarizeUrlTarget(cleanedTarget, selectedPreset?.label);
+  const summary = summarizeUrlTarget(cleanedTarget, selectedPreset?.label);
+  const colors = useMemo(() => theme === 'light'
+    ? { dark: '#123b3a', light: '#f4f0e6' }
+    : { dark: '#6f2931', light: '#f4f0e6' }, [theme]);
 
   useEffect(() => {
+    const section = document.getElementById(id);
+    if (!section || !('IntersectionObserver' in window)) {
+      setShouldLoadQr(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setShouldLoadQr(true);
+      observer.disconnect();
+    }, { rootMargin: '420px 0px' });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [id]);
+
+  useEffect(() => {
+    if (!shouldLoadQr) return undefined;
     let cancelled = false;
     setError('');
+    void import('qrcode')
+      .then(({ toDataURL }) => toDataURL(cleanedTarget, { errorCorrectionLevel: 'H', margin: 2, width: 320, color: colors }))
+      .then((dataUrl) => { if (!cancelled) setQrDataUrl(dataUrl); })
+      .catch(() => { if (!cancelled) setError('The share code could not be generated for this URL.'); });
+    return () => { cancelled = true; };
+  }, [cleanedTarget, colors, shouldLoadQr]);
 
-    QRCode.toDataURL(cleanedTarget, {
-      errorCorrectionLevel: 'H',
-      margin: 2,
-      width: 320,
-      color: qrColors,
-    })
-      .then((dataUrl) => {
-        if (!cancelled) setQrDataUrl(dataUrl);
-      })
-      .catch(() => {
-        if (!cancelled) setError('QR code could not be generated for this value.');
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cleanedTarget, qrColors]);
-
-  const handlePngDownload = () => {
+  const downloadPng = () => {
     if (!qrDataUrl) return;
     const anchor = document.createElement('a');
     anchor.href = qrDataUrl;
     anchor.download = 'rahul-mitra-portfolio-qr.png';
-    document.body.appendChild(anchor);
     anchor.click();
-    anchor.remove();
-    track('qr_code_downloaded', { format: 'png', ...targetSummary });
+    track('qr_code_downloaded', { format: 'png', ...summary });
   };
 
-  const handleSvgDownload = async () => {
-    const svg = await QRCode.toString(cleanedTarget, {
-      type: 'svg',
-      errorCorrectionLevel: 'H',
-      margin: 2,
-      color: qrColors,
-    });
+  const downloadSvg = async () => {
+    const { toString } = await import('qrcode');
+    const svg = await toString(cleanedTarget, { type: 'svg', errorCorrectionLevel: 'H', margin: 2, color: colors });
     downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), 'rahul-mitra-portfolio-qr.svg');
-    track('qr_code_downloaded', { format: 'svg', ...targetSummary });
-  };
-
-  const selectTarget = (target: (typeof QR_TARGETS)[number]) => {
-    setTargetUrl(target.url);
-    track('qr_target_selected', summarizeUrlTarget(target.url, target.label));
+    track('qr_code_downloaded', { format: 'svg', ...summary });
   };
 
   return (
     <SectionContainer
       id={id}
-      title="Tools"
-      subtitle="A compact utility bench for the portfolio, starting with a branded QR generator for fast profile sharing."
-      className="bg-gray-900 dark:bg-black"
+      title="Share bench"
+      subtitle="A small practical tool preserved from the original portfolio: generate a clean, downloadable QR code for this site or its primary professional profiles."
+      className="share-section"
     >
-      <div className="grid gap-6 lg:grid-cols-[1fr,22rem] lg:items-stretch">
-        <div className="rounded-lg border border-cyan-300/25 bg-gray-950/80 p-5 shadow-2xl backdrop-blur dark:border-red-400/25">
-          <div className="mb-5 flex items-start gap-3">
-            <div className="flex h-11 w-11 flex-none items-center justify-center rounded-md border border-cyan-300/35 bg-cyan-300/10 text-cyan-300 dark:border-red-300/35 dark:bg-red-500/10 dark:text-red-300">
-              <QrCodeIcon className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300 dark:text-red-300">QR generator</p>
-              <h3 className="mt-1 text-2xl font-bold text-white">Portfolio share code</h3>
-            </div>
-          </div>
-
-          <div className="mb-5 flex flex-wrap gap-2" aria-label="QR target presets">
-            {QR_TARGETS.map((target) => {
-              const active = selectedPresetId === target.id;
-              return (
-                <button
-                  key={target.id}
-                  type="button"
-                  onClick={() => selectTarget(target)}
-                  data-analytics-id={`qr-target-${target.id}`}
-                  aria-pressed={active}
-                  className={`rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
-                    active
-                      ? 'border-cyan-300 bg-cyan-300/15 text-cyan-100 dark:border-red-300 dark:bg-red-500/15 dark:text-red-100'
-                      : 'border-white/15 text-gray-300 hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200'
-                  }`}
-                >
-                  {target.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <label className="block">
-            <span className="text-sm font-semibold text-gray-200">Target URL</span>
-            <input
-              type="url"
-              value={targetUrl}
-              onChange={(event) => setTargetUrl(event.target.value)}
-              data-private="true"
-              data-block-replay="true"
-              className="ph-no-capture mt-2 h-11 w-full rounded-md border border-white/10 bg-black/40 px-3 text-sm text-white outline-none transition-colors placeholder:text-gray-500 focus:border-cyan-300 dark:focus:border-red-300"
-            />
-          </label>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handlePngDownload}
-              disabled={!qrDataUrl}
-              className="inline-flex items-center gap-2 rounded-md border border-cyan-300/45 px-3 py-2 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-300/45 dark:text-red-100 dark:hover:bg-red-500/10"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4" />
-              PNG
-            </button>
-            <button
-              type="button"
-              onClick={handleSvgDownload}
-              className="inline-flex items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-cyan-300 hover:text-cyan-200 dark:hover:border-red-300 dark:hover:text-red-200"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4" />
-              SVG
-            </button>
-          </div>
-          {error && <p className="mt-3 text-sm text-red-300" role="status">{error}</p>}
-        </div>
-
-        <div className="flex min-h-80 items-center justify-center rounded-lg border border-white/10 bg-[radial-gradient(circle_at_30%_15%,rgba(34,211,238,0.16),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.08),rgba(15,23,42,0.62))] p-6 shadow-2xl dark:bg-[radial-gradient(circle_at_30%_15%,rgba(248,113,113,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.07),rgba(0,0,0,0.68))]">
-          <div className="rounded-lg border border-white/20 bg-black/30 p-4 shadow-2xl">
-            {qrDataUrl ? (
-              <a
-                href={cleanedTarget}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => track('qr_code_clicked', targetSummary)}
-                className="block rounded-md outline-none ring-offset-2 ring-offset-gray-950 transition-transform hover:scale-[1.015] focus:ring-2 focus:ring-cyan-300 dark:focus:ring-red-300"
-                aria-label="Open QR target"
+      <div className="share-workbench">
+        <div className="share-controls">
+          <div className="bench-note"><span>Utility 01</span><h3>Portfolio share code</h3><p>The canonical portfolio preset always points to rahul-mitra.com.</p></div>
+          <div className="preset-row" aria-label="Share target presets">
+            {QR_TARGETS.map((target) => (
+              <button
+                key={target.id}
+                type="button"
+                aria-pressed={selectedPreset?.id === target.id}
+                onClick={() => { setTargetUrl(target.url); track('qr_target_selected', summarizeUrlTarget(target.url, target.label)); }}
               >
-                <img src={qrDataUrl} alt="QR code for selected target" className="h-64 w-64 rounded-md" />
-              </a>
-            ) : (
-              <div className="flex h-64 w-64 items-center justify-center rounded-md border border-white/10 text-sm text-gray-400">
-                Rendering...
-              </div>
-            )}
+                {target.label}
+              </button>
+            ))}
           </div>
+          <label className="share-url-field">
+            <span>Target URL</span>
+            <input className="ph-no-capture" type="url" value={targetUrl} onChange={(event) => setTargetUrl(event.target.value)} data-private="true" data-block-replay="true" />
+          </label>
+          <div className="share-actions">
+            <button type="button" onClick={downloadPng} disabled={!qrDataUrl}>Download PNG</button>
+            <button type="button" onClick={downloadSvg}>Download SVG</button>
+          </div>
+          {error && <p className="form-error" role="status">{error}</p>}
+        </div>
+        <div className="share-output">
+          <div className="coordinate-label" aria-hidden="true">share://verified-target</div>
+          {qrDataUrl ? (
+            <a href={cleanedTarget} target="_blank" rel="noopener noreferrer" onClick={() => track('qr_code_clicked', summary)}>
+              <img src={qrDataUrl} alt={`QR code for ${selectedPreset?.label ?? 'the entered URL'}`} />
+              <span className="sr-only">Open the QR target in a new tab</span>
+            </a>
+          ) : <p role="status">Rendering share code…</p>}
         </div>
       </div>
     </SectionContainer>

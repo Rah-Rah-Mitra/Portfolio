@@ -3,6 +3,7 @@ import React from 'react';
 import { CompetencyCluster, EventHighlight, FieldNote, FieldNoteLink, PortfolioData, ProjectHighlight, ResumeProfile } from './types';
 import { CodeBracketIcon, AcademicCapIcon, CommandLineIcon, DevicePhoneMobileIcon, ServerStackIcon } from './components/icons/TechIcons';
 import * as assets from './assets';
+import { resumeAssetUrl, SITE_CONFIG } from './siteConfig';
 
 /**
  * Data for the "Systems Architect & AI Engineer" profile (Light Theme).
@@ -12,10 +13,10 @@ export const softwareEngineerData: PortfolioData = {
   tagline: "Systems Architect & AI Engineer | ISE × CS × Mathematics",
   bio: "NUS Industrial Systems Engineering student (Second Major CS, Minor Math). I build intelligent systems at the intersection of agentic AI, high-performance computing, and open-source engineering — from fine-tuned 109M-parameter transformer models to async Python libraries with global PyPI adoption.",
   profileImageUrl: assets.SE_PROFILE_IMAGE,
-  contactEmail: "mitrarahul2002@gmail.com",
-  linkedinUrl: "https://linkedin.com/in/rahulmitra-dev",
-  githubUrl: "https://github.com/Rah-Rah-Mitra",
-  instagramUrl: "https://www.instagram.com/rah.rah.mitra/",
+  contactEmail: SITE_CONFIG.email,
+  linkedinUrl: SITE_CONFIG.social.linkedin,
+  githubUrl: SITE_CONFIG.social.github,
+  instagramUrl: SITE_CONFIG.social.instagram,
   achievements: [
     {
       id: 7,
@@ -24,7 +25,9 @@ export const softwareEngineerData: PortfolioData = {
       date: "2026 Jul",
       imageUrl: assets.SE_ACHIEVEMENT_3DCV,
       category: "Academic Distinction",
-      tags: ["3D Vision", "Multi-View Geometry", "Structure-from-Motion", "Bundle Adjustment", "NUS", "Top Student"]
+      tags: ["3D Vision", "Multi-View Geometry", "Structure-from-Motion", "Bundle Adjustment", "NUS", "Top Student"],
+      proofUrl: '/certificates/nus-3d-computer-vision-outstanding-performance-2026.pdf',
+      proofLabel: 'View NUS certificate',
     },
     {
       id: 6,
@@ -100,10 +103,10 @@ export const cybersecurityData: PortfolioData = {
   tagline: "Adversarial Security Researcher & Bug Bounty Hunter",
   bio: "NUS Engineering student and active bug bounty hunter on YesWeHack. I've uncovered critical vulnerabilities — SSRF, CSRF, SQL/NoSQL Injection, and authentication bypasses — for Singapore's GovTech (GBBP12/13) and the Land Transport Authority. My adversarial mindset drives security-first design across every system I build.",
   profileImageUrl: assets.CS_PROFILE_IMAGE,
-  contactEmail: "mitrarahul2002@gmail.com",
-  linkedinUrl: "https://linkedin.com/in/rahulmitra-dev",
-  githubUrl: "https://github.com/Rah-Rah-Mitra",
-  instagramUrl: "https://www.instagram.com/rah.rah.mitra/",
+  contactEmail: SITE_CONFIG.email,
+  linkedinUrl: SITE_CONFIG.social.linkedin,
+  githubUrl: SITE_CONFIG.social.github,
+  instagramUrl: SITE_CONFIG.social.instagram,
   achievements: [
     {
       id: 3,
@@ -151,63 +154,70 @@ export const resumeProfiles: ResumeProfile[] = [
     role: 'Software Engineer',
     headline: 'Python, TypeScript, React, CI/CD, and open-source systems for product-facing engineering roles.',
     keywords: ['Python', 'TypeScript', 'React', 'FastAPI', 'Docker', 'CI/CD', 'System Design'],
-    docxUrl: '/resume/generated/rahul-mitra-software-engineer-2026-07.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-software-engineer-2026-07.pdf',
+    docxUrl: resumeAssetUrl('software-engineer', 'docx'),
+    pdfUrl: resumeAssetUrl('software-engineer', 'pdf'),
     accent: 'cyan',
+    recommendedFor: ['build'],
   },
   {
     id: 'solution-architect',
     role: 'Solution Architect',
     headline: 'Cloud, product, and stakeholder architecture across Azure simulators, civic tech, and agentic AI.',
     keywords: ['Azure', 'Docker', 'Bitbucket', 'RAG', 'APIs', 'Singpass', 'Stakeholders'],
-    docxUrl: '/resume/generated/rahul-mitra-solution-architect-2026-07.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-solution-architect-2026-07.pdf',
+    docxUrl: resumeAssetUrl('solution-architect', 'docx'),
+    pdfUrl: resumeAssetUrl('solution-architect', 'pdf'),
     accent: 'blue',
+    recommendedFor: ['build'],
   },
   {
     id: 'ai-engineer',
     role: 'AI Engineer',
     headline: 'Applied AI profile spanning BERT, RAG, vector search, agents, HPC, and model deployment.',
     keywords: ['BERT', 'RAG', 'AI Agents', 'Vector Search', 'OpenAI', 'HPC', 'Model Evaluation'],
-    docxUrl: '/resume/generated/rahul-mitra-ai-engineer-2026-07.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-ai-engineer-2026-07.pdf',
+    docxUrl: resumeAssetUrl('ai-engineer', 'docx'),
+    pdfUrl: resumeAssetUrl('ai-engineer', 'pdf'),
     accent: 'violet',
+    recommendedFor: ['build'],
   },
   {
     id: 'operations-research-engineer',
     role: 'Operations Research Engineer',
     headline: 'Scheduling, simulation, graph optimization, analytics automation, and decision-support engineering.',
     keywords: ['Constraint Programming', 'Scheduling', 'Simulation', 'Dijkstra', 'Statistics', 'Excel VBA'],
-    docxUrl: '/resume/generated/rahul-mitra-operations-research-engineer-2026-07.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-operations-research-engineer-2026-07.pdf',
+    docxUrl: resumeAssetUrl('operations-research-engineer', 'docx'),
+    pdfUrl: resumeAssetUrl('operations-research-engineer', 'pdf'),
     accent: 'amber',
+    recommendedFor: ['build'],
   },
   {
     id: 'cyber-security',
     role: 'Cyber Security',
     headline: 'Bug bounty, web application security, custom exploit scripting, and secure system design.',
     keywords: ['Burp Suite', 'Wireshark', 'SSRF', 'CSRF', 'SQLi', 'OAuth2/JWT', 'Rust'],
-    docxUrl: '/resume/generated/rahul-mitra-cyber-security-2026-07.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-cyber-security-2026-07.pdf',
+    docxUrl: resumeAssetUrl('cyber-security', 'docx'),
+    pdfUrl: resumeAssetUrl('cyber-security', 'pdf'),
     accent: 'red',
+    recommendedFor: ['secure'],
   },
   {
     id: 'civic-tech-solution-architect',
     role: 'Solution Architect · Civic Tech',
     headline: 'Technology for social good: Singpass-integrated civic platforms, cloud architecture, and AI that reaches vulnerable communities.',
     keywords: ['Civic Tech', 'Social Impact', 'Singpass/Myinfo', 'Solution Architecture', 'Full-Stack', 'GIS', 'Accessibility'],
-    docxUrl: '/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-07.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-07.pdf',
+    docxUrl: resumeAssetUrl('civic-tech-solution-architect', 'docx'),
+    pdfUrl: resumeAssetUrl('civic-tech-solution-architect', 'pdf'),
     accent: 'green',
+    recommendedFor: ['build'],
   },
   {
     id: 'general',
     role: 'General / Master CV',
     headline: 'Two-page cross-disciplinary CV unifying every profile — software, AI/ML, operations research, architecture, and security — for broad job search.',
     keywords: ['Full Stack', 'AI/ML', 'Operations Research', 'Solution Architecture', 'Security', 'Two Pages'],
-    docxUrl: '/resume/generated/rahul-mitra-general-2026-07.docx',
-    pdfUrl: '/resume/generated/rahul-mitra-general-2026-07.pdf',
+    docxUrl: resumeAssetUrl('general', 'docx'),
+    pdfUrl: resumeAssetUrl('general', 'pdf'),
     accent: 'amber',
+    recommendedFor: ['build', 'secure'],
   },
 ];
 
@@ -272,10 +282,17 @@ export const projectHighlights: ProjectHighlight[] = [
     repoUrl: 'https://github.com/Rah-Rah-Mitra/OnTheSpectrum',
     dateLabel: 'May 2026',
     sortDate: '2026-05-31',
-    imageUrl: '/renders/on_the_spectrum-painter-chibi-preview.png',
+    imageUrl: '/renders/on_the_spectrum-painter-chibi-preview-720.webp',
     accent: 'cyan',
     linkedEventIds: ['january-gauntlet-2026'],
     npcRole: '3D world architect',
+    featuredPriority: 2,
+    spotlight: {
+      context: 'A local-first pipeline for moving authored 3D assets from Blender into a browser-based interactive world.',
+      contribution: 'Built the asset, metadata, preview, and playable-world workflow around generated GLBs.',
+      approach: 'Python orchestration, Blender MCP, Three.js runtime integration, asset previews, and world QA.',
+      outcome: 'A reusable prototyping pipeline and the existing spatial portfolio asset library.',
+    },
   },
   {
     id: 'geometry',
@@ -321,6 +338,13 @@ export const projectHighlights: ProjectHighlight[] = [
     accent: 'violet',
     linkedEventIds: ['certification-trail'],
     npcRole: 'security tooling guide',
+    featuredPriority: 7,
+    spotlight: {
+      context: 'A family of responsible security and red-team tooling experiments.',
+      contribution: 'Developed Rust-forward automation, OCR, and adversarial workflow prototypes across the Arcane repositories.',
+      approach: 'Systems programming, automation, OCR experiments, and responsible security research practices.',
+      outcome: 'A public tooling family that demonstrates the engineering side of the security profile.',
+    },
   },
   {
     id: 'hailo-training',
@@ -346,6 +370,13 @@ export const projectHighlights: ProjectHighlight[] = [
     accent: 'amber',
     linkedEventIds: ['abbott-internship'],
     npcRole: 'operations research optimizer',
+    featuredPriority: 1,
+    spotlight: {
+      context: 'A professional manufacturing scheduling problem with hybrid flow-shop constraints and real operating complexity.',
+      contribution: 'Modeled the production system as a Python digital twin and constraint-programming optimization problem.',
+      approach: 'Discrete simulation, hybrid flow-shop scheduling, objective/constraint modeling, and decision-ready schedule generation.',
+      outcome: 'A deployment-oriented decision-support workflow; confidential operating details remain intentionally abstracted.',
+    },
   },
   {
     id: 'azure-apc-web-simulator',
@@ -372,6 +403,13 @@ export const projectHighlights: ProjectHighlight[] = [
     accent: 'amber',
     linkedEventIds: ['january-gauntlet-2026'],
     npcRole: 'global-systems analyst',
+    featuredPriority: 3,
+    spotlight: {
+      context: 'A need to combine fast-moving global news, geopolitical signals, and infrastructure context in one view.',
+      contribution: 'Built the real-time situational-awareness dashboard and its AI-assisted aggregation workflow.',
+      approach: 'Geospatial visualization, AI news aggregation, infrastructure tracking, and dashboard system design.',
+      outcome: 'A public experimental platform for exploring global events and infrastructure signals.',
+    },
   },
   {
     id: 'volt-pulse-sg',
@@ -385,6 +423,13 @@ export const projectHighlights: ProjectHighlight[] = [
     accent: 'green',
     linkedEventIds: ['smu-hack-for-cities-2026'],
     npcRole: 'sustainability systems guide',
+    featuredPriority: 6,
+    spotlight: {
+      context: 'Household energy information is fragmented and difficult to translate into timely action.',
+      contribution: 'Co-built an agentic AI platform for HDB energy-cost tracking and recommendation routing.',
+      approach: 'SEALION embeddings, Supabase vector search, reciprocal-rank fusion, and scheduler-agent planning.',
+      outcome: 'Top 8 finalist of 50+ teams at SMU Hack For Cities 2026.',
+    },
   },
   {
     id: 'smart-exam',
@@ -456,6 +501,13 @@ export const projectHighlights: ProjectHighlight[] = [
     accent: 'blue',
     linkedEventIds: ['january-gauntlet-2026'],
     npcRole: 'maritime AI guide',
+    featuredPriority: 5,
+    spotlight: {
+      context: 'Forecasting the severity of maritime inspection deficiencies from complex operational logs.',
+      contribution: 'Led the multidisciplinary team and model-training work for the predictive system.',
+      approach: 'A fine-tuned 109M-parameter BERT model, DNN layers, gradient clipping, hyperparameter optimization, and ASPIRE 2A HPC.',
+      outcome: 'A completed Maritime Hackathon 2025 submission with certificate evidence.',
+    },
   },
   {
     id: 'churp',
@@ -469,6 +521,13 @@ export const projectHighlights: ProjectHighlight[] = [
     accent: 'green',
     linkedEventIds: ['sparks-by-pa-churp'],
     npcRole: 'community systems guide',
+    featuredPriority: 4,
+    spotlight: {
+      context: 'Community garden-plot allocation needed a complete civic workflow rather than another isolated form.',
+      contribution: 'Built the admin and public surfaces, backend, GIS allocation, and Singpass/Myinfo identity flow.',
+      approach: 'Full-stack delivery, GIS-based allocation, OIDC identity, stakeholder coordination, and rollout planning.',
+      outcome: 'Production-ready for national rollout and awarded the S$20,000 Sparks Community Innovation Fund.',
+    },
   },
   {
     id: 'kaogenie',
@@ -494,6 +553,13 @@ export const projectHighlights: ProjectHighlight[] = [
     accent: 'cyan',
     linkedEventIds: ['software-achievement-6'],
     npcRole: 'open-source systems guide',
+    featuredPriority: 3,
+    spotlight: {
+      context: 'Search-enabled Python systems needed an asyncio-first DuckDuckGo client built around aiohttp.',
+      contribution: 'Authored and maintain the AsyncDDGS package and its public release workflow.',
+      approach: 'Python asyncio, aiohttp, pytest, GitHub Actions, and PyPI packaging.',
+      outcome: 'A maintained public library referenced by AI tooling, search projects, and Discord bot frameworks.',
+    },
   },
 ];
 

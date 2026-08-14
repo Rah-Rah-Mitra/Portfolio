@@ -66,15 +66,16 @@ interface EffectsContextType {
   openWorld: (source?: string) => void;
   closeWorld: (reason?: string) => void;
   restoreAll: () => void;
+  pauseAll: () => void;
   registerWords: (elements: HTMLElement[]) => () => void;
 }
 
 const defaultSettings: EffectSettings = {
   smash: { enabled: false, intensity: 60, radius: 42 },
   gravity: { enabled: false, strength: 45, radius: 48 },
-  fluid: { enabled: true, speed: 0.7, intensity: 38, opacity: 28, splatRadius: 28, curl: 18, quality: 'balanced' },
-  pretext: { enabled: true, intensity: 42, mode: 'decode' },
-  world: { enabled: true, quality: 'high' },
+  fluid: { enabled: false, speed: 0.7, intensity: 38, opacity: 28, splatRadius: 28, curl: 18, quality: 'balanced' },
+  pretext: { enabled: false, intensity: 42, mode: 'decode' },
+  world: { enabled: true, quality: 'balanced' },
 };
 
 const PARAM_LIMITS: Record<NumericEffectId, Record<string, [number, number]>> = {
@@ -175,8 +176,6 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
 
   useEffect(() => {
     const engine = engineRef.current;
-    const runner = runnerRef.current;
-
     engine.gravity.y = 0.4;
 
     const setupBoundaries = () => {
@@ -204,42 +203,57 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
 
     window.addEventListener('resize', handleResize);
 
-    let animationId = 0;
-    const renderLoop = () => {
-      bodiesRef.current.forEach((ref) => {
-        if (!ref.element) return;
-
-        const isRestoring = ref.element.classList.contains('word-restoring');
-
-        if (!ref.body.isStatic) {
-          ref.element.classList.add('physics-active');
-        } else if (!isRestoring) {
-          ref.element.classList.remove('physics-active');
-        }
-
-        if (isRestoring || ref.body.isStatic) {
-          return;
-        }
-
-        const { x, y } = ref.body.position;
-        const angle = ref.body.angle;
-        ref.element.style.transform = `translate(${x - ref.initial.x}px, ${y - ref.initial.y}px) rotate(${angle}rad)`;
-      });
-      animationId = requestAnimationFrame(renderLoop);
-    };
-
-    Runner.run(runner, engine);
-    renderLoop();
-
     return () => {
-      cancelAnimationFrame(animationId);
-      Runner.stop(runner);
+      Runner.stop(runnerRef.current);
       World.clear(engine.world, false);
       Engine.clear(engine);
       window.removeEventListener('resize', handleResize);
       restoreTimers.current.forEach((timerId) => clearTimeout(timerId));
     };
   }, [restoreAll]);
+
+  const physicsActive = settings.smash.enabled || settings.gravity.enabled;
+
+  useEffect(() => {
+    if (!physicsActive) return undefined;
+    const runner = runnerRef.current;
+    const engine = engineRef.current;
+    let animationId = 0;
+    let running = false;
+
+    const renderLoop = () => {
+      bodiesRef.current.forEach((ref) => {
+        if (!ref.element) return;
+        const restoring = ref.element.classList.contains('word-restoring');
+        ref.element.classList.toggle('physics-active', !ref.body.isStatic && !restoring);
+        if (restoring || ref.body.isStatic) return;
+        const { x, y } = ref.body.position;
+        ref.element.style.transform = `translate(${x - ref.initial.x}px, ${y - ref.initial.y}px) rotate(${ref.body.angle}rad)`;
+      });
+      animationId = requestAnimationFrame(renderLoop);
+    };
+
+    const start = () => {
+      if (running || document.hidden) return;
+      running = true;
+      Runner.run(runner, engine);
+      renderLoop();
+    };
+    const stop = () => {
+      if (!running) return;
+      running = false;
+      Runner.stop(runner);
+      cancelAnimationFrame(animationId);
+    };
+    const handleVisibility = () => { if (document.hidden) stop(); else start(); };
+
+    start();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [physicsActive]);
 
   useEffect(() => {
     engineRef.current.gravity.y = settings.gravity.enabled ? 0 : 0.4;
@@ -295,6 +309,19 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
       return false;
     });
   }, []);
+
+  const pauseAll = useCallback(() => {
+    restoreAll();
+    setSettings((prev) => ({
+      ...prev,
+      smash: { ...prev.smash, enabled: false },
+      gravity: { ...prev.gravity, enabled: false },
+      fluid: { ...prev.fluid, enabled: false },
+      pretext: { ...prev.pretext, enabled: false },
+    }));
+    closeWorld('pause_all');
+    track('effect_control_changed', { effect: 'all', control: 'enabled', value: 'false' });
+  }, [closeWorld, restoreAll]);
 
   const setEffectEnabled = useCallback((id: EffectId, enabled: boolean) => {
     setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
@@ -395,6 +422,7 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
     closeWorld,
     registerWords,
     restoreAll,
+    pauseAll,
   };
 
   return (

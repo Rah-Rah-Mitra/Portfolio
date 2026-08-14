@@ -1,15 +1,17 @@
 /// <reference types="vite/client" />
 
-import posthog, {
-  type CaptureResult,
-  type LogAttributes,
-  type LogSeverityLevel,
-  type PostHogConfig,
-  type Properties,
+import type {
+  CaptureResult,
+  LogAttributes,
+  LogSeverityLevel,
+  PostHogConfig,
+  Properties,
 } from 'posthog-js';
 
+type PostHogClient = (typeof import('posthog-js'))['default'];
+
 export type Profile = 'software_engineer' | 'cybersecurity';
-export type PanelName = 'effects_lab' | 'ask_the_page';
+export type PanelName = 'effects_lab' | 'ask_the_page' | 'ask_this_portfolio';
 
 export type UrlTargetSummary = {
   target_type: 'preset' | 'external' | 'invalid';
@@ -36,6 +38,7 @@ export type AnalyticsEvent =
   | { event: 'social_link_clicked'; props: { platform: 'linkedin' | 'github' | 'instagram'; location: 'hero' | 'contact' | 'footer' } }
   | { event: 'contact_email_clicked'; props: Partial<{ location: 'contact' | 'footer' }> }
   | { event: 'achievement_viewed'; props: { title: string; category: string; index: number; profile: Profile } }
+  | { event: 'achievement_proof_opened'; props: { title: string } }
   | { event: 'achievement_hovered'; props: { title: string; hover_duration_ms: number } }
   | { event: 'physics_mode_toggled'; props: { mode: 'hammer' | 'gravity_well'; action: 'activated' | 'deactivated' } }
   | { event: 'effect_control_changed'; props: { effect: string; control: string; value: string } }
@@ -72,6 +75,10 @@ const SERVICE_VERSION = import.meta.env.VITE_APP_VERSION ?? 'portfolio-web';
 const SENSITIVE_PROPERTY_PARTS = ['authorization', 'email', 'input', 'message', 'pageState', 'prompt', 'reply', 'token'];
 
 let analyticsEnabled = false;
+let analyticsConfigured = false;
+let posthogClient: PostHogClient | null = null;
+let analyticsLoadPromise: Promise<boolean> | null = null;
+const pendingAnalyticsActions: Array<(client: PostHogClient) => void> = [];
 
 const getViewportBucket = () => {
   if (typeof window === 'undefined') return 'server';
@@ -123,82 +130,125 @@ const sanitizeCapture = (capture: CaptureResult | null): CaptureResult | null =>
 
 const shouldEnableAnalytics = () => Boolean(POSTHOG_KEY) && (!import.meta.env.DEV || ANALYTICS_DEBUG);
 
+const runOrQueueAnalytics = (action: (client: PostHogClient) => void) => {
+  if (!analyticsConfigured) return;
+  if (analyticsEnabled && posthogClient) {
+    action(posthogClient);
+    return;
+  }
+  if (pendingAnalyticsActions.length < 80) pendingAnalyticsActions.push(action);
+};
+
+const loadAnalytics = async (): Promise<boolean> => {
+  if (!analyticsConfigured) return false;
+  if (analyticsEnabled && posthogClient) return true;
+  if (analyticsLoadPromise) return analyticsLoadPromise;
+
+  analyticsLoadPromise = (async () => {
+    try {
+      const { default: posthog } = await import('posthog-js');
+      posthogClient = posthog;
+      posthog.init(POSTHOG_KEY, {
+        api_host: POSTHOG_HOST,
+        ui_host: POSTHOG_UI_HOST,
+        defaults: '2026-01-30',
+        capture_pageview: 'history_change',
+        capture_pageleave: true,
+        respect_dnt: false,
+        persistence: 'localStorage+cookie',
+        person_profiles: 'identified_only',
+        property_denylist: SENSITIVE_PROPERTY_PARTS,
+        before_send: sanitizeCapture,
+        autocapture: {
+          dom_event_allowlist: ['click', 'change', 'submit'],
+          element_allowlist: ['a', 'button', 'form', 'input', 'select', 'textarea', 'label'],
+          element_attribute_ignorelist: ['value', 'placeholder'],
+          capture_copied_text: false,
+        },
+        capture_heatmaps: true,
+        enable_heatmaps: true,
+        capture_dead_clicks: {
+          element_attribute_ignorelist: ['value', 'placeholder'],
+        },
+        rageclick: {
+          content_ignorelist: true,
+          css_selector_ignorelist: ['.ph-no-capture', '.ph-no-rageclick', '.effect-range'],
+        },
+        capture_exceptions: true,
+        disable_session_recording: false,
+        enable_recording_console_log: false,
+        session_recording: {
+          maskAllInputs: true,
+          maskTextSelector: '.ph-mask, [data-private]',
+          blockSelector: '.ph-no-capture, [data-block-replay]',
+        },
+        logs: {
+          captureConsoleLogs: false,
+          serviceName: 'rahul-portfolio-web',
+          environment: import.meta.env.MODE,
+          serviceVersion: SERVICE_VERSION,
+          maxLogsPerInterval: 100,
+        },
+        capture_performance: {
+          network_timing: true,
+          web_vitals: true,
+          web_vitals_attribution: true,
+        },
+        rate_limiting: {
+          events_per_second: 8,
+          events_burst_limit: 32,
+        },
+        loaded(ph) {
+          ph.register_once({ first_seen_profile: getCurrentProfile() });
+          ph.register(getBaseProperties());
+          if (ANALYTICS_DEBUG) console.log('[analytics] PostHog ready. Distinct ID:', ph.get_distinct_id());
+        },
+      } satisfies Partial<PostHogConfig>);
+
+      analyticsEnabled = true;
+      pendingAnalyticsActions.splice(0).forEach((action) => {
+        try { action(posthog); } catch { /* Analytics is non-critical. */ }
+      });
+      return true;
+    } catch (error) {
+      analyticsLoadPromise = null;
+      if (ANALYTICS_DEBUG) console.warn('[analytics] PostHog could not be loaded.', error);
+      return false;
+    }
+  })();
+
+  return analyticsLoadPromise;
+};
+
 export function initAnalytics(): boolean {
   if (!shouldEnableAnalytics()) {
     analyticsEnabled = false;
-    if (ANALYTICS_DEBUG && !POSTHOG_KEY) {
-      console.warn('[analytics] VITE_POSTHOG_KEY is missing; PostHog is disabled.');
-    }
+    analyticsConfigured = false;
+    if (ANALYTICS_DEBUG && !POSTHOG_KEY) console.warn('[analytics] VITE_POSTHOG_KEY is missing; PostHog is disabled.');
     return false;
   }
 
-  analyticsEnabled = true;
-  posthog.init(POSTHOG_KEY, {
-    api_host: POSTHOG_HOST,
-    ui_host: POSTHOG_UI_HOST,
-    defaults: '2026-01-30',
-    capture_pageview: 'history_change',
-    capture_pageleave: true,
-    respect_dnt: false,
-    persistence: 'localStorage+cookie',
-    person_profiles: 'identified_only',
-    property_denylist: SENSITIVE_PROPERTY_PARTS,
-    before_send: sanitizeCapture,
-    autocapture: {
-      dom_event_allowlist: ['click', 'change', 'submit'],
-      element_allowlist: ['a', 'button', 'form', 'input', 'select', 'textarea', 'label'],
-      element_attribute_ignorelist: ['value', 'placeholder'],
-      capture_copied_text: false,
-    },
-    capture_heatmaps: true,
-    enable_heatmaps: true,
-    capture_dead_clicks: {
-      element_attribute_ignorelist: ['value', 'placeholder'],
-    },
-    rageclick: {
-      content_ignorelist: true,
-      css_selector_ignorelist: ['.ph-no-capture', '.ph-no-rageclick', '.effect-range'],
-    },
-    capture_exceptions: true,
-    disable_session_recording: false,
-    enable_recording_console_log: false,
-    session_recording: {
-      maskAllInputs: true,
-      maskTextSelector: '.ph-mask, [data-private]',
-      blockSelector: '.ph-no-capture, [data-block-replay]',
-    },
-    logs: {
-      captureConsoleLogs: false,
-      serviceName: 'rahul-portfolio-web',
-      environment: import.meta.env.MODE,
-      serviceVersion: SERVICE_VERSION,
-      maxLogsPerInterval: 100,
-    },
-    capture_performance: {
-      network_timing: true,
-      web_vitals: true,
-      web_vitals_attribution: true,
-    },
-    rate_limiting: {
-      events_per_second: 8,
-      events_burst_limit: 32,
-    },
-    loaded(ph) {
-      ph.register_once({
-        first_seen_profile: getCurrentProfile(),
-      });
-      ph.register(getBaseProperties());
-      if (ANALYTICS_DEBUG) {
-        console.log('[analytics] PostHog ready. Distinct ID:', ph.get_distinct_id());
-      }
-    },
-  } satisfies Partial<PostHogConfig>);
+  analyticsConfigured = true;
+  if (typeof window === 'undefined') {
+    void loadAnalytics();
+    return true;
+  }
 
+  let fallbackTimer = 0;
+  const begin = () => {
+    window.removeEventListener('pointerdown', begin, true);
+    window.removeEventListener('keydown', begin, true);
+    window.clearTimeout(fallbackTimer);
+    void loadAnalytics();
+  };
+  window.addEventListener('pointerdown', begin, { once: true, capture: true });
+  window.addEventListener('keydown', begin, { once: true, capture: true });
+  fallbackTimer = window.setTimeout(begin, 30_000);
   return true;
 }
 
 export function getPostHogClient() {
-  return posthog;
+  return posthogClient;
 }
 
 export function isAnalyticsEnabled(): boolean {
@@ -209,33 +259,33 @@ export function track<E extends AnalyticsEvent['event']>(
   event: E,
   props: Extract<AnalyticsEvent, { event: E }>['props'],
 ): void {
-  if (!analyticsEnabled) return;
-
-  try {
-    posthog.capture(event, {
-      ...getBaseProperties(),
-      ...(props as Record<string, unknown>),
-    });
-  } catch {
-    // Analytics must never affect the portfolio experience.
-  }
+  runOrQueueAnalytics((client) => {
+    try {
+      client.capture(event, {
+        ...getBaseProperties(),
+        ...(props as Record<string, unknown>),
+      });
+    } catch {
+      // Analytics must never affect the portfolio experience.
+    }
+  });
 }
 
 export function logClientEvent(level: LogSeverityLevel, body: string, attributes: LogAttributes = {}): void {
-  if (!analyticsEnabled) return;
-
-  try {
-    posthog.captureLog({
-      level,
-      body,
-      attributes: redactSensitiveProperties({
-        ...getBaseProperties(),
-        ...attributes,
-      }),
-    });
-  } catch {
-    // No-op by design.
-  }
+  runOrQueueAnalytics((client) => {
+    try {
+      client.captureLog({
+        level,
+        body,
+        attributes: redactSensitiveProperties({
+          ...getBaseProperties(),
+          ...attributes,
+        }),
+      });
+    } catch {
+      // No-op by design.
+    }
+  });
 }
 
 export function captureAnalyticsException(error: unknown, properties: { area: string } & Properties): void {
@@ -243,27 +293,32 @@ export function captureAnalyticsException(error: unknown, properties: { area: st
   triggerSessionReplay('frontend_exception', { source: properties.area });
   track('frontend_exception_captured', { area: String(properties.area), error_name: errorName });
 
-  if (!analyticsEnabled) return;
-
-  try {
-    posthog.captureException(error, redactSensitiveProperties({
-      ...getBaseProperties(),
-      ...properties,
-    }));
-  } catch {
-    // No-op by design.
-  }
+  runOrQueueAnalytics((client) => {
+    try {
+      client.captureException(error, redactSensitiveProperties({
+        ...getBaseProperties(),
+        ...properties,
+      }));
+    } catch {
+      // No-op by design.
+    }
+  });
+  void loadAnalytics();
 }
 
 export function triggerSessionReplay(reason: ReplayReason, properties: { source?: string } = {}): void {
-  if (!analyticsEnabled) return;
-
-  try {
-    posthog.startSessionRecording({ sampling: true, event_trigger: true });
-    track('session_replay_triggered', { reason, ...properties });
-  } catch {
-    // Replay should be opportunistic, never required.
-  }
+  runOrQueueAnalytics((client) => {
+    try {
+      client.startSessionRecording({ sampling: true, event_trigger: true });
+      client.capture('session_replay_triggered', {
+        ...getBaseProperties(),
+        reason,
+        ...properties,
+      });
+    } catch {
+      // Replay should be opportunistic, never required.
+    }
+  });
 }
 
 export function summarizeUrlTarget(rawTarget: string, targetLabel?: string): UrlTargetSummary {

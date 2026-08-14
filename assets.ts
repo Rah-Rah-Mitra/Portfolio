@@ -3,7 +3,7 @@
 // Place your actual image files in the 'images' directory.
 
 // == Software Engineer Profile (Light Theme) ==
-export const SE_PROFILE_IMAGE = '/images/se-profile.jpg';
+export const SE_PROFILE_IMAGE = '/images/se-profile-384.webp';
 
 // Achievements
 export const SE_ACHIEVEMENT_MARITIME = '/images/se-achievement-maritime.jpg';
@@ -14,7 +14,7 @@ export const SE_ACHIEVEMENT_NVIDIA_DIL_DRM = '/images/se-achievement-nvidia-dil-
 export const SE_ACHIEVEMENT_3DCV = '/images/se-achievement-3dcv.jpg';
 
 // == Cybersecurity Analyst Profile (Dark Theme) ==
-export const CS_PROFILE_IMAGE = '/images/cs-profile.jpg';
+export const CS_PROFILE_IMAGE = '/images/cs-profile-384.webp';
 
 // Achievements
 export const CS_ACHIEVEMENT_BUG_BOUNTY = '/images/cs-achievement-bug-bounty.jpg';

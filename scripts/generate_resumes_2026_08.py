@@ -6,6 +6,7 @@ from pathlib import Path
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.text.paragraph import Paragraph
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +34,9 @@ ABBOTT_APC_SOURCE = (
     "- Architected an Azure-based web simulator for Advanced Process Control systems across global manufacturing plants, "
     "using Docker containerization and Bitbucket CI/CD for repeatable releases."
 )
+GLOBAL_INLINE_REPLACEMENTS = {
+    "Abbott Laboratories Singapore Pte Ltd": "Abbott Laboratories",
+}
 INLINE_REPLACEMENTS: dict[str, dict[str, str]] = {
     "civic-tech-solution-architect": {"Azure APC Web Simulator": "APC Simulator Cloud Operations"},
     "solution-architect": {"Azure APC Web Simulator": "APC Simulator Cloud Operations"},
@@ -41,31 +45,31 @@ INLINE_REPLACEMENTS: dict[str, dict[str, str]] = {
 REPLACEMENTS: dict[str, dict[str, str]] = {
     "ai-engineer": {
         ABBOTT_DIGITAL_TWIN_SOURCE:
-        "- Built a SimPy discrete-event digital twin and CP-SAT optimizer for hybrid flow-shop scheduling; engineered a 15-stage changeover-data pipeline that handled human- and machine-generated errors and processed five years of unseen raw data without errors.",
+        "- Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
         ABBOTT_APC_SOURCE:
-        "- Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training users as a Docker container on Azure App Service; delivered practical AI upskilling to the regional engineering workforce.",
+        "- Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of previously unseen raw data with zero execution failures.",
         "Skills: Python; BERT; DNN; RAG; AI Agents; OpenAI GPT-4; Gemini; Vector Search; SEALION; ASPIRE 2A; LangChain; Computer Vision; Multi-View Geometry; Structure-from-Motion; Model Evaluation.":
         "Skills: Python; BERT; DNN; RAG; AI Agents; GPT-4; Gemini; Vector Search; SEALION; ASPIRE 2A; 3D Computer Vision; Projective & Epipolar Geometry; Absolute Pose; Structure-from-Motion; Bundle Adjustment; Multi-View Stereo; Model Evaluation.",
     },
     "civic-tech-solution-architect": {
         ABBOTT_DIGITAL_TWIN_SOURCE:
-        "- Built a manufacturing scheduling digital twin and a 15-stage changeover-data pipeline that handled human- and machine-generated errors and processed five years of unseen raw data without errors.",
+        "- Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
         ABBOTT_APC_SOURCE:
-        "- Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use as a Docker container on Azure App Service; delivered practical AI upskilling to the regional engineering workforce.",
+        "- Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of previously unseen raw data with zero execution failures.",
         "- Designed a cloud-hosted process-control simulation surface with Azure deployment, Docker packaging, CI/CD pipelines, and manufacturing stakeholder feedback loops.":
         "- Owned cloud hosting and production support for a team-built process-control simulator, Docker-packaged on Azure App Service for active internal manufacturing and engineer-training use.",
     },
     "cyber-security": {
         ABBOTT_DIGITAL_TWIN_SOURCE:
-        "- Engineered a non-destructive 15-stage changeover-data pipeline with staged audit outputs, handling human- and machine-generated errors and processing five years of unseen raw data without errors.",
+        "- Engineered a non-destructive, 15-stage changeover-data pipeline with staged audit outputs to normalize operator- and machine-generated anomalies, validating it against five years of previously unseen raw data with zero execution failures.",
         ABBOTT_APC_SOURCE:
-        "- Productionized and operated a team-built APC simulator for live internal users, applying access restrictions, runtime/session hardening, and Docker packaging for Azure App Service.",
+        "- Productionized and supported a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime/session hardening, and Docker packaging.",
     },
     "general": {
         ABBOTT_DIGITAL_TWIN_GENERAL_SOURCE:
-        "- Built a SimPy discrete-event digital twin and CP-SAT optimizer for hybrid flow-shop scheduling; researched robust optimization and engineered a 15-stage data pipeline that processed five years of unseen raw data without errors.",
+        "- Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
         ABBOTT_APC_SOURCE:
-        "- Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use as a Docker container on Azure App Service; delivered practical AI upskilling to the regional engineering workforce.",
+        "- Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of previously unseen raw data with zero execution failures.",
         "Operations Research / Optimization: Constraint Programming, Scheduling Optimization, Hybrid Flow Shop, Digital Twin Simulation, Simulation, Dijkstra / SSSP / APSP, Decision Analytics, Statistics, Jupyter, Mathematical Modeling (Linear Algebra, Probability, Calculus)":
         "Operations Research / Optimization: CP-SAT, Hybrid Flow-Shop Scheduling, SimPy, Digital Twin Simulation, Robust Optimization Research, Graph Optimization, Network Flow, Dijkstra / SSSP / APSP, Decision Analytics, Statistics, Mathematical Modeling",
         "AI/ML: BERT, DNN, Transformers, RAG / RAG Architecture, AI Agents, OpenAI GPT-4, Gemini, SEALION, LangChain, Vector Search, Computer Vision, Multi-View Geometry, Structure-from-Motion, Bundle Adjustment, Model Evaluation, NLP, Deep Reinforcement Learning (PPO, A2C, DDPG, DQN, Double DQN), ASPIRE 2A / HPC / CUDA / distributed training":
@@ -73,30 +77,56 @@ REPLACEMENTS: dict[str, dict[str, str]] = {
     },
     "software-engineer": {
         ABBOTT_DIGITAL_TWIN_SOURCE:
-        "- Built a SimPy discrete-event digital twin and CP-SAT scheduling optimizer; engineered a non-destructive 15-stage data pipeline that handled human- and machine-generated errors and processed five years of unseen raw data without errors.",
+        "- Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
         ABBOTT_APC_SOURCE:
-        "- Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training users, resolving runtime issues and packaging it as a Docker container for Azure App Service; delivered regional AI upskilling.",
+        "- Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of previously unseen raw data with zero execution failures.",
         "Skills: Python; TypeScript; React; Next.js; Three.js; FastAPI; Flask; aiohttp; asyncio; Java; Docker; CI/CD; Azure; Singpass/Myinfo; Codex.":
         "Skills: Python; TypeScript; React; Next.js; Three.js; FastAPI; aiohttp/asyncio; Docker; CI/CD; Azure; 3D CV: projective & epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo.",
     },
     "solution-architect": {
         ABBOTT_DIGITAL_TWIN_SOURCE:
-        "- Built a SimPy digital twin and CP-SAT scheduling optimizer; engineered a 15-stage changeover-data pipeline that handled human- and machine-generated errors and processed five years of unseen raw data without errors.",
+        "- Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
         ABBOTT_APC_SOURCE:
-        "- Owned hosting and production support for a team-built APC simulator used by internal manufacturing and engineering-training teams, packaging it as a Docker container for Azure App Service and documenting handover; delivered regional AI upskilling.",
+        "- Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of previously unseen raw data with zero execution failures.",
         "- Designed a cloud-hosted process-control simulation surface with Azure deployment, Docker packaging, CI/CD pipelines, and manufacturing stakeholder feedback loops.":
         "- Productionized a team-built process-control simulator for active internal use through Azure App Service, Docker packaging, controlled access, runtime support, and deployment handover.",
     },
     "operations-research-engineer": {
         ABBOTT_DIGITAL_TWIN_SOURCE:
-        "- Built a SimPy discrete-event digital twin and CP-SAT optimizer for hybrid flow-shop scheduling; compared heuristic, MIP, and GA approaches and researched robust optimization for uncertainty-aware decisions.",
+        "- Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling; compared heuristic, MIP, and genetic-algorithm approaches and researched robust optimization.",
         ABBOTT_APC_SOURCE:
-        "- Engineered a 15-stage changeover-data pipeline that handled human- and machine-generated errors and processed five years of unseen raw data without errors; separately operated a team-built APC simulator on Azure App Service.",
+        "- Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of previously unseen raw data with zero execution failures.",
         "- Modeled production scheduling as a digital twin simulation and constraint-programming optimization problem, connecting ISE methods with deployment-oriented Python tooling.":
         "- Modeled hybrid flow-shop scheduling as a SimPy digital twin with explicit objectives and constraints, using CP-SAT, simulation, and deployment-oriented Python tooling.",
         "Skills: Constraint Programming; Scheduling Optimization; Hybrid Flow Shop; Digital Twin Simulation; Dijkstra; SSSP/APSP; Python; Jupyter; Statistics; Simulation; Excel VBA; Decision Analytics.":
         "Skills: CP-SAT; Hybrid Flow-Shop Scheduling; SimPy; Robust Optimization Research; Digital Twin Simulation; Objective Functions & Constraints; Graph Optimization; Network Flow; Dijkstra; Python; Statistics; Excel VBA; Decision Analytics.",
     },
+}
+
+ADDITIONAL_ABBOTT_BULLETS: dict[str, tuple[str, ...]] = {
+    "ai-engineer": (
+        "- Productionized and supported a team-built APC simulator for live manufacturing and engineer training by packaging it in Docker and deploying it to Azure App Service.",
+        "- Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use.",
+    ),
+    "civic-tech-solution-architect": (
+        "- Productionized and supported a team-built APC simulator for live manufacturing and engineer training by packaging it in Docker and deploying it to Azure App Service.",
+        "- Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use.",
+    ),
+    "general": (
+        "- Productionized and supported a team-built APC simulator for live manufacturing and engineer training by packaging it in Docker and deploying it to Azure App Service.",
+        "- Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use.",
+    ),
+    "software-engineer": (
+        "- Productionized and supported a team-built APC simulator for live manufacturing and engineer training, resolving runtime issues, packaging it in Docker, and deploying it to Azure App Service.",
+        "- Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use.",
+    ),
+    "solution-architect": (
+        "- Owned cloud deployment and production support for a team-built APC simulator used in manufacturing and engineer training, with Docker packaging, Azure App Service hosting, and documented handover.",
+        "- Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use.",
+    ),
+    "operations-research-engineer": (
+        "- Productionized and supported a team-built APC simulator for live manufacturing and engineer training by packaging it in Docker and deploying it to Azure App Service.",
+    ),
 }
 
 
@@ -161,6 +191,14 @@ def replace_paragraph_text(paragraph, text: str) -> None:
     copy_run_properties(sample_run, run)
 
 
+def insert_paragraph_after(paragraph, text: str) -> Paragraph:
+    cloned_element = deepcopy(paragraph._p)
+    paragraph._p.addnext(cloned_element)
+    inserted = Paragraph(cloned_element, paragraph._parent)
+    replace_paragraph_text(inserted, text)
+    return inserted
+
+
 def iter_paragraphs(document):
     yield from document.paragraphs
     for table in document.tables:
@@ -177,6 +215,8 @@ def generate(slug: str) -> Path:
     found_contact = False
     found_replacements: set[str] = set()
     found_inline_replacements: set[str] = set()
+    abbott_insert_anchor = None
+    inline_replacements = {**GLOBAL_INLINE_REPLACEMENTS, **INLINE_REPLACEMENTS.get(slug, {})}
 
     paragraphs = list(iter_paragraphs(document))
     for paragraph in paragraphs:
@@ -188,9 +228,11 @@ def generate(slug: str) -> Path:
         if original in replacements:
             replace_paragraph_text(paragraph, replacements[original])
             found_replacements.add(original)
+            if original == ABBOTT_APC_SOURCE:
+                abbott_insert_anchor = paragraph
 
         for run in paragraph.runs:
-            for source_text, target_text in INLINE_REPLACEMENTS.get(slug, {}).items():
+            for source_text, target_text in inline_replacements.items():
                 if source_text in run.text:
                     run.text = run.text.replace(source_text, target_text)
                     found_inline_replacements.add(source_text)
@@ -200,10 +242,18 @@ def generate(slug: str) -> Path:
     missing = set(replacements) - found_replacements
     if missing:
         raise RuntimeError(f"Expected content was not found in {source.name}: {sorted(missing)}")
-    missing_inline = set(INLINE_REPLACEMENTS.get(slug, {})) - found_inline_replacements
+    missing_inline = set(inline_replacements) - found_inline_replacements
     if missing_inline:
         raise RuntimeError(f"Expected inline content was not found in {source.name}: {sorted(missing_inline)}")
 
+    additional_bullets = ADDITIONAL_ABBOTT_BULLETS.get(slug, ())
+    if additional_bullets:
+        if abbott_insert_anchor is None:
+            raise RuntimeError(f"Abbott insertion anchor not found in {source.name}")
+        for bullet in additional_bullets:
+            abbott_insert_anchor = insert_paragraph_after(abbott_insert_anchor, bullet)
+
+    paragraphs = list(iter_paragraphs(document))
     for current, following in zip(paragraphs, paragraphs[1:]):
         current_text = current.text.strip()
         if current_text and not current_text.startswith("- ") and following.text.strip().startswith("- "):

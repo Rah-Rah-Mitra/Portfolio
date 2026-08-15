@@ -66,9 +66,11 @@ def main() -> None:
             "canonical_in_pdf_text": "rahul-mitra.com" in extracted,
             "legacy_domain_absent": ("rahul-mitra." + "vercel.app") not in extracted,
             "replacement_glyph_absent": "\ufffd" not in extracted,
-            "abbott_pipeline_present": "15-stage" in normalized_text and "five years of unseen raw data without errors" in normalized_text,
+            "abbott_pipeline_present": "15-stage" in normalized_text and "five years of previously unseen raw data with zero execution failures" in normalized_text,
             "apc_ownership_present": "team-built APC simulator" in normalized_text,
             "old_apc_ownership_absent": "Architected an Azure-based web simulator" not in normalized_text,
+            "abbott_name_standardized": "Abbott Laboratories" in normalized_text and "Abbott Laboratories Singapore Pte Ltd" not in normalized_text,
+            "overloaded_bullet_absent": "CP-SAT scheduling optimizer; engineered" not in normalized_text,
         }
         if checks["page_count"] != expected_pages:
             raise RuntimeError(f"Unexpected page count for {pdf_path.name}: {checks['page_count']}")
@@ -83,6 +85,8 @@ def main() -> None:
             checks["abbott_pipeline_present"],
             checks["apc_ownership_present"],
             checks["old_apc_ownership_absent"],
+            checks["abbott_name_standardized"],
+            checks["overloaded_bullet_absent"],
         )):
             raise RuntimeError(f"Text validation failed for {pdf_path.name}")
         report.append({"slug": docx_path.stem, **checks})

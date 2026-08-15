@@ -60,8 +60,12 @@ const localAgent = (message, reason = 'model_unavailable') => {
   const commands = [];
   let reply = 'I could not find that in Rahul’s portfolio record. Ask about optimization, 3D computer vision, security, a résumé, or the spatial map.';
   let references = [];
-  if (text.includes('optim') || text.includes('scheduling') || text.includes('operations research')) {
-    reply = 'Rahul’s operations-research work connects constraint programming and hybrid flow-shop scheduling to a digital-twin simulator, with additional evidence in graph optimization, network flow, simulation, objectives, and constraints.';
+  if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
+    reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce.';
+    references = [{ label: 'Hybrid Flow Shop Digital Twin Optimizer', href: '#project-hybrid-flow-shop-digital-twin' }, { label: 'Manufacturing Changeover Data Pipeline', href: '#project-changeover-data-quality-pipeline' }, { label: 'APC Simulator Cloud Operations', href: '#project-azure-apc-web-simulator' }];
+    commands.push({ type: 'focusSection', sectionId: 'work' });
+  } else if (text.includes('optim') || text.includes('scheduling') || text.includes('operations research')) {
+    reply = 'Rahul’s operations-research work connects CP-SAT and hybrid flow-shop scheduling to a SimPy digital twin, robust-optimization research, graph optimization, network flow, simulation, objectives, and constraints.';
     references = [{ label: 'Hybrid Flow Shop Digital Twin Optimizer', href: '#project-hybrid-flow-shop-digital-twin' }, { label: 'Operations research capability map', href: '#domains' }];
     commands.push({ type: 'focusSection', sectionId: 'work' });
   } else if (text.includes('3d computer vision') || text.includes('3d cv') || text.includes('epipolar') || text.includes('spatial')) {

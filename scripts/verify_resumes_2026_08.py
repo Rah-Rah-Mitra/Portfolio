@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
@@ -54,6 +55,7 @@ def main() -> None:
         reader = PdfReader(pdf_path)
         expected_pages = 2 if "-general-" in docx_path.name else 1
         extracted = "\n".join(page.extract_text() or "" for page in reader.pages)
+        normalized_text = re.sub(r"\s+", " ", extracted.replace("-\n", "-"))
         docx_uri_set = docx_links(docx_path)
         pdf_uri_set = pdf_links(reader)
         checks = {
@@ -64,6 +66,9 @@ def main() -> None:
             "canonical_in_pdf_text": "rahul-mitra.com" in extracted,
             "legacy_domain_absent": ("rahul-mitra." + "vercel.app") not in extracted,
             "replacement_glyph_absent": "\ufffd" not in extracted,
+            "abbott_pipeline_present": "15-stage" in normalized_text and "five years of unseen raw data without errors" in normalized_text,
+            "apc_ownership_present": "team-built APC simulator" in normalized_text,
+            "old_apc_ownership_absent": "Architected an Azure-based web simulator" not in normalized_text,
         }
         if checks["page_count"] != expected_pages:
             raise RuntimeError(f"Unexpected page count for {pdf_path.name}: {checks['page_count']}")
@@ -71,7 +76,14 @@ def main() -> None:
             raise RuntimeError(f"Missing DOCX links in {docx_path.name}: {EXPECTED_URIS - docx_uri_set}")
         if set(checks["pdf_contact_links"]) != EXPECTED_URIS:
             raise RuntimeError(f"Missing PDF links in {pdf_path.name}: {EXPECTED_URIS - pdf_uri_set}")
-        if not checks["canonical_in_pdf_text"] or not checks["legacy_domain_absent"] or not checks["replacement_glyph_absent"]:
+        if not all((
+            checks["canonical_in_pdf_text"],
+            checks["legacy_domain_absent"],
+            checks["replacement_glyph_absent"],
+            checks["abbott_pipeline_present"],
+            checks["apc_ownership_present"],
+            checks["old_apc_ownership_absent"],
+        )):
             raise RuntimeError(f"Text validation failed for {pdf_path.name}")
         report.append({"slug": docx_path.stem, **checks})
 

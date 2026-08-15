@@ -72,7 +72,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ id, clusters }) => {
               type="button"
               role="tab"
               aria-selected={cluster.id === activeDomain?.id}
-              aria-controls={`domain-panel-${cluster.id}`}
+              aria-controls="domain-panel"
               onClick={() => setActiveDomainId(cluster.id)}
             >
               <CameraGlyph angle={(index - 2.5) * 4} />
@@ -83,7 +83,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ id, clusters }) => {
         {activeDomain && (
           <article
             key={activeDomain.id}
-            id={`domain-panel-${activeDomain.id}`}
+            id="domain-panel"
             className="domain-focus-view"
             data-domain={activeDomain.id}
             role="tabpanel"

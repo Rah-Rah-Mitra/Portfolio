@@ -51,7 +51,7 @@ const ResumesSection: React.FC<ResumesSectionProps> = ({ id, resumes }) => {
                 type="button"
                 role="tab"
                 aria-selected={resume.id === activeResume?.id}
-                aria-controls={`resume-panel-${resume.id}`}
+                aria-controls="resume-panel"
                 onClick={() => setActiveResumeId(resume.id)}
               >
                 <CameraGlyph angle={(index - 3) * 3} />
@@ -64,7 +64,7 @@ const ResumesSection: React.FC<ResumesSectionProps> = ({ id, resumes }) => {
         {activeResume && (
           <article
             key={activeResume.id}
-            id={`resume-panel-${activeResume.id}`}
+            id="resume-panel"
             className="resume-entry resume-active-view"
             data-accent={activeResume.accent}
             role="tabpanel"

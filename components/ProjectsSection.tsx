@@ -38,7 +38,7 @@ const ProjectLinks: React.FC<{ project: ProjectHighlight }> = ({ project }) => {
 };
 
 const CaseStudyPreview: React.FC<{ project: ProjectHighlight; index: number }> = ({ project, index }) => (
-  <article id={`project-panel-${project.id}`} className={`case-study case-study-${(index % 3) + 1}`} data-accent={project.accent} role="tabpanel" aria-labelledby={`project-${project.id}`}>
+  <article id="project-panel" className={`case-study case-study-${(index % 3) + 1}`} data-project={project.id} data-accent={project.accent} role="tabpanel" aria-labelledby={`project-${project.id}`}>
     <div className="case-main">
       <div className="case-meta">
         <span>{accentLabels[project.accent]}</span>
@@ -157,7 +157,7 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
               type="button"
               role="tab"
               aria-selected={project.id === activeProject?.id}
-              aria-controls={`project-panel-${project.id}`}
+              aria-controls="project-panel"
               onClick={() => selectProject(project, 'camera_marker')}
             >
               <CameraGlyph angle={(index % 2 === 0 ? -1 : 1) * (5 + index * 2)} />
@@ -200,8 +200,7 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
         </button>
       </div>
 
-      {archiveOpen && (
-        <div id="project-archive" className="archive-panel">
+      <div id="project-archive" className="archive-panel" hidden={!archiveOpen}>
           <label className="search-field">
             <span>Search projects and methods</span>
             <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try Python, security, geometry..." />
@@ -223,8 +222,7 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ id, projects, archive
             ))}
           </div>
           {filtered.length === 0 && <p className="empty-state">No project matches that search. Try a broader method or domain.</p>}
-        </div>
-      )}
+      </div>
     </SectionContainer>
   );
 };

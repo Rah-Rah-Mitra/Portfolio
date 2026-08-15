@@ -130,7 +130,7 @@ The portfolio is a code-led survey of one engineering practice from a sequence o
 
 The first viewport states Rahul's positioning and explicit actions on the left, localizes that claim through the spatial field on the right, and keeps the camera journey subordinate. Real projects, contributions, distinctions, dates, résumé files, and contact paths remain the primary material. Camera frustums, sparse points, pose paths, reconstruction marks, and uncertainty contours explain how the evidence is observed; they never upgrade an interest or academic foundation into unsupported professional robotics, SLAM, localization, mapping, or Gaussian-splatting delivery.
 
-Build and Secure are semantic lenses over the same world. Build teal or Secure coral owns active state and emphasis, while optimization amber and reconstruction violet keep stable technical meanings. The assistant, Effects Lab, and Spatial World are opt-in depth layers opened from explicit inline hero launchers. Persistent docks are intentionally suppressed so optional tools never obstruct the survey.
+Build and Secure are semantic lenses over the same world. Build teal or Secure coral owns active state and emphasis, while optimization amber and reconstruction violet keep stable technical meanings. The assistant, Effects Lab, and Spatial World are opt-in depth layers opened from explicit inline hero launchers. Above 860px, the assistant and Effects Lab also remain persistently available from a reserved left instrument rail; below that breakpoint, the rail disappears and the inline launchers preserve access without covering the survey.
 
 **Key Characteristics:**
 
@@ -202,11 +202,11 @@ The palette treats each chapter as a calibrated sheet in the same laboratory-pap
 
 The shell is a sequence of seven observation fields: position → selected system → capabilities → journey → proof → targeted résumé → contact. The hero is capped at 82rem and pairs a left positioning-and-actions column with a right localization/spatial visual. Chapter frames are capped at 76rem and add a third heading column for a CameraGlyph and frame label on wide screens. Each major chapter has its own tinted neutral field, sparse observation points, uncertainty ellipses, a structural top rule, and enough stage depth to read as a registered viewpoint rather than another row in one page-long ledger.
 
-Above 1100px, the camera journey is a fixed right-side rail with seven markers, a progress path, and an active frame readout when space permits. At 1100px and below it becomes a sticky horizontal rail beneath the header. At 640px and below, inactive markers collapse to glyphs while the active marker expands to expose its label, preserving orientation without consuming the viewport. The active chapter follows scrolling through intersection state, while every marker remains a real anchor link.
+Above 1100px, the camera journey is a fixed right-side rail with seven markers, a progress path, and an active frame readout when space permits. At 1100px and below it becomes a sticky horizontal rail beneath the header. At 640px and below, inactive markers collapse to glyphs while the active marker expands to expose its label, preserving orientation without consuming the viewport. The active chapter follows scrolling through intersection state, while every marker remains a real anchor link. Above 860px, the shell reserves a 4rem left instrument rail for the persistent AI and FX docks so optional controls never overlap hero copy, navigation, or the camera journey.
 
 Selected Work uses a filter row, horizontal camera capture strip, one registered project panel, previous/next controls, and a searchable complete-archive drawer. Capabilities uses six camera markers and one active observation panel. Proof and Résumés use bounded selector rails with one active evidence or download surface. The Journey intentionally defaults to four compact ledger items and can expand after filtering or search. The Share Bench is a collapsed details surface until explicitly opened.
 
-At 860px and below, chapter headings and active views become single-column, and vertical selectors turn into horizontally scrollable camera strips. At 640px, the hero actions become a deliberate grid, active views stack, the four-item ledger moves dates above content, and section camera frames become compact inline registrations. At 380px, the hero actions stack and optional links simplify further. The 320px layout remains the minimum supported width with no horizontal overflow or content obstruction.
+At 860px and below, the instrument rail is removed, chapter headings and active views become single-column, and vertical selectors turn into horizontally scrollable camera strips. Inline hero launchers remain available for both AI and FX. At 640px, the hero actions become a deliberate grid, active views stack, the four-item ledger moves dates above content, and section camera frames become compact inline registrations. At 380px, the hero actions stack and optional links simplify further. The 320px layout remains the minimum supported width with no horizontal overflow or content obstruction.
 
 The background uses a quiet 32px graph-paper grid, tightening to 24px on mobile. Sticky navigation, visible focus outlines, thin but legible scrollbars, stable drawer gutters, semantic document order, and 2.75rem coarse-pointer targets are part of the layout contract.
 
@@ -220,13 +220,14 @@ The background uses a quiet 32px graph-paper grid, tightening to 24px on mobile.
 
 ## Elevation & Depth
 
-The system is flat by default. Chapter tint, rule density, grid texture, clipped registration, and overlap carry most hierarchy. Shadows are reserved for the hero's spatial sheet, the scrolled header, the active desktop journey marker, and modal side panels. There is no resting shadow vocabulary for ordinary observation panels, selectors, ledgers, or archives, and no utility-dock elevation because persistent docks are suppressed.
+The system is flat by default. Chapter tint, rule density, grid texture, clipped registration, and overlap carry most hierarchy. Shadows are reserved for the hero's spatial sheet, the scrolled header, the active desktop journey marker, compact instrument docks, and modal side panels. There is no resting shadow vocabulary for ordinary observation panels, selectors, ledgers, or archives.
 
 ### Shadow Vocabulary
 
 - **Field Sheet:** A broad, low-contrast lift under the hero spatial/localization sheet.
 - **Scrolled Header:** A shallow ambient shadow that appears only after the page moves.
 - **Active Journey Marker:** A compact lift that identifies the current registered camera on the desktop rail.
+- **Instrument Dock:** A restrained compact lift that separates the persistent AI and FX controls from the reserved desktop rail without turning them into floating spectacle.
 - **Panel Edge:** Directional depth on assistant and Effects Lab drawers, paired with a translucent ink backdrop.
 
 ### Named Rules
@@ -302,7 +303,7 @@ The chronological Journey shows four compact records by default, with filters, s
 
 ### Assistant, Effects Lab, and Spatial World
 
-Inline hero actions are the persistent launch points for the assistant, Effects Lab, and Spatial World. Desktop and mobile utility docks remain suppressed to avoid covering the survey. Assistant and Effects Lab open focus-managed directional drawers; the Three.js world remains lazy and opt-in. Loading, fallback, error, and disabled states must remain explicit, and no recruiter-critical fact may exist only inside an optional layer.
+Inline hero actions remain the universal launch points for the assistant, Effects Lab, and Spatial World. On desktop, compact AI and FX docks are also maintained inside the reserved left instrument rail; their labels appear on hover or keyboard focus, and the initiating dock remains mounted while its drawer is open so focus returns correctly on close. At 860px and below, those docks are hidden and the inline launchers own access to prevent viewport obstruction. Assistant and Effects Lab open focus-managed directional drawers; the Three.js world remains lazy and opt-in. Loading, fallback, error, and disabled states must remain explicit, and no recruiter-critical fact may exist only inside an optional layer.
 
 ### Motion and Reduced Motion
 
@@ -321,7 +322,7 @@ Normal motion registers viewpoint changes: chapter reveals alternate by camera s
 - **Do** use chapter tints, CameraGlyph poses, sparse observations, and frame labels to distinguish registered viewpoints.
 - **Do** keep one active work, capability, proof, or résumé panel visible while preserving searchable archives and clearly labeled selectors.
 - **Do** keep Journey concise at four default entries and keep Share Bench collapsed until requested.
-- **Do** use inline hero launchers for the assistant, Effects Lab, and Spatial World while persistent docks remain suppressed.
+- **Do** maintain the compact desktop AI and FX docks inside their reserved instrument rail, while retaining explicit inline launchers for every viewport.
 - **Do** preserve visible focus, semantic headings and landmarks, active-label exposure on mobile, 2.75rem coarse-pointer targets, readable contrast, and meaningful alt text.
 - **Do** remove registration, panel, camera, progress, spatial, and decorative motion under reduced-motion preference.
 

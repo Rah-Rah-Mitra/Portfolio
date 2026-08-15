@@ -204,11 +204,15 @@ const AskThePage: React.FC = () => {
     track('chatbot_command_submitted', { used_model: String(Boolean(agent.modelUsed)), command_count: String(agent.commands?.length ?? 0), status: source, fallback_reason: agent.reason });
   };
 
-  if (!open) return <button type="button" className="ask-dock" data-open-assistant onClick={() => openPanel('dock')} aria-label="AI, open Ask this portfolio"><span aria-hidden="true">AI</span><span>Ask portfolio</span></button>;
+  const dockTrigger = <button type="button" className="ask-dock" data-open-assistant onClick={() => openPanel('dock')} aria-label="AI, open Ask this portfolio"><span aria-hidden="true">AI</span><span>Ask portfolio</span></button>;
+
+  if (!open) return dockTrigger;
 
   return (
-    <div className="panel-backdrop assistant-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close('backdrop'); }}>
-      <section ref={panelRef} className="ask-page" role="dialog" aria-modal="true" aria-labelledby="assistant-title" tabIndex={-1}>
+    <>
+      {dockTrigger}
+      <div className="panel-backdrop assistant-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close('backdrop'); }}>
+        <section ref={panelRef} className="ask-page" role="dialog" aria-modal="true" aria-labelledby="assistant-title" tabIndex={-1}>
         <header className="panel-header"><div><h2 id="assistant-title">Ask this portfolio</h2><p className="panel-context">Private · data grounded</p></div><button type="button" onClick={() => close('close_button')}>Close</button></header>
         <p className="panel-intro">Ask a recruiter-style question or navigate the page. Keys remain server-side; if the service is unavailable, the assistant falls back to a small factual local index.</p>
         <div className="assistant-starters" aria-label="Starter questions">
@@ -232,8 +236,9 @@ const AskThePage: React.FC = () => {
           <div><input id="portfolio-question" className="ph-no-capture" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask about optimization, 3D vision, security…" data-private="true" data-block-replay="true" autoComplete="off" /><button type="submit" disabled={isSending || !input.trim()}>Send</button></div>
         </form>
         <p className="assistant-status" role="status">{serviceNote}</p>
-      </section>
-    </div>
+        </section>
+      </div>
+    </>
   );
 };
 

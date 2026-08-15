@@ -731,11 +731,20 @@ img { max-width: 100%; }
 .panel-backdrop { animation: backdrop-register 220ms ease-out; }
 .effects-lab { animation: panel-register-right 420ms cubic-bezier(.16,1,.3,1); }
 .ask-page { animation: panel-register-left 420ms cubic-bezier(.16,1,.3,1); }
-.effects-dock, .ask-dock { display: none; }
 @keyframes camera-register { from { transform: translate3d(1.5rem,0,0); clip-path: inset(0 0 0 8%); opacity: .35; filter: blur(3px); } to { transform: translate3d(0,0,0); clip-path: inset(0); opacity: 1; filter: blur(0); } }
 @keyframes backdrop-register { from { background: rgba(23,38,36,0); } }
 @keyframes panel-register-right { from { transform: translate3d(2.5rem,0,0); } }
 @keyframes panel-register-left { from { transform: translate3d(-2.5rem,0,0); } }
+
+@media (min-width: 861px) {
+  .site-shell { padding-left: 4rem; }
+  .site-shell::before { position: fixed; inset: 0 auto 0 0; z-index: 55; width: 4rem; border-right: 1px solid var(--rule-strong); background: color-mix(in srgb, var(--paper-raised) 92%, transparent); content: ''; pointer-events: none; }
+  .effects-dock, .ask-dock { right: auto; left: .5rem; display: grid; width: 3rem; min-width: 3rem; min-height: 3rem; place-items: center; padding: 0; box-shadow: 0 8px 24px rgba(23,38,36,.11); }
+  .ask-dock { bottom: 4.65rem; }
+  .effects-dock { bottom: 1rem; }
+  .effects-dock span:last-child, .ask-dock span:last-child { position: absolute; bottom: 50%; left: calc(100% + .55rem); width: max-content; padding: .32rem .48rem; transform: translate(-.3rem,50%); border: 1px solid var(--rule); background: var(--paper-raised); box-shadow: 0 8px 24px rgba(23,38,36,.1); opacity: 0; pointer-events: none; color: var(--ink); font-size: .64rem; white-space: nowrap; transition: transform var(--motion-fast), opacity var(--motion-fast); }
+  .effects-dock:hover span:last-child, .effects-dock:focus-visible span:last-child, .ask-dock:hover span:last-child, .ask-dock:focus-visible span:last-child { transform: translate(0,50%); opacity: 1; }
+}
 
 @media (max-width: 1300px) {
   .journey-readout { display: none; }
@@ -830,6 +839,10 @@ img { max-width: 100%; }
   }
   .journey-navigator ol::after,
   .camera-glyph-rig {
+    transition: none !important;
+  }
+  .effects-dock span:last-child,
+  .ask-dock span:last-child {
     transition: none !important;
   }
   .pretext-scan [data-word], .pretext-pulse [data-word] { animation: none !important; }

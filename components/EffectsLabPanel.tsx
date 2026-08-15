@@ -78,17 +78,19 @@ const EffectsLabPanel: React.FC = () => {
     </div>
   );
 
-  if (!open) {
-    return (
-      <button type="button" className="effects-dock" data-open-effects onClick={() => openPanel('dock')} aria-label="FX, open optional effects lab">
-        <span aria-hidden="true">FX</span><span>Lab mode</span>
-      </button>
-    );
-  }
+  const dockTrigger = (
+    <button type="button" className="effects-dock" data-open-effects onClick={() => openPanel('dock')} aria-label="FX, open optional effects lab">
+      <span aria-hidden="true">FX</span><span>Lab mode</span>
+    </button>
+  );
+
+  if (!open) return dockTrigger;
 
   return (
-    <div className="panel-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close('backdrop'); }}>
-      <aside ref={panelRef} className="effects-lab" role="dialog" aria-modal="true" aria-labelledby="effects-title" tabIndex={-1}>
+    <>
+      {dockTrigger}
+      <div className="panel-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close('backdrop'); }}>
+        <aside ref={panelRef} className="effects-lab" role="dialog" aria-modal="true" aria-labelledby="effects-title" tabIndex={-1}>
         <header className="panel-header">
           <div><h2 id="effects-title">Effects lab</h2><p className="panel-context">Optional interaction layer</p></div>
           <button type="button" onClick={() => close('close_button')}>Close</button>
@@ -134,8 +136,9 @@ const EffectsLabPanel: React.FC = () => {
             <p>Current professional lens: {theme === 'light' ? 'Build' : 'Secure'}.</p>
           </section>
         </div>
-      </aside>
-    </div>
+        </aside>
+      </div>
+    </>
   );
 };
 

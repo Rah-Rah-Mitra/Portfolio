@@ -16,6 +16,7 @@ import AskThePage from './components/AskThePage';
 import ResumesSection from './components/ResumesSection';
 import ToolsSection from './components/ToolsSection';
 import { useScrollDepth } from './hooks/useScrollDepth';
+import JourneyNavigator from './components/JourneyNavigator';
 
 const PortfolioWorld = React.lazy(() => import('./components/PortfolioWorld'));
 
@@ -38,6 +39,11 @@ const AppContent: React.FC = () => {
   const { theme } = useTheme();
   const portfolioData = theme === 'light' ? softwareEngineerData : cybersecurityData;
   useScrollDepth(theme);
+  React.useEffect(() => {
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!motionQuery.matches) document.documentElement.classList.add('motion-ready');
+    return () => document.documentElement.classList.remove('motion-ready');
+  }, []);
   React.useEffect(() => {
     const timers = new Set<number>();
     const alignToHash = () => {
@@ -74,6 +80,7 @@ const AppContent: React.FC = () => {
       <div className="site-shell min-h-screen flex flex-col" data-lens={theme === 'light' ? 'build' : 'secure'}>
         <FluidBackground />
         <Navbar name={portfolioData.name} />
+        <JourneyNavigator />
         <main id="main-content" className="flex-grow relative z-10">
           <HeroSection id={SECTION_IDS.HOME} data={portfolioData} />
           <ProjectsSection id={SECTION_IDS.PROJECTS} projects={projectHighlights} archiveProjects={projectArchive} />

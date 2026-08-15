@@ -22,6 +22,7 @@ const kindLabels: Record<FieldNoteKind, string> = {
 };
 
 const getKinds = (note: FieldNote) => note.kinds.length ? note.kinds : [note.kind];
+const CONCISE_NOTE_COUNT = 4;
 
 const EventsTimeline: React.FC<EventsTimelineProps> = ({ id, notes, projects, archiveProjects = [] }) => {
   const [filter, setFilter] = useState<'all' | FieldNoteKind>('all');
@@ -43,7 +44,7 @@ const EventsTimeline: React.FC<EventsTimelineProps> = ({ id, notes, projects, ar
       return inFilter && (!normalized || haystack.includes(normalized));
     });
   }, [filter, notes, query]);
-  const visible = expanded ? filtered : filtered.slice(0, 7);
+  const visible = expanded ? filtered : filtered.slice(0, CONCISE_NOTE_COUNT);
 
   return (
     <SectionContainer
@@ -107,7 +108,7 @@ const EventsTimeline: React.FC<EventsTimelineProps> = ({ id, notes, projects, ar
       </div>
 
       {filtered.length === 0 && <p className="empty-state" role="status">No field note matches that combination. Clear the search or choose a different filter.</p>}
-      {filtered.length > 7 && (
+      {filtered.length > CONCISE_NOTE_COUNT && (
         <button type="button" className="ledger-more" onClick={() => setExpanded((current) => !current)} aria-expanded={expanded}>
           {expanded ? 'Show the concise record' : `Open ${filtered.length - visible.length} more field notes`}
         </button>

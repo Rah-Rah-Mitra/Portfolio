@@ -29,6 +29,7 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [error, setError] = useState('');
   const [shouldLoadQr, setShouldLoadQr] = useState(false);
+  const [toolOpen, setToolOpen] = useState(false);
   const cleanedTarget = targetUrl.trim() || SITE_CONFIG.canonicalUrl;
   const selectedPreset = QR_TARGETS.find((target) => target.url === cleanedTarget);
   const summary = summarizeUrlTarget(cleanedTarget, selectedPreset?.label);
@@ -37,19 +38,8 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
     : { dark: '#6f2931', light: '#f4f0e6' }, [theme]);
 
   useEffect(() => {
-    const section = document.getElementById(id);
-    if (!section || !('IntersectionObserver' in window)) {
-      setShouldLoadQr(true);
-      return undefined;
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      setShouldLoadQr(true);
-      observer.disconnect();
-    }, { rootMargin: '420px 0px' });
-    observer.observe(section);
-    return () => observer.disconnect();
-  }, [id]);
+    if (toolOpen) setShouldLoadQr(true);
+  }, [toolOpen]);
 
   useEffect(() => {
     if (!shouldLoadQr) return undefined;
@@ -85,7 +75,12 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
       subtitle="A small practical tool preserved from the original portfolio: generate a clean, downloadable QR code for this site or its primary professional profiles."
       className="share-section"
     >
-      <div className="share-workbench">
+      <details className="share-drawer" onToggle={(event) => setToolOpen(event.currentTarget.open)}>
+        <summary>
+          <strong>Generate a portfolio share code</strong>
+          <span>Optional utility · canonical links · PNG or SVG</span>
+        </summary>
+        {toolOpen && <div className="share-workbench">
         <div className="share-controls">
           <div className="bench-note"><span>Utility 01</span><h3>Portfolio share code</h3><p>The canonical portfolio preset always points to rahul-mitra.com.</p></div>
           <div className="preset-row" aria-label="Share target presets">
@@ -119,7 +114,8 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ id }) => {
             </a>
           ) : <p role="status">Rendering share code…</p>}
         </div>
-      </div>
+        </div>}
+      </details>
     </SectionContainer>
   );
 };

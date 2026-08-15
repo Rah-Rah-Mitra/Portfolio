@@ -31,7 +31,6 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, index })
 
   return (
     <article ref={itemRef} className="proof-entry">
-      <div className="proof-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</div>
       {achievement.imageUrl && (
         <img src={achievement.imageUrl} alt="" loading="lazy" decoding="async" className="proof-image" />
       )}

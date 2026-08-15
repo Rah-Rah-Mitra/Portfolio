@@ -34,6 +34,7 @@ export type AnalyticsEvent =
   | { event: 'section_viewed'; props: { section: string; profile: Profile } }
   | { event: 'scroll_depth_reached'; props: { depth: 25 | 50 | 75 | 90; profile: Profile } }
   | { event: 'nav_link_clicked'; props: { destination: string } }
+  | { event: 'journey_marker_clicked'; props: { section: string; camera_index: number } }
   | { event: 'cta_clicked'; props: { label: string; profile: Profile } }
   | { event: 'social_link_clicked'; props: { platform: 'linkedin' | 'github' | 'instagram'; location: 'hero' | 'contact' | 'footer' } }
   | { event: 'contact_email_clicked'; props: Partial<{ location: 'contact' | 'footer' }> }
@@ -44,6 +45,7 @@ export type AnalyticsEvent =
   | { event: 'effect_control_changed'; props: { effect: string; control: string; value: string } }
   | { event: 'effect_preset_applied'; props: { effect: string; preset: string } }
   | { event: 'project_link_clicked'; props: { title: string; destination: string } }
+  | { event: 'selected_project_view_changed'; props: { project: string; source: string } }
   | { event: 'featured_projects_toggled'; props: { expanded: boolean; visible_count: number } }
   | { event: 'project_archive_toggled'; props: { expanded: boolean; visible_count: number } }
   | { event: 'archive_search_changed'; props: { query_length: number; result_count: number } }

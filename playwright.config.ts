@@ -12,7 +12,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
-    command: 'npm run dev:vite -- --host 127.0.0.1 --port 4175',
+    // Acceptance exercises the pre-rendered semantic document, so the local
+    // server must be the production build rather than Vite's source shell.
+    command: 'npm run build && npm run preview -- --host 127.0.0.1 --port 4175',
     url: baseURL,
     reuseExistingServer: true,
   },

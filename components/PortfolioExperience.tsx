@@ -120,6 +120,13 @@ const PortfolioHero: React.FC = () => {
         <p className="hero-introduction">I’m Rahul Mitra, an engineer working across applied AI, mathematical optimization, software architecture, 3D perception, and responsible security. I turn uncertain problems into systems that can be tested, deployed, and trusted.</p>
         <p className="hero-facts">Based in Singapore · NUS Industrial Systems Engineering · Second Major in Computer Science · Minor in Mathematics</p>
         <p className="hero-role-line"><strong>Target roles</strong> Software engineering · Applied AI · Operations research · Solution architecture <span>Open to engineering roles and collaborations.</span></p>
+        <nav className="hero-current-proof" aria-label="Current proof">
+          <strong>Current proof</strong>
+          <a href="#experience-abbott-internship">Abbott</a>
+          <a href="#selected-hybrid-flow-shop-digital-twin">Hybrid Flow Shop</a>
+          <a href="#selected-churp">Churp</a>
+          <a href="#selected-on-the-spectrum">OnTheSpectrum</a>
+        </nav>
         <div className="hero-actions">
           <a className="action-primary" href="#work" onClick={() => track('cta_clicked', { label: 'View selected work' })}>View selected work</a>
           <a className="action-secondary" href={generalResume?.pdfUrl ?? resumeAssetUrl('general', 'pdf')} target="_blank" rel="noreferrer" onClick={() => track('resume_download_clicked', { role: 'General / Master CV', format: 'pdf' })}>Download résumé<ExternalLabel /></a>

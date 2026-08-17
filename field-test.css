@@ -232,10 +232,10 @@ body::after {
   grid-template-columns: minmax(0, 65fr) minmax(17rem, 35fr);
   grid-template-rows: auto auto;
   column-gap: clamp(2rem, 5vw, 5rem);
-  align-content: center;
+  align-content: start;
   min-block-size: min(760px, 88svh);
   max-block-size: min(760px, 88svh);
-  padding: clamp(2rem, 4vw, 3.5rem) 0;
+  padding: clamp(1.5rem, 2.8vw, 2.5rem) 0;
 }
 
 .hero-positioning { grid-column: 1; }
@@ -269,7 +269,7 @@ body::after {
 .portfolio-hero h1 {
   max-width: 13ch;
   margin: 0;
-  font-size: clamp(3.7rem, 7vw, 6rem);
+  font-size: clamp(3.7rem, 6.4vw, 5.15rem);
   font-weight: 760;
   letter-spacing: -.04em;
   line-height: .9;
@@ -277,10 +277,10 @@ body::after {
 
 .hero-introduction {
   max-width: 46rem;
-  margin: 2.4rem 0 0;
+  margin: 1.35rem 0 0;
   color: #2c3835;
-  font-size: clamp(1.08rem, 1.55vw, 1.38rem);
-  line-height: 1.62;
+  font-size: clamp(1rem, 1.3vw, 1.18rem);
+  line-height: 1.52;
 }
 
 .hero-role-line {
@@ -288,7 +288,7 @@ body::after {
   flex-wrap: wrap;
   gap: .45rem .9rem;
   max-width: 46rem;
-  margin: 1.15rem 0 0;
+  margin: .75rem 0 0;
   color: var(--field-muted);
   font-size: .82rem;
   line-height: 1.55;
@@ -307,6 +307,28 @@ body::after {
   font-weight: 650;
 }
 
+.hero-current-proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem .7rem;
+  margin-top: .7rem;
+  color: var(--field-muted);
+  font: 560 .68rem/1.45 "IBM Plex Mono", monospace;
+}
+
+.hero-current-proof strong {
+  color: var(--field-teal-dark);
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.hero-current-proof a {
+  color: var(--field-ink);
+  text-decoration-color: var(--field-rule-strong);
+  text-underline-offset: .18em;
+}
+
 .hero-actions,
 .hero-socials,
 .project-links,
@@ -318,7 +340,7 @@ body::after {
 }
 
 .hero-actions {
-  margin-top: 2rem;
+  margin-top: 1.2rem;
 }
 
 .hero-actions a {
@@ -351,7 +373,7 @@ body::after {
 }
 
 .hero-socials {
-  margin-top: 1.35rem;
+  margin-top: .8rem;
   font-size: .78rem;
   font-weight: 620;
 }
@@ -361,14 +383,14 @@ body::after {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
   grid-column: 1;
-  margin: clamp(1.5rem, 3vw, 2.5rem) 0 0;
+  margin: clamp(1rem, 1.8vw, 1.5rem) 0 0;
   border-top: 1px solid var(--field-rule-strong);
   border-bottom: 1px solid var(--field-rule);
 }
 
 .hero-evidence div {
   min-width: 0;
-  padding: 1.25rem 1.25rem 1.4rem 0;
+  padding: .85rem 1.25rem 1rem 0;
 }
 
 .hero-evidence div + div {
@@ -460,13 +482,13 @@ body::after {
   scroll-margin-top: 4.75rem;
 }
 
-.portfolio-world-mount > header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, .55fr); gap: 2rem; align-items: end; margin-bottom: 2rem; }
+.portfolio-world-mount > header { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, .55fr); gap: 2rem; align-items: end; margin-bottom: 2rem; background: white; }
 .portfolio-world-mount h2 { margin: 0; font-size: clamp(2rem, 4vw, 4rem); line-height: 1; letter-spacing: -.04em; }
 .portfolio-world-mount > header p { padding: 0; font-family: Archivo, Arial, sans-serif; font-size: .95rem; }
 
 .optical-world { position: relative; min-height: 27rem; border: 1px solid var(--field-rule-strong); background: rgb(255 255 255 / 88%); overflow: clip; }
-.optical-world-canvas { position: fixed; inset: 4.3rem 0 0; z-index: 0; pointer-events: none; opacity: .14; transition: opacity 180ms linear; }
-.optical-world-canvas[data-scene-visible] { opacity: 1; }
+.optical-world-canvas { position: fixed; inset: 4.3rem 0 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 0ms linear; }
+.optical-world-canvas[data-scene-visible] { opacity: 1; transition-duration: 180ms; }
 .optical-world-canvas canvas { display: block; width: 100%; height: 100%; pointer-events: none; touch-action: pan-y; }
 .optical-world[data-control-owner="visitor"] { cursor: grab; touch-action: pan-y; }
 .optical-world[data-control-owner="visitor"]:active { cursor: grabbing; }
@@ -740,7 +762,7 @@ body::after {
   padding: 1rem 0;
   border-top: 1px solid var(--field-ink);
   border-bottom: 1px solid var(--field-rule-strong);
-  background: rgb(255 255 255 / 96%);
+  background: white;
 }
 
 .project-controls label {
@@ -896,7 +918,7 @@ body::after {
 .camera-control input { width: 100%; min-height: 2.75rem; padding: .45rem .55rem; border: 1px solid var(--field-rule-strong); border-radius: 0; background: white; color: var(--field-ink); font: 500 .88rem/1.2 "IBM Plex Mono", monospace; }
 .camera-control input[type="range"] { min-height: 1.4rem; padding: 0; accent-color: var(--field-teal-dark); }
 .camera-equation,
-.camera-convention { padding: .75rem; border-left: 3px solid var(--field-violet); background: var(--field-soft); color: var(--field-muted); font: 500 .72rem/1.55 "IBM Plex Mono", monospace; }
+.camera-convention { padding: .75rem; border: 1px solid var(--field-rule); background: var(--field-soft); color: var(--field-muted); font: 500 .72rem/1.55 "IBM Plex Mono", monospace; }
 .camera-mode-panel table { width: 100%; margin: 1rem 0; border-collapse: collapse; font-size: .78rem; }
 .camera-mode-panel th,
 .camera-mode-panel td { padding: .7rem; border-top: 1px solid var(--field-rule); text-align: left; vertical-align: top; }
@@ -1572,6 +1594,16 @@ body::after {
 }
 
 @media (max-width: 1180px) {
+  .portfolio-hero {
+    padding-block: .65rem;
+  }
+
+  .hero-current-proof { margin-top: .35rem; }
+  .hero-actions { margin-top: .65rem; }
+  .hero-socials { margin-top: .5rem; }
+  .hero-evidence { margin-top: .5rem; }
+  .hero-evidence div { padding-block: .65rem .75rem; }
+
   .portfolio-header nav {
     gap: .8rem;
   }
@@ -1712,7 +1744,7 @@ body::after {
   }
 
   .portfolio-hero {
-    padding-top: 4rem;
+    padding-top: 3rem;
   }
 
   .portfolio-hero h1 {
@@ -1720,7 +1752,7 @@ body::after {
   }
 
   .hero-introduction {
-    margin-top: 1.7rem;
+    margin-top: 1.35rem;
     font-size: 1rem;
   }
 

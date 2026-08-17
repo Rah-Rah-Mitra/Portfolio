@@ -16,7 +16,7 @@ colors:
 typography:
   display:
     fontFamily: "Archivo, Arial, sans-serif"
-    fontSize: "clamp(3.7rem, 7vw, 6rem)"
+    fontSize: "clamp(3.7rem, 6.4vw, 5.15rem)"
     fontWeight: 760
     lineHeight: 0.9
     letterSpacing: "-0.04em"
@@ -103,6 +103,12 @@ components:
     rounded: "{rounded.square}"
     height: "3.25rem"
     width: "3.25rem"
+  technical-callout:
+    backgroundColor: "{colors.field-soft}"
+    textColor: "{colors.field-muted}"
+    rounded: "{rounded.square}"
+    padding: "0.75rem"
+    border: "1px solid {colors.field-rule}"
 ---
 
 # Design System: Rahul Mitra Engineering Portfolio
@@ -188,11 +194,13 @@ The palette is almost entirely paper, graphite, and cool rules; teal communicate
 
 ## Layout
 
-The desktop shell is capped at 92rem and divides into a maximum 59rem evidence column plus a 19–27rem guide stage, separated by a responsive 2–5rem gap. The header remains sticky at 4.75rem high. The first evidence view fills the available viewport beneath it and gives at least sixty percent of the composition to positioning, current proof, and explicit actions. The continuous document order is position → selected work → experience → all projects → technical lab → capabilities → proof → résumés → contact.
+The desktop shell is capped at 92rem and divides the compact hero into a 65% evidence column and 35% supporting calibration stage, separated by a responsive 2–5rem gap. The header remains sticky at 4.75rem high. The first evidence view is capped at `min(760px, 88svh)`; its top-aligned compact rhythm keeps the claim below the header and the supporting stage inside the hero boundary. A compact Current proof trail names Abbott, Hybrid Flow Shop, Churp, and OnTheSpectrum before the primary actions so a first-view recruiter scan can recover recent experience and concrete systems without waiting for animation. The continuous document order is position → selected work → experience → all projects → technical lab → shared world → capabilities → proof → résumés → contact.
 
 Sections are separated by structural top rules and generous vertical intervals of roughly 5–9rem. Headings use a wide claim/narrow context split. Selected systems use index, evidence, and optional media columns; experience and the complete project archive use conventional ledgers; proof uses a two-column ruled matrix; résumés use a four-column row. The All Projects controls become sticky below the header on wide screens, while the full archive remains visible, searchable, keyboard-steppable, and filterable.
 
 At 1180px the evidence layouts tighten. At 920px the evidence shell becomes a single column capped at 50rem, navigation moves into an expanding header menu, and the static optical register follows the mobile hero evidence; no sidebar guide is retained. At 680px actions stack, headings and ledgers become one column, lab tabs become a horizontally scrolling strip, metrics stack, project controls stop sticking, and proof collapses to one column. The 320px layout remains the minimum supported width without horizontal overflow. Fixed AI and FX docks disappear at 860px; mobile and tablet access remains in the header menu.
+
+In Guided mode the fixed world canvas is fully transparent while its registered `#world` surface is offscreen. The canvas becomes visible only when that scene crosses its observer threshold, and opaque semantic headers plus safe-text anchors prevent world geometry from washing through recruiter copy. Quick Scan never mounts the world or video sources. On small screens the hero’s factual evidence and actions always precede the 20rem static/media stage.
 
 ### Named Rules
 
@@ -261,6 +269,10 @@ The sticky header uses a translucent white strip, a Structural Rule bottom edge,
 ### Selected Work and Evidence Ledgers
 
 Selected systems lead with a teal number and mono domain/date column, then a title, context, Contribution/Approach/Outcome definition list, method trail, and proof links. Optional imagery occupies a framed field-evidence column with a low-saturation treatment and technical caption. Experience, All Projects, capabilities, proof, and résumés reuse the same ruled-ledger logic at different densities rather than becoming interchangeable cards.
+
+### Direct-Manipulation Exhibits
+
+Systems in Motion, Spatial Systems, selected-project inspectors, Camera Laboratory, and Departure share one interaction contract: semantic controls, a concise hint, computed explanatory status, visible Reset, and a static/no-WebGL equivalent. Flow-shop and spatial results come from deterministic local models rather than decorative animation. Visitor changes emit typed world events; the procedural Courier may point, inspect, acknowledge, or step aside, but those reactions never carry evidence. Technical equations and conventions use a complete one-pixel frame, never a decorative thick side stripe.
 
 ### Camera Laboratory
 

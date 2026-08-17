@@ -8,4 +8,11 @@ describe('direct-manipulation touch policy', () => {
     expect(markerRule).toMatch(/touch-action:\s*pan-y\s*;/);
     expect(markerRule).not.toMatch(/touch-action:\s*none\s*;/);
   });
+
+  it('uses a full technical frame instead of a thick side-stripe callout', () => {
+    const stylesheet = readFileSync(new URL('../field-test.css', import.meta.url), 'utf8');
+    const equationRule = stylesheet.match(/\.camera-equation,[\s\S]*?\.camera-convention\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+    expect(equationRule).not.toMatch(/border-(?:left|right):\s*[2-9]px/);
+    expect(equationRule).toMatch(/border:\s*1px solid var\(--field-rule\)/);
+  });
 });

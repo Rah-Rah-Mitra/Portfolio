@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_EXTRINSICS, DEFAULT_INTRINSICS, DEFAULT_OPTICS, DEFAULT_STEREO,
   computeExtrinsics, computeIntrinsics, computeOptics, computeStereo,
@@ -15,12 +15,12 @@ const modes: Array<{ id: Mode; label: string }> = [
 const fmt = (value: number | null, digits = 3) => value === null || !Number.isFinite(value) ? 'Invalid' : value.toFixed(digits);
 const Matrix = ({ value }: { value: number[][] }) => <code className="camera-matrix">{value.map((row) => `[${row.map((cell) => fmt(cell, 3)).join(', ')}]`).join(' ')}</code>;
 const Numeric = ({ label, value, onChange, min, max, step = 'any' }: { label: string; value: number; onChange: (value: number) => void; min?: number; max?: number; step?: number | 'any' }) => (
-  <label className="camera-control"><span>{label}</span><input type="number" aria-label={label} value={value} min={min} max={max} step={step} onChange={(event) => onChange(Number(event.target.value))} /></label>
+  <label className="camera-control"><span>{label}</span>{min !== undefined && max !== undefined && <input type="range" aria-label={`${label} range`} value={value} min={min} max={max} step={step} onChange={(event) => onChange(Number(event.target.value))} />}<input type="number" aria-label={label} value={value} min={min} max={max} step={step} onChange={(event) => onChange(Number(event.target.value))} /></label>
 );
 
-interface CameraLaboratoryProps { onWorldEvent?: (event: PortfolioWorldEvent) => void; qualityTier?: QualityTier }
+interface CameraLaboratoryProps { onWorldEvent?: (event: PortfolioWorldEvent) => void; qualityTier?: QualityTier; frameTimeMs?: number | null }
 
-const CameraLaboratory: React.FC<CameraLaboratoryProps> = ({ onWorldEvent, qualityTier = 'full' }) => {
+const CameraLaboratory: React.FC<CameraLaboratoryProps> = ({ onWorldEvent, qualityTier = 'full', frameTimeMs = null }) => {
   const [mode, setMode] = useState<Mode>('intrinsics');
   const [intrinsics, setIntrinsics] = useState<IntrinsicsInput>({ ...DEFAULT_INTRINSICS });
   const [extrinsics, setExtrinsics] = useState<ExtrinsicsInput>({ ...DEFAULT_EXTRINSICS });
@@ -32,6 +32,7 @@ const CameraLaboratory: React.FC<CameraLaboratoryProps> = ({ onWorldEvent, quali
   const extrinsicsResult = useMemo(() => computeExtrinsics(extrinsics, intrinsics), [extrinsics, intrinsics]);
   const opticsResult = useMemo(() => computeOptics(optics), [optics]);
   const stereoResult = useMemo(() => computeStereo(stereo), [stereo]);
+  useEffect(() => { onWorldEvent?.({ type: 'CAMERA_LAB_UPDATED', snapshot: { mode, intrinsics, extrinsics, optics, stereo } }); }, [mode, intrinsics, extrinsics, optics, stereo, onWorldEvent]);
 
   const changeMode = (next: Mode) => { setMode(next); tabs.current.get(next)?.focus(); };
   const handleTabKey = (event: React.KeyboardEvent, index: number) => {
@@ -76,27 +77,27 @@ const CameraLaboratory: React.FC<CameraLaboratoryProps> = ({ onWorldEvent, quali
       <div className="camera-mode-panel" id="camera-mode-panel" role="tabpanel" aria-labelledby={`camera-tab-${mode}`} tabIndex={0}>
         {mode === 'intrinsics' && <>
           <div className="camera-control-grid">
-            <Numeric label="Image width (px)" value={intrinsics.imageWidthPx} min={1} onChange={(value) => updateIntrinsics({ imageWidthPx: value })} />
-            <Numeric label="Image height (px)" value={intrinsics.imageHeightPx} min={1} onChange={(value) => updateIntrinsics({ imageHeightPx: value })} />
-            <Numeric label="Focal length (mm)" value={intrinsics.focalLengthMm} min={1} onChange={(value) => updateIntrinsics({ focalLengthMm: value })} />
-            <Numeric label="Sensor width (mm)" value={intrinsics.sensorWidthMm} min={1} onChange={(value) => updateIntrinsics({ sensorWidthMm: value })} />
-            <Numeric label="Sensor height (mm)" value={intrinsics.sensorHeightMm} min={1} onChange={(value) => updateIntrinsics({ sensorHeightMm: value })} />
-            <Numeric label="Principal point X" value={intrinsics.principalX} onChange={(value) => updateIntrinsics({ principalX: value })} />
-            <Numeric label="Principal point Y" value={intrinsics.principalY} onChange={(value) => updateIntrinsics({ principalY: value })} />
-            <Numeric label="Radial distortion k1" value={intrinsics.k1} step={0.01} onChange={(value) => updateIntrinsics({ k1: value })} />
-            <Numeric label="Radial distortion k2" value={intrinsics.k2} step={0.01} onChange={(value) => updateIntrinsics({ k2: value })} />
+            <Numeric label="Image width (px)" value={intrinsics.imageWidthPx} min={160} max={3840} step={10} onChange={(value) => updateIntrinsics({ imageWidthPx: value })} />
+            <Numeric label="Image height (px)" value={intrinsics.imageHeightPx} min={120} max={2160} step={10} onChange={(value) => updateIntrinsics({ imageHeightPx: value })} />
+            <Numeric label="Focal length (mm)" value={intrinsics.focalLengthMm} min={8} max={200} step={1} onChange={(value) => updateIntrinsics({ focalLengthMm: value })} />
+            <Numeric label="Sensor width (mm)" value={intrinsics.sensorWidthMm} min={8} max={70} step={1} onChange={(value) => updateIntrinsics({ sensorWidthMm: value })} />
+            <Numeric label="Sensor height (mm)" value={intrinsics.sensorHeightMm} min={6} max={50} step={1} onChange={(value) => updateIntrinsics({ sensorHeightMm: value })} />
+            <Numeric label="Principal point X" value={intrinsics.principalX} min={0} max={intrinsics.imageWidthPx} step={1} onChange={(value) => updateIntrinsics({ principalX: value })} />
+            <Numeric label="Principal point Y" value={intrinsics.principalY} min={0} max={intrinsics.imageHeightPx} step={1} onChange={(value) => updateIntrinsics({ principalY: value })} />
+            <Numeric label="Radial distortion k1" value={intrinsics.k1} min={-1} max={1} step={0.01} onChange={(value) => updateIntrinsics({ k1: value })} />
+            <Numeric label="Radial distortion k2" value={intrinsics.k2} min={-1} max={1} step={0.01} onChange={(value) => updateIntrinsics({ k2: value })} />
           </div>
           {!intrinsicsResult.valid && <p role="alert">{intrinsicsResult.error}</p>}
           <p className="camera-equation">fx = f / sensorWidth × imageWidth · FOV = 2 atan(sensor / 2f)</p>
-          <table aria-label="Intrinsics results"><tbody><tr><th scope="row">fx / fy</th><td>{fmt(intrinsicsResult.fx)} / {fmt(intrinsicsResult.fy)} px</td></tr><tr><th scope="row">Horizontal / vertical FOV</th><td>{fmt(intrinsicsResult.horizontalFovDegrees, 2)}° / {fmt(intrinsicsResult.verticalFovDegrees, 2)}°</td></tr><tr><th scope="row">Intrinsic matrix K</th><td><Matrix value={intrinsicsResult.K} /></td></tr></tbody></table>
+          <table aria-label="Intrinsics results"><tbody><tr><th scope="row">fx / fy</th><td>{fmt(intrinsicsResult.fx)} / {fmt(intrinsicsResult.fy)} px</td></tr><tr><th scope="row">Horizontal / vertical FOV</th><td>{fmt(intrinsicsResult.horizontalFovDegrees, 2)}° / {fmt(intrinsicsResult.verticalFovDegrees, 2)}°</td></tr><tr><th scope="row">Image plane</th><td>{intrinsics.imageWidthPx} × {intrinsics.imageHeightPx} px at principal point [{intrinsics.principalX}, {intrinsics.principalY}]</td></tr><tr><th scope="row">Frustum</th><td>{fmt(intrinsicsResult.horizontalFovDegrees, 2)}° horizontal × {fmt(intrinsicsResult.verticalFovDegrees, 2)}° vertical</td></tr><tr><th scope="row">Distortion</th><td>k1 {fmt(intrinsics.k1, 4)} · k2 {fmt(intrinsics.k2, 4)}</td></tr><tr><th scope="row">Intrinsic matrix K</th><td><Matrix value={intrinsicsResult.K} /></td></tr></tbody></table>
           <button type="button" onClick={() => updateIntrinsics({ focalLengthMm: 24, k1: -0.08, k2: 0.015 })}>Load Intrinsics example</button>
         </>}
         {mode === 'extrinsics' && <>
           <p className="camera-convention">Right-handed world; +Z is camera-forward view depth. Yaw/pitch/roll rotate the world into camera coordinates.</p>
           <div className="camera-control-grid">
-            {(['X', 'Y', 'Z'] as const).map((axis, index) => <Numeric key={`camera-${axis}`} label={`Camera ${axis}`} value={extrinsics.camera[index]} onChange={(value) => { const camera = [...extrinsics.camera] as [number, number, number]; camera[index] = value; updateExtrinsics({ camera }); }} />)}
-            <Numeric label="Yaw (degrees)" value={extrinsics.yawDegrees} onChange={(value) => updateExtrinsics({ yawDegrees: value })} /><Numeric label="Pitch (degrees)" value={extrinsics.pitchDegrees} onChange={(value) => updateExtrinsics({ pitchDegrees: value })} /><Numeric label="Roll (degrees)" value={extrinsics.rollDegrees} onChange={(value) => updateExtrinsics({ rollDegrees: value })} />
-            {(['X', 'Y', 'Z'] as const).map((axis, index) => <Numeric key={`object-${axis}`} label={`Object ${axis}`} value={extrinsics.object[index]} onChange={(value) => { const object = [...extrinsics.object] as [number, number, number]; object[index] = value; updateExtrinsics({ object }); }} />)}
+            {(['X', 'Y', 'Z'] as const).map((axis, index) => <Numeric key={`camera-${axis}`} label={`Camera ${axis}`} value={extrinsics.camera[index]} min={-10} max={10} step={0.1} onChange={(value) => { const camera = [...extrinsics.camera] as [number, number, number]; camera[index] = value; updateExtrinsics({ camera }); }} />)}
+            <Numeric label="Yaw (degrees)" value={extrinsics.yawDegrees} min={-180} max={180} step={1} onChange={(value) => updateExtrinsics({ yawDegrees: value })} /><Numeric label="Pitch (degrees)" value={extrinsics.pitchDegrees} min={-180} max={180} step={1} onChange={(value) => updateExtrinsics({ pitchDegrees: value })} /><Numeric label="Roll (degrees)" value={extrinsics.rollDegrees} min={-180} max={180} step={1} onChange={(value) => updateExtrinsics({ rollDegrees: value })} />
+            {(['X', 'Y', 'Z'] as const).map((axis, index) => <Numeric key={`object-${axis}`} label={`Object ${axis}`} value={extrinsics.object[index]} min={-10} max={index === 2 ? 20 : 10} step={0.1} onChange={(value) => { const object = [...extrinsics.object] as [number, number, number]; object[index] = value; updateExtrinsics({ object }); }} />)}
           </div>
           {!extrinsicsResult.valid && <p role="alert">{extrinsicsResult.error}</p>}
           <p className="camera-equation">p = K [R | t] P · projection requires view depth z &gt; 0</p>
@@ -105,14 +106,14 @@ const CameraLaboratory: React.FC<CameraLaboratoryProps> = ({ onWorldEvent, quali
         </>}
         {mode === 'optics' && <>
           <p className="camera-convention">Analytic thin-lens sensor blur only; this is not a photorealistic depth-of-field renderer.</p>
-          <div className="camera-control-grid"><Numeric label="F-number" value={optics.fNumber} min={1.4} max={16} step={0.1} onChange={(value) => setOptics({ ...optics, fNumber: value })} /><Numeric label="Optics focal length (mm)" value={optics.focalLengthMm} min={1} onChange={(value) => setOptics({ ...optics, focalLengthMm: value })} /><Numeric label="Object distance (mm)" value={optics.objectDistanceMm} min={1} onChange={(value) => setOptics({ ...optics, objectDistanceMm: value })} /><Numeric label="Focus distance (mm)" value={optics.focusDistanceMm} min={1} onChange={(value) => setOptics({ ...optics, focusDistanceMm: value })} /></div>
+          <div className="camera-control-grid"><Numeric label="F-number" value={optics.fNumber} min={1.4} max={16} step={0.1} onChange={(value) => setOptics({ ...optics, fNumber: value })} /><Numeric label="Optics focal length (mm)" value={optics.focalLengthMm} min={8} max={200} step={1} onChange={(value) => setOptics({ ...optics, focalLengthMm: value })} /><Numeric label="Object distance (mm)" value={optics.objectDistanceMm} min={100} max={10000} step={10} onChange={(value) => setOptics({ ...optics, objectDistanceMm: value })} /><Numeric label="Focus distance (mm)" value={optics.focusDistanceMm} min={100} max={10000} step={10} onChange={(value) => setOptics({ ...optics, focusDistanceMm: value })} /></div>
           {!opticsResult.valid && <p role="alert">{opticsResult.error}</p>}
           <p className="camera-equation">v = fs/(s−f) · vf = fsf/(sf−f) · D = f/N · c = D |v−vf| / v</p>
           <table aria-label="Optics results"><tbody><tr><th scope="row">Image / focus plane</th><td>{fmt(opticsResult.imageDistanceMm)} / {fmt(opticsResult.focusImageDistanceMm)} mm</td></tr><tr><th scope="row">Aperture diameter</th><td>{fmt(opticsResult.apertureDiameterMm)} mm</td></tr><tr><th scope="row">Analytic blur circle</th><td>{fmt(opticsResult.blurCircleMm, 4)} mm</td></tr></tbody></table>
           <button type="button" onClick={() => setOptics({ fNumber: 1.4, focalLengthMm: 85, objectDistanceMm: 1800, focusDistanceMm: 3000 })}>Load Optics example</button>
         </>}
         {mode === 'stereo' && <>
-          <div className="camera-control-grid"><Numeric label="Stereo focal length (px)" value={stereo.focalPx} min={1} onChange={(value) => updateStereo({ focalPx: value })} /><Numeric label="Baseline (m)" value={stereo.baselineMeters} min={0.001} step={0.01} onChange={(value) => updateStereo({ baselineMeters: value })} /><Numeric label="Disparity (px)" value={stereo.disparityPx} min={0} onChange={(value) => updateStereo({ disparityPx: value })} /><Numeric label="Reference depth (m)" value={stereo.referenceDepthMeters} min={0.001} step={0.1} onChange={(value) => updateStereo({ referenceDepthMeters: value })} /></div>
+          <div className="camera-control-grid"><Numeric label="Stereo focal length (px)" value={stereo.focalPx} min={100} max={2000} step={10} onChange={(value) => updateStereo({ focalPx: value })} /><Numeric label="Baseline (m)" value={stereo.baselineMeters} min={0.01} max={1} step={0.01} onChange={(value) => updateStereo({ baselineMeters: value })} /><Numeric label="Disparity (px)" value={stereo.disparityPx} min={1} max={300} step={1} onChange={(value) => updateStereo({ disparityPx: value })} /><Numeric label="Reference depth (m)" value={stereo.referenceDepthMeters} min={0.1} max={50} step={0.1} onChange={(value) => updateStereo({ referenceDepthMeters: value })} /></div>
           {!stereoResult.valid && <p role="alert">{stereoResult.error}</p>}
           <p className="camera-equation">Z = fB / d · absolute error = |Z − Zref|</p>
           <table aria-label="Stereo results"><tbody><tr><th scope="row">Estimated depth</th><td>{fmt(stereoResult.depthMeters)} m</td></tr><tr><th scope="row">Absolute / relative error</th><td>{fmt(stereoResult.absoluteErrorMeters)} m / {fmt(stereoResult.relativeError === null ? null : stereoResult.relativeError * 100, 2)}%</td></tr></tbody></table>
@@ -120,7 +121,7 @@ const CameraLaboratory: React.FC<CameraLaboratoryProps> = ({ onWorldEvent, quali
         </>}
         <button className="camera-reset" type="button" onClick={reset}>Reset {modes.find((item) => item.id === mode)?.label}</button>
       </div>
-      {engineer && <aside className="engineer-view" role="region" aria-label="Engineer View"><h4>Engineer View</h4><dl><div><dt>Quality tier</dt><dd>{qualityTier}</dd></div><div><dt>Frame time</dt><dd>On-demand rendering</dd></div><div><dt>Intrinsic matrix K</dt><dd><Matrix value={intrinsicsResult.K} /></dd></div><div><dt>World/object coordinate</dt><dd>{extrinsics.object.join(', ')}</dd></div><div><dt>Projected pixel</dt><dd>{extrinsicsResult.pixel?.map((value) => fmt(value, 2)).join(', ') ?? 'Rejected'}</dd></div></dl></aside>}
+      {engineer && <aside className="engineer-view" role="region" aria-label="Engineer View"><h4>Engineer View</h4><dl><div><dt>Quality tier</dt><dd>{qualityTier}</dd></div><div><dt>Frame time</dt><dd>{frameTimeMs === null ? 'World inactive · on-demand rendering' : `${frameTimeMs.toFixed(2)} ms recent`}</dd></div><div><dt>Camera pose</dt><dd>{[...extrinsics.camera, extrinsics.yawDegrees, extrinsics.pitchDegrees, extrinsics.rollDegrees].join(', ')}</dd></div><div><dt>Intrinsic matrix K</dt><dd><Matrix value={intrinsicsResult.K} /></dd></div><div><dt>World-to-camera matrix</dt><dd><Matrix value={extrinsicsResult.matrix} /></dd></div><div><dt>World/object coordinate</dt><dd>{extrinsics.object.join(', ')}</dd></div><div><dt>Projected pixel</dt><dd>{extrinsicsResult.pixel?.map((value) => fmt(value, 2)).join(', ') ?? 'Rejected'}</dd></div></dl></aside>}
     </section>
   );
 };

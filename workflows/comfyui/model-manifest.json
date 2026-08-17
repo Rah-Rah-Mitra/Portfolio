@@ -39,9 +39,9 @@
       "promptSeed": 4837373,
       "prompt": "Professional abstract field engineer, human proportions, graphite workwear, teal survey instruments, neutral studio pose, clean white technical laboratory, no text, not an avatar of Rahul.",
       "dimensions": "768x1024",
-      "outputs": ["public/images/field-engineer-guide.webp"],
+      "outputs": ["artifacts/legacy-concepts/field-engineer-guide.webp"],
       "outputSha256": "A7D212C4484415C4921FD989FB76D485DDDF48E08116E56461370A137F596F41",
-      "purpose": "mobile and reduced-motion guide poster"
+      "purpose": "superseded concept retained for provenance only; not a production asset"
     },
     {
       "id": "continuous-field-test-comp",

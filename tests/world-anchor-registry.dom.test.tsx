@@ -56,4 +56,14 @@ describe('WorldAnchorRegistry', () => {
     expect(refresh).toHaveBeenCalledTimes(1);
     vi.useRealTimers(); anchor.remove();
   });
+
+  it('observes media inserted after start and removes its listeners on destroy', async () => {
+    vi.useFakeTimers(); const refresh = vi.fn();
+    const registry = new WorldAnchorRegistry({ refresh, requestFrame: (cb) => window.setTimeout(cb, 0), cancelFrame: window.clearTimeout });
+    registry.start(); const image = document.createElement('img'); document.body.append(image);
+    await Promise.resolve(); image.dispatchEvent(new Event('load')); await vi.runAllTimersAsync();
+    expect(refresh).toHaveBeenCalled(); const calls = refresh.mock.calls.length;
+    registry.destroy(); image.dispatchEvent(new Event('load')); await vi.runAllTimersAsync(); expect(refresh).toHaveBeenCalledTimes(calls);
+    image.remove(); vi.useRealTimers();
+  });
 });

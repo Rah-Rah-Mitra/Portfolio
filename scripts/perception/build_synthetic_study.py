@@ -16,7 +16,7 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[2]
-OUTPUT = ROOT / "public" / "lab"
+OUTPUT = ROOT / "artifacts" / "deferred-slam-study"
 OUTPUT.mkdir(parents=True, exist_ok=True)
 RNG = np.random.default_rng(4837375)
 WIDTH, HEIGHT = 960, 540

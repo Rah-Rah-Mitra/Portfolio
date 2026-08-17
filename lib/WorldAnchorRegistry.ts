@@ -26,6 +26,7 @@ export class WorldAnchorRegistry {
   private teardown: Array<() => void> = [];
   private resizeObserver?: ResizeObserver;
   private mutationObserver?: MutationObserver;
+  private observedMedia = new WeakSet<EventTarget>();
 
   constructor(options: RegistryOptions) {
     this.options = {
@@ -48,13 +49,18 @@ export class WorldAnchorRegistry {
       listen(window.visualViewport, 'resize', () => this.invalidate('viewport'));
       listen(window.visualViewport, 'scroll', () => this.invalidate('zoom'));
     }
-    document.querySelectorAll('img,video').forEach((media) => {
+    const attachMedia = (media: Element) => {
+      if (this.observedMedia.has(media)) return;
+      this.observedMedia.add(media);
       listen(media, 'load', () => this.invalidate('media'));
       if (media instanceof HTMLVideoElement) listen(media, 'loadedmetadata', () => this.invalidate('media'));
-    });
-    this.resizeObserver = new ResizeObserver(() => this.invalidate('resize'));
-    this.resizeObserver.observe(document.documentElement);
-    this.mutationObserver = new MutationObserver(() => this.invalidate('mutation'));
+    };
+    document.querySelectorAll('img,video').forEach(attachMedia);
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.invalidate('resize'));
+      this.resizeObserver.observe(document.documentElement);
+    }
+    this.mutationObserver = new MutationObserver((records) => { records.forEach((record) => record.addedNodes.forEach((node) => { if (!(node instanceof Element)) return; if (node.matches('img,video')) attachMedia(node); node.querySelectorAll('img,video').forEach(attachMedia); })); this.invalidate('mutation'); });
     this.mutationObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 

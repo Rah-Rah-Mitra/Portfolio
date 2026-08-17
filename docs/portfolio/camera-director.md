@@ -8,9 +8,9 @@ The camera director is a development-only authoring surface. Start the local sit
 4. Validate the export before merging it:
 
    ```powershell
-   npm run camera:merge-shots -- .\shot.camera-shot.json .\validated-camera-shots.json
+   npm run camera:merge-shots -- .\shot.camera-shot.json
    ```
 
-5. Review and merge the validated values into `world/narrativeManifest.ts`. Camera positions, targets, focus/exposure, scroll ranges, responsive overrides, lighting, safe-text regions, and character framing belong in that typed manifest—not in React components.
+5. Review the resulting diff in `world/narrativeManifest.json`, which is imported by the typed `world/narrativeManifest.ts` runtime. Camera positions, targets, focus/exposure, scroll ranges, responsive overrides, lighting, safe-text regions, and character framing belong in that consumed manifest—not in React components.
 
 The validator rejects missing IDs/chapters, invalid clipping planes, FOV outside 5–120 degrees, and story-camera transitions longer than 450ms.

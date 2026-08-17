@@ -9,7 +9,7 @@ export interface IntrinsicsInput {
 export const DEFAULT_INTRINSICS: IntrinsicsInput = { imageWidthPx: 640, imageHeightPx: 480, focalLengthMm: 35, sensorWidthMm: 36, sensorHeightMm: 24, principalX: 320, principalY: 240, k1: 0, k2: 0 };
 
 export const computeIntrinsics = (input: IntrinsicsInput) => {
-  if ([input.imageWidthPx, input.imageHeightPx, input.focalLengthMm, input.sensorWidthMm, input.sensorHeightMm].some((value) => !Number.isFinite(value) || value <= 0)) {
+  if (![input.imageWidthPx, input.imageHeightPx, input.focalLengthMm, input.sensorWidthMm, input.sensorHeightMm, input.principalX, input.principalY, input.k1, input.k2].every(Number.isFinite) || [input.imageWidthPx, input.imageHeightPx, input.focalLengthMm, input.sensorWidthMm, input.sensorHeightMm].some((value) => value <= 0)) {
     return { valid: false as const, error: 'Image, focal, and sensor dimensions must be positive.', fx: 0, fy: 0, horizontalFovDegrees: 0, verticalFovDegrees: 0, K: [[0, 0, 0], [0, 0, 0], [0, 0, 1]] as Matrix3 };
   }
   const fx = input.focalLengthMm / input.sensorWidthMm * input.imageWidthPx;
@@ -31,6 +31,9 @@ const multiply3 = (matrix: Matrix3, vector: [number, number, number]): [number, 
 const multiplyMatrices = (a: Matrix3, b: Matrix3): Matrix3 => a.map((row) => b[0].map((_, column) => row.reduce((sum, value, index) => sum + value * b[index][column], 0))) as Matrix3;
 
 export const computeExtrinsics = (input: ExtrinsicsInput, intrinsicsInput: IntrinsicsInput) => {
+  if (![...input.camera, input.yawDegrees, input.pitchDegrees, input.rollDegrees, ...input.object].every(Number.isFinite)) {
+    return { valid: false as const, error: 'Camera and object pose values must be finite.', viewPoint: [0, 0, 0] as [number, number, number], pixel: null, matrix: [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]] as Matrix4 };
+  }
   const intrinsics = computeIntrinsics(intrinsicsInput);
   const radians = [input.yawDegrees, input.pitchDegrees, input.rollDegrees].map((value) => -value * Math.PI / 180);
   const [yaw, pitch, roll] = radians;
@@ -51,7 +54,7 @@ export const computeExtrinsics = (input: ExtrinsicsInput, intrinsicsInput: Intri
 export interface OpticsInput { fNumber: number; focalLengthMm: number; objectDistanceMm: number; focusDistanceMm: number }
 export const DEFAULT_OPTICS: OpticsInput = { fNumber: 4, focalLengthMm: 50, objectDistanceMm: 2000, focusDistanceMm: 3000 };
 export const computeOptics = (input: OpticsInput) => {
-  if (input.fNumber <= 0 || input.focalLengthMm <= 0 || input.objectDistanceMm <= input.focalLengthMm || input.focusDistanceMm <= input.focalLengthMm) return { valid: false as const, error: 'Object and focus distances must exceed focal length.', imageDistanceMm: null, focusImageDistanceMm: null, apertureDiameterMm: null, blurCircleMm: null };
+  if (![input.fNumber, input.focalLengthMm, input.objectDistanceMm, input.focusDistanceMm].every(Number.isFinite) || input.fNumber < 1.4 || input.fNumber > 16 || input.focalLengthMm <= 0 || input.objectDistanceMm <= input.focalLengthMm || input.focusDistanceMm <= input.focalLengthMm) return { valid: false as const, error: 'Use finite values; f-number must be 1.4–16 and object/focus distances must exceed focal length.', imageDistanceMm: null, focusImageDistanceMm: null, apertureDiameterMm: null, blurCircleMm: null };
   const imageDistanceMm = input.focalLengthMm * input.objectDistanceMm / (input.objectDistanceMm - input.focalLengthMm);
   const focusImageDistanceMm = input.focalLengthMm * input.focusDistanceMm / (input.focusDistanceMm - input.focalLengthMm);
   const apertureDiameterMm = input.focalLengthMm / input.fNumber;
@@ -62,7 +65,7 @@ export const computeOptics = (input: OpticsInput) => {
 export interface StereoInput { focalPx: number; baselineMeters: number; disparityPx: number; referenceDepthMeters: number }
 export const DEFAULT_STEREO: StereoInput = { focalPx: 700, baselineMeters: 0.12, disparityPx: 28, referenceDepthMeters: 3.2 };
 export const computeStereo = (input: StereoInput) => {
-  if (input.focalPx <= 0 || input.baselineMeters <= 0 || input.disparityPx <= 0 || input.referenceDepthMeters <= 0) return { valid: false as const, error: 'Focal length, baseline, disparity, and reference depth must be positive.', depthMeters: null, absoluteErrorMeters: null, relativeError: null };
+  if (![input.focalPx, input.baselineMeters, input.disparityPx, input.referenceDepthMeters].every(Number.isFinite) || input.focalPx <= 0 || input.baselineMeters <= 0 || input.disparityPx <= 0 || input.referenceDepthMeters <= 0) return { valid: false as const, error: 'Focal length, baseline, disparity, and reference depth must be finite and positive.', depthMeters: null, absoluteErrorMeters: null, relativeError: null };
   const depthMeters = input.focalPx * input.baselineMeters / input.disparityPx;
   const absoluteErrorMeters = Math.abs(depthMeters - input.referenceDepthMeters);
   return { valid: true as const, error: null, depthMeters, absoluteErrorMeters, relativeError: absoluteErrorMeters / input.referenceDepthMeters };

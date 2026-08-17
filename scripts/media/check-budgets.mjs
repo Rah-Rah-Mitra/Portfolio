@@ -3,7 +3,6 @@ import path from 'node:path';
 
 const root = path.resolve(process.cwd(), 'public');
 const limits = {
-  'images/field-engineer-guide.webp': 1_500_000,
   'media/field-calibration-poster.webp': 200_000,
   'media/field-calibration.mp4': 2_500_000,
   'media/field-calibration.webm': 2_500_000,

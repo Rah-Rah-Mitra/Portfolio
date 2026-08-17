@@ -257,6 +257,14 @@ export type CameraShotDefinition = {
 
 export type QualityTier = 'full' | 'balanced' | 'reduced' | 'static';
 
+export type CameraLabSnapshot = {
+  mode: 'intrinsics' | 'extrinsics' | 'optics' | 'stereo';
+  intrinsics: { imageWidthPx: number; imageHeightPx: number; focalLengthMm: number; sensorWidthMm: number; sensorHeightMm: number; principalX: number; principalY: number; k1: number; k2: number };
+  extrinsics: { camera: Vector3Tuple; yawDegrees: number; pitchDegrees: number; rollDegrees: number; object: Vector3Tuple };
+  optics: { fNumber: number; focalLengthMm: number; objectDistanceMm: number; focusDistanceMm: number };
+  stereo: { focalPx: number; baselineMeters: number; disparityPx: number; referenceDepthMeters: number };
+};
+
 export type PortfolioWorldEvent =
   | { type: 'INTERACTION_PRIMED'; sceneId: SceneId; source: 'visitor' }
   | { type: 'INTERACTION_CHANGED'; sceneId: SceneId; source: 'visitor'; detail: string }
@@ -268,6 +276,7 @@ export type PortfolioWorldEvent =
   | { type: 'PROJECT_OPENED'; projectId: string; selectedId: string; selectedIndex: number }
   | { type: 'CAMERA_CALIBRATED'; reprojectionError: number }
   | { type: 'STEREO_POINT_TRIANGULATED'; depthError: number }
+  | { type: 'CAMERA_LAB_UPDATED'; snapshot: CameraLabSnapshot }
   | { type: 'DEPARTURE_COMPLETED'; state: 'closed' | 'calibrated' }
   | { type: 'LAB_RESET'; sceneId?: SceneId }
   | { type: 'QUALITY_CHANGED'; tier: QualityTier };

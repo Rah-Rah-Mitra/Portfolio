@@ -26,6 +26,13 @@ describe('portfolio AI commands', () => {
     expect(response.commands).toContainEqual({ type: 'openWorld' });
   });
 
+  it('describes the shipped camera laboratory without publishing deferred SLAM results', () => {
+    const response = localAgent('open the technical lab SLAM study');
+    expect(response.reply).toMatch(/intrinsics|extrinsics|optics|stereo/i);
+    expect(response.reply).toMatch(/unpublished/i);
+    expect(response.reply).not.toMatch(/dense flow|ORB matches|trajectory comparison/i);
+  });
+
   it('removes profile switching from server commands and analytics', async () => {
     const serverAgent = await readFile(new URL('../server/pageAgent.mjs', import.meta.url), 'utf8');
     const analytics = await readFile(new URL('../lib/analytics.ts', import.meta.url), 'utf8');

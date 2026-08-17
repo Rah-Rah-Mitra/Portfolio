@@ -66,8 +66,8 @@ export const localAgent = (message: string): AgentResponse => {
   let references: Reference[] = [];
 
   if (text.includes('technical lab') || text.includes('slam') || text.includes('calibration study')) {
-    reply = 'The Technical Lab is a synthetic calibration study, explicitly separated from professional work. It exposes RGB, detection, segmentation, dense flow, ORB matches, sparse geometry, and a measured trajectory comparison.';
-    references = [{ label: 'Open the synthetic calibration study', href: '#technical-lab' }];
+    reply = 'The shipped Technical Lab is a synthetic, local camera-geometry instrument for intrinsics, extrinsics, analytic optics, and stereo triangulation. It is explicitly separated from professional work. The separate SLAM/RADIO benchmark remains unpublished until its reproducibility and evidence gates pass.';
+    references = [{ label: 'Open the Camera Laboratory', href: '#technical-lab' }];
     commands.push({ type: 'openTechnicalLab' });
   } else if (text.includes('asyncddgs')) {
     reply = 'AsyncDDGS is Rahul’s maintained asyncio-first DuckDuckGo client, built with aiohttp and released through a tested PyPI workflow.';

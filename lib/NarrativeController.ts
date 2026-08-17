@@ -35,16 +35,23 @@ export class NarrativeController {
   private destroyed = false;
   private storyPoseId: string;
   private storyShotId: string;
+  private reactionTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly reactionDurationMs: number;
 
-  constructor(initial: { chapterId: string; cameraShotId: string; characterPoseId: string; qualityTier?: QualityTier }) {
+  constructor(initial: { chapterId: string; cameraShotId: string; characterPoseId: string; qualityTier?: QualityTier; reactionDurationMs?: number }) {
     this.storyPoseId = initial.characterPoseId;
     this.storyShotId = initial.cameraShotId;
+    this.reactionDurationMs = initial.reactionDurationMs ?? 900;
     this.state = { activeChapterId: initial.chapterId, normalizedProgress: 0, direction: 'forward', velocityPxPerSecond: 0, cameraShotId: initial.cameraShotId, characterPoseId: initial.characterPoseId, controlOwner: 'story', exploreSceneId: null, reaction: null, qualityTier: initial.qualityTier ?? 'full' };
   }
 
   getState = (): Readonly<NarrativeState> => ({ ...this.state });
-  subscribe = (listener: Listener) => { this.listeners.add(listener); return () => this.listeners.delete(listener); };
+  subscribe = (listener: Listener) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private notify() { if (!this.destroyed) this.listeners.forEach((listener) => listener(this.getState())); }
+  private scheduleReactionClear() {
+    if (this.reactionTimer) clearTimeout(this.reactionTimer);
+    this.reactionTimer = setTimeout(() => { this.reactionTimer = null; this.clearReaction(); }, this.reactionDurationMs);
+  }
 
   updateScroll(input: { chapterId: string; progress: number; velocityPxPerSecond: number; cameraShotId: string }) {
     const reverse = input.velocityPxPerSecond < 0;
@@ -60,6 +67,7 @@ export class NarrativeController {
     if (this.destroyed) return;
     this.state = { ...this.state, controlOwner: 'visitor', exploreSceneId: sceneId, reaction: { id: 'ownership-change', priority: 100 } };
     this.notify();
+    this.scheduleReactionClear();
   }
 
   exitExplore(_reason: 'escape' | 'exit' | 'scroll' | 'capability-change') {
@@ -71,6 +79,13 @@ export class NarrativeController {
   completeTransition() {
     if (this.destroyed) return;
     this.state = { ...this.state, controlOwner: 'story', cameraShotId: this.storyShotId, characterPoseId: this.storyPoseId, reaction: null };
+    this.notify();
+  }
+
+  authorCameraShot(cameraShotId: string) {
+    if (this.destroyed) return;
+    this.storyShotId = cameraShotId;
+    this.state = { ...this.state, cameraShotId };
     this.notify();
   }
 
@@ -88,13 +103,16 @@ export class NarrativeController {
       this.state = { ...this.state, reaction };
     }
     this.notify();
+    this.scheduleReactionClear();
   }
 
   clearReaction() {
     if (this.destroyed) return;
+    if (this.reactionTimer) clearTimeout(this.reactionTimer);
+    this.reactionTimer = null;
     this.state = { ...this.state, reaction: null, characterPoseId: this.storyPoseId };
     this.notify();
   }
 
-  destroy() { this.destroyed = true; this.listeners.clear(); }
+  destroy() { this.destroyed = true; if (this.reactionTimer) clearTimeout(this.reactionTimer); this.reactionTimer = null; this.listeners.clear(); }
 }

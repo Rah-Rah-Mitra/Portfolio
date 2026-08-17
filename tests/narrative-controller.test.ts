@@ -54,4 +54,38 @@ describe('NarrativeController', () => {
     controller.dispatch(hover);
     expect(listener).toHaveBeenCalledTimes(1);
   });
+
+  it('clears bounded reactions automatically and cancels timers on destroy', () => {
+    vi.useFakeTimers();
+    const controller = new NarrativeController({ chapterId: 'home', cameraShotId: 'shot-home', characterPoseId: 'idle-home' });
+    const listener = vi.fn(); controller.subscribe(listener);
+    controller.dispatch({ type: 'PROJECT_OPENED', projectId: 'churp', selectedId: 'map', selectedIndex: 0 });
+    expect(controller.getState().reaction?.id).toBe('inspect-project');
+    vi.advanceTimersByTime(1200);
+    expect(controller.getState()).toMatchObject({ reaction: null, characterPoseId: 'idle-home' });
+    controller.dispatch({ type: 'PROJECT_OPENED', projectId: 'churp', selectedId: 'map', selectedIndex: 0 });
+    controller.destroy(); const calls = listener.mock.calls.length;
+    vi.runAllTimers(); expect(listener).toHaveBeenCalledTimes(calls);
+    vi.useRealTimers();
+  });
+
+  it('bounds the Explore ownership reaction and returns to the authored story pose', () => {
+    vi.useFakeTimers();
+    const controller = new NarrativeController({ chapterId: 'home', cameraShotId: 'shot-home', characterPoseId: 'idle-home', reactionDurationMs: 300 });
+    controller.enterExplore('camera-laboratory');
+    expect(controller.getState().reaction).toEqual({ id: 'ownership-change', priority: 100 });
+    vi.advanceTimersByTime(300);
+    expect(controller.getState()).toMatchObject({ controlOwner: 'visitor', reaction: null, characterPoseId: 'idle-home' });
+    controller.destroy();
+    vi.useRealTimers();
+  });
+
+  it('publishes capability-driven transition ownership before returning to story', () => {
+    const controller = new NarrativeController({ chapterId: 'home', cameraShotId: 'shot-home', characterPoseId: 'idle-home' });
+    const states: string[] = []; controller.subscribe((state) => states.push(state.controlOwner));
+    controller.enterExplore('camera-laboratory');
+    controller.dispatch({ type: 'QUALITY_CHANGED', tier: 'static' });
+    expect(states).toEqual(['visitor', 'transition']);
+    expect(controller.getState().cameraShotId).toBe('shot-home');
+  });
 });

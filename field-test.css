@@ -467,7 +467,9 @@ body::after {
 .optical-world { position: relative; min-height: 27rem; border: 1px solid var(--field-rule-strong); background: rgb(255 255 255 / 88%); overflow: clip; }
 .optical-world-canvas { position: fixed; inset: 4.3rem 0 0; z-index: 0; pointer-events: none; opacity: .14; transition: opacity 180ms linear; }
 .optical-world-canvas[data-scene-visible] { opacity: 1; }
-.optical-world-canvas canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+.optical-world-canvas canvas { display: block; width: 100%; height: 100%; pointer-events: none; touch-action: pan-y; }
+.optical-world[data-control-owner="visitor"] { cursor: grab; touch-action: pan-y; }
+.optical-world[data-control-owner="visitor"]:active { cursor: grabbing; }
 .world-local-controls { position: absolute; right: 0; bottom: 0; left: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: .8rem; border-top: 1px solid var(--field-rule-strong); background: rgb(255 255 255 / 94%); }
 .world-local-controls p { flex: 1 1 24rem; padding: 0; color: var(--field-muted); font: 400 .76rem/1.5 Archivo, Arial, sans-serif; }
 .world-local-controls button { min-height: 2.75rem; padding: .6rem .8rem; border: 1px solid var(--field-ink); background: white; color: var(--field-ink); cursor: pointer; }
@@ -892,6 +894,7 @@ body::after {
 .camera-control-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-bottom: 1rem; border: 1px solid var(--field-rule); background: var(--field-rule); }
 .camera-control { display: grid; gap: .45rem; min-width: 0; padding: .75rem; background: white; color: var(--field-muted); font: 500 .66rem/1.4 "IBM Plex Mono", monospace; }
 .camera-control input { width: 100%; min-height: 2.75rem; padding: .45rem .55rem; border: 1px solid var(--field-rule-strong); border-radius: 0; background: white; color: var(--field-ink); font: 500 .88rem/1.2 "IBM Plex Mono", monospace; }
+.camera-control input[type="range"] { min-height: 1.4rem; padding: 0; accent-color: var(--field-teal-dark); }
 .camera-equation,
 .camera-convention { padding: .75rem; border-left: 3px solid var(--field-violet); background: var(--field-soft); color: var(--field-muted); font: 500 .72rem/1.55 "IBM Plex Mono", monospace; }
 .camera-mode-panel table { width: 100%; margin: 1rem 0; border-collapse: collapse; font-size: .78rem; }

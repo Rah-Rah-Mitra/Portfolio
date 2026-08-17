@@ -1,4 +1,4 @@
-import { GuideChapter, ProjectMedia, TechnicalDemo } from './types';
+import { GuideChapter, ProjectMedia } from './types';
 
 export const calibrationMedia: ProjectMedia = {
   id: 'field-calibration-ambient',
@@ -25,25 +25,3 @@ export const guideChapters: GuideChapter[] = [
   { sectionId: 'proof', label: 'Proof', cue: 'inspect', pathProgress: 0.88, camera: [-0.5, 1.2, 4.6], annotation: 'Verify awards and credentials', reducedMotionLabel: 'Field engineer verifying proof' },
   { sectionId: 'contact', label: 'Contact', cue: 'idle', pathProgress: 0.98, camera: [0, 1.4, 5.2], annotation: 'Complete the handoff', reducedMotionLabel: 'Field engineer at the handoff point' },
 ];
-
-export const technicalDemo: TechnicalDemo = {
-  id: 'slam-foundations',
-  title: 'SLAM Foundations — Synthetic Calibration Study',
-  disclaimer: 'An interactive portfolio-site experiment, not a professional project claim.',
-  provenance: 'Synthetic camera frames rendered with known poses; OpenCV estimates adjacent relative poses and uses known step lengths only to resolve monocular scale before trajectory comparison.',
-  metrics: [
-    { label: 'Synthetic frames', value: '18' },
-    { label: 'ORB matches', value: '7,152' },
-    { label: 'Median reprojection', value: '0.24 px' },
-    { label: 'Trajectory error', value: '22.52%' },
-  ],
-  layers: [
-    { id: 'rgb', label: 'RGB', method: 'Three.js render', description: 'Known camera poses establish ground truth for the study.' },
-    { id: 'detection', label: 'Objects', method: 'OpenCV contour detector', description: 'Three synthetic rigs are detected offline; no inference runs in the browser.' },
-    { id: 'segmentation', label: 'Segments', method: 'HSV mask + BiRefNet asset pass', description: 'Deterministic scene masks are paired with the BiRefNet-generated guide cutout.' },
-    { id: 'features', label: 'Dense field', method: 'Farneback optical flow', description: 'A measured dense motion field ships today; C-RADIOv4 remains a documented feasibility track.' },
-    { id: 'matches', label: 'Matches', method: 'ORB + ratio test', description: 'Adjacent keyframes expose retained and rejected correspondences.' },
-    { id: 'map', label: 'Sparse map', method: 'Essential matrix + triangulation', description: 'Two-view geometry recovers a compact sparse reconstruction.' },
-    { id: 'trajectory', label: 'Trajectory', method: 'Scaled pose accumulation', description: 'Recovered relative poses are accumulated with known step lengths for monocular scale, then compared with the synthetic path.' },
-  ],
-};

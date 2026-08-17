@@ -135,6 +135,13 @@ test.describe('capability fallbacks', () => {
     await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'visitor');
     await page.keyboard.press('Escape');
     await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'story');
+    await page.getByRole('button', { name: 'Enter Explore' }).click();
+    const before = await page.locator('.optical-world').getAttribute('data-world-rotation');
+    const heading = await page.getByRole('heading', { name: 'Explore the shared optical test bench' }).boundingBox();
+    await page.mouse.move(heading!.x + 5, heading!.y + 5); await page.mouse.down(); await page.mouse.move(heading!.x + 30, heading!.y + 5); await page.mouse.up();
+    await expect(page.locator('.optical-world')).toHaveAttribute('data-world-rotation', before ?? '0');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'story');
   });
 
   test('Effects Lab hands Explore World to the shared optical test bench anchor', async ({ page }) => {

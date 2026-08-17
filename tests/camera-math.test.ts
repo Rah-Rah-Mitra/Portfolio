@@ -64,4 +64,17 @@ describe('camera laboratory math', () => {
     expect(computeStereo({ ...DEFAULT_STEREO, disparityPx: 0 }).valid).toBe(false);
     expect(computeIntrinsics({ ...DEFAULT_INTRINSICS, sensorWidthMm: 0 }).valid).toBe(false);
   });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])('rejects non-finite inputs (%s)', (invalid) => {
+    expect(computeIntrinsics({ ...DEFAULT_INTRINSICS, focalLengthMm: invalid }).valid).toBe(false);
+    expect(computeExtrinsics({ ...DEFAULT_EXTRINSICS, yawDegrees: invalid }, DEFAULT_INTRINSICS).valid).toBe(false);
+    expect(computeOptics({ ...DEFAULT_OPTICS, focusDistanceMm: invalid }).valid).toBe(false);
+    expect(computeStereo({ ...DEFAULT_STEREO, disparityPx: invalid }).valid).toBe(false);
+  });
+
+  it('enforces the published optics and geometry ranges', () => {
+    expect(computeOptics({ ...DEFAULT_OPTICS, fNumber: 1.39 }).valid).toBe(false);
+    expect(computeOptics({ ...DEFAULT_OPTICS, fNumber: 16.01 }).valid).toBe(false);
+    expect(computeExtrinsics({ ...DEFAULT_EXTRINSICS, object: [0, Number.NaN, 3] }, DEFAULT_INTRINSICS).valid).toBe(false);
+  });
 });

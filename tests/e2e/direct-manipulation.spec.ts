@@ -64,3 +64,20 @@ test('the semantic exhibits stay operable without page overflow at 320px', async
   }));
   expect(overflow.page, JSON.stringify(overflow, null, 2)).toBeLessThanOrEqual(overflow.viewport);
 });
+
+test('direct marker preserves vertical touch policy and releases control when the page scrolls', async ({ page }) => {
+  await page.goto('/?mode=scan');
+  const marker = page.getByRole('button', { name: 'Move allocation marker' });
+  await marker.scrollIntoViewIfNeeded();
+  await expect(marker).toHaveCSS('touch-action', 'pan-y');
+  const bounds = await marker.boundingBox();
+  expect(bounds).not.toBeNull();
+  await page.mouse.move(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds!.x + bounds!.width / 2 + 15, bounds!.y + bounds!.height / 2);
+  await expect(marker).toHaveAttribute('data-interaction-state', 'dragging');
+  await page.evaluate(() => window.scrollBy(0, 2));
+  await expect(marker).toHaveAttribute('data-interaction-state', 'idle');
+  await expect(marker).toHaveAttribute('data-control-owner', 'story');
+  await page.mouse.up();
+});

@@ -46,6 +46,7 @@ export class InteractionArbitrator {
   constructor(private readonly emit?: EventSink, private readonly threshold = 8) {}
 
   pointerDown(pointer: PointerIntent, sceneId: SceneId): ArbitrationResult {
+    if (this.activePointer || this.state === 'exploring') return this.currentResult();
     this.activePointer = pointer;
     this.sceneId = sceneId;
     this.state = 'primed';
@@ -56,7 +57,7 @@ export class InteractionArbitrator {
 
   pointerMove(pointer: PointerIntent): ArbitrationResult {
     if (!this.activePointer || pointer.pointerId !== this.activePointer.pointerId || this.state === 'exploring') {
-      return { state: this.state, capturePointer: false, preventDefault: false };
+      return this.currentResult();
     }
     const distance = Math.hypot(pointer.x - this.activePointer.x, pointer.y - this.activePointer.y);
     if (this.state === 'primed' && distance >= this.threshold) {
@@ -70,11 +71,13 @@ export class InteractionArbitrator {
     };
   }
 
-  pointerUp(): ArbitrationResult {
+  pointerUp(pointerId?: number): ArbitrationResult {
+    if (!this.activePointer || (pointerId !== undefined && pointerId !== this.activePointer.pointerId)) return this.currentResult();
     return this.release();
   }
 
-  pointerCancel(): ArbitrationResult {
+  pointerCancel(pointerId?: number): ArbitrationResult {
+    if (!this.activePointer || (pointerId !== undefined && pointerId !== this.activePointer.pointerId)) return this.currentResult();
     return this.release();
   }
 
@@ -123,5 +126,14 @@ export class InteractionArbitrator {
     this.state = 'idle';
     this.owner = 'story';
     return idleResult();
+  }
+
+  private currentResult(): ArbitrationResult {
+    return {
+      state: this.state,
+      capturePointer: false,
+      preventDefault: false,
+      owner: this.owner,
+    };
   }
 }

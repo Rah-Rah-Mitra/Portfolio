@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { PortfolioWorldEvent } from '../types';
 import { resumeProfiles, unifiedPortfolioData } from '../portfolioData';
 import { InteractionArbitrator } from '../lib/InteractionArbitrator';
@@ -63,6 +63,7 @@ export const FlowShopExhibit: React.FC<{ onWorldEvent?: WorldEventHandler }> = (
   };
 
   const inspected = state.schedule.operations.find((operation) => operation.id === inspectedOperation);
+  const inspectedPredecessors = new Set(inspected?.predecessorIds ?? []);
 
   return (
     <section className="interactive-exhibit flow-shop-exhibit" aria-labelledby="flow-shop-title" role="region">
@@ -110,7 +111,12 @@ export const FlowShopExhibit: React.FC<{ onWorldEvent?: WorldEventHandler }> = (
           <div key={machine} className="gantt-track">
             <span>{machine}</span>
             <div>{state.schedule.operations.filter((operation) => operation.machine === machine).map((operation) => (
-              <i key={operation.id} className={operation.critical ? 'is-critical' : ''} style={{ left: `${operation.start / state.schedule.makespan * 100}%`, width: `${operation.duration / state.schedule.makespan * 100}%` }}>{operation.job}</i>
+              <i
+                key={operation.id}
+                data-operation-id={operation.id}
+                className={[operation.critical ? 'is-critical' : '', operation.id === inspectedOperation ? 'is-inspected' : '', inspectedPredecessors.has(operation.id) ? 'is-predecessor' : ''].filter(Boolean).join(' ')}
+                style={{ left: `${operation.start / state.schedule.makespan * 100}%`, width: `${operation.duration / state.schedule.makespan * 100}%` }}
+              >{operation.job}</i>
             ))}</div>
           </div>
         ))}
@@ -122,7 +128,7 @@ export const FlowShopExhibit: React.FC<{ onWorldEvent?: WorldEventHandler }> = (
         <tbody>{state.order.map((job) => {
           const m1 = state.schedule.operations.find((operation) => operation.id === `${job}-M1`)!;
           const m2 = state.schedule.operations.find((operation) => operation.id === `${job}-M2`)!;
-          return <tr key={job}><th scope="row">{job}</th>{[m1, m2].map((operation) => <td key={operation.id}><button type="button" onMouseEnter={() => setInspectedOperation(operation.id)} onFocus={() => setInspectedOperation(operation.id)}>{operation.start}–{operation.end}{operation.critical ? ' · critical final' : ''}</button></td>)}</tr>;
+          return <tr key={job}><th scope="row">{job}</th>{[m1, m2].map((operation) => <td key={operation.id}><button type="button" aria-current={operation.id === inspectedOperation ? 'true' : undefined} onMouseEnter={() => setInspectedOperation(operation.id)} onFocus={() => setInspectedOperation(operation.id)}>{operation.start}–{operation.end}{operation.critical ? ' · critical final' : ''}</button></td>)}</tr>;
         })}</tbody>
       </table>
       <p className="exhibit-inspection">{inspected?.id}: starts at {inspected?.start}, finishes at {inspected?.end}. {inspected?.predecessorIds.length ? `Predecessors: ${inspected.predecessorIds.join(' and ')}.` : 'No predecessor; this begins the schedule.'}</p>
@@ -134,15 +140,58 @@ export const FlowShopExhibit: React.FC<{ onWorldEvent?: WorldEventHandler }> = (
 export const SpatialSystemsExhibit: React.FC<{ onWorldEvent?: WorldEventHandler }> = ({ onWorldEvent }) => {
   const [state, setState] = useState(createSpatialState);
   const [message, setMessage] = useState('North is the nearest eligible plot from marker [45, 44].');
-  const arbitrator = useRef(new InteractionArbitrator((event) => publishWorldEvent(event, onWorldEvent)));
+  const worldEventHandler = useRef(onWorldEvent);
+  worldEventHandler.current = onWorldEvent;
+  const arbitrator = useRef(new InteractionArbitrator((event) => publishWorldEvent(event, worldEventHandler.current)));
   const activePointerId = useRef<number | null>(null);
+  const activePointerType = useRef<string>('mouse');
+  const activePointerOrigin = useRef<{ x: number; y: number } | null>(null);
+  const markerRef = useRef<HTMLButtonElement | null>(null);
+  const cancelActive = useRef<(reason: 'escape' | 'scroll' | 'visibility' | 'blur' | 'pointer-cancel') => void>(() => undefined);
+  const [interactionView, setInteractionView] = useState({ state: arbitrator.current.state, owner: arbitrator.current.owner });
 
-  const updateMarker = (coordinates: [number, number]) => {
+  const releasePointerCapture = () => {
+    const pointerId = activePointerId.current;
+    const marker = markerRef.current;
+    if (pointerId !== null && marker?.hasPointerCapture?.(pointerId)) marker.releasePointerCapture?.(pointerId);
+    activePointerId.current = null;
+    activePointerOrigin.current = null;
+  };
+
+  cancelActive.current = (reason) => {
+    if (arbitrator.current.state === 'idle') return;
+    releasePointerCapture();
+    const result = reason === 'escape' ? arbitrator.current.escape() : arbitrator.current.scrollOut();
+    setInteractionView({ state: result.state, owner: result.owner ?? arbitrator.current.owner });
+    publishWorldEvent({ type: 'INTERACTION_CHANGED', sceneId: 'spatial-systems', source: 'visitor', detail: `cancelled:${reason}` }, worldEventHandler.current);
+  };
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') cancelActive.current('escape'); };
+    const handleScroll = () => cancelActive.current('scroll');
+    const handleVisibility = () => { if (document.visibilityState === 'hidden') cancelActive.current('visibility'); };
+    const handleWindowBlur = () => cancelActive.current('blur');
+    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      releasePointerCapture();
+      arbitrator.current.focusLost();
+    };
+  }, []);
+
+  const updateMarker = (coordinates: [number, number], direct = false) => {
     const next = moveSpatialMarker(state, coordinates);
     const distance = next.distances.find(({ plot }) => plot.id === next.nearestEligible.id)?.distance ?? 0;
     setState(next);
     setMessage(`${next.nearestEligible.label} is the nearest eligible plot from marker [${next.marker.join(', ')}], at ${distance.toFixed(2)} units.`);
     publishWorldEvent({ type: 'MAP_MARKER_MOVED', markerId: 'allocation-marker', coordinates: next.marker, selectedPlot: next.nearestEligible.id, distance }, onWorldEvent);
+    if (direct) publishWorldEvent({ type: 'INTERACTION_CHANGED', sceneId: 'spatial-systems', source: 'visitor', detail: `marker:${next.marker.join(',')}` }, onWorldEvent);
   };
 
   const changeOverlay = (overlay: SpatialOverlay) => {
@@ -162,11 +211,7 @@ export const SpatialSystemsExhibit: React.FC<{ onWorldEvent?: WorldEventHandler 
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === 'Escape') {
-      if (activePointerId.current !== null && event.currentTarget.hasPointerCapture?.(activePointerId.current)) {
-        event.currentTarget.releasePointerCapture?.(activePointerId.current);
-      }
-      activePointerId.current = null;
-      arbitrator.current.escape();
+      cancelActive.current('escape');
       event.currentTarget.blur();
       return;
     }
@@ -182,7 +227,7 @@ export const SpatialSystemsExhibit: React.FC<{ onWorldEvent?: WorldEventHandler 
     <section className="interactive-exhibit spatial-exhibit" aria-labelledby="spatial-systems-title" role="region">
       <header className="exhibit-heading"><div><h4 id="spatial-systems-title">Spatial Systems</h4><p>Marker-to-plot allocation · coordinate field 0–100</p></div><ResetButton label="Reset spatial exhibit" onClick={reset} /></header>
       <p className="exhibit-disclaimer">This is a synthetic allocation illustration inspired by civic spatial reasoning, not Churp’s production algorithm. <a href="#selected-churp">Read the factual Churp case study.</a></p>
-      <p className="exhibit-hint">Use the X/Y controls or drag the square marker. Arrow keys move one unit; Shift + Arrow moves ten.</p>
+      <p className="exhibit-hint">Use the X/Y controls or drag the square marker. On touch, drag horizontally to move X while vertical movement scrolls the page; use the Y slider for vertical placement. Arrow keys move one unit; Shift + Arrow moves ten.</p>
       <div className="spatial-control-grid">
         <div className="spatial-ranges">
           <label>Marker X coordinate <output aria-hidden="true">{state.marker[0]}</output><input aria-label="Marker X coordinate" type="range" min="0" max="100" value={state.marker[0]} onChange={(event) => updateMarker([Number(event.target.value), state.marker[1]])} /></label>
@@ -197,26 +242,56 @@ export const SpatialSystemsExhibit: React.FC<{ onWorldEvent?: WorldEventHandler 
             {state.distances.map(({ plot, nearestEligibleRegion }) => <g key={plot.id} className={`${plot.eligible ? 'is-eligible' : 'is-ineligible'} ${nearestEligibleRegion ? 'is-nearest' : ''}`}><circle cx={plot.coordinate[0]} cy={plot.coordinate[1]} r={state.overlays.capacity ? plot.capacity + 2 : 3} /><text x={plot.coordinate[0]} y={plot.coordinate[1] - 5}>{plot.label}</text></g>)}
           </svg>
           <button
+            ref={markerRef}
             type="button"
             className="spatial-marker"
             aria-label="Move allocation marker"
+            data-touch-policy="pan-y"
+            data-interaction-state={interactionView.state}
+            data-control-owner={interactionView.owner}
             style={{ left: `${state.marker[0]}%`, top: `${state.marker[1]}%` }}
             onKeyDown={handleKeyDown}
             onPointerDown={(event) => {
+              if (activePointerId.current !== null) return;
+              const result = arbitrator.current.pointerDown({ pointerId: event.pointerId, x: event.clientX, y: event.clientY }, 'spatial-systems');
+              if (result.state !== 'primed') return;
               activePointerId.current = event.pointerId;
-              arbitrator.current.pointerDown({ pointerId: event.pointerId, x: event.clientX, y: event.clientY }, 'spatial-systems');
+              activePointerType.current = event.pointerType;
+              activePointerOrigin.current = { x: event.clientX, y: event.clientY };
+              setInteractionView({ state: result.state, owner: result.owner ?? arbitrator.current.owner });
             }}
             onPointerMove={(event) => {
+              const origin = activePointerOrigin.current;
+              if (activePointerType.current === 'touch' && origin && arbitrator.current.state === 'primed') {
+                const deltaX = Math.abs(event.clientX - origin.x);
+                const deltaY = Math.abs(event.clientY - origin.y);
+                if (deltaY > deltaX) return;
+              }
+              const previousState = arbitrator.current.state;
               const intent = arbitrator.current.pointerMove({ pointerId: event.pointerId, x: event.clientX, y: event.clientY });
               if (!intent.preventDefault) return;
               event.preventDefault();
               if (intent.capturePointer && !event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.setPointerCapture?.(event.pointerId);
+              setInteractionView({ state: intent.state, owner: intent.owner ?? arbitrator.current.owner });
+              if (previousState !== 'dragging' && intent.state === 'dragging') {
+                publishWorldEvent({ type: 'INTERACTION_CHANGED', sceneId: 'spatial-systems', source: 'visitor', detail: 'marker-drag-started' }, onWorldEvent);
+              }
               const bounds = event.currentTarget.parentElement?.getBoundingClientRect();
-              if (bounds?.width && bounds.height) updateMarker([(event.clientX - bounds.left) / bounds.width * 100, (event.clientY - bounds.top) / bounds.height * 100]);
+              if (bounds?.width && bounds.height) {
+                const pointerY = activePointerType.current === 'touch' ? state.marker[1] : (event.clientY - bounds.top) / bounds.height * 100;
+                updateMarker([(event.clientX - bounds.left) / bounds.width * 100, pointerY], true);
+              }
             }}
-            onPointerUp={() => { activePointerId.current = null; arbitrator.current.pointerUp(); }}
-            onPointerCancel={() => { activePointerId.current = null; arbitrator.current.pointerCancel(); }}
-            onBlur={() => arbitrator.current.focusLost()}
+            onPointerUp={(event) => {
+              const result = arbitrator.current.pointerUp(event.pointerId);
+              if (result.state === 'idle') {
+                activePointerId.current = null;
+                activePointerOrigin.current = null;
+              }
+              setInteractionView({ state: result.state, owner: result.owner ?? arbitrator.current.owner });
+            }}
+            onPointerCancel={(event) => { if (activePointerId.current === event.pointerId) cancelActive.current('pointer-cancel'); }}
+            onBlur={() => cancelActive.current('blur')}
           ><span aria-hidden="true" /></button>
         </div>
       </div>

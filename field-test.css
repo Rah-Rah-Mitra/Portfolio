@@ -1214,6 +1214,8 @@ body::after {
 .gantt-track > div { position: relative; height: 1.55rem; background: repeating-linear-gradient(90deg, var(--field-soft) 0 calc(10% - 1px), var(--field-rule) calc(10% - 1px) 10%); }
 .gantt-track i { position: absolute; top: 0; display: grid; height: 100%; place-items: center; border-right: 1px solid white; background: var(--field-teal); color: white; font-family: "IBM Plex Mono", monospace; font-size: .58rem; font-style: normal; }
 .gantt-track i.is-critical { background: var(--field-amber); }
+.gantt-track i.is-predecessor { outline: 2px solid var(--field-violet); outline-offset: -2px; }
+.gantt-track i.is-inspected { z-index: 1; outline: 3px solid #df9f2f; outline-offset: 2px; }
 
 .exhibit-table {
   width: 100%;
@@ -1304,7 +1306,7 @@ body::after {
   border: 0;
   background: transparent;
   cursor: grab;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .spatial-marker span { display: block; width: .72rem; height: .72rem; margin: auto; transform: rotate(45deg); border: 2px solid white; background: var(--field-amber); box-shadow: 0 0 0 1px var(--field-amber); }

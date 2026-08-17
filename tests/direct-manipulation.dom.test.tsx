@@ -24,6 +24,16 @@ describe('direct-manipulation exhibits', () => {
     expect(within(exhibit).getByText('Makespan 18')).not.toBeNull();
   });
 
+  it('marks the inspected operation and its predecessors in the shared Gantt result', () => {
+    render(<FlowShopExhibit />);
+    const exhibit = screen.getByRole('region', { name: 'Systems in Motion' });
+    fireEvent.focus(within(exhibit).getByRole('button', { name: '10–12' }));
+    expect(within(exhibit).getByRole('button', { name: '10–12' }).getAttribute('aria-current')).toBe('true');
+    expect(exhibit.querySelector('[data-operation-id="B-M2"]')?.classList.contains('is-inspected')).toBe(true);
+    expect(exhibit.querySelector('[data-operation-id="A-M2"]')?.classList.contains('is-predecessor')).toBe(true);
+    expect(exhibit.querySelector('[data-operation-id="B-M1"]')?.classList.contains('is-predecessor')).toBe(true);
+  });
+
   it('renders spatial controls, exact result table, disclaimer, overlays, and Reset', () => {
     const events = vi.fn();
     render(<SpatialSystemsExhibit onWorldEvent={events} />);
@@ -40,6 +50,65 @@ describe('direct-manipulation exhibits', () => {
     fireEvent.click(within(exhibit).getByRole('button', { name: 'Reset spatial exhibit' }));
     expect(within(exhibit).getByRole('slider', { name: 'Marker X coordinate' })).toHaveProperty('value', '45');
     expect(events).toHaveBeenCalledWith(expect.objectContaining({ type: 'INTERACTION_RESET', sceneId: 'spatial-systems' }));
+  });
+
+  it('preserves touch scrolling and cancels active direct manipulation through global listeners', () => {
+    const events = vi.fn();
+    const view = render(<SpatialSystemsExhibit onWorldEvent={events} />);
+    const marker = screen.getByRole('button', { name: 'Move allocation marker' }) as HTMLButtonElement;
+    expect(marker.getAttribute('data-touch-policy')).toBe('pan-y');
+    expect(screen.getByText(/On touch, drag horizontally to move X/i)).not.toBeNull();
+    Object.defineProperty(marker.parentElement, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100, x: 0, y: 0, toJSON: () => ({}) }),
+    });
+    Object.defineProperty(marker, 'setPointerCapture', { configurable: true, value: vi.fn() });
+    Object.defineProperty(marker, 'hasPointerCapture', { configurable: true, value: vi.fn(() => true) });
+    Object.defineProperty(marker, 'releasePointerCapture', { configurable: true, value: vi.fn() });
+
+    fireEvent.pointerDown(marker, { pointerId: 17, pointerType: 'touch', clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(marker, { pointerId: 17, pointerType: 'touch', clientX: 14, clientY: 35 });
+    expect(marker.getAttribute('data-interaction-state')).toBe('primed');
+    expect(marker.setPointerCapture).not.toHaveBeenCalled();
+    expect(events).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'INTERACTION_CHANGED', detail: 'marker-drag-started' }));
+    fireEvent.pointerCancel(marker, { pointerId: 17, pointerType: 'touch' });
+    events.mockClear();
+
+    fireEvent.pointerDown(marker, { pointerId: 18, pointerType: 'touch', clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(marker, { pointerId: 18, pointerType: 'touch', clientX: 25, clientY: 12 });
+    expect(marker.getAttribute('data-interaction-state')).toBe('dragging');
+    expect(events).toHaveBeenCalledWith(expect.objectContaining({ type: 'INTERACTION_CHANGED', detail: 'marker-drag-started' }));
+    expect(events).toHaveBeenCalledWith(expect.objectContaining({ type: 'INTERACTION_CHANGED', detail: expect.stringMatching(/^marker:/) }));
+    expect(events).toHaveBeenCalledWith(expect.objectContaining({ type: 'MAP_MARKER_MOVED' }));
+    expect(screen.getByRole('slider', { name: 'Marker Y coordinate' })).toHaveProperty('value', '44');
+
+    fireEvent.scroll(window);
+    expect(marker.getAttribute('data-interaction-state')).toBe('idle');
+    expect(marker.getAttribute('data-control-owner')).toBe('story');
+    expect(marker.releasePointerCapture).toHaveBeenCalledWith(18);
+    expect(events).toHaveBeenCalledWith(expect.objectContaining({ type: 'INTERACTION_CHANGED', detail: 'cancelled:scroll' }));
+
+    const callsBeforeUnmount = events.mock.calls.length;
+    view.unmount();
+    fireEvent.scroll(window);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(events).toHaveBeenCalledTimes(callsBeforeUnmount);
+  });
+
+  it('cancels active manipulation on global Escape and restores story ownership', () => {
+    const events = vi.fn();
+    render(<SpatialSystemsExhibit onWorldEvent={events} />);
+    const marker = screen.getByRole('button', { name: 'Move allocation marker' }) as HTMLButtonElement;
+    Object.defineProperty(marker, 'setPointerCapture', { configurable: true, value: vi.fn() });
+    Object.defineProperty(marker, 'hasPointerCapture', { configurable: true, value: vi.fn(() => true) });
+    Object.defineProperty(marker, 'releasePointerCapture', { configurable: true, value: vi.fn() });
+    fireEvent.pointerDown(marker, { pointerId: 9, pointerType: 'mouse', clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(marker, { pointerId: 9, pointerType: 'mouse', clientX: 9, clientY: 0 });
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(marker.getAttribute('data-interaction-state')).toBe('idle');
+    expect(marker.getAttribute('data-control-owner')).toBe('story');
+    expect(marker.releasePointerCapture).toHaveBeenCalledWith(9);
+    expect(events).toHaveBeenCalledWith(expect.objectContaining({ type: 'INTERACTION_CHANGED', detail: 'cancelled:escape' }));
   });
 
   it('keeps complete project diagrams while changing their inspected stage', () => {

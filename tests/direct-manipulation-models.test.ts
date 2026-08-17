@@ -72,6 +72,22 @@ describe('InteractionArbitrator', () => {
     expect(arbitrator.owner).toBe('story');
     expect(events).toHaveBeenCalledWith(expect.objectContaining({ type: 'EXPLORE_EXITED', sceneId: 'selected-work' }));
   });
+
+  it('does not let a secondary pointer steal or terminate the active interaction', () => {
+    const events = vi.fn();
+    const arbitrator = new InteractionArbitrator(events);
+    arbitrator.pointerDown({ pointerId: 11, x: 0, y: 0 }, 'spatial-systems');
+    arbitrator.pointerMove({ pointerId: 11, x: 9, y: 0 });
+
+    expect(arbitrator.pointerDown({ pointerId: 22, x: 50, y: 50 }, 'selected-work')).toMatchObject({ state: 'dragging', owner: 'visitor' });
+    expect(arbitrator.pointerMove({ pointerId: 22, x: 80, y: 80 })).toMatchObject({ state: 'dragging', capturePointer: false, preventDefault: false });
+    expect(arbitrator.pointerUp(22)).toMatchObject({ state: 'dragging', owner: 'visitor' });
+    expect(arbitrator.pointerCancel(22)).toMatchObject({ state: 'dragging', owner: 'visitor' });
+    expect(arbitrator.state).toBe('dragging');
+    expect(events).not.toHaveBeenCalledWith(expect.objectContaining({ sceneId: 'selected-work' }));
+
+    expect(arbitrator.pointerUp(11)).toMatchObject({ state: 'idle', owner: 'story' });
+  });
 });
 
 describe('deterministic permutation flow shop', () => {

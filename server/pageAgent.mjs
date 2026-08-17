@@ -3,7 +3,7 @@ import { emitServerLog } from './posthogTelemetry.mjs';
 
 export const DEFAULT_GEMINI_MODEL = 'gemma-4-26b-a4b-it';
 
-const effectIds = new Set(['smash', 'gravity', 'fluid', 'pretext', 'world']);
+const effectIds = new Set(['smash', 'gravity', 'fluid', 'pretext']);
 const numericParams = {
   smash: new Set(['intensity', 'radius']), gravity: new Set(['strength', 'radius']),
   fluid: new Set(['speed', 'intensity', 'opacity', 'splatRadius', 'curl']), pretext: new Set(['intensity']),
@@ -40,7 +40,7 @@ const sanitizeCommands = (commands, eventIds = new Set()) => {
     if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) sanitized.push({ type: command.type, sectionId: command.sectionId });
     if (command.type === 'focusEvent' && eventIds.has(command.eventId)) sanitized.push({ type: command.type, eventId: command.eventId });
     if (command.type === 'startNpcDialogue' && npcIds.has(command.npcId)) sanitized.push({ type: command.type, npcId: command.npcId });
-    if (['openWorld', 'closeWorld', 'restoreText'].includes(command.type)) sanitized.push({ type: command.type });
+    if (['openWorld', 'restoreText'].includes(command.type)) sanitized.push({ type: command.type });
   }
   return sanitized;
 };
@@ -57,7 +57,7 @@ const sanitizeReferences = (references, allowedLinks) => {
 const localAgent = (message, reason = 'model_unavailable') => {
   const text = String(message || '').toLowerCase();
   const commands = [];
-  let reply = 'I could not find that in Rahul’s portfolio record. Ask about optimization, 3D computer vision, security, a résumé, or the spatial map.';
+  let reply = 'I could not find that in Rahul’s portfolio record. Ask about optimization, 3D computer vision, security, a résumé, or Explore World.';
   let references = [];
   if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
     reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce.';
@@ -80,8 +80,8 @@ const localAgent = (message, reason = 'model_unavailable') => {
     references = [{ label: 'Arcane security tooling', href: '#project-arcane' }, { label: 'Security experience and proof', href: '#proof' }];
     commands.push({ type: 'focusSection', sectionId: 'proof' });
   } else if (text.includes('world') || text.includes('map')) {
-    reply = 'Opening the optional spatial portfolio map. The primary portfolio remains fully usable without this Three.js layer.';
-    references = [{ label: 'Selected work', href: '#work' }];
+    reply = 'Explore World marks the shared optical test bench as this site’s enhancement target. Its semantic anchor is available now; the evidence document remains the shipped experience.';
+    references = [{ label: 'Explore World', href: '#world' }];
     commands.push({ type: 'openWorld' });
   }
   const enabled = !(text.includes('disable') || text.includes('off'));
@@ -100,11 +100,11 @@ Return strict JSON only:
 
 References must use exact values from allowedLinks. Prefer relevant section/project/resume links and return at most five.
 Allowed commands:
-- {"type":"setEffectEnabled","effect":"smash|gravity|fluid|pretext|world","enabled":true|false}
+- {"type":"setEffectEnabled","effect":"smash|gravity|fluid|pretext","enabled":true|false}
 - {"type":"setEffectParam","effect":"smash|gravity|fluid|pretext","param":"intensity|radius|strength|speed|opacity|splatRadius|curl","value":number}
 - {"type":"focusSection","sectionId":"home|work|domains|experience|proof|methods|resumes|share|contact"}
 - {"type":"focusEvent","eventId":"an event id from page state"}
-- {"type":"openWorld"} or {"type":"closeWorld"} or {"type":"restoreText"}
+- {"type":"openWorld"} (navigate to the #world optical-test-bench anchor) or {"type":"restoreText"}
 - {"type":"startNpcDialogue","npcId":"volt-pulse-guide|waaah-comics-guide|spectrum-guide|arcane-guide|utopia-guide|churp-guide|asyncddgs-guide|geometry-guide|agewell-guide"}
 Never return JavaScript, CSS, selectors, unlisted URLs, or arbitrary commands.
 

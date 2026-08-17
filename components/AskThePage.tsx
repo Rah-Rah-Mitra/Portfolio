@@ -18,7 +18,6 @@ export type PageCommand =
   | { type: 'focusGuideChapter'; sectionId: string }
   | { type: 'focusEvent'; eventId: string }
   | { type: 'openWorld' }
-  | { type: 'closeWorld' }
   | { type: 'startNpcDialogue'; npcId: string }
   | { type: 'restoreText' };
 type AgentResponse = { reply: string; references?: Reference[]; commands?: PageCommand[]; modelUsed?: boolean; model?: string; reason?: string };
@@ -27,11 +26,12 @@ const numericParams: Record<NumericEffectId, Set<string>> = {
   smash: new Set(['intensity', 'radius']), gravity: new Set(['strength', 'radius']),
   fluid: new Set(['speed', 'intensity', 'opacity', 'splatRadius', 'curl']), pretext: new Set(['intensity']),
 };
-const effectIds = new Set<EffectId>(['smash', 'gravity', 'fluid', 'pretext', 'world']);
+const effectIds = new Set<EffectId>(['smash', 'gravity', 'fluid', 'pretext']);
 const sectionIds = new Set<string>(Object.values(SECTION_IDS));
 const eventIds = new Set(fieldNoteByIdOrAlias.keys());
 const allowedLinks = new Set([
   ...Object.values(SECTION_IDS).map((id) => `#${id}`),
+  '#world',
   ...allProjects.flatMap((project) => [`#project-${project.id}`, project.repoUrl, project.liveUrl, ...(project.links ?? []).map((link) => link.url)]).filter((link): link is string => Boolean(link)),
   ...resumeProfiles.flatMap((resume) => [resume.pdfUrl, resume.docxUrl]),
   ...fieldNotes.flatMap((note) => (note.links ?? []).map((link) => link.url)),
@@ -63,7 +63,7 @@ const projectRef = (id: string, label: string): Reference => ({ label, href: `#p
 export const localAgent = (message: string): AgentResponse => {
   const text = message.toLowerCase();
   const commands: PageCommand[] = [];
-  let reply = 'I could not find that in Rahul’s portfolio record. Try asking about optimization, 3D computer vision, security, a résumé, or the spatial map.';
+  let reply = 'I could not find that in Rahul’s portfolio record. Try asking about optimization, 3D computer vision, security, a résumé, or Explore World.';
   let references: Reference[] = [];
 
   if (text.includes('technical lab') || text.includes('slam') || text.includes('calibration study')) {
@@ -103,8 +103,8 @@ export const localAgent = (message: string): AgentResponse => {
     references = [projectRef('arcane', 'Arcane security tooling'), { label: 'Security experience and proof', href: '#proof' }];
     commands.push({ type: 'focusSection', sectionId: SECTION_IDS.ACHIEVEMENTS });
   } else if (text.includes('world') || text.includes('map')) {
-    reply = 'Opening the optional spatial portfolio map. It uses the existing Three.js and GLB environment as an exploratory layer; the main portfolio remains available without it.';
-    references = [{ label: 'Return to selected work', href: '#work' }];
+    reply = 'Explore World marks the shared optical test bench as this site’s enhancement target. Its semantic anchor is available now; the evidence document remains the shipped experience.';
+    references = [{ label: 'Explore World', href: '#world' }];
     commands.push({ type: 'openWorld' });
   } else if (text.includes('project') || text.includes('work')) {
     reply = 'The selected work is organized as evidence-led briefs covering operating context, Rahul’s contribution, technical approach, and current result or proof.';
@@ -181,7 +181,6 @@ const AskThePage: React.FC = () => {
       const note = fieldNoteByIdOrAlias.get(command.eventId);
       if (note) document.getElementById(`event-${note.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else if (command.type === 'openWorld') document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else if (command.type === 'closeWorld') effects.closeWorld('ask_this_portfolio');
     else if (command.type === 'restoreText') effects.restoreAll();
     else if (command.type === 'startNpcDialogue') {
       document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });

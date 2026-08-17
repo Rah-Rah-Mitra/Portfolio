@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { EffectId, FluidQuality, NumericEffectId, TextEffectMode, useEffects, WorldQuality } from '../contexts/PhysicsContext';
+import { EffectId, FluidQuality, NumericEffectId, TextEffectMode, useEffects } from '../contexts/PhysicsContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import BreakableText from './BreakableText';
 import { track } from '../lib/analytics';
@@ -34,7 +34,7 @@ const EffectsLabPanel: React.FC = () => {
   const panelRef = useRef<HTMLElement>(null);
   const suppressFocusRestore = useRef(false);
   const openedAt = useRef<number | null>(null);
-  const { settings, toggleEffect, setEffectParam, setPretextMode, setWorldQuality, setFluidQuality, restoreAll, pauseAll } = useEffects();
+  const { settings, toggleEffect, setEffectParam, setPretextMode, setFluidQuality, restoreAll, pauseAll } = useEffects();
   useFocusTrap(open, panelRef, '[data-open-effects], .effects-dock', suppressFocusRestore);
 
   const close = (reason: string) => {
@@ -128,10 +128,9 @@ const EffectsLabPanel: React.FC = () => {
             <RangeField label="Strength" value={settings.pretext.intensity} min={0} max={100} onChange={(value) => setEffectParam('pretext', 'intensity', value)} />
           </section>
           <section className="world-control">
-            <EffectToggle enabled={settings.world.enabled} title="Spatial portfolio map" description="Lazy-loaded Three.js environment" onClick={() => toggle('world')} />
-            <label className="lab-select"><span>Quality</span><select value={settings.world.quality} onChange={(event) => setWorldQuality(event.target.value as WorldQuality)}><option value="balanced">Balanced</option><option value="high">High</option></select></label>
+            <h3>Explore World</h3>
+            <p>The shared optical test bench is this site’s enhancement target. This anchor marks its integration point; the evidence document remains the shipped experience.</p>
             <a href="#world" onClick={() => close('explore_world')}>Explore World</a>
-            <p>The spatial map is optional; the complete portfolio remains available in the document.</p>
           </section>
         </div>
         </aside>

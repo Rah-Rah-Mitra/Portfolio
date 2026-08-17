@@ -132,4 +132,20 @@ test.describe('capability fallbacks', () => {
     await expect(page).toHaveURL(/#world$/);
     await expect(page.locator('.portfolio-world')).toHaveCount(0);
   });
+
+  test('Effects Lab hands Explore World to the shared optical test bench anchor', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /FX, open optional effects lab/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Effects lab' });
+
+    await expect(dialog).not.toContainText('Spatial portfolio map');
+    await expect(dialog).not.toContainText('Lazy-loaded Three.js environment');
+    await expect(dialog).toContainText('The shared optical test bench is this site’s enhancement target.');
+    const explore = dialog.getByRole('link', { name: 'Explore World' });
+    await expect(explore).toHaveAttribute('href', '#world');
+    await explore.click();
+    await expect(page).toHaveURL(/#world$/);
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('.portfolio-world')).toHaveCount(0);
+  });
 });

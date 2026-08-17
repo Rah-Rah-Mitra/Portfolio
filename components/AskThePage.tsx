@@ -18,7 +18,6 @@ export type PageCommand =
   | { type: 'focusGuideChapter'; sectionId: string }
   | { type: 'focusEvent'; eventId: string }
   | { type: 'openWorld' }
-  | { type: 'startNpcDialogue'; npcId: string }
   | { type: 'restoreText' };
 type AgentResponse = { reply: string; references?: Reference[]; commands?: PageCommand[]; modelUsed?: boolean; model?: string; reason?: string };
 
@@ -182,9 +181,6 @@ const AskThePage: React.FC = () => {
       if (note) document.getElementById(`event-${note.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else if (command.type === 'openWorld') document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     else if (command.type === 'restoreText') effects.restoreAll();
-    else if (command.type === 'startNpcDialogue') {
-      document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   };
 
   const submitMessage = async (message: string) => {

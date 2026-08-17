@@ -23,9 +23,7 @@ type ReplayReason =
   | 'ask_page_command'
   | 'frontend_exception'
   | 'high_intent_click'
-  | 'npc_dialogue_opened'
-  | 'resume_download'
-  | 'world_opened';
+  | 'resume_download';
 
 export type AnalyticsEvent =
   | { event: 'portfolio_viewed'; props: { surface: 'continuous_field_test' } }
@@ -60,11 +58,6 @@ export type AnalyticsEvent =
   | { event: 'chatbot_quick_action_clicked'; props: { action: string; command_count: string } }
   | { event: 'chatbot_command_submitted'; props: { used_model: string; command_count: string; status: string; fallback_reason?: string } }
   | { event: 'api_request_completed'; props: { route: string; status: number | 'network_error'; ok: boolean; duration_ms: number; response_source: string } }
-  | { event: 'world_opened'; props: { source: string } }
-  | { event: 'world_closed'; props: { reason: string; duration_ms: number } }
-  | { event: 'pointer_lock_changed'; props: { locked: boolean } }
-  | { event: 'npc_dialogue_opened'; props: { npc_id: string; title: string; method: string } }
-  | { event: 'world_link_clicked'; props: { npc_id: string; title: string; destination_host: string } }
   | { event: 'guide_capability_detected'; props: { mode: string; chapter: string } }
   | { event: 'technical_layer_changed'; props: { layer: string; method: string } }
   | { event: 'session_replay_triggered'; props: { reason: ReplayReason; source?: string } }

@@ -115,7 +115,9 @@ The portfolio is a clean white laboratory record of an engineer making intellige
 
 The graphite-and-teal field engineer is a supporting guide, not the subject. On wide screens it occupies a sticky calibration stage beside the evidence and advances gently with the reader's scroll. On constrained devices it becomes a static poster after the first-view facts, so mobile always presents Rahul's claim and actions first. Sparse amber and violet belong to focus, survey stations, reconstruction, and other technical annotations; they do not become decorative themes or unsupported experience claims.
 
-The interface has one evidence model and no Build/Secure lenses. The assistant, Effects Lab, and Spatial World are optional depth layers: fixed AI and FX controls are desktop-only, while mobile exposes AI, FX, and Spatial World inside the header menu. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.
+The interface has one evidence model and no Build/Secure lenses. The assistant and Effects Lab are optional shipped depth layers: fixed AI and FX controls are desktop-only, while mobile exposes AI, FX, and Explore World inside the header menu. Explore World is ordinary navigation to the shared optical-test-bench anchor; that combined enhancement is pending and no separate world modal ships today. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.
+
+Quick Scan is the canonical light, static-first route. It renders the same recruiter evidence in ordinary semantic HTML, omits heavy guide and video layers, and keeps Explore World as navigation to the shared future anchor rather than implying a second experience.
 
 **Key Characteristics:**
 
@@ -124,7 +126,7 @@ The interface has one evidence model and no Build/Secure lenses. The assistant, 
 - A persistent desktop evidence-and-guide split that collapses to an evidence-first mobile column.
 - Archivo for claims and reading; IBM Plex Mono for methods, dates, counts, readouts, and state.
 - Square controls and ruled rows instead of floating cards, pills, or dashboard chrome.
-- Optional spatial and generative tools remain clearly labeled, accessible, and subordinate.
+- Optional AI and FX tools remain clearly labeled, accessible, and subordinate; the pending optical test bench remains an honest semantic anchor.
 
 ## Colors
 
@@ -254,7 +256,7 @@ The form language is rectilinear and instrument-like. Buttons, inputs, chips, ta
 
 ### Navigation
 
-The sticky header uses a translucent white strip, a Structural Rule bottom edge, a compact RM mark, centered desktop links, and a square Spatial World launcher. Link hover and focus reveal a two-pixel teal underline over 160ms. At 920px the links move into a full-width expanding menu; AI · Ask, FX · Lab, and Spatial World appear as three equally explicit tool buttons inside it.
+The sticky header uses a translucent white strip, a Structural Rule bottom edge, a compact RM mark, centered desktop links, and a square Explore World anchor. Link hover and focus reveal a two-pixel teal underline over 160ms. At 920px the links move into a full-width expanding menu; AI · Ask, FX · Lab, and Explore World remain three explicit routes, with Explore World linking to the pending shared test-bench boundary.
 
 ### Selected Work and Evidence Ledgers
 
@@ -270,7 +272,7 @@ On wide screens, the guide is sticky within a ruled, faintly gridded stage. A co
 
 ### Optional Tool Docks and Panels
 
-AI and FX are square 3.25rem fixed controls in the lower-right desktop corner. They are shadowless at rest and reveal a small label on hover or focus. At mobile sizes the fixed pair is hidden and the header menu owns AI, FX, and Spatial World access. Assistant and Effects Lab drawers are white, square, left-entering modal panels with a translucent graphite backdrop and directional shadow. No essential evidence or action may exist only inside these tools.
+AI and FX are square 3.25rem fixed controls in the lower-right desktop corner. They are shadowless at rest and reveal a small label on hover or focus. At mobile sizes the fixed pair is hidden and the header menu owns AI, FX, and Explore World access. Explore World is a normal link to `#world`, not a modal control. Assistant and Effects Lab drawers are white, square, left-entering modal panels with a translucent graphite backdrop and directional shadow. No essential evidence or action may exist only inside these tools.
 
 ### Motion and Reduced Motion
 
@@ -291,7 +293,7 @@ Motion is limited to the 160ms navigation underline, the 280ms guide progress re
 - **Do** use white space, one-pixel rules, and typographic hierarchy to organize dense evidence.
 - **Do** keep teal restrained and reserve amber and violet for focus or technical annotation.
 - **Do** keep the field engineer in a supporting desktop guide role and use the static evidence-first fallback on constrained devices.
-- **Do** expose AI, FX, and Spatial World in the mobile header menu while keeping fixed AI and FX controls desktop-only.
+- **Do** expose AI, FX, and the Explore World anchor in the mobile header menu while keeping fixed AI and FX controls desktop-only.
 - **Do** preserve visible focus, semantic landmarks, keyboard-operable filters and tabs, truthful disclaimers, and the complete project archive.
 - **Do** make reduced motion a static, fully readable version of the same experience.
 

@@ -14,7 +14,6 @@ const numericRanges = {
   pretext: { intensity: [0, 100] },
 };
 const sectionIds = new Set(['home', 'work', 'domains', 'experience', 'proof', 'methods', 'resumes', 'share', 'contact']);
-const npcIds = new Set(['volt-pulse-guide', 'waaah-comics-guide', 'spectrum-guide', 'arcane-guide', 'utopia-guide', 'churp-guide', 'asyncddgs-guide', 'geometry-guide', 'agewell-guide']);
 
 const getGeminiModel = () => process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 const getGeminiApiKey = () => process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -39,7 +38,6 @@ const sanitizeCommands = (commands, eventIds = new Set()) => {
     }
     if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) sanitized.push({ type: command.type, sectionId: command.sectionId });
     if (command.type === 'focusEvent' && eventIds.has(command.eventId)) sanitized.push({ type: command.type, eventId: command.eventId });
-    if (command.type === 'startNpcDialogue' && npcIds.has(command.npcId)) sanitized.push({ type: command.type, npcId: command.npcId });
     if (['openWorld', 'restoreText'].includes(command.type)) sanitized.push({ type: command.type });
   }
   return sanitized;
@@ -105,7 +103,6 @@ Allowed commands:
 - {"type":"focusSection","sectionId":"home|work|domains|experience|proof|methods|resumes|share|contact"}
 - {"type":"focusEvent","eventId":"an event id from page state"}
 - {"type":"openWorld"} (navigate to the #world optical-test-bench anchor) or {"type":"restoreText"}
-- {"type":"startNpcDialogue","npcId":"volt-pulse-guide|waaah-comics-guide|spectrum-guide|arcane-guide|utopia-guide|churp-guide|asyncddgs-guide|geometry-guide|agewell-guide"}
 Never return JavaScript, CSS, selectors, unlisted URLs, or arbitrary commands.
 
 CURRENT PAGE STATE:

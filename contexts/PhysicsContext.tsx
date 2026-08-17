@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import Matter from 'matter-js';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
-import { track, triggerSessionReplay } from '../lib/analytics';
+import { track } from '../lib/analytics';
 
 type BodyRef = {
   body: Matter.Body;
@@ -15,7 +15,6 @@ type BodyRef = {
 };
 
 export type TextEffectMode = 'decode' | 'scan' | 'pulse';
-export type WorldQuality = 'balanced' | 'high';
 export type FluidQuality = 'balanced' | 'high';
 
 export type EffectSettings = {
@@ -43,10 +42,6 @@ export type EffectSettings = {
     intensity: number;
     mode: TextEffectMode;
   };
-  world: {
-    enabled: boolean;
-    quality: WorldQuality;
-  };
 };
 
 export type EffectId = keyof EffectSettings;
@@ -55,15 +50,11 @@ export type NumericEffectId = 'smash' | 'gravity' | 'fluid' | 'pretext';
 interface EffectsContextType {
   settings: EffectSettings;
   isInteractionActive: boolean;
-  worldOpen: boolean;
   setEffectEnabled: (id: EffectId, enabled: boolean) => void;
   toggleEffect: (id: EffectId) => void;
   setEffectParam: (id: NumericEffectId, param: string, value: number) => void;
   setPretextMode: (mode: TextEffectMode) => void;
-  setWorldQuality: (quality: WorldQuality) => void;
   setFluidQuality: (quality: FluidQuality) => void;
-  openWorld: (source?: string) => void;
-  closeWorld: (reason?: string) => void;
   restoreAll: () => void;
   pauseAll: () => void;
   registerWords: (elements: HTMLElement[]) => () => void;
@@ -74,7 +65,6 @@ const defaultSettings: EffectSettings = {
   gravity: { enabled: false, strength: 45, radius: 48 },
   fluid: { enabled: false, speed: 0.7, intensity: 38, opacity: 28, splatRadius: 28, curl: 18, quality: 'balanced' },
   pretext: { enabled: false, intensity: 42, mode: 'decode' },
-  world: { enabled: true, quality: 'balanced' },
 };
 
 const PARAM_LIMITS: Record<NumericEffectId, Record<string, [number, number]>> = {
@@ -117,13 +107,11 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 
 export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<EffectSettings>(defaultSettings);
-  const [worldOpen, setWorldOpen] = useState(false);
   const engineRef = useRef(Engine.create());
   const runnerRef = useRef(Runner.create());
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
   const boundariesRef = useRef<Matter.Body[]>([]);
   const restoreTimers = useRef(new Set<number>());
-  const worldOpenedAtRef = useRef<number | null>(null);
 
   const restoreAll = useCallback(() => {
     setSettings((prev) => ({
@@ -275,32 +263,6 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
     radius: settings.gravity.radius,
   });
 
-  const openWorld = useCallback((source = 'unknown') => {
-    setSettings((prev) => ({
-      ...prev,
-      world: { ...prev.world, enabled: true },
-    }));
-    setWorldOpen((current) => {
-      if (!current) {
-        worldOpenedAtRef.current = performance.now();
-        track('world_opened', { source });
-        triggerSessionReplay('world_opened', { source });
-      }
-      return true;
-    });
-  }, []);
-
-  const closeWorld = useCallback((reason = 'unknown') => {
-    setWorldOpen((current) => {
-      if (current) {
-        const duration = worldOpenedAtRef.current ? Math.round(performance.now() - worldOpenedAtRef.current) : 0;
-        track('world_closed', { reason, duration_ms: duration });
-        worldOpenedAtRef.current = null;
-      }
-      return false;
-    });
-  }, []);
-
   const pauseAll = useCallback(() => {
     restoreAll();
     setSettings((prev) => ({
@@ -310,24 +272,17 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
       fluid: { ...prev.fluid, enabled: false },
       pretext: { ...prev.pretext, enabled: false },
     }));
-    closeWorld('pause_all');
     track('effect_control_changed', { effect: 'all', control: 'enabled', value: 'false' });
-  }, [closeWorld, restoreAll]);
+  }, [restoreAll]);
 
   const setEffectEnabled = useCallback((id: EffectId, enabled: boolean) => {
     setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
-    if (id === 'world' && !enabled) {
-      closeWorld('effect_disabled');
-    }
-  }, [closeWorld]);
+  }, []);
 
   const toggleEffect = useCallback((id: EffectId) => {
     const enabled = !settings[id].enabled;
     setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
-    if (id === 'world' && !enabled) {
-      closeWorld('effect_disabled');
-    }
-  }, [closeWorld, settings]);
+  }, [settings]);
 
   const setEffectParam = useCallback((id: NumericEffectId, param: string, value: number) => {
     const limits = PARAM_LIMITS[id][param];
@@ -346,13 +301,6 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
     setSettings((prev) => ({
       ...prev,
       pretext: { ...prev.pretext, mode },
-    }));
-  }, []);
-
-  const setWorldQuality = useCallback((quality: WorldQuality) => {
-    setSettings((prev) => ({
-      ...prev,
-      world: { ...prev.world, quality },
     }));
   }, []);
 
@@ -402,15 +350,11 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
   const value: EffectsContextType = {
     settings,
     isInteractionActive: settings.smash.enabled || settings.gravity.enabled,
-    worldOpen,
     setEffectEnabled,
     toggleEffect,
     setEffectParam,
     setPretextMode,
-    setWorldQuality,
     setFluidQuality,
-    openWorld,
-    closeWorld,
     registerWords,
     restoreAll,
     pauseAll,

@@ -386,7 +386,7 @@ const PortfolioExperience: React.FC = () => (
         <ResumeSection />
         <ContactFooter />
       <section id="world" className="portfolio-world-mount" aria-label="Explore World mount point">
-        <p>Explore World is an optional spatial layer. Every portfolio fact is already available in the evidence above.</p>
+        <p>Explore World marks the shared optical test bench integration point. The evidence document above is the shipped experience today.</p>
       </section>
     </main>
   </div>

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "id": "field-calibration-ambient",
+      "status": "existing-reviewed-asset",
+      "manifest": "../comfyui/model-manifest.json",
+      "note": "This checkpoint does not claim any new media generation."
+    },
+    {
+      "id": "optical-courier",
+      "status": "not-generated",
+      "manifest": "../optical-courier/prompt-manifest.json",
+      "note": "Concept, model, rig, animations, and media remain pending."
+    }
+  ]
+}

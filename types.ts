@@ -151,8 +151,101 @@ export interface ProjectMedia {
   alt: string;
   transcript?: string;
   workflowId?: string;
+  provenanceId?: string;
   loadPriority?: 'critical' | 'near-viewport' | 'lazy';
 }
+
+export type ExperiencePath = {
+  id: string;
+  label: string;
+  sourceAnchor: `#${string}`;
+  evidenceSectionIds: string[];
+  initialProgress: number;
+  destinationProgress: number;
+};
+
+export type SceneId =
+  | 'calibration'
+  | 'systems-in-motion'
+  | 'spatial-systems'
+  | 'selected-work'
+  | 'camera-laboratory'
+  | 'departure';
+
+export type SceneControlOwner = 'narrative' | 'visitor' | 'system';
+
+export type SceneControlOwnership = {
+  owner: SceneControlOwner;
+  control: string;
+  resetLabel: string;
+  keyboardShortcut?: string;
+};
+
+export type InteractionFallback = {
+  responseTarget: `#${string}`;
+  message: string;
+};
+
+export type InteractionDefinition = {
+  id: SceneId;
+  title: string;
+  purpose: string;
+  model: string;
+  primaryManipulation: string;
+  secondaryDetail: string;
+  ambientMotion: string;
+  characterReaction: string;
+  controls: SceneControlOwnership[];
+  fallback: InteractionFallback;
+  testCoverage: string[];
+};
+
+export type WorldAnchor = {
+  id: string;
+  semanticTarget: `#${string}`;
+  position: [number, number, number];
+  safeTextRegion: [number, number, number, number];
+  interactionBounds: [number, number, number, number];
+  projectionDepth: number;
+  responsiveOverrides?: Record<'mobile' | 'tablet' | 'desktop', Partial<Pick<WorldAnchor, 'position' | 'safeTextRegion' | 'interactionBounds'>>>;
+  occluders?: string[];
+};
+
+export type CameraShot = {
+  id: string;
+  position: [number, number, number];
+  target: [number, number, number];
+  fov: number;
+  focusDistance?: number;
+  exposure?: number;
+  transitionMs: number;
+};
+
+export type QualityTier = 'full' | 'balanced' | 'reduced' | 'static';
+
+export type QualityTierDefinition = {
+  id: QualityTier;
+  allowsWebgl: boolean;
+  allowsVideo: boolean;
+  allowsAmbientMotion: boolean;
+  maxPixelRatio: number;
+};
+
+export type WorldEventType =
+  | 'chapter-entered'
+  | 'interaction-primed'
+  | 'interaction-reset'
+  | 'quality-changed'
+  | 'explore-entered'
+  | 'explore-exited';
+
+export type WorldEvent = {
+  type: WorldEventType;
+  sceneId?: SceneId;
+  source: 'narrative' | 'visitor' | 'system';
+  occurredAt: number;
+  payload?: Record<string, string | number | boolean>;
+};
 
 export interface GuideChapter {
   sectionId: string;

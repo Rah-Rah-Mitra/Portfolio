@@ -7,4 +7,8 @@ describe('local-drive mirror verifier', () => {
     expect(isSafeMirrorDestination('C:/repo', 'C:/repo/.verify')).toBe(false);
     expect(isSafeMirrorDestination('C:/repo', 'C:/verify/portfolio')).toBe(true);
   });
+
+  it('rejects a mirror destination that contains the source workspace', () => {
+    expect(isSafeMirrorDestination('C:/repo/portfolio', 'C:/repo')).toBe(false);
+  });
 });

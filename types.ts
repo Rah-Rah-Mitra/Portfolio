@@ -174,6 +174,14 @@ export type SceneId =
 
 export type SceneControlOwner = 'narrative' | 'visitor' | 'system';
 
+export type SemanticFallbackAnchor =
+  | '#home'
+  | '#experience'
+  | '#all-work'
+  | '#work'
+  | '#technical-lab'
+  | '#contact';
+
 export type SceneControlOwnership = {
   owner: SceneControlOwner;
   control: string;
@@ -182,7 +190,7 @@ export type SceneControlOwnership = {
 };
 
 export type InteractionFallback = {
-  responseTarget: `#${string}`;
+  responseTarget: SemanticFallbackAnchor;
   message: string;
 };
 

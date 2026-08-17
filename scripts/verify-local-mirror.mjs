@@ -14,7 +14,8 @@ export const isSafeMirrorDestination = (source, destination) => {
   const resolvedSource = path.resolve(source).toLowerCase();
   const resolvedDestination = path.resolve(destination).toLowerCase();
   return resolvedDestination !== resolvedSource
-    && !resolvedDestination.startsWith(`${resolvedSource}${path.sep}`);
+    && !resolvedDestination.startsWith(`${resolvedSource}${path.sep}`)
+    && !resolvedSource.startsWith(`${resolvedDestination}${path.sep}`);
 };
 
 const run = (command, args, cwd) => new Promise((resolve, reject) => {

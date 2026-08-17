@@ -4,7 +4,7 @@ import {
   resolveInteractionResponse,
   validateInteractionDefinitions,
 } from '../interactionData';
-import type { InteractionDefinition } from '../types';
+import type { InteractionDefinition, SemanticFallbackAnchor } from '../types';
 
 describe('interactive optical test bench contract', () => {
   it('keeps all six scenes semantically reachable when optional rendering is unavailable', () => {
@@ -40,13 +40,38 @@ describe('interactive optical test bench contract', () => {
   it('rejects a scene whose fallback would hide evidence outside a semantic anchor', () => {
     const invalidDefinitions: InteractionDefinition[] = interactionDefinitions.map((scene) => (
       scene.id === 'departure'
-        ? { ...scene, fallback: { ...scene.fallback, responseTarget: 'world-canvas' as `#${string}` } }
+        ? { ...scene, fallback: { ...scene.fallback, responseTarget: 'world-canvas' as SemanticFallbackAnchor } }
         : scene
     ));
 
     expect(validateInteractionDefinitions(invalidDefinitions)).toEqual({
       valid: false,
       issues: ['departure fallback responseTarget must be an in-page anchor'],
+    });
+  });
+
+  it('rejects an unknown in-page target that is not a published semantic fallback anchor', () => {
+    const invalidDefinitions: InteractionDefinition[] = interactionDefinitions.map((scene) => (
+      scene.id === 'departure'
+        ? { ...scene, fallback: { ...scene.fallback, responseTarget: '#world-canvas' as SemanticFallbackAnchor } }
+        : scene
+    ));
+
+    expect(validateInteractionDefinitions(invalidDefinitions)).toEqual({
+      valid: false,
+      issues: ['departure fallback responseTarget must target a published semantic fallback anchor'],
+    });
+  });
+
+  it.each([
+    ['reduced motion', { quickScan: false, reducedMotion: true, webglAvailable: true }],
+    ['no WebGL', { quickScan: false, reducedMotion: false, webglAvailable: false }],
+  ] as const)('routes every scene to semantic evidence for %s', (_condition, capabilities) => {
+    interactionDefinitions.forEach((scene) => {
+      expect(resolveInteractionResponse(scene, capabilities)).toMatchObject({
+        mode: 'semantic',
+        responseTarget: scene.fallback.responseTarget,
+      });
     });
   });
 });

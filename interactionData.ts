@@ -1,4 +1,4 @@
-import type { InteractionDefinition, InteractionFallback, SceneId } from './types';
+import type { InteractionDefinition, InteractionFallback, SceneId, SemanticFallbackAnchor } from './types';
 
 export type InteractionCapabilities = {
   quickScan: boolean;
@@ -24,6 +24,15 @@ const sceneIds: SceneId[] = [
   'selected-work',
   'camera-laboratory',
   'departure',
+];
+
+export const semanticFallbackAnchors: readonly SemanticFallbackAnchor[] = [
+  '#home',
+  '#experience',
+  '#all-work',
+  '#work',
+  '#technical-lab',
+  '#contact',
 ];
 
 export const interactionDefinitions: InteractionDefinition[] = [
@@ -114,8 +123,10 @@ export const validateInteractionDefinitions = (definitions: readonly Interaction
   definitions.forEach((definition) => {
     if (ids.has(definition.id)) issues.push(`${definition.id} is duplicated`);
     ids.add(definition.id);
-    if (!definition.fallback.responseTarget.startsWith('#')) {
-      issues.push(`${definition.id} fallback responseTarget must be an in-page anchor`);
+    if (!semanticFallbackAnchors.includes(definition.fallback.responseTarget)) {
+      issues.push(definition.fallback.responseTarget.startsWith('#')
+        ? `${definition.id} fallback responseTarget must target a published semantic fallback anchor`
+        : `${definition.id} fallback responseTarget must be an in-page anchor`);
     }
   });
 

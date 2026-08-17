@@ -11,6 +11,8 @@ The portfolio uses local ComfyUI for authored support media. Career claims and p
 
 Run `npm run comfy:smoke` while Comfy Desktop is open. The smoke test is read-only: it checks the API, available node classes, queue state, and the model manifest.
 
+Run `npm run comfy:field-media` to enqueue the pinned calibration-video workflow, then copy the returned MP4 from ComfyUI output into `public/media/field-calibration.mp4`. Run `npm run media:encode` to create the muted VP9 WebM and poster through the pinned `ffmpeg-static` dependency.
+
 ## Reproducibility contract
 
 Every shipped asset must have an entry in `model-manifest.json` containing its prompt, seed, workflow name, model, license/source URL, dimensions, duration, and output path. Model weights are never committed.
@@ -30,4 +32,4 @@ Export a workflow's API form from ComfyUI before automating it. Do not submit th
 - LTX-2.3 may be used only after a 512p four-second benchmark completes in 15 minutes or less with no ROCm or custom-node errors and a visible consistency improvement.
 - ARDY is research-only for this Windows/AMD pipeline.
 - Large GIFs are prohibited. Ship WebM and H.264 MP4 plus a poster and transcript.
-
+- The shipped 768×512, 97-frame LTXV 2B render completed in 95.33 seconds on the verified ROCm runtime. Its false-color footage is deliberately subdued in CSS and used only as supporting calibration ambience.

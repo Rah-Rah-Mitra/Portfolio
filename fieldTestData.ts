@@ -1,4 +1,19 @@
-import { GuideChapter, TechnicalDemo } from './types';
+import { GuideChapter, ProjectMedia, TechnicalDemo } from './types';
+
+export const calibrationMedia: ProjectMedia = {
+  id: 'field-calibration-ambient',
+  kind: 'video',
+  posterSrc: '/media/field-calibration-poster.webp',
+  webmSrc: '/media/field-calibration.webm',
+  mp4Src: '/media/field-calibration.mp4',
+  durationSeconds: 4.04,
+  width: 768,
+  height: 512,
+  alt: 'Graphite survey cameras in a white calibration laboratory with false-color tracking overlays.',
+  transcript: 'A slow lateral camera move passes multiple survey-camera rigs in a bright laboratory. Sparse false-color green and violet tracking fields move across the equipment. No people, speech, or text appear.',
+  workflowId: 'ltxv-fast-t2v-distilled-4837376',
+  loadPriority: 'near-viewport',
+};
 
 export const guideChapters: GuideChapter[] = [
   { sectionId: 'home', label: 'Overview', cue: 'idle', pathProgress: 0.03, camera: [0, 1.4, 5.2], annotation: 'Establish the operating position', reducedMotionLabel: 'Field engineer at origin' },
@@ -15,12 +30,12 @@ export const technicalDemo: TechnicalDemo = {
   id: 'slam-foundations',
   title: 'SLAM Foundations — Synthetic Calibration Study',
   disclaimer: 'An interactive portfolio-site experiment, not a professional project claim.',
-  provenance: 'Synthetic camera frames rendered from the portfolio scene with known poses; overlay values are deterministic illustrative output from the study pipeline.',
+  provenance: 'Synthetic camera frames rendered with known poses; OpenCV estimates adjacent relative poses and uses known step lengths only to resolve monocular scale before trajectory comparison.',
   metrics: [
     { label: 'Synthetic frames', value: '18' },
-    { label: 'ORB matches', value: '454' },
+    { label: 'ORB matches', value: '7,152' },
     { label: 'Median reprojection', value: '0.24 px' },
-    { label: 'Trajectory error', value: '0.81%' },
+    { label: 'Trajectory error', value: '22.52%' },
   ],
   layers: [
     { id: 'rgb', label: 'RGB', method: 'Three.js render', description: 'Known camera poses establish ground truth for the study.' },
@@ -29,6 +44,6 @@ export const technicalDemo: TechnicalDemo = {
     { id: 'features', label: 'Dense field', method: 'Farneback optical flow', description: 'A measured dense motion field ships today; C-RADIOv4 remains a documented feasibility track.' },
     { id: 'matches', label: 'Matches', method: 'ORB + ratio test', description: 'Adjacent keyframes expose retained and rejected correspondences.' },
     { id: 'map', label: 'Sparse map', method: 'Essential matrix + triangulation', description: 'Two-view geometry recovers a compact sparse reconstruction.' },
-    { id: 'trajectory', label: 'Trajectory', method: 'Pose accumulation', description: 'Estimated motion is compared against the known synthetic path.' },
+    { id: 'trajectory', label: 'Trajectory', method: 'Scaled pose accumulation', description: 'Recovered relative poses are accumulated with known step lengths for monocular scale, then compared with the synthetic path.' },
   ],
 };

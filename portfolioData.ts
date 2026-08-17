@@ -1231,7 +1231,8 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
 };
 
 export const experienceRecords: ExperienceRecord[] = experienceNotes.map((note) => {
-  const detail = experienceDetailById[note.id];
+  const detail = experienceDetailById[note.id]
+    ?? note.aliases?.map((alias) => experienceDetailById[alias]).find(Boolean);
   return {
     id: note.id,
     dateLabel: note.dateLabel,

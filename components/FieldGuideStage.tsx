@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { GuideChapter } from '../types';
+import { calibrationMedia } from '../fieldTestData';
 import { track } from '../lib/analytics';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -80,6 +81,7 @@ const FieldGuideStage: React.FC<FieldGuideStageProps> = ({ chapters }) => {
   useEffect(() => {
     if (isConstrainedDevice()) {
       setMode('static');
+      track('guide_capability_detected', { mode: 'static', chapter: chapters[0]?.sectionId ?? 'home' });
       return undefined;
     }
 
@@ -251,6 +253,15 @@ const FieldGuideStage: React.FC<FieldGuideStageProps> = ({ chapters }) => {
 
   return (
     <div className="field-guide-stage" data-mode={mode} aria-label="Scroll-linked field engineer guide">
+      <div className="field-guide-media" aria-hidden="true">
+        {mode === 'webgl' ? (
+          <video autoPlay muted loop playsInline preload="metadata" poster={calibrationMedia.posterSrc}>
+            {calibrationMedia.webmSrc && <source src={calibrationMedia.webmSrc} type="video/webm" />}
+            {calibrationMedia.mp4Src && <source src={calibrationMedia.mp4Src} type="video/mp4" />}
+          </video>
+        ) : <img src={calibrationMedia.posterSrc} alt="" width={calibrationMedia.width} height={calibrationMedia.height} />}
+      </div>
+      <p className="sr-only">Motion description: {calibrationMedia.transcript}</p>
       <div className="field-guide-readout" aria-live="polite">
         <span>{activeChapter?.label}</span>
         <strong>{activeChapter?.annotation}</strong>

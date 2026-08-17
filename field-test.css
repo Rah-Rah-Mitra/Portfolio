@@ -923,8 +923,27 @@ body::after {
   transform: rotate(45deg);
 }
 
+.field-guide-media {
+  position: absolute;
+  z-index: 0;
+  inset: 4.9rem .6rem 3.25rem;
+  overflow: hidden;
+  opacity: .16;
+  filter: grayscale(.84) contrast(.9) brightness(1.08);
+  mix-blend-mode: multiply;
+}
+
+.field-guide-media video,
+.field-guide-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .field-guide-canvas,
 .field-guide-canvas canvas {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
 }
@@ -955,6 +974,13 @@ body::after {
   height: 100%;
   object-fit: contain;
   object-position: center bottom;
+}
+
+.field-guide-poster {
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  padding: 5.5rem 1.25rem 1.75rem;
 }
 
 .field-guide-progress {

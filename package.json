@@ -10,7 +10,13 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "comfy:smoke": "node scripts/comfyui/smoke-test.mjs"
+    "comfy:smoke": "node scripts/comfyui/smoke-test.mjs",
+    "comfy:field-media": "node scripts/comfyui/generate-field-media.mjs",
+    "media:encode": "node scripts/media/encode-support-video.mjs",
+    "media:check": "node scripts/media/check-budgets.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.7",

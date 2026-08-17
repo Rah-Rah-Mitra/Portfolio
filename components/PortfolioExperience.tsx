@@ -243,7 +243,17 @@ const CapabilitiesSection: React.FC = () => (
         <article key={cluster.id}>
           <h3>{cluster.title}</h3><p>{cluster.summary}</p>
           <div className="capability-methods"><strong>Methods</strong><span>{cluster.tools.join(' · ')}</span></div>
-          <div className="capability-proof"><strong>Evidence</strong>{cluster.proof.map((name) => { const project = allProjects.find((item) => item.title.includes(name) || name.includes(item.title)); return project ? <a key={name} href={`#project-${project.id}`}>{name}</a> : <span key={name}>{name}</span>; })}</div>
+          <div className="capability-proof"><strong>Evidence</strong>{cluster.proof.map((name) => {
+            const explicitIds: Record<string, string> = {
+              '15-Stage Changeover Pipeline': 'changeover-data-quality-pipeline',
+              'Changeover Data Pipeline': 'changeover-data-quality-pipeline',
+              'Hybrid Flow Shop Digital Twin': 'hybrid-flow-shop-digital-twin',
+              'Interactive Portfolio': 'portfolio-repo',
+              'Maritime BERT/DNN': 'maritime-deficiency-severity',
+            };
+            const project = allProjects.find((item) => item.id === explicitIds[name] || item.title === name || item.title.includes(name) || name.includes(item.title));
+            return project ? <a key={name} href={`#project-${project.id}`}>{name}</a> : <span key={name}>{name}</span>;
+          })}</div>
         </article>
       ))}
     </div>

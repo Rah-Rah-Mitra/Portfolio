@@ -8,7 +8,7 @@ import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/a
 
 type Reference = { label: string; href: string };
 type ChatMessage = { role: 'assistant' | 'user'; content: string; references?: Reference[] };
-type PageCommand =
+export type PageCommand =
   | { type: 'setEffectEnabled'; effect: EffectId; enabled: boolean }
   | { type: 'setEffectParam'; effect: NumericEffectId; param: string; value: number }
   | { type: 'focusSection'; sectionId: string }
@@ -60,13 +60,29 @@ const parseAgentResponse = (value: unknown): AgentResponse | null => {
 };
 
 const projectRef = (id: string, label: string): Reference => ({ label, href: `#project-${id}` });
-const localAgent = (message: string): AgentResponse => {
+export const localAgent = (message: string): AgentResponse => {
   const text = message.toLowerCase();
   const commands: PageCommand[] = [];
   let reply = 'I could not find that in Rahul’s portfolio record. Try asking about optimization, 3D computer vision, security, a résumé, or the spatial map.';
   let references: Reference[] = [];
 
-  if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
+  if (text.includes('technical lab') || text.includes('slam') || text.includes('calibration study')) {
+    reply = 'The Technical Lab is a synthetic calibration study, explicitly separated from professional work. It exposes RGB, detection, segmentation, dense flow, ORB matches, sparse geometry, and a measured trajectory comparison.';
+    references = [{ label: 'Open the synthetic calibration study', href: '#technical-lab' }];
+    commands.push({ type: 'openTechnicalLab' });
+  } else if (text.includes('asyncddgs')) {
+    reply = 'AsyncDDGS is Rahul’s maintained asyncio-first DuckDuckGo client, built with aiohttp and released through a tested PyPI workflow.';
+    references = [projectRef('asyncddgs', 'Inspect AsyncDDGS')];
+    commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
+  } else if (text.includes('experience') || text.includes('timeline')) {
+    reply = 'The experience timeline presents Rahul’s role, organization, location, dates, scope, responsibilities, outcomes, and related work in ordinary HTML.';
+    references = [{ label: 'Read the experience timeline', href: '#experience' }];
+    commands.push({ type: 'focusExperience' });
+  } else if (text.includes('guide') || text.includes('chapter')) {
+    reply = 'The field engineer is a supporting navigation aid. It follows chapter checkpoints while all portfolio evidence remains stationary and readable.';
+    references = [{ label: 'Return to selected work', href: '#work' }];
+    commands.push({ type: 'focusGuideChapter', sectionId: SECTION_IDS.PROJECTS });
+  } else if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
     reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce.';
     references = [projectRef('hybrid-flow-shop-digital-twin', 'Hybrid Flow Shop Digital Twin Optimizer'), projectRef('changeover-data-quality-pipeline', 'Manufacturing Changeover Data Pipeline'), projectRef('azure-apc-web-simulator', 'APC Simulator Cloud Operations')];
     commands.push({ type: 'focusSection', sectionId: SECTION_IDS.PROJECTS });

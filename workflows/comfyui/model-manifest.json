@@ -10,6 +10,9 @@
     {
       "id": "ltxv-2b-distilled",
       "file": "ltxv-2b-0.9.8-distilled.safetensors",
+      "sha256": "76AA8C4786AF752FA6F951947129D5290C3C6C0B2FADCADEA6B5E114AE2CAD8F",
+      "source": "https://huggingface.co/Lightricks/LTX-Video",
+      "license": "LTX-Video Open Weights License 0.9.8",
       "role": "fast local text-to-video baseline",
       "status": "verified-local"
     },
@@ -30,9 +33,14 @@
       "id": "field-engineer-guide",
       "workflow": "Character Builder - 1 Part Image.json",
       "model": "z_image_turbo-Q5_K_S.gguf",
+      "modelSha256": "62D1E85679D1A207D43823AA5755480A9279B38C8715B2E1CB9E7166FBA279C1",
+      "modelSource": "https://huggingface.co/Tongyi-MAI/Z-Image-Turbo",
+      "license": "Apache-2.0",
       "promptSeed": 4837373,
+      "prompt": "Professional abstract field engineer, human proportions, graphite workwear, teal survey instruments, neutral studio pose, clean white technical laboratory, no text, not an avatar of Rahul.",
       "dimensions": "768x1024",
       "outputs": ["public/images/field-engineer-guide.webp"],
+      "outputSha256": "A7D212C4484415C4921FD989FB76D485DDDF48E08116E56461370A137F596F41",
       "purpose": "mobile and reduced-motion guide poster"
     },
     {
@@ -43,6 +51,33 @@
       "dimensions": "1360x896",
       "outputs": [".impeccable/mocks/decision/continuous-field-test.png"],
       "purpose": "approved composition reference; generated text is not production copy"
+    },
+    {
+      "id": "field-calibration-ambient",
+      "workflow": "LTXV Fast T2V (distilled).json",
+      "model": "ltxv-2b-0.9.8-distilled.safetensors",
+      "modelSha256": "76AA8C4786AF752FA6F951947129D5290C3C6C0B2FADCADEA6B5E114AE2CAD8F",
+      "textEncoder": "t5xxl_fp8_e4m3fn_scaled.safetensors",
+      "textEncoderSha256": "A498F0485DC9536735258018417C3FD7758DC3BCCC0A645FEAA472B34955557A",
+      "modelSource": "https://huggingface.co/Lightricks/LTX-Video",
+      "license": "LTX-Video Open Weights License 0.9.8",
+      "promptSeed": 4837376,
+      "prompt": "A clean white engineering calibration laboratory, graphite survey camera rigs and sparse teal tracking points, restrained amber status lights, a slow smooth lateral camera move, precise industrial design, subtle moving depth parallax, stable geometry, professional technical visualization, realistic soft daylight, no people, no words, no logos, seamless calm four second ambient loop",
+      "negativePrompt": "text, captions, logos, people, hands, warped geometry, flicker, jitter, fast camera, low quality, worst quality, deformed, distorted, motion smear, motion artifacts, oversaturated",
+      "dimensions": "768x512",
+      "durationSeconds": 4.04,
+      "generationMilliseconds": 95330,
+      "outputs": [
+        "public/media/field-calibration.webm",
+        "public/media/field-calibration.mp4",
+        "public/media/field-calibration-poster.webp"
+      ],
+      "outputSha256": {
+        "webm": "F371C3B93063AE4179D6A9011F275FF3939278F24FEA83068BC51A20462A4B4A",
+        "mp4": "C3BAD55548481A1C865FC4C30589FEA4177495DBB6941B4F23FFB645A5DA3C77",
+        "poster": "E457C03C5A4532404C3F4CF0AACE4DECEC801CC0BCED8A788DE70B6EB801BF64"
+      },
+      "purpose": "supporting calibration ambience; CSS desaturates false-color output so portfolio evidence remains dominant"
     }
   ]
 }

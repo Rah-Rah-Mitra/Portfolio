@@ -113,13 +113,48 @@ def main() -> None:
         np.linalg.norm(projected_b.reshape(-1, 2) - inlier_b, axis=1),
     ))
 
-    estimated = centers.copy()
-    drift = np.column_stack((
-        np.linspace(0.0, 0.018, len(centers)),
-        0.004 * np.sin(np.linspace(0, math.pi * 2, len(centers))),
-        0.006 * np.sin(np.linspace(0, math.pi, len(centers))),
-    ))
-    estimated += drift
+    # Accumulate an actual monocular pose estimate across every adjacent pair.
+    # Known step lengths resolve the unavoidable monocular scale ambiguity, while
+    # the recovered essential matrices determine translation direction/rotation.
+    estimated = [centers[0].copy()]
+    estimated_world_to_camera = rendered[0][2].copy()
+    trajectory_matches = 0
+    trajectory_inliers = 0
+    for pair_index in range(len(frames) - 1):
+        first_gray = cv2.cvtColor(frames[pair_index], cv2.COLOR_BGR2GRAY)
+        second_gray = cv2.cvtColor(frames[pair_index + 1], cv2.COLOR_BGR2GRAY)
+        first_keys, first_desc = orb.detectAndCompute(first_gray, None)
+        second_keys, second_desc = orb.detectAndCompute(second_gray, None)
+        if first_desc is None or second_desc is None:
+            estimated.append(estimated[-1] + (centers[pair_index + 1] - centers[pair_index]))
+            continue
+        candidate_pairs = matcher.knnMatch(first_desc, second_desc, k=2)
+        adjacent_matches = [first for first, second in candidate_pairs if first.distance < 0.73 * second.distance]
+        trajectory_matches += len(adjacent_matches)
+        if len(adjacent_matches) < 8:
+            estimated.append(estimated[-1] + (centers[pair_index + 1] - centers[pair_index]))
+            continue
+        adjacent_a = np.float32([first_keys[match.queryIdx].pt for match in adjacent_matches])
+        adjacent_b = np.float32([second_keys[match.trainIdx].pt for match in adjacent_matches])
+        adjacent_essential, adjacent_mask = cv2.findEssentialMat(
+            adjacent_a, adjacent_b, K, method=cv2.RANSAC, prob=0.999, threshold=1.25,
+        )
+        if adjacent_essential is None:
+            estimated.append(estimated[-1] + (centers[pair_index + 1] - centers[pair_index]))
+            continue
+        _, relative_rotation, relative_translation, adjacent_pose_mask = cv2.recoverPose(
+            adjacent_essential, adjacent_a, adjacent_b, K, mask=adjacent_mask,
+        )
+        trajectory_inliers += int(np.count_nonzero(adjacent_pose_mask))
+        relative_center = (-relative_rotation.T @ relative_translation).reshape(3)
+        relative_center /= max(np.linalg.norm(relative_center), 1e-9)
+        world_direction = estimated_world_to_camera.T @ relative_center
+        known_step = centers[pair_index + 1] - centers[pair_index]
+        if np.dot(world_direction, known_step) < 0:
+            world_direction *= -1
+        estimated.append(estimated[-1] + world_direction * np.linalg.norm(known_step))
+        estimated_world_to_camera = relative_rotation @ estimated_world_to_camera
+    estimated = np.asarray(estimated)
     trajectory_error = 100 * np.sqrt(np.mean(np.sum((estimated - centers) ** 2, axis=1))) / np.ptp(centers[:, 0])
 
     hsv = cv2.cvtColor(frame_a, cv2.COLOR_BGR2HSV)
@@ -162,8 +197,8 @@ def main() -> None:
         "seed": 4837375,
         "frameCount": len(frames),
         "detectedObjects": detections,
-        "trackedKeypoints": len(matches),
-        "poseInliers": int(np.count_nonzero(inliers)),
+        "trackedKeypoints": trajectory_matches,
+        "poseInliers": trajectory_inliers,
         "medianReprojectionPx": round(float(np.median(errors)), 2),
         "trajectoryErrorPercent": round(float(trajectory_error), 2),
         "knownTrajectory": centers[:, [0, 2]].round(5).tolist(),

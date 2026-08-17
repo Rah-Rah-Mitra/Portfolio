@@ -47,7 +47,7 @@ export class NarrativeController {
     const rapid = Math.abs(input.velocityPxPerSecond) >= 2500;
     this.storyPoseId = `${input.chapterId}-${rapid ? 'arrival' : 'traverse'}-${reverse ? 'reverse' : 'forward'}`;
     this.storyShotId = input.cameraShotId;
-    this.state = { ...this.state, activeChapterId: input.chapterId, normalizedProgress: Math.max(0, Math.min(1, input.progress)), direction: reverse ? 'reverse' : 'forward', velocityPxPerSecond: input.velocityPxPerSecond, cameraShotId: this.state.controlOwner === 'visitor' ? this.state.cameraShotId : input.cameraShotId, characterPoseId: this.storyPoseId };
+    this.state = { ...this.state, activeChapterId: input.chapterId, normalizedProgress: Math.max(0, Math.min(1, input.progress)), direction: reverse ? 'reverse' : 'forward', velocityPxPerSecond: input.velocityPxPerSecond, cameraShotId: this.state.controlOwner === 'visitor' ? this.state.cameraShotId : input.cameraShotId, characterPoseId: this.state.controlOwner === 'story' ? this.storyPoseId : this.state.characterPoseId };
     this.notify();
     return { skippedTraversal: rapid, durationMs: rapid ? 180 : 360, poseId: this.storyPoseId };
   }

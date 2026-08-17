@@ -10,6 +10,8 @@ export const COURIER_CLIP_ALIASES = {
 export type CourierReactionAlias = keyof Pick<typeof COURIER_CLIP_ALIASES, 'inspect' | 'point' | 'success' | 'puzzled' | 'stepAside' | 'look' | 'reset'>;
 export type CourierReaction = { id: string; alias: CourierReactionAlias; clip: string; priority: number; coalesceKey: string };
 
+export const resolveCourierPose = (state: { reaction: { alias: CourierReactionAlias } | null; characterPoseId: string }): string => state.reaction?.alias ?? state.characterPoseId;
+
 const build = (id: string, alias: CourierReactionAlias, priority: number, coalesceKey: string = alias): CourierReaction => ({
   id, alias, clip: COURIER_CLIP_ALIASES[alias], priority, coalesceKey,
 });

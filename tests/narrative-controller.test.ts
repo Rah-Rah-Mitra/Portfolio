@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { NarrativeController } from '../lib/NarrativeController';
+import * as reactionPolicy from '../lib/courierReactions';
+import { createNeutralCourierPlaceholder } from '../world/courierAsset';
 
 describe('NarrativeController', () => {
   it('is the sole owner and restores the current story shot within 450ms', () => {
@@ -110,5 +112,29 @@ describe('NarrativeController', () => {
     const notifications: string[] = []; controller.subscribe((snapshot) => notifications.push(snapshot.controlOwner));
     vi.runAllTimers(); expect(notifications).toEqual([]);
     controller.destroy(); vi.useRealTimers();
+  });
+
+  it('keeps the visible Explore reaction through scroll and restores the latest story pose after exit', () => {
+    vi.useFakeTimers();
+    const resolveCourierPose = (reactionPolicy as { resolveCourierPose?: (state: ReturnType<NarrativeController['getState']>) => string }).resolveCourierPose;
+    expect(resolveCourierPose).toBeTypeOf('function');
+    if (!resolveCourierPose) { vi.useRealTimers(); return; }
+    const controller = new NarrativeController({ chapterId: 'home', cameraShotId: 'shot-home', characterPoseId: 'idle-home', reactionDurationMs: 300 });
+    const courier = createNeutralCourierPlaceholder();
+    const apply = (state: ReturnType<NarrativeController['getState']>) => courier.setPose(resolveCourierPose(state));
+    controller.subscribe(apply);
+    controller.enterExplore('camera-laboratory');
+    controller.dispatch({ type: 'EXPLORE_ENTERED', sceneId: 'camera-laboratory', source: 'visitor' });
+    expect(courier.root.userData.poseId).toBe('stepAside');
+
+    controller.updateScroll({ chapterId: 'work', progress: .7, velocityPxPerSecond: 400, cameraShotId: 'shot-work' });
+    expect(controller.getState().characterPoseId).toBe('idle-home');
+    expect(courier.root.userData.poseId).toBe('stepAside');
+
+    controller.dispatch({ type: 'EXPLORE_EXITED', sceneId: 'camera-laboratory', source: 'visitor' });
+    controller.exitExplore('exit');
+    vi.advanceTimersByTime(300);
+    expect(courier.root.userData.poseId).toBe('work-traverse-forward');
+    courier.dispose(); controller.destroy(); vi.useRealTimers();
   });
 });

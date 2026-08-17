@@ -58,19 +58,19 @@ export const localAgent = (message, reason = 'model_unavailable') => {
   const commands = [];
   let reply = 'I could not find that in Rahul’s portfolio record. Ask about optimization, 3D computer vision, security, a résumé, or Explore World.';
   let references = [];
-  if (text.includes('technical lab') || text.includes('camera lab') || text.includes('intrinsics') || text.includes('extrinsics') || text.includes('optics') || text.includes('stereo')) {
+  if (text.includes('technical lab') || text.includes('slam') || text.includes('calibration study')) {
     const mode = [...labModes].find((candidate) => text.includes(candidate));
     reply = 'The Camera Laboratory exposes grounded intrinsics, extrinsics, optics, and stereo controls as a portfolio experiment.';
     references = [{ label: 'Open the Camera Laboratory', href: '#technical-lab' }];
     commands.push(mode ? { type: 'openTechnicalLab', mode } : { type: 'openTechnicalLab' });
+  } else if (text.includes('asyncddgs')) {
+    reply = 'AsyncDDGS is Rahul’s maintained asyncio-first DuckDuckGo client, built with aiohttp and released through a tested PyPI workflow.';
+    references = [{ label: 'Inspect AsyncDDGS', href: '#project-asyncddgs' }];
+    commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
   } else if (text.includes('experience') || text.includes('timeline')) {
     reply = 'The experience timeline keeps Rahul’s roles, responsibilities, and outcomes in conventional semantic HTML.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience' });
-  } else if (text.includes('quick scan') || text.includes('concise')) {
-    reply = 'Quick Scan preserves the complete evidence document and omits optional world, video, and sound enhancements.';
-    references = [{ label: 'Quick Scan overview', href: '#home' }];
-    commands.push({ type: 'setQuickScan', enabled: true });
   } else if (text.includes('guide') || text.includes('chapter')) {
     reply = 'The guide points toward evidence while the portfolio record remains stationary and readable.';
     references = [{ label: 'Selected work', href: '#work' }];
@@ -91,7 +91,7 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     reply = 'Use the role-specific résumé when the vacancy is clear; use the two-page General / Master CV for broad or multidisciplinary applications. Seven PDF and DOCX variants are available.';
     references = [{ label: 'Compare all seven résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: '/resume/generated/rahul-mitra-general-2026-08.pdf' }];
     commands.push({ type: 'focusGuideChapter', chapterId: 'resumes' });
-  } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty')) {
+  } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty') || text.includes('adversarial')) {
     reply = 'Rahul’s security record covers responsible bug-bounty research, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';
     references = [{ label: 'Arcane security tooling', href: '#project-arcane' }, { label: 'Security experience and proof', href: '#proof' }];
     commands.push({ type: 'focusGuideChapter', chapterId: 'proof' });
@@ -99,6 +99,14 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     reply = 'Explore World marks the shared optical test bench as this site’s enhancement target. Its semantic anchor is available now; the evidence document remains the shipped experience.';
     references = [{ label: 'Explore World', href: '#world' }];
     commands.push({ type: 'enterExploreMode', sceneId: 'camera-laboratory' });
+  } else if (text.includes('quick scan') || text.includes('concise')) {
+    reply = 'Quick Scan preserves the complete evidence document and omits optional world, video, and sound enhancements.';
+    references = [{ label: 'Quick Scan overview', href: '#home' }];
+    commands.push({ type: 'setQuickScan', enabled: true });
+  } else if (text.includes('project') || text.includes('work')) {
+    reply = 'The selected work is organized as evidence-led briefs covering context, contribution, engineering approach, and inspectable proof.';
+    references = [{ label: 'Browse selected engineering work', href: '#work' }];
+    commands.push({ type: 'focusGuideChapter', chapterId: 'work' });
   }
   return { reply, references, commands, modelUsed: false, reason };
 };

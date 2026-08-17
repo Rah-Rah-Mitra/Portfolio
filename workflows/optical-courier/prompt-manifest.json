@@ -1,10 +1,114 @@
 {
-  "schemaVersion": 1,
-  "status": "not-generated",
-  "concept": "Optical Courier: a 7.25-head stylized humanoid with a graphite visor and one vertical teal signal, cropped off-white shell jacket, restrained graphite panels, tapered charcoal trousers, black gloves, and amber soles. Exclude hard hats, backpacks, cameras, cables, capes, tails, armor, and tools.",
-  "prompts": [],
-  "seeds": [],
-  "models": [],
-  "licenses": [],
-  "outputs": []
+  "schemaVersion": 2,
+  "status": "pre-rig-ready",
+  "concept": "Optical Courier: a 7.25-head stylized humanoid with a rounded graphite visor and one vertical teal signal, cropped off-white shell jacket, restrained graphite panels, tapered charcoal trousers, fitted black gloves, and amber-accented soles.",
+  "workflow": {
+    "path": "workflows/optical-courier/character-builder-studio.ui.json",
+    "name": "Character Builder - Studio.json",
+    "sha256": "097d0aa1e4adf9922382aedb949ebaf6b82c8c8077fc1e566188cdb1c4125442"
+  },
+  "positivePrompt": "Character turnaround reference sheet of one original Optical Courier, the exact same character shown three times side by side: front view on the left, true left profile in the middle, back view on the right. Full body head to soles, neutral T-pose, arms straight out horizontally, palms down, feet shoulder width, centered in each panel, approximately 7.25 heads tall. Rounded graphite visor covering the face with exactly one narrow vertical teal signal centered on the visor. Cropped off-white shell jacket ending above the hips with restrained flat graphite shoulder and side panels, tapered charcoal trousers, fitted black gloves, compact black boots with a thin amber sole accent. Clean connected simple humanoid silhouette, low-poly production character, practical seam placement around shoulders hips knees and elbows, symmetrical proportions, uniform light gray studio background, soft even shadowless lighting, orthographic character design sheet, no text, no labels.",
+  "negativePrompt": "hard hat, helmet brim, backpack, camera, camera prop, cable, cape, tail, armor, weapon, tool, pouch, holster, antenna, goggles, exposed face, asymmetrical clothing, extra limbs, bent arms, perspective view, action pose, shadows, text, labels, floor props, environment",
+  "imageSettings": {
+    "width": 2304,
+    "height": 768,
+    "steps": 9,
+    "cfg": 1,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "modelShift": 3.1,
+    "poseControlOuterStrength": 0.7,
+    "poseControlMiddleStrength": 0.35,
+    "backgroundRemoval": "BiRefNet"
+  },
+  "models": [
+    { "role": "diffusion-model", "filename": "z_image_turbo-Q5_K_S.gguf", "bytes": 5189814336, "sha256": "62d1e85679d1a207d43823aa5755480a9279b38c8715b2e1cb9e7166fba279c1", "source": "https://huggingface.co/jayn7/Z-Image-Turbo-GGUF/blob/main/z_image_turbo-Q5_K_S.gguf", "license": "Apache-2.0" },
+    { "role": "text-encoder", "filename": "Qwen3-4B-UD-Q6_K_XL.gguf", "bytes": 3658223392, "sha256": "ac0767b5e9c9f16efe57ce422253a33747970c166c3131c4d4d59d20511f07e1", "source": "https://huggingface.co/unsloth/Qwen3-4B-GGUF/blob/main/Qwen3-4B-UD-Q6_K_XL.gguf", "license": "Apache-2.0" },
+    { "role": "vae", "filename": "z-image-ae.safetensors", "bytes": 335304388, "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38", "source": "https://huggingface.co/f5aiteam/Z-Image/blob/main/ae.safetensors", "license": "Apache-2.0" },
+    { "role": "background-removal", "filename": "birefnet.safetensors", "bytes": 444473596, "sha256": "9ab37426bf4de0567af6b5d21b16151357149139362e6e8992021b8ce356a154", "source": "https://huggingface.co/Comfy-Org/BiRefNet/blob/main/background_removal/birefnet.safetensors", "license": "MIT" },
+    { "role": "pose-control", "filename": "Z-Image-Turbo-Fun-Controlnet-Union-fp8-e5m2.safetensors", "bytes": 1550794400, "sha256": "50198f8af115a842da5567a4fad44bdf3dca1645ac31fb156aae2668911dadbe", "source": "https://huggingface.co/BlackStone-Yu/Z-Image-Turbo-GGUF/blob/main/Z-Image-Turbo-Fun-Controlnet-Union-fp8-e5m2.safetensors", "license": "Apache-2.0" },
+    { "role": "geometry-proof", "filename": "hunyuan3d-dit-v2-mv-turbo.safetensors", "bytes": 4930777530, "sha256": "172d7a989b99f66af760da0080d8c6f6350c72609536cf0c55b87a4afa574e45", "source": "https://huggingface.co/tencent/Hunyuan3D-2mv/blob/main/hunyuan3d-dit-v2-mv-turbo/model.fp16.safetensors", "license": "Tencent Hunyuan 3D 2.0 Community License; raw proof remains local-only" }
+  ],
+  "failedAttempts": [
+    {
+      "id": "batch_1c424cf6-87fa-4137-89f9-4b51c2afe38a",
+      "promptIds": ["b934d338-564f-4701-be69-813d48588689", "033cffd1-549a-4ba9-bba5-d85582b77de7", "76757f56-1f6f-4dae-b558-96670c024c1e"],
+      "cause": "Three full image-plus-geometry workflows were incorrectly queued together; memory-map release left the model with no usable VRAM and the server unresponsive.",
+      "remediation": "Restarted the exact verified Comfy Desktop server process, cleared VRAM, and ran image candidates sequentially before changing model families. No output from this failed attempt was promoted."
+    }
+  ],
+  "generations": [
+    {
+      "id": "oc-1-231119",
+      "seed": 231119,
+      "promptId": "e4a9a9af-81f0-445e-8871-0c54f8e2486a",
+      "durationMs": 293015,
+      "review": {
+        "approved": true,
+        "viewConsistency": "Front, true-left, and back panels retain the same visor, jacket, trousers, gloves, boots, and proportions.",
+        "forbiddenPropsObserved": [],
+        "notes": "Selected: strongest identity consistency, covered graphite visor with one vertical teal signal, clean slim T-pose, cropped off-white jacket, charcoal trousers, black gloves and boots, amber sole accent."
+      }
+    },
+    {
+      "id": "oc-2-531817",
+      "seed": 531817,
+      "promptId": "4a9d89cd-e4d4-4f5f-9ea2-133c847479df",
+      "durationMs": 264272,
+      "review": {
+        "approved": false,
+        "viewConsistency": "Front, left, and back are broadly consistent, but the head silhouette violates the brief.",
+        "forbiddenPropsObserved": ["hard hat/helmet brim silhouette"],
+        "notes": "Rejected because the pronounced brim reads as a hard hat despite the negative prompt."
+      }
+    },
+    {
+      "id": "oc-3-902413",
+      "seed": 902413,
+      "promptId": "352da14e-029b-4caa-900a-a663d545bdc4",
+      "durationMs": 264054,
+      "review": {
+        "approved": false,
+        "viewConsistency": "The requested front-left-back sequence fails because the third panel repeats a front view.",
+        "forbiddenPropsObserved": ["helmet brim silhouette", "exposed face"],
+        "notes": "Rejected for an incorrect back view, exposed face, and pronounced visor brim."
+      }
+    }
+  ],
+  "selectedCandidateId": "oc-1-231119",
+  "selectedOutputs": [
+    { "kind": "sheet", "path": "assets/optical-courier/concept/optical-courier-sheet.png", "width": 2304, "height": 768, "sha256": "021c6da674d2312a4e666062bf748dc39592b37eb423516ee07478476d99f41d" },
+    { "kind": "front", "path": "assets/optical-courier/concept/optical-courier-front.png", "width": 768, "height": 768, "sha256": "9659c8469fd5a9bc95f0ec95a8b853da14327e3a5be397f1bc87e3b4377affce" },
+    { "kind": "left", "path": "assets/optical-courier/concept/optical-courier-left.png", "width": 768, "height": 768, "sha256": "d62ab905f2ec81f720134288be864cb29811a82a2112fe09c2775b7352f0dde7" },
+    { "kind": "back", "path": "assets/optical-courier/concept/optical-courier-back.png", "width": 768, "height": 768, "sha256": "eecf48ca1e033bca0127310ee7afc965223e278feed3ab9d7f29557fed39dd8a" },
+    { "kind": "material-detail", "path": "assets/optical-courier/concept/optical-courier-material-detail.png", "width": 512, "height": 512, "sha256": "6798742ef3aa758ee7814311406751757672de771136e672a769d3ba1fecc052" }
+  ],
+  "geometrySource": "blender-procedural-shell",
+  "preMixamo": {
+    "generator": "scripts/optical-courier/generate_shell.py",
+    "blenderVersion": "5.2.0 LTS",
+    "sourceBlend": "assets/optical-courier/pre-mixamo/optical-courier-source.blend",
+    "uploadFbx": "assets/optical-courier/pre-mixamo/optical-courier-upload.fbx",
+    "uploadFbxSha256": "1749d6b88e93331cf46a922460b018896bf6c5eabd9d0b18bed83ca56d86b71b",
+    "validation": "assets/optical-courier/pre-mixamo/validation-report.json",
+    "roundTripValidation": "assets/optical-courier/pre-mixamo/fbx-roundtrip-report.json"
+  },
+  "hunyuanProof": {
+    "promptId": "15237ee5-70bc-4afe-bfe9-245a6f05c325",
+    "seed": 231119,
+    "durationMs": 678459,
+    "settings": { "steps": 20, "cfg": 4, "sampler": "euler", "scheduler": "normal" },
+    "rawAsset": "artifacts/optical-courier/proofs/hunyuan-selected.glb",
+    "rawAssetSha256": "1250e96e354aa76840f784d267932662d56d1b333b4591bb76d19fa05280002d",
+    "publicDistribution": false,
+    "report": "assets/optical-courier/proofs/hunyuan-proof-report.json",
+    "decision": "rejected-for-deformation",
+    "measuredReason": "Blender 5.2 found 62,000 vertices, 126,044 triangles, one connected component, and 2,826 non-manifold edges. Voxel extraction has no authored deformation loops, so the procedural connected shell remains the upload source."
+  },
+  "mixamo": {
+    "status": "blocked-chrome-control",
+    "rigged": false,
+    "reason": "The required Google Chrome control extension/native host is unavailable. No alternative browser or UI automation was used.",
+    "nextAction": "When Chrome control is restored, verify the existing Adobe session, upload only the validated FBX, place and visually verify markers, download one skin-bearing rig and then 30fps clips without duplicate skin data."
+  }
 }

@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 artifacts/
+.cache/optical-courier/
+assets/optical-courier/raw-mixamo/
+assets/optical-courier/browser-state/
+assets/optical-courier/hunyuan-raw/
+assets/optical-courier/pre-mixamo/*.blend1
 .env
 *.local
 

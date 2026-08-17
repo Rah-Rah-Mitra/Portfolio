@@ -15,6 +15,7 @@
     "media:encode": "node scripts/media/encode-support-video.mjs",
     "media:check": "node scripts/media/check-budgets.mjs",
     "camera:merge-shots": "node scripts/camera/validate-merge-shots.mjs",
+    "courier:validate": "node scripts/optical-courier/validate-provenance.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"

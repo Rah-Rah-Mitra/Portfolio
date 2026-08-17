@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "source": "artifacts/optical-courier/proofs/hunyuan-selected.glb",
+  "sourceSha256": "1250e96e354aa76840f784d267932662d56d1b333b4591bb76d19fa05280002d",
+  "sourceBytes": 2292700,
+  "inspection": {
+    "meshObjects": 1,
+    "vertices": 62000,
+    "triangles": 126044,
+    "connectedComponents": 1,
+    "nonManifoldEdges": 2826,
+    "bounds": {
+      "min": [
+        -0.924675,
+        -0.200412,
+        -0.979985
+      ],
+      "max": [
+        0.932786,
+        0.199034,
+        0.987377
+      ]
+    },
+    "xSymmetryErrorRatio": 0.004367,
+    "armatures": 0
+  },
+  "decision": "rejected-for-deformation",
+  "reasons": [
+    "proof contains 2826 non-manifold edges",
+    "voxel extraction has no authored shoulder, hip, knee, elbow, or wrist deformation loops; manual retopology would be required before Mixamo"
+  ],
+  "fallback": "assets/optical-courier/pre-mixamo/optical-courier-upload.fbx"
+}

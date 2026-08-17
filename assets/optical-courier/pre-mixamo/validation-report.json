@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "status": "pre-rig-ready",
+  "sourceBlend": "assets/optical-courier/pre-mixamo/optical-courier-source.blend",
+  "geometry": {
+    "meshObjectCount": 2,
+    "primaryObject": "OpticalCourier_Body",
+    "vertices": 5771,
+    "triangles": 11538,
+    "primaryConnectedComponents": 1,
+    "nonManifoldEdges": 0,
+    "dimensionsMeters": [
+      2.079322,
+      0.399783,
+      1.992156
+    ],
+    "headHeightMeters": 0.276,
+    "headRatio": 7.218
+  },
+  "materials": [
+    "Shell_OffWhite",
+    "Graphite_VisorPanels",
+    "Charcoal_Trousers",
+    "Black_GlovesBoots",
+    "Signal_Teal",
+    "Sole_Amber"
+  ],
+  "transforms": {
+    "applied": true,
+    "location": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rotationEuler": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "upAxis": "+Z",
+    "originCentered": true
+  },
+  "bounds": {
+    "min": [
+      -1.039661,
+      -0.199892,
+      0.0
+    ],
+    "max": [
+      1.039661,
+      0.199892,
+      1.992156
+    ]
+  },
+  "rig": {
+    "armatures": 0,
+    "actions": 0,
+    "status": "not-rigged"
+  }
+}

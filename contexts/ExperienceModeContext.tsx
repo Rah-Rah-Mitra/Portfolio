@@ -28,6 +28,7 @@ const modeFromHistoryState = (state: unknown): ExperienceMode | null => {
 
 interface ExperienceModeContextValue {
   policy: ExperiencePolicy;
+  capabilities: ExperienceCapabilities | null;
   chooseMode: (mode: ExperienceMode) => void;
 }
 
@@ -86,6 +87,6 @@ export const ExperienceModeProvider: React.FC<{
     window.history.pushState({ ...window.history.state, portfolioExperienceMode: mode }, '', withExperienceMode(window.location.href, mode));
   };
 
-  const value = useMemo(() => ({ policy, chooseMode }), [policy]);
+  const value = useMemo(() => ({ policy, capabilities, chooseMode }), [policy, capabilities]);
   return <ExperienceModeContext.Provider value={value}>{children}</ExperienceModeContext.Provider>;
 };

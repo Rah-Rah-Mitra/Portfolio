@@ -825,6 +825,50 @@ img { max-width: 100%; }
   .fluid-background { display: none; }
 }
 
+.supporting-media {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--color-line, #cfd8d5);
+  background: #f7faf9;
+  overflow: hidden;
+}
+
+.supporting-media video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  filter: saturate(.68) contrast(.96);
+}
+
+.supporting-media > button {
+  position: absolute;
+  right: .75rem;
+  bottom: .75rem;
+  min-height: 44px;
+  padding: .6rem .8rem;
+  border: 1px solid #15221f;
+  background: rgba(255, 255, 255, .94);
+  color: #15221f;
+  font: 600 .72rem/1 var(--font-mono, monospace);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.supporting-media details {
+  padding: .6rem .75rem;
+  border-top: 1px solid var(--color-line, #cfd8d5);
+  font-size: .78rem;
+}
+
+.supporting-media details p { max-width: 58ch; margin: .45rem 0 0; }
+
+html[data-visual-density="minimal"] .supporting-media,
+html[data-motion-paused="true"] .supporting-media { filter: none; }
+
+html[data-visual-density="minimal"] .calibration-station:nth-of-type(n + 4) { display: none; }
+
 @media print {
   .site-header, .effects-dock, .ask-dock, .fluid-background { display: none !important; }
   body { background: white; color: black; }

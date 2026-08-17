@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "records": [
     {
       "id": "field-calibration-ambient",
@@ -9,9 +9,64 @@
     },
     {
       "id": "optical-courier",
-      "status": "not-generated",
+      "status": "pre-rig-only",
       "manifest": "../optical-courier/prompt-manifest.json",
-      "note": "Concept, model, rig, animations, and media remain pending."
+      "note": "Concept and pre-rig geometry exist. Production rig, animations, and GLB remain blocked; no Courier video was generated."
+    },
+    {
+      "id": "camera-lab-composite-6081701",
+      "status": "rejected-not-shipped",
+      "workflow": "ltxv-fast-t2v-distilled.api.json",
+      "committedWorkflowSha256": "D0196D5C3267149F5594AC03B2601D38B56CB56D1747F14F646BC53E54EDA8EE",
+      "sourceWorkflow": "LTXV Fast T2V (distilled).json",
+      "sourceWorkflowSha256": "C5547833345CDB4D11D1CED67AE21408D6CEED81360DAD48ABF9F4FC18A4D4B6",
+      "promptId": "82589529-2060-463f-8d25-5a17e5d4adfb",
+      "seed": 6081701,
+      "dimensions": "768x512",
+      "frames": 97,
+      "fps": 24,
+      "durationSeconds": 4.04,
+      "generationMilliseconds": 81209,
+      "model": "ltxv-2b-0.9.8-distilled.safetensors",
+      "modelSha256": "76AA8C4786AF752FA6F951947129D5290C3C6C0B2FADCADEA6B5E114AE2CAD8F",
+      "license": "LTX-Video Open Weights License 0.9.8",
+      "positivePrompt": "A clean white optical test bench in a bright professional engineering laboratory, graphite camera rail and precision dolly, stable circular iris aperture blades opening slightly, translucent image plane, restrained teal calibration rays and sparse teal points, one small amber instrument readout with abstract marks only, slow stable lateral parallax, exact rigid geometry, calm seamless four second loop, no people, no readable text, no logos, high-end technical visualization, soft neutral daylight, white negative space suitable behind black website typography",
+      "negativePrompt": "people, person, character, hands, faces, readable text, letters, numbers, captions, logos, watermark, warped rail, bending metal, unstable geometry, duplicated mechanism, melting, flicker, jitter, fast camera, zoom, scene cut, motion smear, oversaturated, dark background, clutter, low quality, worst quality, deformed, distorted",
+      "rejectedOutputSha256": "882E099231922682D145243CF2B7591CDD689D7AF8F0CE8F81386D8C7CECB356",
+      "rejectedOutputBytes": 785105,
+      "review": "Rejected after contact-sheet and motion inspection: severe RGB separation, duplicated tiling, and compositing artifacts begin after the clean establishing frames. The output remains local and is not referenced by public code."
+    },
+    {
+      "id": "hybrid-flow-shop-vignette-6081702",
+      "status": "rejected-not-shipped",
+      "workflow": "ltxv-fast-t2v-distilled.api.json",
+      "committedWorkflowSha256": "D0196D5C3267149F5594AC03B2601D38B56CB56D1747F14F646BC53E54EDA8EE",
+      "sourceWorkflow": "LTXV Fast T2V (distilled).json",
+      "sourceWorkflowSha256": "C5547833345CDB4D11D1CED67AE21408D6CEED81360DAD48ABF9F4FC18A4D4B6",
+      "seed": 6081702,
+      "attempts": [
+        { "promptId": "4e2f847d-58b5-457b-bae3-c0ace4313005", "dimensions": "768x512", "status": "runtime-exited-during-model-reload", "output": null },
+        { "promptId": "14be20db-6a2d-4a4d-b309-86f84cea26dd", "dimensions": "640x384", "status": "completed-rejected", "generationMilliseconds": 45478, "outputSha256": "49515FAE5495FE6997F65B60A64E335FAFFB0BCE2FC73B0C03EE9352EE88528B", "outputBytes": 319272 }
+      ],
+      "frames": 97,
+      "fps": 24,
+      "durationSeconds": 4.04,
+      "model": "ltxv-2b-0.9.8-distilled.safetensors",
+      "modelSha256": "76AA8C4786AF752FA6F951947129D5290C3C6C0B2FADCADEA6B5E114AE2CAD8F",
+      "license": "LTX-Video Open Weights License 0.9.8",
+      "positivePrompt": "A miniature white and graphite scheduling test bench viewed from a stable three-quarter angle, exactly three simple geometric job tokens moving slowly and precisely across exactly two parallel machine lanes, restrained teal completion paths connecting stages, one small amber bottleneck indicator, deterministic industrial motion, rigid stable geometry, clean white background, subtle calm four second loop, no people, no readable text, no letters, no logos, no numbers, high-end operations research visualization, ample white negative space suitable behind black website typography",
+      "negativePrompt": "people, person, character, hands, readable text, letters, numbers, captions, logos, watermark, more than three tokens, more than two lanes, warped rails, bending parts, unstable geometry, duplicated objects, melting, flicker, jitter, fast camera, zoom, scene cut, motion smear, oversaturated, dark background, clutter, low quality, worst quality, deformed, distorted",
+      "review": "Rejected after contact-sheet and motion inspection: the first half is coherent, then RGB separation, frame tiling, and duplicated mechanisms make the clip unstable and unsafe as factual project support. No public placeholder ships."
+    },
+    {
+      "id": "optical-cues-audio-sprite",
+      "status": "selected-shipped",
+      "generator": "../../scripts/media/generate-audio-sprite.mjs",
+      "output": "../../public/media/optical-cues.mp3",
+      "outputSha256": "6C6A6611FA162736B5E9A614B76EFBE4F65DA3305CB3BA38E23F20C455460BA5",
+      "outputBytes": 11825,
+      "license": "Original deterministic synthesis; no sampled recording",
+      "note": "Five quiet nonverbal cues. Muted by default and never required for meaning."
     }
   ]
 }

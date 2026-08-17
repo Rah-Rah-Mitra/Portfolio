@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { EffectId, FluidQuality, NumericEffectId, TextEffectMode, useEffects } from '../contexts/PhysicsContext';
+import { EffectId, FluidQuality, NumericEffectId, TextEffectMode, useEffects, VisualDensity } from '../contexts/PhysicsContext';
+import type { QualityTier } from '../types';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import BreakableText from './BreakableText';
 import { track } from '../lib/analytics';
@@ -34,7 +35,7 @@ const EffectsLabPanel: React.FC = () => {
   const panelRef = useRef<HTMLElement>(null);
   const suppressFocusRestore = useRef(false);
   const openedAt = useRef<number | null>(null);
-  const { settings, toggleEffect, setEffectParam, setPretextMode, setFluidQuality, restoreAll, pauseAll } = useEffects();
+  const { settings, enhancements, toggleEffect, setEffectParam, setPretextMode, setFluidQuality, restoreAll, pauseAll, setMotionPaused, setVisualDensity, setMediaEnabled, setSoundEnabled, setQuality } = useEffects();
   useFocusTrap(open, panelRef, '[data-open-effects], .effects-dock', suppressFocusRestore);
 
   const close = (reason: string) => {
@@ -95,12 +96,19 @@ const EffectsLabPanel: React.FC = () => {
         </header>
         <p className="panel-intro">All stronger motion is opt-in. Pause everything at any time; reduced-motion preferences always take priority.</p>
         <div className="lab-safety-row">
-          <button type="button" onClick={pauseAll}>Pause all effects</button>
+          <button type="button" aria-pressed={enhancements.motionPaused} onClick={() => { const paused = !enhancements.motionPaused; setMotionPaused(paused); if (paused) pauseAll(); }}>{enhancements.motionPaused ? 'Resume motion' : 'Pause all motion'}</button>
           <button type="button" onClick={restoreAll}>Reset displaced text</button>
         </div>
         <div className="lab-sample" aria-label="Text effect test surface"><BreakableText text="interaction test surface" /></div>
 
         <div className="lab-sections">
+          <section aria-labelledby="experience-output-title">
+            <h3 id="experience-output-title">Experience output</h3>
+            <EffectToggle enabled={enhancements.mediaEnabled} title="Supporting media" description="Optional local-generated video; evidence remains in text" onClick={() => setMediaEnabled(!enhancements.mediaEnabled)} />
+            <EffectToggle enabled={enhancements.soundEnabled} title="Sound cues" description="Muted by default; unlocked only after your gesture" onClick={() => setSoundEnabled(!enhancements.soundEnabled)} />
+            <label className="lab-select"><span>Visual density</span><select value={enhancements.visualDensity} onChange={(event) => setVisualDensity(event.target.value as VisualDensity)}><option value="minimal">Minimal</option><option value="balanced">Balanced</option><option value="dense">Dense</option></select></label>
+            <label className="lab-select"><span>World quality</span><select value={enhancements.quality} onChange={(event) => setQuality(event.target.value as QualityTier)}><option value="full">Full</option><option value="balanced">Balanced</option><option value="reduced">Reduced</option><option value="static">Static</option></select></label>
+          </section>
           <section>
             <EffectToggle enabled={settings.smash.enabled} title="Smash" description="Pointer impulse on the test surface" onClick={() => toggle('smash')} />
             <PresetRow id="smash" />

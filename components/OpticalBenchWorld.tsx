@@ -8,6 +8,8 @@ import { WorldAnchorRegistry } from '../lib/WorldAnchorRegistry';
 import { WORLD_POLICY_CHANGE_EVENT, resolveWorldPolicyHandoff, type WorldPolicyChangeDetail } from '../lib/worldPolicyHandoff';
 import type { CameraLabSnapshot, CameraShotDefinition, PortfolioWorldEvent, ResponsiveTier } from '../types';
 import { createNeutralCourierPlaceholder } from '../world/courierAsset';
+import { COURIER_ASSET_CONTRACT } from '../world/courierAssetContract';
+import { loadProductionCourier } from '../world/productionCourierLoader';
 import { ActiveResponsiveShot, applyCameraShotToAdapter, applyCharacterFraming, applyOpticalGeometryToAdapter, constrainOrbitState, resolveResponsiveCameraShot, resolveSafePlacement, type OrbitState } from '../world/opticalWorldState';
 import { cameraShots, worldAnchorDefinitions } from '../world/narrativeManifest';
 
@@ -69,6 +71,10 @@ const OpticalBenchWorld: React.FC = () => {
     const labCamera = new THREE.Mesh(new THREE.BoxGeometry(.35, .25, .22), graphite); const objectMarker = new THREE.Mesh(new THREE.SphereGeometry(.12), amber); const stereoPair = new THREE.Group(); const leftStereo = labCamera.clone(); const rightStereo = labCamera.clone(); stereoPair.add(leftStereo, rightStereo); scene.add(labCamera, objectMarker, stereoPair);
     const occluderFrames = new THREE.Group(); scene.add(occluderFrames);
     const courier = createNeutralCourierPlaceholder(); scene.add(courier.root);
+    void loadProductionCourier(COURIER_ASSET_CONTRACT, async (path) => {
+      const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+      return new Promise((resolve, reject) => new GLTFLoader().load(path, resolve, undefined, reject));
+    });
     const render = () => { const started = performance.now(); renderer.render(scene, camera); const frameTimeMs = Math.max(0, performance.now() - started); window.dispatchEvent(new CustomEvent('portfolio:world-frame', { detail: { frameTimeMs } })); };
     const cameraAdapterFor = (shot: CameraShotDefinition) => {
       const adapter = { position: camera.position.toArray() as [number, number, number], target: cameraTarget.toArray() as [number, number, number], fov: camera.fov, near: camera.near, far: camera.far, roll: camera.rotation.z, exposure: renderer.toneMappingExposure, focusDistance: camera.userData.focusDistance ?? 6, lighting: { key: key.intensity, fill: fill.intensity, environment: ambient.intensity, keyColor: `#${key.color.getHexString()}`, fillColor: `#${fill.color.getHexString()}` }, renderCount: 0 };

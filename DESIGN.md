@@ -192,7 +192,7 @@ The desktop shell is capped at 92rem and divides into a maximum 59rem evidence c
 
 Sections are separated by structural top rules and generous vertical intervals of roughly 5–9rem. Headings use a wide claim/narrow context split. Selected systems use index, evidence, and optional media columns; experience and the complete project archive use conventional ledgers; proof uses a two-column ruled matrix; résumés use a four-column row. The All Projects controls become sticky below the header on wide screens, while the full archive remains visible, searchable, keyboard-steppable, and filterable.
 
-At 1180px the evidence layouts tighten. At 920px the right guide disappears, the shell becomes a single column capped at 50rem, navigation moves into an expanding header menu, and a static field-engineer image follows the mobile hero evidence. At 680px actions stack, headings and ledgers become one column, lab tabs become a horizontally scrolling strip, metrics stack, project controls stop sticking, and proof collapses to one column. The 320px layout remains the minimum supported width without horizontal overflow. Fixed AI and FX docks disappear at 860px; mobile and tablet access remains in the header menu.
+At 1180px the evidence layouts tighten. At 920px the evidence shell becomes a single column capped at 50rem, navigation moves into an expanding header menu, and the static optical register follows the mobile hero evidence; no sidebar guide is retained. At 680px actions stack, headings and ledgers become one column, lab tabs become a horizontally scrolling strip, metrics stack, project controls stop sticking, and proof collapses to one column. The 320px layout remains the minimum supported width without horizontal overflow. Fixed AI and FX docks disappear at 860px; mobile and tablet access remains in the header menu.
 
 ### Named Rules
 
@@ -275,6 +275,8 @@ One lazy Three.js renderer builds the optical rail, iris, image plane, frustum, 
 ### Optional Tool Docks and Panels
 
 AI and FX are square 3.25rem fixed controls in the lower-right desktop corner. They are shadowless at rest and reveal a small label on hover or focus. At mobile sizes the fixed pair is hidden and the header menu owns AI, FX, and Explore World access. Explore World is a normal link to `#world`, not a modal control. Assistant and Effects Lab drawers are white, square, left-entering modal panels with a translucent graphite backdrop and directional shadow. No essential evidence or action may exist only inside these tools.
+
+FX also owns the optional-output contract: global motion pause, visual density, supporting-media playback, muted sound cues, and quality tier. Fluid remains off by default. Sound uses one original deterministic nonverbal sprite, is muted until an explicit gesture and preference, and is suppressed by Quick Scan, Save-Data, reduced stimulation, and global pause. Supporting video uses poster-first semantic figures with a visible play/pause control and transcript; sources are omitted in constrained modes and paused offscreen. Task 6's two new LTXV environment studies were rejected after visual inspection for channel separation and tiling, so only the previously reviewed hero ambience ships.
 
 ### Motion and Reduced Motion
 

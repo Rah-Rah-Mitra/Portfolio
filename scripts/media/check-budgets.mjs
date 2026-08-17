@@ -6,6 +6,7 @@ const limits = {
   'media/field-calibration-poster.webp': 200_000,
   'media/field-calibration.mp4': 2_500_000,
   'media/field-calibration.webm': 2_500_000,
+  'media/optical-cues.mp3': 200_000,
 };
 
 let failed = false;
@@ -17,6 +18,6 @@ for (const [relative, limit] of Object.entries(limits)) {
 
 const mediaFiles = await readdir(path.join(root, 'media'));
 const total = (await Promise.all(mediaFiles.map(async (name) => (await stat(path.join(root, 'media', name))).size))).reduce((sum, size) => sum + size, 0);
-console.log(`new shipped video media: ${(total / 1_000_000).toFixed(2)} MB / 10.00 MB`);
+console.log(`new shipped visual/audio media: ${(total / 1_000_000).toFixed(2)} MB / 10.00 MB`);
 if (total > 10_000_000) failed = true;
 if (failed) process.exitCode = 1;

@@ -1,4 +1,5 @@
 import type { PortfolioWorldEvent, QualityTier, SceneControlOwner, SceneId } from '../types';
+import { reactionForEvent, shouldRestartReaction, type CourierReaction } from './courierReactions';
 
 export interface NarrativeState {
   activeChapterId: string;
@@ -15,20 +16,6 @@ export interface NarrativeState {
 
 type Listener = (state: Readonly<NarrativeState>) => void;
 
-const eventReaction = (event: PortfolioWorldEvent): { id: string; priority: number } => {
-  switch (event.type) {
-    case 'QUALITY_CHANGED': return { id: 'quality-change', priority: 100 };
-    case 'LAB_RESET': case 'INTERACTION_RESET': return { id: 'reset', priority: 100 };
-    case 'CAMERA_CALIBRATED': return { id: event.reprojectionError < 1 ? 'calibration-success' : 'calibration-puzzled', priority: 60 };
-    case 'STEREO_POINT_TRIANGULATED': return { id: event.depthError < 0.25 ? 'stereo-success' : 'stereo-puzzled', priority: 60 };
-    case 'PROJECT_OPENED': return { id: 'inspect-project', priority: 50 };
-    case 'JOB_REORDERED': return { id: 'point-bottleneck', priority: 50 };
-    case 'MAP_MARKER_MOVED': return { id: 'inspect-marker', priority: 50 };
-    case 'EXPLORE_ENTERED': case 'EXPLORE_EXITED': return { id: 'ownership-change', priority: 100 };
-    default: return { id: 'ambient-look', priority: 10 };
-  }
-};
-
 export class NarrativeController {
   private state: NarrativeState;
   private listeners = new Set<Listener>();
@@ -37,6 +24,8 @@ export class NarrativeController {
   private storyShotId: string;
   private reactionTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly reactionDurationMs: number;
+  private activeReaction: CourierReaction | null = null;
+  private reactionStartedAt = 0;
 
   constructor(initial: { chapterId: string; cameraShotId: string; characterPoseId: string; qualityTier?: QualityTier; reactionDurationMs?: number }) {
     this.storyPoseId = initial.characterPoseId;
@@ -85,6 +74,7 @@ export class NarrativeController {
   resolveCapabilityPolicy(qualityTier: QualityTier) {
     if (this.reactionTimer) clearTimeout(this.reactionTimer);
     this.reactionTimer = null;
+    this.activeReaction = null;
     this.state = { ...this.state, controlOwner: 'story', exploreSceneId: null, cameraShotId: this.storyShotId, characterPoseId: this.storyPoseId, reaction: null, qualityTier };
     this.notify();
     return this.getState();
@@ -99,9 +89,12 @@ export class NarrativeController {
 
   dispatch(event: PortfolioWorldEvent) {
     if (this.destroyed) return;
-    const reaction = eventReaction(event);
-    if (this.state.reaction && this.state.reaction.priority > reaction.priority) return;
-    if (reaction.priority <= 10 && this.state.reaction?.id === reaction.id) return;
+    const courierReaction = reactionForEvent(event);
+    if (this.state.reaction && this.state.reaction.priority > courierReaction.priority) return;
+    if (!shouldRestartReaction(this.activeReaction, courierReaction, performance.now() - this.reactionStartedAt)) return;
+    const reaction = { id: courierReaction.id, priority: courierReaction.priority };
+    this.activeReaction = courierReaction;
+    this.reactionStartedAt = performance.now();
     if (event.type === 'QUALITY_CHANGED') {
       this.state = { ...this.state, qualityTier: event.tier, reaction };
       if (this.state.controlOwner === 'visitor' && (event.tier === 'static' || event.tier === 'reduced')) {
@@ -118,9 +111,10 @@ export class NarrativeController {
     if (this.destroyed) return;
     if (this.reactionTimer) clearTimeout(this.reactionTimer);
     this.reactionTimer = null;
+    this.activeReaction = null;
     this.state = { ...this.state, reaction: null, characterPoseId: this.storyPoseId };
     this.notify();
   }
 
-  destroy() { this.destroyed = true; if (this.reactionTimer) clearTimeout(this.reactionTimer); this.reactionTimer = null; this.listeners.clear(); }
+  destroy() { this.destroyed = true; if (this.reactionTimer) clearTimeout(this.reactionTimer); this.reactionTimer = null; this.activeReaction = null; this.listeners.clear(); }
 }

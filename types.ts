@@ -153,6 +153,15 @@ export interface ProjectMedia {
   workflowId?: string;
   provenanceId?: string;
   loadPriority?: 'critical' | 'near-viewport' | 'lazy';
+  provenance?: {
+    status: 'selected' | 'rejected';
+    promptId: string;
+    seed: number;
+    workflowSha256: string;
+    sourceSha256?: string;
+    outputSha256?: { poster?: string; webm?: string; mp4?: string };
+    rejectionReason?: string;
+  };
 }
 
 export type ExperiencePath = {

@@ -1,33 +1,42 @@
 import React, { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { SECTION_IDS } from '../constants';
 import { ASSISTANT_STARTERS } from '../siteConfig';
-import { allProjects, fieldNoteByIdOrAlias, fieldNotes, resumeProfiles } from '../portfolioData';
-import { EffectId, NumericEffectId, useEffects } from '../contexts/PhysicsContext';
+import { allProjects, experienceRecords, fieldNotes, resumeProfiles } from '../portfolioData';
+import { useEffects } from '../contexts/PhysicsContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/analytics';
+import { JOURNEY_STAGES } from '../constants';
+import type { SceneId } from '../types';
+import { useExperienceMode } from '../contexts/ExperienceModeContext';
 
 type Reference = { label: string; href: string };
 type ChatMessage = { role: 'assistant' | 'user'; content: string; references?: Reference[] };
 export type PageCommand =
-  | { type: 'setEffectEnabled'; effect: EffectId; enabled: boolean }
-  | { type: 'setEffectParam'; effect: NumericEffectId; param: string; value: number }
-  | { type: 'focusSection'; sectionId: string }
-  | { type: 'focusExperience' }
+  | { type: 'focusExperience'; experienceId?: string }
   | { type: 'focusProject'; projectId: string }
-  | { type: 'openTechnicalLab' }
-  | { type: 'focusGuideChapter'; sectionId: string }
-  | { type: 'focusEvent'; eventId: string }
-  | { type: 'openWorld' }
-  | { type: 'restoreText' };
+  | { type: 'openTechnicalLab'; mode?: 'intrinsics' | 'extrinsics' | 'optics' | 'stereo' }
+  | { type: 'focusGuideChapter'; chapterId: string }
+  | { type: 'enterExploreMode'; sceneId: SceneId }
+  | { type: 'setQuickScan'; enabled: boolean };
 type AgentResponse = { reply: string; references?: Reference[]; commands?: PageCommand[]; modelUsed?: boolean; model?: string; reason?: string };
 
-const numericParams: Record<NumericEffectId, Set<string>> = {
-  smash: new Set(['intensity', 'radius']), gravity: new Set(['strength', 'radius']),
-  fluid: new Set(['speed', 'intensity', 'opacity', 'splatRadius', 'curl']), pretext: new Set(['intensity']),
+const experienceIds = new Set(experienceRecords.map((record) => record.id));
+const projectIds = new Set(allProjects.map((project) => project.id));
+const chapterIds: Set<string> = new Set(JOURNEY_STAGES.map((stage) => stage.id));
+const labModes = new Set(['intrinsics', 'extrinsics', 'optics', 'stereo']);
+const sceneIds = new Set<SceneId>(['calibration', 'systems-in-motion', 'spatial-systems', 'selected-work', 'camera-laboratory', 'departure']);
+
+export const validatePageCommand = (value: unknown): PageCommand | null => {
+  if (!value || typeof value !== 'object') return null;
+  const command = value as Record<string, unknown>;
+  if (command.type === 'focusExperience' && (command.experienceId === undefined || (typeof command.experienceId === 'string' && experienceIds.has(command.experienceId)))) return { type: 'focusExperience', ...(command.experienceId ? { experienceId: command.experienceId as string } : {}) };
+  if (command.type === 'focusProject' && typeof command.projectId === 'string' && projectIds.has(command.projectId)) return { type: 'focusProject', projectId: command.projectId };
+  if (command.type === 'openTechnicalLab' && (command.mode === undefined || (typeof command.mode === 'string' && labModes.has(command.mode)))) return { type: 'openTechnicalLab', ...(command.mode ? { mode: command.mode as 'intrinsics' | 'extrinsics' | 'optics' | 'stereo' } : {}) };
+  if (command.type === 'focusGuideChapter' && typeof command.chapterId === 'string' && chapterIds.has(command.chapterId)) return { type: 'focusGuideChapter', chapterId: command.chapterId };
+  if (command.type === 'enterExploreMode' && typeof command.sceneId === 'string' && sceneIds.has(command.sceneId as SceneId)) return { type: 'enterExploreMode', sceneId: command.sceneId as SceneId };
+  if (command.type === 'setQuickScan' && typeof command.enabled === 'boolean') return { type: 'setQuickScan', enabled: command.enabled };
+  return null;
 };
-const effectIds = new Set<EffectId>(['smash', 'gravity', 'fluid', 'pretext']);
-const sectionIds = new Set<string>(Object.values(SECTION_IDS));
-const eventIds = new Set(fieldNoteByIdOrAlias.keys());
 const allowedLinks = new Set([
   ...Object.values(SECTION_IDS).map((id) => `#${id}`),
   '#world',
@@ -52,7 +61,7 @@ const parseAgentResponse = (value: unknown): AgentResponse | null => {
   if (typeof response.reply !== 'string') return null;
   return {
     reply: response.reply.slice(0, 700), references: cleanReferences(response.references),
-    commands: Array.isArray(response.commands) ? response.commands : [], modelUsed: response.modelUsed === true,
+    commands: Array.isArray(response.commands) ? response.commands.flatMap((command) => { const valid = validatePageCommand(command); return valid ? [valid] : []; }) : [], modelUsed: response.modelUsed === true,
     model: typeof response.model === 'string' ? response.model : undefined,
     reason: typeof response.reason === 'string' ? response.reason : undefined,
   };
@@ -68,7 +77,8 @@ export const localAgent = (message: string): AgentResponse => {
   if (text.includes('technical lab') || text.includes('slam') || text.includes('calibration study')) {
     reply = 'The shipped Technical Lab is a synthetic, local camera-geometry instrument for intrinsics, extrinsics, analytic optics, and stereo triangulation. It is explicitly separated from professional work. The separate SLAM/RADIO benchmark remains unpublished until its reproducibility and evidence gates pass.';
     references = [{ label: 'Open the Camera Laboratory', href: '#technical-lab' }];
-    commands.push({ type: 'openTechnicalLab' });
+    const mode = [...labModes].find((candidate) => text.includes(candidate)) as 'intrinsics' | 'extrinsics' | 'optics' | 'stereo' | undefined;
+    commands.push({ type: 'openTechnicalLab', ...(mode ? { mode } : {}) });
   } else if (text.includes('asyncddgs')) {
     reply = 'AsyncDDGS is Rahul’s maintained asyncio-first DuckDuckGo client, built with aiohttp and released through a tested PyPI workflow.';
     references = [projectRef('asyncddgs', 'Inspect AsyncDDGS')];
@@ -80,42 +90,40 @@ export const localAgent = (message: string): AgentResponse => {
   } else if (text.includes('guide') || text.includes('chapter')) {
     reply = 'The field engineer is a supporting navigation aid. It follows chapter checkpoints while all portfolio evidence remains stationary and readable.';
     references = [{ label: 'Return to selected work', href: '#work' }];
-    commands.push({ type: 'focusGuideChapter', sectionId: SECTION_IDS.PROJECTS });
+    commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.PROJECTS });
   } else if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
     reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce.';
     references = [projectRef('hybrid-flow-shop-digital-twin', 'Hybrid Flow Shop Digital Twin Optimizer'), projectRef('changeover-data-quality-pipeline', 'Manufacturing Changeover Data Pipeline'), projectRef('azure-apc-web-simulator', 'APC Simulator Cloud Operations')];
-    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.PROJECTS });
+    commands.push({ type: 'focusProject', projectId: 'hybrid-flow-shop-digital-twin' });
   } else if (text.includes('optim') || text.includes('scheduling') || text.includes('operations research')) {
     reply = 'Rahul’s operations-research evidence connects CP-SAT and hybrid flow-shop scheduling to a SimPy digital twin, robust-optimization research, graph optimization, network flow, simulation, objective functions, and operational constraints.';
     references = [projectRef('hybrid-flow-shop-digital-twin', 'Hybrid Flow Shop Digital Twin Optimizer'), { label: 'Operations research capability map', href: '#domains' }];
-    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.PROJECTS });
+    commands.push({ type: 'focusProject', projectId: 'hybrid-flow-shop-digital-twin' });
   } else if (text.includes('3d computer vision') || text.includes('3d cv') || text.includes('epipolar') || text.includes('spatial')) {
     reply = 'Rahul received the NUS School of Computing Certificate of Outstanding Performance as the top student in CS4277. The recorded foundations include projective geometry, camera models, epipolar geometry, absolute pose, structure from motion, bundle adjustment, and two-view and multi-view stereo.';
     references = [{ label: '3D perception capability map', href: '#domains' }, { label: 'NUS distinction and proof', href: '#proof' }];
-    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.DOMAINS });
+    commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.DOMAINS });
   } else if (text.includes('resume') || text.includes('résumé') || text.includes('cv')) {
     reply = 'Choose the role-specific résumé when the vacancy is clear: Software, Solution Architecture, AI, Operations Research, Cyber Security, or Civic Tech. Use the two-page General / Master CV for broad or multidisciplinary applications.';
     references = [{ label: 'Compare all seven résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: resumeProfiles.find((resume) => resume.id === 'general')!.pdfUrl }];
-    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.RESUMES });
+    commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.RESUMES });
   } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty') || text.includes('adversarial')) {
     reply = 'Rahul’s security record includes responsible bug-bounty research for government and transport programs, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';
     references = [projectRef('arcane', 'Arcane security tooling'), { label: 'Security experience and proof', href: '#proof' }];
-    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.ACHIEVEMENTS });
+    commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.ACHIEVEMENTS });
   } else if (text.includes('world') || text.includes('map')) {
     reply = 'Explore World marks the shared optical test bench as this site’s enhancement target. Its semantic anchor is available now; the evidence document remains the shipped experience.';
     references = [{ label: 'Explore World', href: '#world' }];
-    commands.push({ type: 'openWorld' });
+    commands.push({ type: 'enterExploreMode', sceneId: 'camera-laboratory' });
+  } else if (text.includes('quick scan') || text.includes('concise')) {
+    reply = 'Quick Scan keeps the complete evidence document and omits optional world, video, and sound enhancements.';
+    references = [{ label: 'Quick Scan overview', href: '#home' }];
+    commands.push({ type: 'setQuickScan', enabled: true });
   } else if (text.includes('project') || text.includes('work')) {
     reply = 'The selected work is organized as evidence-led briefs covering operating context, Rahul’s contribution, technical approach, and current result or proof.';
     references = [{ label: 'Browse selected engineering work', href: '#work' }];
-    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.PROJECTS });
+    commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.PROJECTS });
   }
-
-  const enabled = !(text.includes('disable') || text.includes('off'));
-  if (text.includes('fluid')) commands.push({ type: 'setEffectEnabled', effect: 'fluid', enabled });
-  if (text.includes('gravity')) commands.push({ type: 'setEffectEnabled', effect: 'gravity', enabled });
-  if (text.includes('smash')) commands.push({ type: 'setEffectEnabled', effect: 'smash', enabled });
-  if (text.includes('restore') || text.includes('reset')) commands.push({ type: 'restoreText' });
 
   return { reply, references, commands, modelUsed: false, reason: 'client_local_fallback' };
 };
@@ -130,11 +138,14 @@ const AskThePage: React.FC = () => {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const openedAt = useRef<number | null>(null);
   const effects = useEffects();
+  const { chooseMode } = useExperienceMode();
   useFocusTrap(open, panelRef, '[data-open-assistant], .ask-dock');
 
   const pageState = useMemo(() => ({
     surface: 'continuous-field-test', effects: effects.settings,
     sections: Object.values(SECTION_IDS), allowedLinks: Array.from(allowedLinks),
+    chapters: JOURNEY_STAGES.map((stage) => stage.id),
+    experience: experienceRecords.map(({ id, role, organization, dateLabel, scope, outcomes }) => ({ id, role, organization, dateLabel, scope, outcomes })),
     projects: allProjects.map(({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links }) => ({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links })),
     events: fieldNotes.map(({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links }) => ({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links })),
     resumes: resumeProfiles.map(({ id, role, headline, keywords, pdfUrl, docxUrl }) => ({ id, role, headline, keywords, pdfUrl, docxUrl })),
@@ -169,18 +180,18 @@ const AskThePage: React.FC = () => {
   }, [open]);
 
   const applyCommand = (command: PageCommand) => {
-    if (command.type === 'setEffectEnabled' && effectIds.has(command.effect)) effects.setEffectEnabled(command.effect, command.enabled);
-    else if (command.type === 'setEffectParam' && numericParams[command.effect]?.has(command.param) && Number.isFinite(command.value)) effects.setEffectParam(command.effect, command.param, command.value);
-    else if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) document.getElementById(command.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else if (command.type === 'focusExperience') document.getElementById('experience')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else if (command.type === 'focusProject' && allProjects.some((project) => project.id === command.projectId)) document.getElementById(`project-${command.projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    else if (command.type === 'openTechnicalLab') document.getElementById('technical-lab')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else if (command.type === 'focusGuideChapter' && sectionIds.has(command.sectionId)) document.getElementById(command.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else if (command.type === 'focusEvent' && eventIds.has(command.eventId)) {
-      const note = fieldNoteByIdOrAlias.get(command.eventId);
-      if (note) document.getElementById(`event-${note.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (command.type === 'openWorld') document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else if (command.type === 'restoreText') effects.restoreAll();
+    const valid = validatePageCommand(command);
+    if (!valid) return;
+    if (valid.type === 'focusExperience') document.getElementById(valid.experienceId ? `experience-${valid.experienceId}` : 'experience')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (valid.type === 'focusProject') document.getElementById(`project-${valid.projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    else if (valid.type === 'openTechnicalLab') {
+      document.getElementById('technical-lab')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (valid.mode) window.dispatchEvent(new CustomEvent('portfolio:camera-lab-mode', { detail: { mode: valid.mode } }));
+    } else if (valid.type === 'focusGuideChapter') document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (valid.type === 'enterExploreMode') {
+      document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.dispatchEvent(new CustomEvent('portfolio:explore', { detail: { action: 'enter', sceneId: valid.sceneId } }));
+    } else if (valid.type === 'setQuickScan') chooseMode(valid.enabled ? 'scan' : 'guided');
   };
 
   const submitMessage = async (message: string) => {

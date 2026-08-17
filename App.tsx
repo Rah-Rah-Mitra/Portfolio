@@ -7,12 +7,14 @@ import { useScrollDepth } from './hooks/useScrollDepth';
 import { track } from './lib/analytics';
 import PortfolioExperience from './components/PortfolioExperience';
 import { ExperienceModeProvider, useExperienceMode } from './contexts/ExperienceModeContext';
+import AudioSpriteController from './components/AudioSpriteController';
 
 export const OptionalExperienceLayers: React.FC = () => {
   return (
     <>
       <EffectsLabPanel />
       <AskThePage />
+      <AudioSpriteController />
     </>
   );
 };

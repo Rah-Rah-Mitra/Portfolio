@@ -37,6 +37,29 @@ test('passes an automated accessibility scan on the evidence surface', async ({ 
   expect(results.violations).toEqual([]);
 });
 
+test('supporting media and optional output controls stay accessible and user-controlled', async ({ page }) => {
+  await page.goto('/');
+  const video = page.getByLabel('Abstract calibration laboratory with restrained optical movement.');
+  await expect(video).toHaveCount(1);
+  await expect(video).toHaveAttribute('preload', 'none');
+  await expect(video.locator('source')).toHaveCount(2);
+  await expect(page.getByText(/contains no portfolio evidence/i)).toBeAttached();
+  const play = page.getByRole('button', { name: 'Play Field Calibration Ambient' });
+  await expect(play).toBeVisible();
+  await play.click();
+  await expect(page.getByRole('button', { name: 'Pause Field Calibration Ambient' })).toBeVisible();
+
+  await page.getByRole('button', { name: /FX, open optional effects lab/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Effects lab' });
+  await expect(dialog.getByRole('button', { name: /Sound cues/i })).toHaveAttribute('aria-pressed', 'false');
+  await dialog.getByRole('button', { name: /Sound cues/i }).click();
+  await expect(dialog.getByRole('button', { name: /Sound cues/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('portfolio-sound-enabled'))).toBe('true');
+  await expect(dialog.getByLabel('Visual density')).toHaveValue('balanced');
+  await expect(dialog.getByLabel('World quality')).toHaveValue('balanced');
+  await expect(dialog.getByRole('button', { name: /Fluid field/i })).toHaveAttribute('aria-pressed', 'false');
+});
+
 test.describe('capability fallbacks', () => {
   test('mobile keeps evidence before the static guide marker', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -87,7 +110,8 @@ test.describe('capability fallbacks', () => {
     await expect(page.locator('.site-shell')).toHaveAttribute('data-motion', 'full');
     await expect(page.locator('.optical-world')).toBeAttached();
     await expect(page.locator('.optical-world-canvas canvas')).toHaveCount(1);
-    await expect(page.locator('video')).toHaveCount(0);
+    await expect(page.locator('video')).toHaveCount(1);
+    await expect(page.locator('video')).toHaveAttribute('preload', 'none');
   });
 
   test('WebGL failure retains the static guide and portfolio record', async ({ page }) => {

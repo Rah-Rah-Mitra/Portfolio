@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import AskThePage from '../components/AskThePage';
 import EffectsLabPanel from '../components/EffectsLabPanel';
 import { EffectsProvider, useEffects } from '../contexts/PhysicsContext';
+import { ExperienceModeProvider } from '../contexts/ExperienceModeContext';
 
 afterEach(() => {
   cleanup();
@@ -27,6 +28,18 @@ describe('effects lab world handoff', () => {
     expect(dialog.textContent).toContain('The shared optical test bench is this site’s enhancement target.');
     expect(within(dialog).getByRole('link', { name: 'Explore World' }).getAttribute('href')).toBe('#world');
   });
+
+  it('exposes motion, density, media, sound, and quality without enabling fluid by default', () => {
+    render(<EffectsProvider><EffectsLabPanel /></EffectsProvider>);
+    fireEvent.click(screen.getByRole('button', { name: /FX, open optional effects lab/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Effects lab' });
+    expect(within(dialog).getByRole('button', { name: 'Pause all motion' })).not.toBeNull();
+    expect(within(dialog).getByRole('button', { name: /Supporting media/i }).getAttribute('aria-pressed')).toBe('true');
+    expect(within(dialog).getByRole('button', { name: /Sound cues/i }).getAttribute('aria-pressed')).toBe('false');
+    expect((within(dialog).getByLabelText('Visual density') as HTMLSelectElement).value).toBe('balanced');
+    expect((within(dialog).getByLabelText('World quality') as HTMLSelectElement).value).toBe('balanced');
+    expect(within(dialog).getByRole('button', { name: /Fluid field/i }).getAttribute('aria-pressed')).toBe('false');
+  });
 });
 
 describe('retired world capability', () => {
@@ -48,7 +61,7 @@ describe('retired world capability', () => {
     vi.stubGlobal('fetch', fetchMock);
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', { configurable: true, value: vi.fn() });
 
-    render(<EffectsProvider><AskThePage /></EffectsProvider>);
+    render(<ExperienceModeProvider capabilities={{ saveData: false, reducedMotion: false, webgl: 'full' }}><EffectsProvider><AskThePage /></EffectsProvider></ExperienceModeProvider>);
     fireEvent.click(screen.getByRole('button', { name: /AI, open Ask this portfolio/ }));
     fireEvent.change(screen.getByLabelText('Question or page command'), { target: { value: 'show optimization work' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));

@@ -6,6 +6,10 @@ import { track } from '../lib/analytics';
 import TechnicalLabSection from './TechnicalLabSection';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';
 import { DepartureIris, FlowShopExhibit, ProjectSystemInspector, SpatialSystemsExhibit } from './InteractiveExhibits';
+import { useEffects } from '../contexts/PhysicsContext';
+import { resolveMediaPolicy } from '../lib/mediaPolicy';
+import { supportingMedia } from '../mediaManifest';
+import { SupportingMedia } from './SupportingMedia';
 
 const OpticalBenchWorld = React.lazy(() => import('./OpticalBenchWorld'));
 
@@ -99,6 +103,16 @@ const StaticCalibrationMarker: React.FC = () => (
 
 const PortfolioHero: React.FC = () => {
   const generalResume = resumeProfiles.find((resume) => resume.id === 'general');
+  const { policy, capabilities } = useExperienceMode();
+  const { enhancements } = useEffects();
+  const [mediaViewport, setMediaViewport] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 681px)');
+    const update = () => setMediaViewport(query.matches);
+    update(); query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+  const mediaPolicy = resolveMediaPolicy({ experience: policy, mediaEnabled: enhancements.mediaEnabled, motionPaused: enhancements.motionPaused, visible: true, saveData: capabilities?.saveData });
   return (
     <section id="home" className="portfolio-hero" aria-labelledby="portfolio-title">
       <div className="hero-positioning">
@@ -125,7 +139,9 @@ const PortfolioHero: React.FC = () => {
       </dl>
 
       <div className="hero-world-stage" aria-label="Field guide rendering layer">
-        <StaticCalibrationMarker />
+        {mediaViewport && mediaPolicy.shouldAttachSources
+          ? <SupportingMedia media={supportingMedia.heroCalibration} policy={{ attach: true, motionEnabled: !enhancements.motionPaused }} className="hero-calibration-media" />
+          : <StaticCalibrationMarker />}
       </div>
     </section>
   );

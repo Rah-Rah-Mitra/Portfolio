@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
-import { localAgent } from '../components/AskThePage';
+import { localAgent, validatePageCommand } from '../components/AskThePage';
 
 describe('portfolio AI commands', () => {
   it.each([
@@ -23,7 +23,19 @@ describe('portfolio AI commands', () => {
     expect(response.reply).toContain('shared optical test bench');
     expect(response.reply).not.toMatch(/spatial portfolio map|Three\.js|GLB environment/i);
     expect(response.references).toContainEqual({ label: 'Explore World', href: '#world' });
-    expect(response.commands).toContainEqual({ type: 'openWorld' });
+    expect(response.commands).toContainEqual({ type: 'enterExploreMode', sceneId: 'camera-laboratory' });
+  });
+
+  it('exposes only validated evidence, lab, chapter, explore, and mode commands', () => {
+    expect(validatePageCommand({ type: 'focusExperience' })).toEqual({ type: 'focusExperience' });
+    expect(validatePageCommand({ type: 'focusProject', projectId: 'churp' })).toEqual({ type: 'focusProject', projectId: 'churp' });
+    expect(validatePageCommand({ type: 'openTechnicalLab', mode: 'stereo' })).toEqual({ type: 'openTechnicalLab', mode: 'stereo' });
+    expect(validatePageCommand({ type: 'focusGuideChapter', chapterId: 'work' })).toEqual({ type: 'focusGuideChapter', chapterId: 'work' });
+    expect(validatePageCommand({ type: 'enterExploreMode', sceneId: 'camera-laboratory' })).toEqual({ type: 'enterExploreMode', sceneId: 'camera-laboratory' });
+    expect(validatePageCommand({ type: 'setQuickScan', enabled: true })).toEqual({ type: 'setQuickScan', enabled: true });
+    expect(validatePageCommand({ type: 'openTechnicalLab', mode: 'slam' })).toBeNull();
+    expect(validatePageCommand({ type: 'focusProject', projectId: 'made-up' })).toBeNull();
+    expect(validatePageCommand({ type: 'openWorld' })).toBeNull();
   });
 
   it('describes the shipped camera laboratory without publishing deferred SLAM results', () => {

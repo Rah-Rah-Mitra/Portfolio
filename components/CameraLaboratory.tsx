@@ -33,6 +33,14 @@ const CameraLaboratory: React.FC<CameraLaboratoryProps> = ({ onWorldEvent, quali
   const opticsResult = useMemo(() => computeOptics(optics), [optics]);
   const stereoResult = useMemo(() => computeStereo(stereo), [stereo]);
   useEffect(() => { onWorldEvent?.({ type: 'CAMERA_LAB_UPDATED', snapshot: { mode, intrinsics, extrinsics, optics, stereo } }); }, [mode, intrinsics, extrinsics, optics, stereo, onWorldEvent]);
+  useEffect(() => {
+    const selectMode = (event: Event) => {
+      const requested = (event as CustomEvent<{ mode?: Mode }>).detail?.mode;
+      if (requested && modes.some((item) => item.id === requested)) setMode(requested);
+    };
+    window.addEventListener('portfolio:camera-lab-mode', selectMode);
+    return () => window.removeEventListener('portfolio:camera-lab-mode', selectMode);
+  }, []);
 
   const changeMode = (next: Mode) => { setMode(next); tabs.current.get(next)?.focus(); };
   const handleTabKey = (event: React.KeyboardEvent, index: number) => {

@@ -3,6 +3,8 @@ import Matter from 'matter-js';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
 import { track } from '../lib/analytics';
+import type { QualityTier } from '../types';
+import { readSoundPreference, SOUND_PREFERENCE_KEY } from '../lib/audioPolicy';
 
 type BodyRef = {
   body: Matter.Body;
@@ -44,6 +46,16 @@ export type EffectSettings = {
   };
 };
 
+export type VisualDensity = 'minimal' | 'balanced' | 'dense';
+export type EnhancementSettings = {
+  motionPaused: boolean;
+  visualDensity: VisualDensity;
+  mediaEnabled: boolean;
+  soundEnabled: boolean;
+  soundUnlocked: boolean;
+  quality: QualityTier;
+};
+
 export type EffectId = keyof EffectSettings;
 export type NumericEffectId = 'smash' | 'gravity' | 'fluid' | 'pretext';
 
@@ -57,6 +69,12 @@ interface EffectsContextType {
   setFluidQuality: (quality: FluidQuality) => void;
   restoreAll: () => void;
   pauseAll: () => void;
+  enhancements: EnhancementSettings;
+  setMotionPaused: (paused: boolean) => void;
+  setVisualDensity: (density: VisualDensity) => void;
+  setMediaEnabled: (enabled: boolean) => void;
+  setSoundEnabled: (enabled: boolean) => void;
+  setQuality: (quality: QualityTier) => void;
   registerWords: (elements: HTMLElement[]) => () => void;
 }
 
@@ -107,6 +125,9 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 
 export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<EffectSettings>(defaultSettings);
+  const [enhancements, setEnhancements] = useState<EnhancementSettings>({
+    motionPaused: false, visualDensity: 'balanced', mediaEnabled: true, soundEnabled: false, soundUnlocked: false, quality: 'balanced',
+  });
   const engineRef = useRef(Engine.create());
   const runnerRef = useRef(Runner.create());
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
@@ -273,7 +294,34 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
       pretext: { ...prev.pretext, enabled: false },
     }));
     track('effect_control_changed', { effect: 'all', control: 'enabled', value: 'false' });
+    setEnhancements((current) => ({ ...current, motionPaused: true, mediaEnabled: false }));
   }, [restoreAll]);
+
+  useEffect(() => {
+    setEnhancements((current) => ({ ...current, soundEnabled: readSoundPreference(localStorage.getItem(SOUND_PREFERENCE_KEY)) }));
+    const unlock = () => setEnhancements((current) => ({ ...current, soundUnlocked: true }));
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => { window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock); };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.motionPaused = String(enhancements.motionPaused);
+    document.documentElement.dataset.visualDensity = enhancements.visualDensity;
+    window.dispatchEvent(new CustomEvent('portfolio:enhancement-policy', { detail: enhancements }));
+  }, [enhancements]);
+
+  const setMotionPaused = useCallback((paused: boolean) => setEnhancements((current) => ({ ...current, motionPaused: paused })), []);
+  const setVisualDensity = useCallback((visualDensity: VisualDensity) => setEnhancements((current) => ({ ...current, visualDensity })), []);
+  const setMediaEnabled = useCallback((mediaEnabled: boolean) => setEnhancements((current) => ({ ...current, mediaEnabled })), []);
+  const setSoundEnabled = useCallback((soundEnabled: boolean) => {
+    localStorage.setItem(SOUND_PREFERENCE_KEY, String(soundEnabled));
+    setEnhancements((current) => ({ ...current, soundEnabled }));
+  }, []);
+  const setQuality = useCallback((quality: QualityTier) => {
+    setEnhancements((current) => ({ ...current, quality }));
+    window.dispatchEvent(new CustomEvent('portfolio:world-event', { detail: { type: 'QUALITY_CHANGED', tier: quality } }));
+  }, []);
 
   const setEffectEnabled = useCallback((id: EffectId, enabled: boolean) => {
     setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
@@ -358,6 +406,12 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
     registerWords,
     restoreAll,
     pauseAll,
+    enhancements,
+    setMotionPaused,
+    setVisualDensity,
+    setMediaEnabled,
+    setSoundEnabled,
+    setQuality,
   };
 
   return (

@@ -14,7 +14,7 @@ web
 
 ## Product Purpose
 
-Present Rahul as a multidisciplinary engineer who connects perception and uncertainty to optimization, software systems, security, and deployment. The portfolio must make truthful technical depth easy to scan, preserve a complete evidence archive, and reward deeper exploration through the assistant and Effects Lab. Explore World marks the shared optical test bench as a pending enhancement target rather than a separately shipped experience.
+Present Rahul as a multidisciplinary engineer who connects perception and uncertainty to optimization, software systems, security, and deployment. The portfolio must make truthful technical depth easy to scan, preserve a complete evidence archive, and reward deeper exploration through the assistant, Effects Lab, Camera Laboratory, and shared optical test bench.
 
 Success means a visitor can quickly understand Rahul's engineering identity, inspect representative work and proof, choose a role-targeted resume, and contact him without needing to decode the experimental interactions.
 
@@ -28,7 +28,7 @@ This portfolio explains intelligent systems as one connected engineering practic
 - One unified evidence model; no profile lenses or lens-dependent content branches.
 - Role-targeted resume library with seven DOCX/PDF pairs.
 - "Ask this portfolio" assistant backed by the private `/api/page-agent` endpoint and a safe local fallback.
-- Optional Effects Lab plus an Explore World link to the shared `#world` optical-test-bench anchor; the combined enhancement is pending and no separate world modal ships today.
+- Optional Effects Lab plus an Explore World link to the shared `#world` optical-test-bench anchor. Guided and Explore use the same lazy renderer and no separate world modal ships.
 - Quick Scan is the canonical light, static-first route and keeps recruiter evidence available without heavy rendering.
 - PostHog analytics and feature flags remain part of the runtime.
 
@@ -47,7 +47,7 @@ This portfolio explains intelligent systems as one connected engineering practic
 - Name: Rahul Mitra.
 - Voice: precise, technically literate, candid, warm, and evidence-led.
 - Preserve the playful experimental personality, multidisciplinary systems/software and cybersecurity evidence, Effects Lab, AI assistant, and Explore World optical-test-bench direction as recognizable signatures.
-- Binding direction: a clean white laboratory interface in which real work dominates and a graphite-and-teal field engineer acts only as a supporting navigation guide.
+- Binding direction: a clean white laboratory interface in which real work dominates and a graphite-and-teal Optical Courier acts only as a supporting navigation guide inside the shared world.
 - Avoid generic AI gradients, excessive neon/glitch styling, game-UI framing, interchangeable card walls, meaningless equations, stock robot imagery, and motion that competes with reading.
 
 ## Evidence on Hand
@@ -65,7 +65,7 @@ This portfolio explains intelligent systems as one connected engineering practic
 
 1. Evidence before spectacle: make real work, contributions, methods, and proof immediately understandable.
 2. Connected engineering story: show how mathematics, perception, optimization, software, AI, operations, and security reinforce each other.
-3. Progressive depth: essential information is visible by default; archives and effects are optional layers, while Explore World is an honest anchor for the pending shared optical test bench.
+3. Progressive depth: essential information is visible by default; archives and effects are optional layers, while Explore World is a local control surface for the shared optical test bench.
 4. Human technicality: pair rigorous notation and systems thinking with clear language, warm photography, and approachable interaction.
 5. Responsible truth: preserve confidentiality and responsible disclosure boundaries, and never convert visual motifs into unsupported claims.
 

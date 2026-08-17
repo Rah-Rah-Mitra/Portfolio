@@ -42,7 +42,7 @@ test.describe('capability fallbacks', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     await expect(page.locator('.hero-world-stage')).toBeVisible();
-    await expect(page.locator('.hero-guide-static')).toBeVisible();
+    await expect(page.locator('.hero-calibration-static')).toBeVisible();
     await expect(page.getByRole('button', { name: /FX, open optional effects lab/ })).toBeHidden();
     await expect(page.getByRole('button', { name: /AI, open Ask this portfolio/ })).toBeHidden();
     await page.getByRole('button', { name: 'Menu' }).click();
@@ -56,16 +56,16 @@ test.describe('capability fallbacks', () => {
     await expect(page.getByRole('dialog', { name: 'Effects lab' })).toBeVisible();
   });
 
-  test('technical lab tabs support arrow, Home, End, and a focusable panel', async ({ page }) => {
+  test('camera laboratory tabs support arrow, Home, End, and a focusable panel', async ({ page }) => {
     await page.goto('/#technical-lab');
-    const rgb = page.getByRole('tab', { name: /RGB/ });
-    await rgb.focus();
-    await rgb.press('ArrowRight');
-    await expect(page.getByRole('tab', { name: /Objects/ })).toBeFocused();
+    const intrinsics = page.getByRole('tab', { name: 'Intrinsics' });
+    await intrinsics.focus();
+    await intrinsics.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: 'Extrinsics' })).toBeFocused();
     await page.keyboard.press('End');
-    await expect(page.getByRole('tab', { name: /Trajectory/ })).toBeFocused();
+    await expect(page.getByRole('tab', { name: 'Stereo' })).toBeFocused();
     await page.keyboard.press('Home');
-    await expect(rgb).toBeFocused();
+    await expect(intrinsics).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('tabpanel')).toBeFocused();
   });
@@ -75,7 +75,7 @@ test.describe('capability fallbacks', () => {
     await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { configurable: true, value: { saveData: true } }));
     await page.goto('/');
     await expect(page.getByRole('button', { name: 'Quick Scan' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.hero-guide-static')).toBeVisible();
+    await expect(page.locator('.hero-calibration-static')).toBeVisible();
     await expect(page.locator('video')).toHaveCount(0);
   });
 
@@ -85,8 +85,9 @@ test.describe('capability fallbacks', () => {
     await expect(page.getByText('Guided, low-motion rendering')).toBeAttached();
     await page.getByRole('button', { name: 'Guided' }).click();
     await expect(page.locator('.site-shell')).toHaveAttribute('data-motion', 'full');
-    await expect(page.locator('.field-guide-stage')).toHaveAttribute('data-mode', 'webgl');
-    await expect(page.locator('.field-guide-stage video')).toHaveCount(1);
+    await expect(page.locator('.optical-world')).toBeAttached();
+    await expect(page.locator('.optical-world-canvas canvas')).toHaveCount(1);
+    await expect(page.locator('video')).toHaveCount(0);
   });
 
   test('WebGL failure retains the static guide and portfolio record', async ({ page }) => {
@@ -100,14 +101,13 @@ test.describe('capability fallbacks', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 2, name: 'Experience and education' })).toBeAttached();
     await expect(page.getByRole('button', { name: 'Quick Scan' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.hero-guide-static')).toBeVisible();
+    await expect(page.locator('.hero-calibration-static')).toBeVisible();
   });
 
   test('canonical Quick Scan keeps heavy guide, world, and video layers unloaded', async ({ page }) => {
     await page.goto('/?mode=scan#work');
     await expect(page.getByRole('button', { name: 'Quick Scan' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.field-guide-stage')).toHaveCount(0);
-    await expect(page.locator('.portfolio-world')).toHaveCount(0);
+    await expect(page.locator('.optical-world')).toHaveCount(0);
     await expect(page.locator('video')).toHaveCount(0);
     await expect(page).toHaveURL(/\?mode=scan#work$/);
   });
@@ -124,13 +124,17 @@ test.describe('capability fallbacks', () => {
     await expect(page.getByRole('button', { name: 'Guided' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('Explore World navigates to the future anchor without opening the old modal', async ({ page }) => {
+  test('Explore World navigates to the shared optical bench without opening a modal', async ({ page }) => {
     await page.goto('/');
     const explore = page.locator('.spatial-launch-desktop');
     await expect(explore).toHaveAttribute('href', '#world');
     await explore.click();
     await expect(page).toHaveURL(/#world$/);
-    await expect(page.locator('.portfolio-world')).toHaveCount(0);
+    await expect(page.locator('.optical-world')).toBeAttached();
+    await page.getByRole('button', { name: 'Enter Explore' }).click();
+    await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'visitor');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'story');
   });
 
   test('Effects Lab hands Explore World to the shared optical test bench anchor', async ({ page }) => {
@@ -146,6 +150,17 @@ test.describe('capability fallbacks', () => {
     await explore.click();
     await expect(page).toHaveURL(/#world$/);
     await expect(dialog).toBeHidden();
-    await expect(page.locator('.portfolio-world')).toHaveCount(0);
+    await expect(page.locator('.optical-world')).toBeAttached();
   });
+});
+
+test('camera geometry remains interactive in Quick Scan without loading the world', async ({ page }) => {
+  await page.goto('/?mode=scan#technical-lab');
+  await page.getByRole('tab', { name: 'Stereo' }).click();
+  const panel = page.getByRole('tabpanel');
+  await panel.getByRole('spinbutton', { name: 'Disparity (px)' }).fill('21');
+  await expect(panel.getByRole('table', { name: 'Stereo results' })).toContainText('4.000 m');
+  await expect(page.locator('.optical-world')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Show Engineer View' }).click();
+  await expect(page.getByRole('region', { name: 'Engineer View' })).toContainText('Intrinsic matrix K');
 });

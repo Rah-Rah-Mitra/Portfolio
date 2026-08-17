@@ -208,25 +208,51 @@ export type InteractionDefinition = {
   testCoverage: string[];
 };
 
-export type WorldAnchor = {
+export type Vector3Tuple = [number, number, number];
+export type ResponsiveTier = 'desktop' | 'tablet' | 'mobile';
+export type InteractionBounds = { left: number; top: number; right: number; bottom: number };
+
+export type WorldAnchorOverride = Partial<Pick<WorldAnchorDefinition, 'worldOffset' | 'projectionDepth' | 'worldNormal' | 'interactionBounds'>>;
+
+export type WorldAnchorDefinition = {
   id: string;
-  semanticTarget: `#${string}`;
-  position: [number, number, number];
-  safeTextRegion: [number, number, number, number];
-  interactionBounds: [number, number, number, number];
+  elementId: string;
+  chapterId: string;
+  worldOffset: Vector3Tuple;
   projectionDepth: number;
-  responsiveOverrides?: Record<'mobile' | 'tablet' | 'desktop', Partial<Pick<WorldAnchor, 'position' | 'safeTextRegion' | 'interactionBounds'>>>;
-  occluders?: string[];
+  worldNormal: Vector3Tuple;
+  interactionBounds?: InteractionBounds;
+  occluderElementIds?: string[];
+  responsive?: Partial<Record<'tablet' | 'mobile', WorldAnchorOverride>>;
 };
 
-export type CameraShot = {
+export type ResolvedWorldAnchor = WorldAnchorDefinition & {
+  screenRect: DOMRectReadOnly;
+  worldPosition: Vector3Tuple;
+  safeTextRects: DOMRectReadOnly[];
+};
+
+export type CameraShotOverride = Partial<Omit<CameraShotDefinition, 'id' | 'chapterId' | 'responsive'>>;
+
+export type CameraShotDefinition = {
   id: string;
-  position: [number, number, number];
-  target: [number, number, number];
+  chapterId: string;
+  position: Vector3Tuple;
+  target: Vector3Tuple;
   fov: number;
+  near: number;
+  far: number;
+  roll?: number;
   focusDistance?: number;
+  dollyDistance?: number;
+  orbitLimits?: { azimuth: [number, number]; polar: [number, number]; distance: [number, number] };
   exposure?: number;
-  transitionMs: number;
+  scrollRange: [number, number];
+  transition: { duration: number; easing: string };
+  safeTextRegionIds?: string[];
+  lighting?: { key: number; fill: number; environment: number };
+  characterFraming?: { scale: number; offset: Vector3Tuple };
+  responsive?: Partial<Record<'tablet' | 'mobile', CameraShotOverride>>;
 };
 
 export type QualityTier = 'full' | 'balanced' | 'reduced' | 'static';

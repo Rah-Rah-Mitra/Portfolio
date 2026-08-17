@@ -1,6 +1,5 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { allProjects, coreCompetencies, experienceRecords, resumeProfiles, unifiedPortfolioData } from '../portfolioData';
-import { guideChapters } from '../fieldTestData';
 import { ProjectHighlight } from '../types';
 import { resumeAssetUrl } from '../siteConfig';
 import { track } from '../lib/analytics';
@@ -8,7 +7,7 @@ import TechnicalLabSection from './TechnicalLabSection';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';
 import { DepartureIris, FlowShopExhibit, ProjectSystemInspector, SpatialSystemsExhibit } from './InteractiveExhibits';
 
-const FieldGuideStage = React.lazy(() => import('./FieldGuideStage'));
+const OpticalBenchWorld = React.lazy(() => import('./OpticalBenchWorld'));
 
 const domainLabels: Record<ProjectHighlight['accent'], string> = {
   cyan: 'Software & systems',
@@ -82,16 +81,24 @@ export const PortfolioHeader: React.FC = () => {
   );
 };
 
-const StaticGuideMarker: React.FC = () => (
-  <figure className="hero-guide-static">
-    <img src="/images/field-engineer-guide.webp" alt="Abstract graphite and teal field engineer carrying a survey camera" width="768" height="1024" />
-    <figcaption>Static field marker · recruiter evidence remains fully available</figcaption>
+const StaticCalibrationMarker: React.FC = () => (
+  <figure className="hero-calibration-static">
+    <svg viewBox="0 0 520 420" role="img" aria-label="Optical rail, camera frustum, aperture, and calibration target">
+      <line className="calibration-rail" x1="36" y1="320" x2="484" y2="320" />
+      <circle className="calibration-aperture" cx="128" cy="210" r="58" />
+      <circle className="calibration-aperture-signal" cx="128" cy="210" r="21" />
+      <path className="calibration-frustum" d="M150 210 L390 98 M150 210 L390 322" />
+      <rect className="calibration-plane" x="388" y="86" width="10" height="248" />
+      {[0, 1, 2, 3, 4].map((index) => <circle key={index} className="calibration-station" cx={68 + index * 94} cy="320" r="7" />)}
+      <text x="36" y="40">OPTICAL TEST BENCH / STATIC REGISTER</text>
+      <text x="36" y="64">Evidence remains independent of rendering capability.</text>
+    </svg>
+    <figcaption>Static calibration register · no animation required</figcaption>
   </figure>
 );
 
 const PortfolioHero: React.FC = () => {
   const generalResume = resumeProfiles.find((resume) => resume.id === 'general');
-  const { policy } = useExperienceMode();
   return (
     <section id="home" className="portfolio-hero" aria-labelledby="portfolio-title">
       <div className="hero-positioning">
@@ -118,9 +125,7 @@ const PortfolioHero: React.FC = () => {
       </dl>
 
       <div className="hero-world-stage" aria-label="Field guide rendering layer">
-        {policy.allowHeavyAssets && policy.mode === 'guided' ? (
-          <Suspense fallback={<StaticGuideMarker />}><FieldGuideStage chapters={guideChapters} allowPreferenceOverride={policy.choice === 'explicit'} /></Suspense>
-        ) : <StaticGuideMarker />}
+        <StaticCalibrationMarker />
       </div>
     </section>
   );
@@ -303,7 +308,7 @@ export const AllProjectsSection: React.FC = () => {
         ))}
       </div>
       {hydrated && !isFiltering && visibleCount < visible.length && (
-        <button className="project-load-more" type="button" onClick={() => setVisibleCount((current) => Math.min(visible.length, current + PROJECT_BATCH_SIZE))}>
+        <button className="project-load-more" type="button" onClick={() => { setVisibleCount((current) => Math.min(visible.length, current + PROJECT_BATCH_SIZE)); window.dispatchEvent(new CustomEvent('portfolio:projects-expanded')); }}>
           Load {Math.min(PROJECT_BATCH_SIZE, visible.length - visibleCount)} more projects
         </button>
       )}
@@ -375,8 +380,9 @@ const ContactFooter: React.FC = () => (
   </footer>
 );
 
-const PortfolioExperience: React.FC = () => (
-  <div className="portfolio-field-test">
+const PortfolioExperience: React.FC = () => {
+  const { policy } = useExperienceMode();
+  return <div className="portfolio-field-test">
     <a className="skip-link" href="#main-content">Skip to portfolio evidence</a>
     <PortfolioHeader />
     <main id="main-content" className="portfolio-evidence">
@@ -385,15 +391,16 @@ const PortfolioExperience: React.FC = () => (
         <ExperienceSection />
         <AllProjectsSection />
         <TechnicalLabSection />
+        <section id="world" className="portfolio-world-mount" aria-labelledby="world-title">
+          <header><h2 id="world-title">Explore the shared optical test bench</h2><p>The same world supports the guided story and local inspection. Scroll stays native; Explore temporarily hands this scene’s camera to you.</p></header>
+          {policy.allowHeavyAssets && policy.mode === 'guided' && !policy.lowMotion ? <Suspense fallback={<p role="status">Preparing the optional optical bench…</p>}><OpticalBenchWorld /></Suspense> : <p className="world-static-fallback">Static mode is active. Every Camera Laboratory control, equation, result, and portfolio record above remains available.</p>}
+        </section>
         <CapabilitiesSection />
         <ProofSection />
         <ResumeSection />
         <ContactFooter />
-      <section id="world" className="portfolio-world-mount" aria-label="Explore World mount point">
-        <p>Explore World marks the shared optical test bench integration point. The evidence document above is the shipped experience today.</p>
-      </section>
     </main>
-  </div>
-);
+  </div>;
+};
 
 export default PortfolioExperience;

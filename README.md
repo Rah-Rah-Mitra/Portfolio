@@ -2,7 +2,7 @@
 
 Production: [rahul-mitra.com](https://rahul-mitra.com/)
 
-An evidence-first engineering portfolio spanning software systems, AI and perception, operations research, solution architecture, 3D, civic work, and responsible security. Experience, projects, outcomes, resumes, and contact paths remain semantic HTML; the generated field engineer, Effects Lab, AI assistant, and video are optional supporting layers. Explore World currently links to the shared `#world` optical-test-bench anchor; the combined enhancement is pending.
+An evidence-first engineering portfolio spanning software systems, AI and perception, operations research, solution architecture, 3D, civic work, and responsible security. Experience, projects, outcomes, resumes, and contact paths remain semantic HTML; the Optical Courier world, Effects Lab, AI assistant, and media are optional supporting layers. Explore World links to the shared `#world` optical-test-bench anchor and surface used by both Guided and local Explore control.
 
 ## Run locally
 
@@ -39,4 +39,4 @@ npm run media:check
 
 Reproducible prompts, seeds, workflow inputs, output hashes, model hashes, and license notes live in [`workflows/comfyui`](workflows/comfyui). Model weights and user-level MCP credentials are intentionally excluded from Git. See [`workflows/comfyui/README.md`](workflows/comfyui/README.md) for Claude Code and optional Codex MCP setup; restart those clients after changing their user configuration.
 
-The Technical Lab is explicitly a synthetic calibration study, not professional project experience. C-RADIOv4 remains a benchmark candidate; the shipped deterministic study uses OpenCV, and BiRefNet is used for the generated guide cutout.
+The Camera Laboratory is explicitly a synthetic portfolio-site experiment, not professional project experience. It ships deterministic intrinsics, extrinsics, thin-lens optics, and stereo calculations as semantic controls and result tables. The separate OpenCV/C-RADIO/BiRefNet SLAM study remains unpublished and cannot delay the core experience.

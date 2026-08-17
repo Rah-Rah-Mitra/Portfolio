@@ -113,11 +113,11 @@ components:
 
 The portfolio is a clean white laboratory record of an engineer making intelligent systems operational. It reads as one continuous field test under visual seed `4d83e73b`: Rahul's positioning, experience, selected systems, complete project archive, technical study, capabilities, proof, résumés, and contact path remain stationary, explicit, and easy to inspect. Near-black type and fine rules establish authority; restrained teal marks navigation, methods, state, and verification.
 
-The graphite-and-teal field engineer is a supporting guide, not the subject. On wide screens it occupies a sticky calibration stage beside the evidence and advances gently with the reader's scroll. On constrained devices it becomes a static poster after the first-view facts, so mobile always presents Rahul's claim and actions first. Sparse amber and violet belong to focus, survey stations, reconstruction, and other technical annotations; they do not become decorative themes or unsupported experience claims.
+The graphite-and-teal Optical Courier is a supporting guide, not the subject. One lazy optical-test-bench world owns its replaceable rig, camera, rail, iris, image plane, rays, and calibration stations; it responds to chapter state without creating a sidebar stage. Until the final production rig lands, a neutral procedural placeholder protects the same asset interface. Constrained devices receive a static optical-register diagram after the first-view facts, so mobile always presents Rahul's claim and actions first. Sparse amber and violet belong to focus, survey stations, reconstruction, and other technical annotations; they do not become decorative themes or unsupported experience claims.
 
-The interface has one evidence model and no Build/Secure lenses. The assistant and Effects Lab are optional shipped depth layers: fixed AI and FX controls are desktop-only, while mobile exposes AI, FX, and Explore World inside the header menu. Explore World is ordinary navigation to the shared optical-test-bench anchor; that combined enhancement is pending and no separate world modal ships today. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.
+The interface has one evidence model and no Build/Secure lenses. The assistant and Effects Lab are optional shipped depth layers: fixed AI and FX controls are desktop-only, while mobile exposes AI, FX, and Explore World inside the header menu. Explore World is ordinary navigation to the shared optical-test-bench anchor and exposes local Enter/Exit/Reset controls; no separate world modal ships. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.
 
-Quick Scan is the canonical light, static-first route. It renders the same recruiter evidence in ordinary semantic HTML, omits heavy guide and video layers, and keeps Explore World as navigation to the shared future anchor rather than implying a second experience.
+Quick Scan is the canonical light, static-first route. It renders the same recruiter evidence and complete four-mode Camera Laboratory in ordinary semantic HTML, omits the world and video chunks, and keeps Explore World as navigation to the static shared anchor rather than implying a second experience.
 
 **Key Characteristics:**
 
@@ -126,7 +126,7 @@ Quick Scan is the canonical light, static-first route. It renders the same recru
 - A persistent desktop evidence-and-guide split that collapses to an evidence-first mobile column.
 - Archivo for claims and reading; IBM Plex Mono for methods, dates, counts, readouts, and state.
 - Square controls and ruled rows instead of floating cards, pills, or dashboard chrome.
-- Optional AI and FX tools remain clearly labeled, accessible, and subordinate; the pending optical test bench remains an honest semantic anchor.
+- Optional AI and FX tools remain clearly labeled, accessible, and subordinate; the optical test bench remains an honest, locally controlled enhancement.
 
 ## Colors
 
@@ -219,7 +219,7 @@ The core portfolio has no resting shadows. Depth comes from white-on-white spaci
 
 ## Shapes
 
-The form language is rectilinear and instrument-like. Buttons, inputs, chips, tab strips, evidence media, lab consoles, guide stages, docks, and drawers use square corners. One-pixel rules establish structure; repeated horizontal lines create the archive rhythm. The only prominent non-rectilinear shapes come from the field engineer, camera trajectories, pose paths, survey markers, and the small rotated square checkpoint in the guide stage.
+The form language is rectilinear and instrument-like. Buttons, inputs, chips, tab strips, evidence media, lab consoles, optical surfaces, docks, and drawers use square corners. One-pixel rules establish structure; repeated horizontal lines create the archive rhythm. The only prominent non-rectilinear shapes come from the Optical Courier, camera rays, aperture geometry, calibration stations, and optical mechanisms.
 
 **The Ruled Ledger Rule.** Group evidence with shared top and bottom rules instead of rounding each record into an isolated card.
 
@@ -256,19 +256,21 @@ The form language is rectilinear and instrument-like. Buttons, inputs, chips, ta
 
 ### Navigation
 
-The sticky header uses a translucent white strip, a Structural Rule bottom edge, a compact RM mark, centered desktop links, and a square Explore World anchor. Link hover and focus reveal a two-pixel teal underline over 160ms. At 920px the links move into a full-width expanding menu; AI · Ask, FX · Lab, and Explore World remain three explicit routes, with Explore World linking to the pending shared test-bench boundary.
+The sticky header uses a translucent white strip, a Structural Rule bottom edge, a compact RM mark, centered desktop links, and a square Explore World anchor. Link hover and focus reveal a two-pixel teal underline over 160ms. At 920px the links move into a full-width expanding menu; AI · Ask, FX · Lab, and Explore World remain three explicit routes, with Explore World linking to the shared test-bench controls.
 
 ### Selected Work and Evidence Ledgers
 
 Selected systems lead with a teal number and mono domain/date column, then a title, context, Contribution/Approach/Outcome definition list, method trail, and proof links. Optional imagery occupies a framed field-evidence column with a low-saturation treatment and technical caption. Experience, All Projects, capabilities, proof, and résumés reuse the same ruled-ledger logic at different densities rather than becoming interchangeable cards.
 
-### Technical Lab
+### Camera Laboratory
 
-The synthetic calibration study is a bounded console with a four-column tab strip, one 16:9 visual layer, a method/provenance caption, four ruled metrics, and two-column explanatory provenance. The active tab uses Deep Signal Teal and white; inactive tabs remain white. Its warm amber disclaimer explicitly identifies the study as an interactive portfolio experiment, not professional project delivery.
+Four persistent semantic tabs—Intrinsics, Extrinsics, Optics, and Stereo—place labelled numeric controls beside equations and result tables. Intrinsics uses the 640×480, 35mm/36×24mm calibration defaults; Extrinsics documents the right-handed positive-view-depth convention; Optics explicitly labels its thin-lens blur model analytic; Stereo reports `Z = fB/d` and reference error. Each mode owns Reset and an example preset. Engineer View exposes matrices, coordinates, projected pixels, on-demand frame status, and quality tier without exposing the development camera director.
 
-### Field Engineer Guide
+The laboratory is a bounded console with a four-column tab strip, compact instrument inputs, equation callouts, and ruled result tables. The active tab uses Deep Signal Teal and white; inactive tabs remain white. Its warm amber disclaimer explicitly identifies the study as an interactive portfolio experiment, not professional project delivery.
 
-On wide screens, the guide is sticky within a ruled, faintly gridded stage. A compact mono readout names the active chapter, a progress line advances in teal, and the graphite-and-teal Three.js guide follows a damped course through survey stations. Reduced motion, constrained hardware, data-saving mode, or viewport width at or below 860px switches the WebGL scene to a static poster. At 920px the entire side stage yields to the single evidence column.
+### Shared Optical World
+
+One lazy Three.js renderer builds the optical rail, iris, image plane, frustum, rays, calibration points, and replaceable Courier asset. Camera shots and DOM anchors live in typed manifests. ScrollTrigger supplies one clamped trigger per chapter and resolves fast travel to a direction-specific arrival state; local Explore hands the scene camera to the visitor and returns it to the authored shot within 450ms. Rendering is input/transition driven rather than an idle loop. Quick Scan, Save-Data, reduced motion without explicit opt-in, low capability, and WebGL failure omit the world chunk and retain the static optical register plus the complete semantic laboratory.
 
 ### Optional Tool Docks and Panels
 
@@ -276,7 +278,7 @@ AI and FX are square 3.25rem fixed controls in the lower-right desktop corner. T
 
 ### Motion and Reduced Motion
 
-Motion is limited to the 160ms navigation underline, the 280ms guide progress response, damped guide travel, and temporary panel/backdrop entry. Reading surfaces do not animate while the visitor scans them. Under `prefers-reduced-motion: reduce`, transitions and animations collapse to 0.01ms, iteration is limited to one, scrolling becomes immediate, the field guide uses its static poster, and optional visual effects are removed.
+Motion is limited to the 160ms navigation underline, bounded story-camera/optical transitions, direct-manipulation feedback, and temporary panel/backdrop entry. Reading surfaces do not animate while the visitor scans them. Under `prefers-reduced-motion: reduce`, transitions and animations collapse to 0.01ms, iteration is limited to one, scrolling becomes immediate, the hero uses its static optical register, and optional visual effects are removed unless the visitor explicitly opts into Guided enhancements.
 
 ### Named Rules
 
@@ -292,7 +294,7 @@ Motion is limited to the 160ms navigation underline, the 280ms guide progress re
 - **Do** preserve the continuous story: position → selected work → experience → all projects → technical lab → capabilities → proof → résumés → contact.
 - **Do** use white space, one-pixel rules, and typographic hierarchy to organize dense evidence.
 - **Do** keep teal restrained and reserve amber and violet for focus or technical annotation.
-- **Do** keep the field engineer in a supporting desktop guide role and use the static evidence-first fallback on constrained devices.
+- **Do** keep the Optical Courier subordinate to evidence, inside the shared world asset interface, and use the static optical-register fallback on constrained devices.
 - **Do** expose AI, FX, and the Explore World anchor in the mobile header menu while keeping fixed AI and FX controls desktop-only.
 - **Do** preserve visible focus, semantic landmarks, keyboard-operable filters and tabs, truthful disclaimers, and the complete project archive.
 - **Do** make reduced motion a static, fully readable version of the same experience.

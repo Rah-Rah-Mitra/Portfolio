@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { technicalDemo } from '../fieldTestData';
 import { TechnicalDemoLayer } from '../types';
 import { track } from '../lib/analytics';
@@ -43,6 +43,7 @@ const trajectoryPath = (points: number[][], width: number, height: number) => {
 const TechnicalLabSection: React.FC = () => {
   const [activeLayerId, setActiveLayerId] = useState<TechnicalDemoLayer['id']>('rgb');
   const [study, setStudy] = useState<StudyPayload | null>(null);
+  const tabRefs = useRef(new Map<TechnicalDemoLayer['id'], HTMLButtonElement>());
 
   useEffect(() => {
     let active = true;
@@ -66,6 +67,21 @@ const TechnicalLabSection: React.FC = () => {
     track('technical_layer_changed', { layer: layer.id, method: layer.method });
   };
 
+  const handleLayerKeys = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const { layers } = technicalDemo;
+    let nextIndex = index;
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % layers.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + layers.length) % layers.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = layers.length - 1;
+    else return;
+
+    event.preventDefault();
+    const nextLayer = layers[nextIndex];
+    selectLayer(nextLayer);
+    tabRefs.current.get(nextLayer.id)?.focus();
+  };
+
   return (
     <section id="technical-lab" className="evidence-section technical-lab" aria-labelledby="technical-lab-title">
       <header className="evidence-heading">
@@ -75,14 +91,18 @@ const TechnicalLabSection: React.FC = () => {
 
       <div className="lab-console">
         <div className="lab-layer-tabs" role="tablist" aria-label="Technical study layers">
-          {technicalDemo.layers.map((layer) => (
+          {technicalDemo.layers.map((layer, index) => (
             <button
               key={layer.id}
+              id={`technical-layer-tab-${layer.id}`}
               type="button"
               role="tab"
               aria-selected={layer.id === activeLayer.id}
               aria-controls="technical-layer-panel"
+              tabIndex={layer.id === activeLayer.id ? 0 : -1}
+              ref={(node) => { if (node) tabRefs.current.set(layer.id, node); else tabRefs.current.delete(layer.id); }}
               onClick={() => selectLayer(layer)}
+              onKeyDown={(event) => handleLayerKeys(event, index)}
             >
               <span>{layer.label}</span>
               <small>{layer.method}</small>
@@ -90,14 +110,14 @@ const TechnicalLabSection: React.FC = () => {
           ))}
         </div>
 
-        <div id="technical-layer-panel" className="lab-viewport" role="tabpanel">
+        <div id="technical-layer-panel" className="lab-viewport" role="tabpanel" aria-labelledby={`technical-layer-tab-${activeLayer.id}`} tabIndex={0}>
           {layerAssets[activeLayer.id] ? (
             <img
               src={layerAssets[activeLayer.id]}
               alt={`${activeLayer.label} output from the synthetic calibration study`}
               width="960"
               height="540"
-              loading="lazy"
+              loading="eager"
               decoding="async"
             />
           ) : (

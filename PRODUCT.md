@@ -24,8 +24,8 @@ This portfolio explains intelligent systems as one connected engineering practic
 
 ## Operating Context
 
-- Single-page portfolio with anchored navigation and a searchable/filterable project and field-note archive.
-- Explicit Build / Secure professional lenses that reprioritize supporting content without hiding essential work.
+- Single-page portfolio with anchored navigation and a visible, searchable, filterable index containing every project.
+- One unified evidence model; no profile lenses or lens-dependent content branches.
 - Role-targeted resume library with seven DOCX/PDF pairs.
 - "Ask this portfolio" assistant backed by the private `/api/page-agent` endpoint and a safe local fallback.
 - Optional Effects Lab and lazy-loaded Three.js spatial world using the existing GLB asset library.
@@ -45,8 +45,8 @@ This portfolio explains intelligent systems as one connected engineering practic
 
 - Name: Rahul Mitra.
 - Voice: precise, technically literate, candid, warm, and evidence-led.
-- Preserve the playful experimental personality, dual systems/software and cybersecurity identities, profile photography, and interactive lab/world as recognizable signatures.
-- Binding direction: a human-centered robotics and intelligent-systems field notebook refined into a professional engineering portfolio.
+- Preserve the playful experimental personality, multidisciplinary systems/software and cybersecurity evidence, Effects Lab, AI assistant, and optional spatial world as recognizable signatures.
+- Binding direction: a clean white laboratory interface in which real work dominates and a graphite-and-teal field engineer acts only as a supporting navigation guide.
 - Avoid generic AI gradients, excessive neon/glitch styling, game-UI framing, interchangeable card walls, meaningless equations, stock robot imagery, and motion that competes with reading.
 
 ## Evidence on Hand

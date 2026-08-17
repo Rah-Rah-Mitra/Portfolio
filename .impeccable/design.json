@@ -1,427 +1,332 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-15T08:26:36.3347078+08:00",
+  "generatedAt": "2026-08-17T18:43:54.3350475+08:00",
   "title": "Design System: Rahul Mitra Engineering Portfolio",
   "extensions": {
     "colorMeta": {
-      "paper": {
+      "field-paper": {
         "role": "neutral",
-        "displayName": "Laboratory Paper",
-        "canonical": "#f4f0e6",
-        "tonalRamp": ["oklch(15% 0.020 90)", "oklch(27% 0.020 90)", "oklch(39% 0.020 90)", "oklch(51% 0.020 90)", "oklch(63% 0.020 90)", "oklch(75% 0.020 90)", "oklch(87% 0.020 90)", "oklch(95% 0.020 90)"]
-      },
-      "paper-deep": {
-        "role": "neutral",
-        "displayName": "Pressed Paper",
-        "canonical": "#e8e2d4",
-        "tonalRamp": ["oklch(15% 0.025 88)", "oklch(27% 0.025 88)", "oklch(39% 0.025 88)", "oklch(51% 0.025 88)", "oklch(63% 0.025 88)", "oklch(75% 0.025 88)", "oklch(87% 0.025 88)", "oklch(95% 0.025 88)"]
-      },
-      "paper-raised": {
-        "role": "neutral",
-        "displayName": "Raised Paper",
-        "canonical": "#fbf8f1",
-        "tonalRamp": ["oklch(15% 0.015 90)", "oklch(27% 0.015 90)", "oklch(39% 0.015 90)", "oklch(51% 0.015 90)", "oklch(63% 0.015 90)", "oklch(75% 0.015 90)", "oklch(87% 0.015 90)", "oklch(95% 0.015 90)"]
-      },
-      "ink": {
-        "role": "neutral",
-        "displayName": "Field Ink",
-        "canonical": "#172624",
-        "tonalRamp": ["oklch(15% 0.035 173)", "oklch(27% 0.035 173)", "oklch(39% 0.035 173)", "oklch(51% 0.035 173)", "oklch(63% 0.035 173)", "oklch(75% 0.035 173)", "oklch(87% 0.035 173)", "oklch(95% 0.035 173)"]
-      },
-      "ink-soft": {
-        "role": "neutral",
-        "displayName": "Soft Ink",
-        "canonical": "#31413e",
-        "tonalRamp": ["oklch(15% 0.025 174)", "oklch(27% 0.025 174)", "oklch(39% 0.025 174)", "oklch(51% 0.025 174)", "oklch(63% 0.025 174)", "oklch(75% 0.025 174)", "oklch(87% 0.025 174)", "oklch(95% 0.025 174)"]
-      },
-      "muted": {
-        "role": "neutral",
-        "displayName": "Muted Annotation",
-        "canonical": "#56635f",
-        "tonalRamp": ["oklch(15% 0.018 165)", "oklch(27% 0.018 165)", "oklch(39% 0.018 165)", "oklch(51% 0.018 165)", "oklch(63% 0.018 165)", "oklch(75% 0.018 165)", "oklch(87% 0.018 165)", "oklch(95% 0.018 165)"]
-      },
-      "faint": {
-        "role": "neutral",
-        "displayName": "Faint Coordinate",
-        "canonical": "#626e6a",
-        "tonalRamp": ["oklch(15% 0.016 165)", "oklch(27% 0.016 165)", "oklch(39% 0.016 165)", "oklch(51% 0.016 165)", "oklch(63% 0.016 165)", "oklch(75% 0.016 165)", "oklch(87% 0.016 165)", "oklch(95% 0.016 165)"]
-      },
-      "rule": {
-        "role": "neutral",
-        "displayName": "Hairline Rule",
-        "canonical": "rgba(23, 38, 36, 0.18)",
-        "tonalRamp": ["oklch(15% 0.035 173 / 0.18)", "oklch(27% 0.035 173 / 0.18)", "oklch(39% 0.035 173 / 0.18)", "oklch(51% 0.035 173 / 0.18)", "oklch(63% 0.035 173 / 0.18)", "oklch(75% 0.035 173 / 0.18)", "oklch(87% 0.035 173 / 0.18)", "oklch(95% 0.035 173 / 0.18)"]
-      },
-      "rule-strong": {
-        "role": "neutral",
-        "displayName": "Structural Rule",
-        "canonical": "rgba(23, 38, 36, 0.34)",
-        "tonalRamp": ["oklch(15% 0.035 173 / 0.34)", "oklch(27% 0.035 173 / 0.34)", "oklch(39% 0.035 173 / 0.34)", "oklch(51% 0.035 173 / 0.34)", "oklch(63% 0.035 173 / 0.34)", "oklch(75% 0.035 173 / 0.34)", "oklch(87% 0.035 173 / 0.34)", "oklch(95% 0.035 173 / 0.34)"]
-      },
-      "signal-teal": {
-        "role": "primary",
-        "displayName": "Signal Teal",
-        "canonical": "#167a72",
-        "tonalRamp": ["oklch(15% 0.080 175)", "oklch(27% 0.080 175)", "oklch(39% 0.080 175)", "oklch(51% 0.080 175)", "oklch(63% 0.080 175)", "oklch(75% 0.080 175)", "oklch(87% 0.080 175)", "oklch(95% 0.080 175)"]
-      },
-      "signal-teal-deep": {
-        "role": "primary",
-        "displayName": "Deep Signal Teal",
-        "canonical": "#0b514c",
-        "tonalRamp": ["oklch(15% 0.075 175)", "oklch(27% 0.075 175)", "oklch(39% 0.075 175)", "oklch(51% 0.075 175)", "oklch(63% 0.075 175)", "oklch(75% 0.075 175)", "oklch(87% 0.075 175)", "oklch(95% 0.075 175)"]
-      },
-      "optimization-amber": {
-        "role": "secondary",
-        "displayName": "Optimization Amber",
-        "canonical": "#955410",
-        "tonalRamp": ["oklch(15% 0.110 65)", "oklch(27% 0.110 65)", "oklch(39% 0.110 65)", "oklch(51% 0.110 65)", "oklch(63% 0.110 65)", "oklch(75% 0.110 65)", "oklch(87% 0.110 65)", "oklch(95% 0.110 65)"]
-      },
-      "optimization-amber-deep": {
-        "role": "secondary",
-        "displayName": "Deep Optimization Amber",
-        "canonical": "#8a5415",
-        "tonalRamp": ["oklch(15% 0.100 68)", "oklch(27% 0.100 68)", "oklch(39% 0.100 68)", "oklch(51% 0.100 68)", "oklch(63% 0.100 68)", "oklch(75% 0.100 68)", "oklch(87% 0.100 68)", "oklch(95% 0.100 68)"]
-      },
-      "reconstruction-violet": {
-        "role": "tertiary",
-        "displayName": "Reconstruction Violet",
-        "canonical": "#745985",
-        "tonalRamp": ["oklch(15% 0.070 310)", "oklch(27% 0.070 310)", "oklch(39% 0.070 310)", "oklch(51% 0.070 310)", "oklch(63% 0.070 310)", "oklch(75% 0.070 310)", "oklch(87% 0.070 310)", "oklch(95% 0.070 310)"]
-      },
-      "secure-coral": {
-        "role": "primary",
-        "displayName": "Secure Coral",
-        "canonical": "#a34249",
-        "tonalRamp": ["oklch(15% 0.110 20)", "oklch(27% 0.110 20)", "oklch(39% 0.110 20)", "oklch(51% 0.110 20)", "oklch(63% 0.110 20)", "oklch(75% 0.110 20)", "oklch(87% 0.110 20)", "oklch(95% 0.110 20)"]
-      },
-      "secure-coral-deep": {
-        "role": "primary",
-        "displayName": "Deep Secure Coral",
-        "canonical": "#6f2931",
-        "tonalRamp": ["oklch(15% 0.100 20)", "oklch(27% 0.100 20)", "oklch(39% 0.100 20)", "oklch(51% 0.100 20)", "oklch(63% 0.100 20)", "oklch(75% 0.100 20)", "oklch(87% 0.100 20)", "oklch(95% 0.100 20)"]
-      },
-      "chapter-work": {
-        "role": "neutral",
-        "displayName": "Work Mist",
-        "canonical": "#e4ece5",
-        "tonalRamp": ["oklch(15% 0.020 145)", "oklch(27% 0.020 145)", "oklch(39% 0.020 145)", "oklch(51% 0.020 145)", "oklch(63% 0.020 145)", "oklch(75% 0.020 145)", "oklch(87% 0.020 145)", "oklch(95% 0.020 145)"]
-      },
-      "chapter-domains": {
-        "role": "neutral",
-        "displayName": "Calibration Lilac",
-        "canonical": "#e9e5ef",
-        "tonalRamp": ["oklch(15% 0.025 300)", "oklch(27% 0.025 300)", "oklch(39% 0.025 300)", "oklch(51% 0.025 300)", "oklch(63% 0.025 300)", "oklch(75% 0.025 300)", "oklch(87% 0.025 300)", "oklch(95% 0.025 300)"]
-      },
-      "chapter-experience": {
-        "role": "neutral",
-        "displayName": "Trajectory Parchment",
-        "canonical": "#eee6d7",
-        "tonalRamp": ["oklch(15% 0.030 82)", "oklch(27% 0.030 82)", "oklch(39% 0.030 82)", "oklch(51% 0.030 82)", "oklch(63% 0.030 82)", "oklch(75% 0.030 82)", "oklch(87% 0.030 82)", "oklch(95% 0.030 82)"]
-      },
-      "chapter-proof": {
-        "role": "neutral",
-        "displayName": "Verification Blush",
-        "canonical": "#f0e3df",
-        "tonalRamp": ["oklch(15% 0.025 28)", "oklch(27% 0.025 28)", "oklch(39% 0.025 28)", "oklch(51% 0.025 28)", "oklch(63% 0.025 28)", "oklch(75% 0.025 28)", "oklch(87% 0.025 28)", "oklch(95% 0.025 28)"]
-      },
-      "chapter-resumes": {
-        "role": "neutral",
-        "displayName": "Targeting Glass",
-        "canonical": "#dfeae8",
-        "tonalRamp": ["oklch(15% 0.025 182)", "oklch(27% 0.025 182)", "oklch(39% 0.025 182)", "oklch(51% 0.025 182)", "oklch(63% 0.025 182)", "oklch(75% 0.025 182)", "oklch(87% 0.025 182)", "oklch(95% 0.025 182)"]
-      },
-      "white": {
-        "role": "neutral",
-        "displayName": "Action White",
+        "displayName": "Laboratory White",
         "canonical": "#ffffff",
         "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+      },
+      "field-soft": {
+        "role": "neutral",
+        "displayName": "Calibration Wash",
+        "canonical": "#f5f8f7",
+        "tonalRamp": ["oklch(15% 0.006 165)", "oklch(27% 0.006 165)", "oklch(39% 0.006 165)", "oklch(51% 0.006 165)", "oklch(63% 0.006 165)", "oklch(75% 0.006 165)", "oklch(87% 0.006 165)", "oklch(95% 0.006 165)"]
+      },
+      "field-ink": {
+        "role": "neutral",
+        "displayName": "Graphite Ink",
+        "canonical": "#111816",
+        "tonalRamp": ["oklch(15% 0.015 165)", "oklch(27% 0.015 165)", "oklch(39% 0.015 165)", "oklch(51% 0.015 165)", "oklch(63% 0.015 165)", "oklch(75% 0.015 165)", "oklch(87% 0.015 165)", "oklch(95% 0.015 165)"]
+      },
+      "field-muted": {
+        "role": "neutral",
+        "displayName": "Muted Graphite",
+        "canonical": "#53605d",
+        "tonalRamp": ["oklch(15% 0.018 165)", "oklch(27% 0.018 165)", "oklch(39% 0.018 165)", "oklch(51% 0.018 165)", "oklch(63% 0.018 165)", "oklch(75% 0.018 165)", "oklch(87% 0.018 165)", "oklch(95% 0.018 165)"]
+      },
+      "field-rule": {
+        "role": "neutral",
+        "displayName": "Hairline Rule",
+        "canonical": "#d9e0de",
+        "tonalRamp": ["oklch(15% 0.009 165)", "oklch(27% 0.009 165)", "oklch(39% 0.009 165)", "oklch(51% 0.009 165)", "oklch(63% 0.009 165)", "oklch(75% 0.009 165)", "oklch(87% 0.009 165)", "oklch(95% 0.009 165)"]
+      },
+      "field-rule-strong": {
+        "role": "neutral",
+        "displayName": "Structural Rule",
+        "canonical": "#aebbb8",
+        "tonalRamp": ["oklch(15% 0.012 165)", "oklch(27% 0.012 165)", "oklch(39% 0.012 165)", "oklch(51% 0.012 165)", "oklch(63% 0.012 165)", "oklch(75% 0.012 165)", "oklch(87% 0.012 165)", "oklch(95% 0.012 165)"]
+      },
+      "field-teal": {
+        "role": "primary",
+        "displayName": "Signal Teal",
+        "canonical": "#0b7169",
+        "tonalRamp": ["oklch(15% 0.090 177)", "oklch(27% 0.090 177)", "oklch(39% 0.090 177)", "oklch(51% 0.090 177)", "oklch(63% 0.090 177)", "oklch(75% 0.090 177)", "oklch(87% 0.090 177)", "oklch(95% 0.090 177)"]
+      },
+      "field-teal-dark": {
+        "role": "primary",
+        "displayName": "Deep Signal Teal",
+        "canonical": "#07544f",
+        "tonalRamp": ["oklch(15% 0.070 177)", "oklch(27% 0.070 177)", "oklch(39% 0.070 177)", "oklch(51% 0.070 177)", "oklch(63% 0.070 177)", "oklch(75% 0.070 177)", "oklch(87% 0.070 177)", "oklch(95% 0.070 177)"]
+      },
+      "field-amber": {
+        "role": "secondary",
+        "displayName": "Survey Amber",
+        "canonical": "#95590e",
+        "tonalRamp": ["oklch(15% 0.110 68)", "oklch(27% 0.110 68)", "oklch(39% 0.110 68)", "oklch(51% 0.110 68)", "oklch(63% 0.110 68)", "oklch(75% 0.110 68)", "oklch(87% 0.110 68)", "oklch(95% 0.110 68)"]
+      },
+      "field-violet": {
+        "role": "tertiary",
+        "displayName": "Reconstruction Violet",
+        "canonical": "#6650a4",
+        "tonalRamp": ["oklch(15% 0.100 300)", "oklch(27% 0.100 300)", "oklch(39% 0.100 300)", "oklch(51% 0.100 300)", "oklch(63% 0.100 300)", "oklch(75% 0.100 300)", "oklch(87% 0.100 300)", "oklch(95% 0.100 300)"]
+      },
+      "focus-amber": {
+        "role": "secondary",
+        "displayName": "Focus Amber",
+        "canonical": "#df9f2f",
+        "tonalRamp": ["oklch(15% 0.130 75)", "oklch(27% 0.130 75)", "oklch(39% 0.130 75)", "oklch(51% 0.130 75)", "oklch(63% 0.130 75)", "oklch(75% 0.130 75)", "oklch(87% 0.130 75)", "oklch(95% 0.130 75)"]
       }
     },
     "typographyMeta": {
       "display": {
-        "displayName": "Positioning Display",
+        "displayName": "Operational Claim",
         "purpose": "First-view positioning claim only."
       },
       "headline": {
-        "displayName": "Editorial Headline",
-        "purpose": "Major section openings and footer proposition."
+        "displayName": "Evidence Headline",
+        "purpose": "Major section openings and the contact proposition."
       },
       "title": {
-        "displayName": "Evidence Title",
-        "purpose": "Active projects, capabilities, proof records, resume entries, and panel headings."
+        "displayName": "Record Title",
+        "purpose": "Projects, experience, capabilities, proof, resume entries, and panel headings."
       },
       "body": {
         "displayName": "Reading Body",
-        "purpose": "Narrative context, evidence descriptions, and explanatory copy."
+        "purpose": "Narrative context, evidence descriptions, outcomes, and explanatory copy."
       },
       "label": {
         "displayName": "Instrument Label",
-        "purpose": "Camera frames, coordinates, counts, dates, methods, statuses, tags, and diagram annotations."
+        "purpose": "Domains, dates, methods, counts, states, filters, and laboratory readouts."
       }
     },
     "shadows": [
       {
-        "name": "field-sheet",
-        "value": "0 18px 54px rgba(33, 43, 39, 0.11)",
-        "purpose": "Soft lift beneath the desktop spatial/localization sheet."
+        "name": "modal-drawer",
+        "value": "0 2rem 6rem rgb(20 35 31 / 18%)",
+        "purpose": "Directional separation for the assistant and Effects Lab panels above their backdrop."
       },
       {
-        "name": "header-scrolled",
-        "value": "0 5px 24px rgba(23, 38, 36, 0.07)",
-        "purpose": "Appears only when the sticky header has scrolled."
-      },
-      {
-        "name": "journey-active",
-        "value": "0 8px 24px rgba(23, 38, 36, 0.12)",
-        "purpose": "Identifies the active registered camera on the desktop journey rail."
-      },
-      {
-        "name": "instrument-dock",
-        "value": "0 8px 24px rgba(23, 38, 36, 0.11)",
-        "purpose": "Restrained lift for the lower-right AI and FX corner controls."
-      },
-      {
-        "name": "panel-from-left",
-        "value": "18px 0 55px rgba(23, 38, 36, 0.2)",
-        "purpose": "Directional depth for the assistant and Effects Lab drawers, which both enter from the left."
+        "name": "tool-label",
+        "value": "0 8px 24px rgba(23, 38, 36, 0.10)",
+        "purpose": "Small desktop-only lift for the label revealed above an AI or FX dock."
       }
     ],
     "motion": [
       {
-        "name": "motion-fast",
-        "value": "150ms",
-        "purpose": "Hover, active, focus-adjacent, and small control state changes."
+        "name": "navigation-underline",
+        "value": "160ms ease",
+        "purpose": "Reveals the teal link underline on header hover or keyboard focus."
       },
       {
-        "name": "motion-medium",
-        "value": "280ms",
-        "purpose": "Mobile navigation expansion and larger UI state changes."
+        "name": "guide-progress",
+        "value": "280ms ease",
+        "purpose": "Advances the field guide's teal progress line as the active evidence chapter changes."
       },
       {
-        "name": "camera-glyph-turn",
-        "value": "460ms cubic-bezier(.16,1,.3,1)",
-        "purpose": "Rotates the reusable camera rig to its registered pose."
-      },
-      {
-        "name": "camera-register",
-        "value": "420ms cubic-bezier(.16,1,.3,1)",
-        "purpose": "Registers a newly selected project, capability, proof, or resume panel."
-      },
-      {
-        "name": "chapter-register",
-        "value": "520ms cubic-bezier(.16,1,.3,1)",
-        "purpose": "Alternating transform and clip reveal for a chapter observation field."
-      },
-      {
-        "name": "journey-progress",
-        "value": "520ms cubic-bezier(.16,1,.3,1)",
-        "purpose": "Advances the registered-camera progress path."
-      },
-      {
-        "name": "spatial-drift",
-        "value": "480ms cubic-bezier(.2,.8,.2,1)",
-        "purpose": "Gentle pointer-responsive movement of the desktop spatial field."
+        "name": "backdrop-register",
+        "value": "220ms ease-out",
+        "purpose": "Introduces the assistant or Effects Lab modal backdrop."
       },
       {
         "name": "panel-register",
         "value": "420ms cubic-bezier(.16,1,.3,1)",
-        "purpose": "Directional assistant and Effects Lab drawer entry."
+        "purpose": "Moves a temporary assistant or Effects Lab drawer in from the left."
       },
       {
-        "name": "reduced-motion-state",
-        "value": "120ms color, background-color, border-color, outline-color",
-        "purpose": "Reduced-motion fallback; removes transform and decorative animation."
+        "name": "reduced-motion",
+        "value": "0.01ms; 1 iteration",
+        "purpose": "Collapses transitions and animations while preserving complete static content and state."
       }
     ],
     "breakpoints": [
       {
-        "name": "journey-readout",
-        "value": "1300px"
-      },
-      {
         "name": "compact-desktop",
-        "value": "1100px"
+        "value": "1180px"
       },
       {
-        "name": "tablet-nav",
+        "name": "single-column-guide",
+        "value": "920px"
+      },
+      {
+        "name": "desktop-tool-docks",
         "value": "860px"
       },
       {
-        "name": "mobile",
-        "value": "640px"
+        "name": "mobile-ledgers",
+        "value": "680px"
       },
       {
-        "name": "narrow-mobile",
-        "value": "380px"
+        "name": "minimum-supported",
+        "value": "320px"
       }
     ]
   },
   "components": [
     {
-      "name": "Build Primary Button",
+      "name": "Primary Evidence Action",
       "kind": "button",
-      "refersTo": "button-primary-build",
-      "description": "Primary action in the default Build lens.",
-      "html": "<button class=\"ds-btn-primary\">View selected work</button>",
-      "css": ".ds-btn-primary { display:inline-flex; min-height:2.9rem; align-items:center; justify-content:center; padding:.68rem 1rem; border:1px solid var(--teal-deep, #0b514c); border-radius:var(--radius-sm, .2rem); background:var(--teal-deep, #0b514c); color:#fff; font-family:var(--font-sans, Archivo, sans-serif); font-size:.82rem; font-weight:720; cursor:pointer; transition:transform var(--motion-fast, 150ms), background var(--motion-fast, 150ms), color var(--motion-fast, 150ms); } .ds-btn-primary:hover { transform:translateY(-2px); } .ds-btn-primary:focus-visible { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; } .ds-btn-primary:active { transform:translateY(0); }"
+      "refersTo": "action-primary",
+      "description": "Graphite hero action for moving directly to selected engineering work.",
+      "html": "<a class=\"ds-action-primary\" href=\"#work\">View selected work</a>",
+      "css": ".ds-action-primary { display:inline-flex; min-height:3rem; align-items:center; justify-content:center; padding:.8rem 1.05rem; border:1px solid var(--field-ink,#111816); border-radius:0; background:var(--field-ink,#111816); color:var(--field-paper,#fff); font-family:Archivo,Arial,sans-serif; font-size:.84rem; font-weight:680; text-decoration:none; cursor:pointer; } .ds-action-primary:hover { background:var(--field-teal-dark,#07544f); color:var(--field-paper,#fff); } .ds-action-primary:focus-visible { outline:3px solid #df9f2f; outline-offset:3px; } .ds-action-primary:active { background:var(--field-ink,#111816); }"
     },
     {
-      "name": "Secondary Button",
+      "name": "Secondary Evidence Action",
       "kind": "button",
-      "refersTo": "button-secondary",
-      "description": "Paper-toned companion action for downloads and adjacent routes.",
-      "html": "<button class=\"ds-btn-secondary\">Download resume</button>",
-      "css": ".ds-btn-secondary { display:inline-flex; min-height:2.9rem; align-items:center; justify-content:center; padding:.68rem 1rem; border:1px solid var(--rule-strong, rgba(23,38,36,.34)); border-radius:var(--radius-sm, .2rem); background:rgba(255,255,255,.35); color:var(--ink, #172624); font-family:var(--font-sans, Archivo, sans-serif); font-size:.82rem; font-weight:720; cursor:pointer; transition:transform var(--motion-fast, 150ms), background var(--motion-fast, 150ms); } .ds-btn-secondary:hover { transform:translateY(-2px); background:var(--paper-raised, #fbf8f1); } .ds-btn-secondary:focus-visible { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; } .ds-btn-secondary:active { transform:translateY(0); }"
+      "refersTo": "action-secondary",
+      "description": "White companion action for the general resume and equivalent explicit routes.",
+      "html": "<a class=\"ds-action-secondary\" href=\"#resume\">Download résumé</a>",
+      "css": ".ds-action-secondary { display:inline-flex; min-height:3rem; align-items:center; justify-content:center; padding:.8rem 1.05rem; border:1px solid var(--field-ink,#111816); border-radius:0; background:var(--field-paper,#fff); color:var(--field-ink,#111816); font-family:Archivo,Arial,sans-serif; font-size:.84rem; font-weight:680; text-decoration:none; cursor:pointer; } .ds-action-secondary:hover { color:var(--field-teal-dark,#07544f); } .ds-action-secondary:focus-visible { outline:3px solid #df9f2f; outline-offset:3px; } .ds-action-secondary:active { background:var(--field-soft,#f5f8f7); }"
     },
     {
-      "name": "Quiet Button",
-      "kind": "button",
-      "refersTo": "button-quiet",
-      "description": "Underlined action used for the assistant and adjacent optional tools.",
-      "html": "<button class=\"ds-btn-quiet\">Ask this portfolio</button>",
-      "css": ".ds-btn-quiet { display:inline-flex; min-height:2.9rem; align-items:center; justify-content:center; padding:.68rem 1rem; border:1px solid transparent; border-radius:var(--radius-sm, .2rem); background:transparent; color:var(--ink, #172624); font-family:var(--font-sans, Archivo, sans-serif); font-size:.82rem; font-weight:720; text-decoration:underline; text-underline-offset:.22em; cursor:pointer; transition:color var(--motion-fast, 150ms), transform var(--motion-fast, 150ms); } .ds-btn-quiet:hover { color:var(--teal-deep, #0b514c); transform:translateY(-2px); } .ds-btn-quiet:focus-visible { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; } .ds-btn-quiet:active { transform:translateY(0); }"
-    },
-    {
-      "name": "Build / Secure Lens Switch",
-      "kind": "custom",
-      "refersTo": "lens-option-active",
-      "description": "Explicit two-way content lens; the selected segment is ink-filled and state is announced with aria-pressed.",
-      "html": "<div class=\"ds-lens-switch\" aria-label=\"Portfolio lens\"><button class=\"ds-lens-option is-active\" aria-pressed=\"true\">Build lens</button><button class=\"ds-lens-option\" aria-pressed=\"false\">Secure lens</button></div>",
-      "css": ".ds-lens-switch { display:inline-flex; padding:.2rem; border:1px solid var(--rule-strong, rgba(23,38,36,.34)); background:rgba(255,255,255,.28); } .ds-lens-option { min-height:2.25rem; padding:.4rem .58rem; border:0; background:transparent; color:var(--muted, #56635f); font-family:var(--font-sans, Archivo, sans-serif); font-size:.72rem; font-weight:700; cursor:pointer; } .ds-lens-option.is-active { background:var(--ink, #172624); color:var(--paper, #f4f0e6); } .ds-lens-option:hover:not(.is-active) { color:var(--teal-deep, #0b514c); } .ds-lens-option:focus-visible { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; }"
-    },
-    {
-      "name": "Camera Journey Rail",
-      "kind": "nav",
-      "description": "Seven-stage portfolio orientation with a visible progress path, registered camera poses, and an exposed active label.",
-      "html": "<nav class=\"ds-journey\" aria-label=\"Camera journey through the portfolio\"><ol><li><a href=\"#home\"><svg viewBox=\"0 0 52 34\" aria-hidden=\"true\"><path d=\"M19 17 48 4v26Z\"/><rect x=\"4\" y=\"8\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"15\" cy=\"17\" r=\"4.2\"/></svg><span>Overview</span></a></li><li class=\"is-active\"><a href=\"#projects\" aria-current=\"location\"><svg viewBox=\"0 0 52 34\" aria-hidden=\"true\"><path d=\"M19 17 48 4v26Z\"/><rect x=\"4\" y=\"8\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"15\" cy=\"17\" r=\"4.2\"/></svg><span>Selected work</span></a></li><li><a href=\"#domains\"><svg viewBox=\"0 0 52 34\" aria-hidden=\"true\"><path d=\"M19 17 48 4v26Z\"/><rect x=\"4\" y=\"8\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"15\" cy=\"17\" r=\"4.2\"/></svg><span>Capabilities</span></a></li></ol></nav>",
-      "css": ".ds-journey { width:12rem; color:var(--ink, #172624); } .ds-journey ol { position:relative; display:grid; gap:.18rem; margin:0; padding:.35rem 0; list-style:none; } .ds-journey ol::before { position:absolute; top:1.35rem; bottom:1.35rem; left:1.55rem; width:1px; background:var(--rule-strong, rgba(23,38,36,.34)); content:''; } .ds-journey a { position:relative; display:grid; min-height:3.1rem; grid-template-columns:3.1rem 1fr; align-items:center; border:1px solid transparent; color:var(--muted, #56635f); text-decoration:none; } .ds-journey svg { z-index:1; width:2.35rem; margin:auto; overflow:visible; } .ds-journey svg path { fill:rgba(22,122,114,.08); stroke:currentColor; } .ds-journey svg rect { fill:var(--paper-raised, #fbf8f1); stroke:currentColor; } .ds-journey svg circle { fill:var(--teal, #167a72); stroke:currentColor; } .ds-journey span { font-family:var(--font-mono, 'IBM Plex Mono', monospace); font-size:.61rem; } .ds-journey .is-active a { border-color:var(--teal-deep, #0b514c); background:var(--paper-raised, #fbf8f1); box-shadow:0 8px 24px rgba(23,38,36,.12); color:var(--teal-deep, #0b514c); } .ds-journey a:hover { color:var(--teal-deep, #0b514c); } .ds-journey a:focus-visible { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; }"
-    },
-    {
-      "name": "Active Filter Chip",
+      "name": "Active Project Filter",
       "kind": "chip",
       "refersTo": "filter-chip-active",
-      "description": "Square evidence filter that communicates state with fill, border, text, and aria-pressed.",
-      "html": "<button class=\"ds-filter-chip\" aria-pressed=\"true\">Systems <span>08</span></button>",
-      "css": ".ds-filter-chip { min-height:2.55rem; padding:.5rem .7rem; border:1px solid var(--teal-deep, #0b514c); background:rgba(22,122,114,.1); color:var(--teal-deep, #0b514c); font-family:var(--font-sans, Archivo, sans-serif); font-size:.72rem; font-weight:650; cursor:pointer; } .ds-filter-chip span { margin-left:.25rem; font-family:var(--font-mono, 'IBM Plex Mono', monospace); font-size:.58rem; } .ds-filter-chip:hover { background:rgba(22,122,114,.16); } .ds-filter-chip:focus-visible { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; } .ds-filter-chip:active { background:rgba(22,122,114,.22); }"
+      "description": "Square, explicitly pressed domain filter for the complete project archive.",
+      "html": "<button class=\"ds-filter-chip\" type=\"button\" aria-pressed=\"true\">All 29</button>",
+      "css": ".ds-filter-chip { min-height:2.5rem; padding:.55rem .72rem; border:1px solid var(--field-teal-dark,#07544f); border-radius:0; background:var(--field-teal-dark,#07544f); color:var(--field-paper,#fff); font-family:Archivo,Arial,sans-serif; font-size:.71rem; cursor:pointer; } .ds-filter-chip:hover { background:var(--field-teal,#0b7169); } .ds-filter-chip:focus-visible { outline:3px solid #df9f2f; outline-offset:3px; } .ds-filter-chip:active { background:var(--field-ink,#111816); }"
     },
     {
-      "name": "Search Field",
+      "name": "Project Search Field",
       "kind": "input",
-      "refersTo": "field-input",
-      "description": "Square raised-paper field with a small mono label and visible signal focus.",
-      "html": "<label class=\"ds-field\"><span>Search field notes</span><input type=\"search\" placeholder=\"Methods, projects, evidence…\"></label>",
-      "css": ".ds-field { display:grid; gap:.4rem; max-width:35rem; color:var(--muted, #56635f); font-family:var(--font-mono, 'IBM Plex Mono', monospace); font-size:.67rem; font-weight:600; text-transform:uppercase; } .ds-field input { width:100%; min-height:3rem; padding:.65rem .8rem; border:1px solid var(--rule-strong, rgba(23,38,36,.34)); border-radius:0; background:var(--paper-raised, #fbf8f1); color:var(--ink, #172624); font-family:var(--font-sans, Archivo, sans-serif); font-size:1rem; text-transform:none; } .ds-field input:hover { border-color:var(--ink-soft, #31413e); } .ds-field input:focus-visible { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; }"
+      "refersTo": "search-field",
+      "description": "Square white search input paired with an instrument-style label.",
+      "html": "<label class=\"ds-search\"><span>Search by project, method, or domain</span><input type=\"search\" placeholder=\"Try CP-SAT, RAG, security, geometry…\"></label>",
+      "css": ".ds-search { display:grid; grid-template-columns:minmax(11rem,.35fr) minmax(0,.65fr); gap:1rem; align-items:center; color:var(--field-muted,#53605d); font-family:'IBM Plex Mono',monospace; font-size:.67rem; text-transform:uppercase; } .ds-search input { min-height:2.8rem; padding:.65rem .8rem; border:1px solid var(--field-rule-strong,#aebbb8); border-radius:0; background:var(--field-paper,#fff); color:var(--field-ink,#111816); font-family:Archivo,Arial,sans-serif; font-size:.9rem; text-transform:none; } .ds-search input:hover { border-color:var(--field-ink,#111816); } .ds-search input:focus-visible { outline:3px solid #df9f2f; outline-offset:3px; }"
     },
     {
-      "name": "Evidence Cell",
+      "name": "Selected Work Ledger",
       "kind": "card",
-      "refersTo": "evidence-cell",
-      "description": "Flat ruled cell for contribution, method, result, or proof context.",
-      "html": "<dl class=\"ds-evidence\"><div><dt>Technical approach</dt><dd>Discrete simulation, constraint modeling, and decision-ready schedule generation.</dd></div></dl>",
-      "css": ".ds-evidence { margin:0; border:1px solid var(--rule, rgba(23,38,36,.18)); background:var(--rule, rgba(23,38,36,.18)); } .ds-evidence div { padding:.85rem; background:var(--paper, #f4f0e6); } .ds-evidence dt { color:var(--faint, #626e6a); font-family:var(--font-mono, 'IBM Plex Mono', monospace); font-size:.62rem; text-transform:uppercase; } .ds-evidence dd { margin:.4rem 0 0; color:var(--ink-soft, #31413e); font-family:var(--font-sans, Archivo, sans-serif); font-size:.83rem; line-height:1.55; } .ds-evidence:hover { border-color:var(--rule-strong, rgba(23,38,36,.34)); } .ds-evidence:focus-within { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; }"
+      "description": "Representative evidence record with index, contribution, approach, outcome, and methods in one ruled row.",
+      "html": "<article class=\"ds-work-row\"><div class=\"ds-work-index\"><span>01</span><span>Operations research</span><time>2026</time></div><div class=\"ds-work-body\"><h3>Hybrid Flow Shop Digital Twin Optimizer</h3><p>A professional manufacturing scheduling problem with real operating complexity.</p><dl><div><dt>Contribution</dt><dd>Built the production model, optimization workflow, and validation outputs.</dd></div><div><dt>Approach</dt><dd>Discrete-event simulation, CP-SAT, and robust optimization.</dd></div><div><dt>Outcome</dt><dd>A decision-ready workflow with confidential details abstracted.</dd></div></dl><p class=\"ds-methods\">Python / SimPy / CP-SAT</p></div></article>",
+      "css": ".ds-work-row { display:grid; grid-template-columns:7rem minmax(0,1fr); gap:2rem; padding:2.4rem 0; border-top:1px solid var(--field-ink,#111816); border-bottom:1px solid var(--field-rule,#d9e0de); background:var(--field-paper,#fff); color:var(--field-ink,#111816); } .ds-work-index { display:flex; flex-direction:column; gap:.55rem; color:var(--field-muted,#53605d); font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.065em; line-height:1.5; text-transform:uppercase; } .ds-work-index span:first-child { color:var(--field-teal,#0b7169); font-size:1rem; } .ds-work-body h3 { margin:0; font-family:Archivo,Arial,sans-serif; font-size:1.55rem; line-height:1.18; letter-spacing:-.03em; } .ds-work-body>p { color:#3c4845; font-family:Archivo,Arial,sans-serif; line-height:1.65; } .ds-work-body dl { display:grid; gap:.7rem; margin:1.25rem 0; } .ds-work-body dl div { display:grid; grid-template-columns:6.5rem 1fr; gap:1rem; } .ds-work-body dt { color:var(--field-muted,#53605d); font-family:'IBM Plex Mono',monospace; font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; } .ds-work-body dd { margin:0; color:#273330; font-family:Archivo,Arial,sans-serif; font-size:.9rem; line-height:1.55; } .ds-work-body .ds-methods { color:var(--field-teal-dark,#07544f); font-family:'IBM Plex Mono',monospace; font-size:.66rem; } .ds-work-row:focus-within { outline:3px solid #df9f2f; outline-offset:3px; }"
     },
     {
-      "name": "Active Camera Selector",
+      "name": "Technical Lab Tabs",
       "kind": "custom",
-      "refersTo": "camera-selector-active",
-      "description": "Selected work, capability, proof, or resume viewpoint with CameraGlyph, title, compact metadata, and aria-selected state.",
-      "html": "<button class=\"ds-camera-selector\" role=\"tab\" aria-selected=\"true\"><svg viewBox=\"0 0 52 34\" aria-hidden=\"true\"><g><path d=\"M19 17 48 4v26Z\"/><rect x=\"4\" y=\"8\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"15\" cy=\"17\" r=\"4.2\"/><path class=\"ds-axis\" d=\"M15 17h28M15 17V2\"/></g></svg><span>Constraint scheduling system</span><small>Registered view 02</small></button>",
-      "css": ".ds-camera-selector { display:grid; width:17rem; min-height:5rem; grid-template-columns:2.8rem 1fr; align-items:center; gap:.1rem .55rem; padding:.65rem .75rem; border:1px solid var(--rule-strong, rgba(23,38,36,.34)); background:var(--ink, #172624); color:var(--paper, #f4f0e6); cursor:pointer; text-align:left; } .ds-camera-selector svg { grid-row:1/3; width:2.5rem; overflow:visible; } .ds-camera-selector svg path:first-child { fill:rgba(244,240,230,.08); stroke:currentColor; } .ds-camera-selector svg rect { fill:var(--paper-raised, #fbf8f1); stroke:currentColor; } .ds-camera-selector svg circle { fill:var(--teal, #167a72); stroke:currentColor; } .ds-camera-selector .ds-axis { fill:none; stroke:currentColor; stroke-dasharray:2 3; opacity:.58; } .ds-camera-selector span { font-family:var(--font-sans, Archivo, sans-serif); font-size:.72rem; font-weight:720; line-height:1.2; } .ds-camera-selector small { font-family:var(--font-mono, 'IBM Plex Mono', monospace); font-size:.54rem; } .ds-camera-selector:hover { color:#fff; } .ds-camera-selector:focus-visible { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; }"
+      "refersTo": "lab-tab-active",
+      "description": "Four-layer instrument selector for the synthetic calibration study.",
+      "html": "<div class=\"ds-lab-tabs\" role=\"tablist\" aria-label=\"Technical study layers\"><button role=\"tab\" aria-selected=\"true\"><span>RGB</span><small>THREE.JS RENDER</small></button><button role=\"tab\" aria-selected=\"false\"><span>Objects</span><small>OPENCV DETECTOR</small></button><button role=\"tab\" aria-selected=\"false\"><span>Segments</span><small>HSV MASK</small></button><button role=\"tab\" aria-selected=\"false\"><span>Dense field</span><small>OPTICAL FLOW</small></button></div>",
+      "css": ".ds-lab-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border:1px solid var(--field-rule-strong,#aebbb8); background:var(--field-soft,#f5f8f7); } .ds-lab-tabs button { display:grid; min-height:4rem; gap:.2rem; align-content:center; padding:.55rem .72rem; border:0; border-right:1px solid var(--field-rule,#d9e0de); border-radius:0; background:var(--field-paper,#fff); color:#384440; font-family:Archivo,Arial,sans-serif; font-size:.71rem; text-align:left; cursor:pointer; } .ds-lab-tabs button:last-child { border-right:0; } .ds-lab-tabs small { color:var(--field-muted,#53605d); font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.065em; line-height:1.5; text-transform:uppercase; } .ds-lab-tabs button[aria-selected=true] { background:var(--field-teal-dark,#07544f); color:var(--field-paper,#fff); } .ds-lab-tabs button[aria-selected=true] small { color:#d7f4f0; } .ds-lab-tabs button:hover:not([aria-selected=true]) { color:var(--field-teal-dark,#07544f); } .ds-lab-tabs button:focus-visible { outline:3px solid #df9f2f; outline-offset:-4px; }"
     },
     {
-      "name": "Spatial Field Diagram",
+      "name": "Portfolio Header",
+      "kind": "nav",
+      "description": "Sticky white laboratory header with compact identity, centered evidence links, and a Spatial World launcher.",
+      "html": "<header class=\"ds-header\"><a class=\"ds-mark\" href=\"#home\">RM <span>/ SYSTEMS</span></a><nav aria-label=\"Portfolio sections\"><a href=\"#work\">Work</a><a href=\"#experience\">Experience</a><a href=\"#all-work\">Projects</a><a href=\"#technical-lab\">Technical Lab</a><a href=\"#proof\">Proof</a></nav><button type=\"button\">Spatial World</button></header>",
+      "css": ".ds-header { display:grid; min-height:4.75rem; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; padding:0 1rem; border-bottom:1px solid var(--field-rule-strong,#aebbb8); background:rgba(255,255,255,.94); color:var(--field-ink,#111816); font-family:Archivo,Arial,sans-serif; backdrop-filter:blur(10px); } .ds-mark { display:inline-flex; gap:.55rem; align-items:baseline; color:inherit; font-weight:750; letter-spacing:-.03em; text-decoration:none; } .ds-mark span { color:var(--field-teal,#0b7169); font-family:'IBM Plex Mono',monospace; font-size:.67rem; font-weight:500; letter-spacing:.08em; } .ds-header nav { display:flex; justify-content:center; gap:1.25rem; } .ds-header nav a { position:relative; padding:.7rem 0; color:#34403d; font-size:.74rem; font-weight:650; text-decoration:none; } .ds-header nav a::after { position:absolute; right:0; bottom:.4rem; left:0; height:2px; background:var(--field-teal,#0b7169); content:''; transform:scaleX(0); transform-origin:left; transition:transform 160ms ease; } .ds-header nav a:hover::after,.ds-header nav a:focus-visible::after { transform:scaleX(1); } .ds-header button { min-height:2.6rem; padding:.65rem .9rem; border:1px solid var(--field-ink,#111816); border-radius:0; background:transparent; color:var(--field-ink,#111816); font-family:'IBM Plex Mono',monospace; font-size:.66rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; } .ds-header button:hover { background:var(--field-ink,#111816); color:var(--field-paper,#fff); } .ds-header a:focus-visible,.ds-header button:focus-visible { outline:3px solid #df9f2f; outline-offset:3px; }"
+    },
+    {
+      "name": "Desktop Optional Tool Docks",
       "kind": "custom",
-      "description": "Localization-inspired visual bridge using a pose path, landmarks, uncertainty, and reconstruction geometry.",
-      "html": "<figure class=\"ds-spatial-field\"><div><span>BUILD LENS / SYSTEM MAP</span><span>σ = uncertainty</span></div><svg viewBox=\"0 0 420 180\" role=\"img\" aria-label=\"Diagram connecting perception, optimization, and deployment\"><path class=\"ds-grid\" d=\"M0 45H420M0 90H420M0 135H420M70 0V180M140 0V180M210 0V180M280 0V180M350 0V180\"/><ellipse class=\"ds-uncertainty\" cx=\"105\" cy=\"118\" rx=\"38\" ry=\"18\"/><path class=\"ds-path\" d=\"M30 150 C90 150 75 75 145 100 S220 45 275 94 S350 122 392 38\"/><g class=\"ds-landmarks\"><circle cx=\"72\" cy=\"48\" r=\"4\"/><circle cx=\"165\" cy=\"62\" r=\"4\"/><circle cx=\"250\" cy=\"44\" r=\"4\"/><circle cx=\"340\" cy=\"70\" r=\"4\"/></g><path class=\"ds-frustum\" d=\"M300 122l28-22 20 25-26 20z\"/></svg><figcaption>Perception → uncertainty → optimization → deployed systems.</figcaption></figure>",
-      "css": ".ds-spatial-field { margin:0; border:1px solid var(--rule-strong, rgba(23,38,36,.34)); background:rgba(251,248,241,.65); box-shadow:0 18px 54px rgba(33,43,39,.11); color:var(--muted, #56635f); transition:transform 480ms cubic-bezier(.2,.8,.2,1); } .ds-spatial-field > div { display:flex; justify-content:space-between; padding:.58rem .7rem; border-bottom:1px solid var(--rule, rgba(23,38,36,.18)); font-family:var(--font-mono, 'IBM Plex Mono', monospace); font-size:.56rem; } .ds-spatial-field svg { display:block; width:100%; } .ds-grid { fill:none; stroke:rgba(23,38,36,.08); } .ds-path { fill:none; stroke:var(--ink, #172624); stroke-width:2; } .ds-uncertainty { fill:rgba(22,122,114,.1); stroke:var(--teal, #167a72); stroke-width:1.2; stroke-dasharray:4 3; } .ds-landmarks { fill:var(--teal, #167a72); } .ds-frustum { fill:rgba(116,89,133,.07); stroke:var(--violet, #745985); stroke-width:1.4; } .ds-spatial-field figcaption { padding:.75rem; border-top:1px solid var(--rule, rgba(23,38,36,.18)); font-family:var(--font-mono, 'IBM Plex Mono', monospace); font-size:.64rem; } .ds-spatial-field:hover { transform:translateY(-2px); } .ds-spatial-field:focus-within { outline:3px solid color-mix(in srgb, var(--teal, #167a72) 68%, white); outline-offset:3px; }"
+      "refersTo": "desktop-tool-dock",
+      "description": "Shadowless AI and FX launchers kept in the lower-right desktop corner.",
+      "html": "<div class=\"ds-tool-docks\" aria-label=\"Optional portfolio tools\"><button type=\"button\"><span>AI</span><span>Ask portfolio</span></button><button type=\"button\"><span>FX</span><span>Effects lab</span></button></div>",
+      "css": ".ds-tool-docks { display:flex; gap:.75rem; align-items:flex-end; justify-content:flex-end; padding:2.25rem .25rem .25rem; } .ds-tool-docks button { position:relative; display:grid; width:3.25rem; min-width:3.25rem; height:3.25rem; place-items:center; padding:0; border:1px solid var(--field-ink,#111816); border-radius:0; background:var(--field-paper,#fff); box-shadow:none; color:var(--field-ink,#111816); cursor:pointer; } .ds-tool-docks button span:first-child { color:var(--field-teal-dark,#07544f); font-family:'IBM Plex Mono',monospace; font-size:.7rem; font-weight:700; } .ds-tool-docks button span:last-child { position:absolute; right:0; bottom:calc(100% + .5rem); width:max-content; padding:.32rem .48rem; transform:translateY(.3rem); border:1px solid var(--field-rule,#d9e0de); background:var(--field-paper,#fff); box-shadow:0 8px 24px rgba(23,38,36,.1); opacity:0; color:var(--field-ink,#111816); font-family:Archivo,Arial,sans-serif; font-size:.64rem; pointer-events:none; transition:transform 150ms,opacity 150ms; } .ds-tool-docks button:hover span:last-child,.ds-tool-docks button:focus-visible span:last-child { transform:translateY(0); opacity:1; } .ds-tool-docks button:focus-visible { outline:3px solid #df9f2f; outline-offset:3px; } .ds-tool-docks button:active { background:var(--field-soft,#f5f8f7); }"
+    },
+    {
+      "name": "Field Engineer Guide Stage",
+      "kind": "custom",
+      "description": "Supporting graphite-and-teal calibration stage with chapter readout, survey path, and restrained progress.",
+      "html": "<figure class=\"ds-guide\"><figcaption><span>FIELD 03 / PROJECTS</span><strong>Inspecting the complete evidence archive</strong></figcaption><svg viewBox=\"0 0 280 430\" role=\"img\" aria-label=\"Abstract graphite field engineer following a teal survey path\"><path class=\"ds-guide-grid\" d=\"M0 72H280M0 144H280M0 216H280M0 288H280M0 360H280M140 0V430\"/><path class=\"ds-guide-path\" d=\"M38 384C58 315 210 320 197 224S85 150 122 74\"/><g class=\"ds-guide-person\"><circle cx=\"151\" cy=\"182\" r=\"18\"/><rect x=\"128\" y=\"201\" width=\"46\" height=\"75\"/><path d=\"M129 220L102 276M173 220L196 276M140 274L126 342M163 274L179 342\"/><rect class=\"ds-guide-signal\" x=\"151\" y=\"216\" width=\"10\" height=\"18\"/></g></svg><div class=\"ds-guide-progress\"><span></span></div></figure>",
+      "css": ".ds-guide { position:relative; width:18rem; height:32rem; margin:0; overflow:hidden; border-left:1px solid var(--field-rule,#d9e0de); background:repeating-linear-gradient(0deg,transparent 0 3.75rem,rgba(217,224,222,.4) 3.75rem calc(3.75rem + 1px)); color:var(--field-ink,#111816); } .ds-guide figcaption { position:absolute; z-index:2; top:1.1rem; left:1.25rem; display:grid; max-width:15rem; gap:.45rem; } .ds-guide figcaption span { color:var(--field-muted,#53605d); font-family:'IBM Plex Mono',monospace; font-size:.68rem; font-weight:500; letter-spacing:.065em; text-transform:uppercase; } .ds-guide figcaption strong { font-family:Archivo,Arial,sans-serif; font-size:.86rem; font-weight:620; line-height:1.45; } .ds-guide svg { display:block; width:100%; height:100%; } .ds-guide-grid { fill:none; stroke:rgba(174,187,184,.36); } .ds-guide-path { fill:none; stroke:var(--field-teal,#0b7169); stroke-width:2; } .ds-guide-person { fill:var(--field-ink,#111816); stroke:var(--field-ink,#111816); stroke-width:8; stroke-linecap:square; } .ds-guide-person circle { stroke-width:0; } .ds-guide-signal { fill:var(--field-teal,#0b7169); stroke-width:0; } .ds-guide-progress { position:absolute; right:1.25rem; bottom:1.5rem; left:1.25rem; height:2px; background:var(--field-rule,#d9e0de); } .ds-guide-progress span { display:block; width:72%; height:100%; background:var(--field-teal,#0b7169); transition:width 280ms ease; } .ds-guide:focus-within { outline:3px solid #df9f2f; outline-offset:-4px; }"
     }
   ],
   "narrative": {
-    "northStar": "The Calibrated Multi-Camera Survey",
-    "overview": "The portfolio is a code-led survey of one engineering practice from a sequence of deliberately registered viewpoints. It retains the warmth and truthfulness of a laboratory field notebook, but the governing composition is no longer one continuous ledger: Overview, Selected Work, Capabilities, Journey, Proof, Résumés, and Contact are distinct observation fields connected by a visible camera path. Each chapter controls its own paper tint, camera pose, registration label, sparse observations, and active evidence panel. Visual seed `4293f8f6` remains the reproducibility anchor for this world.\n\nThe first viewport states Rahul's positioning and explicit actions on the left, localizes that claim through the spatial field on the right, and keeps the camera journey subordinate. Real projects, contributions, distinctions, dates, résumé files, and contact paths remain the primary material. Camera frustums, sparse points, pose paths, reconstruction marks, and uncertainty contours explain how the evidence is observed; they never upgrade an interest or academic foundation into unsupported professional robotics, SLAM, localization, mapping, or Gaussian-splatting delivery.\n\nBuild and Secure are semantic lenses over the same world. Build teal or Secure coral owns active state and emphasis, while optimization amber and reconstruction violet keep stable technical meanings. The assistant, Effects Lab, and Spatial World are opt-in depth layers opened from explicit inline hero launchers. Above 860px, the assistant and Effects Lab also remain persistently available as a compact lower-right corner pair; below that breakpoint, the pair disappears and the inline launchers preserve access without covering the survey.",
+    "northStar": "Continuous Field Test",
+    "overview": "The portfolio is a clean white laboratory record of an engineer making intelligent systems operational. It reads as one continuous field test under visual seed `4d83e73b`: Rahul's positioning, experience, selected systems, complete project archive, technical study, capabilities, proof, résumés, and contact path remain stationary, explicit, and easy to inspect. Near-black type and fine rules establish authority; restrained teal marks navigation, methods, state, and verification.\n\nThe graphite-and-teal field engineer is a supporting guide, not the subject. On wide screens it occupies a sticky calibration stage beside the evidence and advances gently with the reader's scroll. On constrained devices it becomes a static poster after the first-view facts, so mobile always presents Rahul's claim and actions first. Sparse amber and violet belong to focus, survey stations, reconstruction, and other technical annotations; they do not become decorative themes or unsupported experience claims.\n\nThe interface has one evidence model and no Build/Secure lenses. The assistant, Effects Lab, and Spatial World are optional depth layers: fixed AI and FX controls are desktop-only, while mobile exposes AI, FX, and Spatial World inside the header menu. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.",
     "keyCharacteristics": [
-      "Seven registered camera stages connected by a fixed desktop rail or sticky horizontal responsive rail.",
-      "Warm laboratory paper, chapter-specific tinted neutrals, dark green-black ink, and sparse technical signals.",
-      "Archivo for claims and reading; IBM Plex Mono for frames, coordinates, counts, methods, dates, and state.",
-      "One active work, capability, proof, or résumé view at a time, with the complete factual archive still searchable.",
-      "CameraGlyph frustums, registration geometry, ruled selectors, and bounded observation panels instead of generic cards.",
-      "Restrained one-shot registration motion that is completely removed under reduced-motion preference."
+      "White laboratory field with near-black editorial typography and hairline ledger rules.",
+      "Real experience, projects, outcomes, proof, and résumé links dominate every section.",
+      "A persistent desktop evidence-and-guide split that collapses to an evidence-first mobile column.",
+      "Archivo for claims and reading; IBM Plex Mono for methods, dates, counts, readouts, and state.",
+      "Square controls and ruled rows instead of floating cards, pills, or dashboard chrome.",
+      "Optional spatial and generative tools remain clearly labeled, accessible, and subordinate."
     ],
     "rules": [
       {
-        "name": "The Lens Is a Semantic Switch Rule",
-        "body": "Build teal and Secure coral may exchange accent ownership; amber and violet keep their technical meanings, and content priority changes without removing evidence.",
+        "name": "The Evidence Owns the Page Rule",
+        "body": "White and graphite carry the page; color supports navigation, state, technical meaning, and focus.",
         "section": "colors"
       },
       {
-        "name": "The Registered Field Rule",
-        "body": "Chapter tints distinguish viewpoints without turning the portfolio into disconnected themes; every tint remains a restrained neutral sheet under the same ink and rule system.",
+        "name": "The Sparse Signal Rule",
+        "body": "Teal is restrained and amber or violet is rarer still. Never use any signal color as a large atmospheric wash or decorative gradient.",
         "section": "colors"
       },
       {
-        "name": "The Paper, Not White, Rule",
-        "body": "Laboratory paper is the default field; pure white is reserved for text on deep filled actions.",
+        "name": "The One Evidence Model Rule",
+        "body": "Do not reintroduce Build/Secure palettes, switches, or content lenses. Security evidence lives in the same hierarchy as every other discipline.",
         "section": "colors"
       },
       {
         "name": "The Two-Voice Rule",
-        "body": "Archivo makes claims and carries reading; IBM Plex Mono registers the evidence. Never set long explanatory paragraphs in mono.",
+        "body": "Archivo makes claims and carries the evidence; IBM Plex Mono measures and labels it. Never set long narrative paragraphs in mono.",
         "section": "typography"
       },
       {
-        "name": "The Registered View Rule",
-        "body": "Work, capability, proof, and résumé chapters show one active observation at a time; adjacent evidence belongs in an explicit selector, bounded archive, or search surface.",
+        "name": "The Claim Before Metadata Rule",
+        "body": "Large Archivo establishes what matters before small mono explains when, how, or where it was measured.",
+        "section": "typography"
+      },
+      {
+        "name": "The Continuous Evidence Rule",
+        "body": "Preserve the complete reading order and visible project archive; progressive interaction may filter or navigate evidence but must not hide the factual baseline.",
         "section": "layout"
       },
       {
-        "name": "The Journey Is Orientation Rule",
-        "body": "The camera rail explains position and progress. It stays visually subordinate to the hero claim and chapter evidence, never becoming game HUD chrome.",
+        "name": "The Guide Yields Rule",
+        "body": "The guide may own a dedicated desktop column, but it disappears before it can compress evidence below a comfortable reading width.",
         "section": "layout"
       },
       {
         "name": "The 320px Integrity Rule",
-        "body": "At the narrowest supported width, preserve the claim, active camera label, primary action, résumé path, assistant path, and optional-world links without overlap or horizontal scrolling.",
+        "body": "At the narrowest supported width, preserve the positioning claim, selected-work action, résumé path, optional-tool access, and every evidence record without overlap or horizontal scrolling.",
         "section": "layout"
       },
       {
-        "name": "The Flat-by-Default Rule",
-        "body": "Resting evidence uses tint, rules, clipping, and registration geometry; elevation appears only for localization, sticky state, active journey position, or a modal layer.",
+        "name": "The Flat Evidence Rule",
+        "body": "Project, experience, capability, proof, résumé, filter, and laboratory surfaces stay flat at rest; use rules and spacing before elevation.",
         "section": "elevation"
       },
       {
-        "name": "The Camera Must Observe Rule",
-        "body": "A camera glyph or frustum must identify a viewpoint, active selector, stage, or spatial relationship; never use it as an ornamental tech icon.",
+        "name": "The Modal Exception Rule",
+        "body": "Shadow is reserved for temporary layers that must separate from the reading surface, never for making ordinary content look clickable.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Ruled Ledger Rule",
+        "body": "Group evidence with shared top and bottom rules instead of rounding each record into an isolated card.",
         "section": "shapes"
       },
       {
-        "name": "The Signal Geometry Rule",
-        "body": "Curves and circles describe a person, observation, trajectory, uncertainty, or state; the editorial container system stays predominantly square.",
+        "name": "The Geometry Must Measure Rule",
+        "body": "Lines, diamonds, trajectories, points, and reconstruction marks must communicate a guide position, technical layer, measurement, or state—not generic technological decoration.",
         "section": "shapes"
       },
       {
-        "name": "The Optional Worlds Rule",
-        "body": "Assistant, effects, and Three.js experiences may deepen the portfolio, but no recruiter-critical fact, proof, résumé, or contact action may exist only inside them.",
+        "name": "The Optional Tools Rule",
+        "body": "Assistant, effects, and spatial experiences may deepen the portfolio, but no recruiter-critical fact, proof, résumé, or contact action may exist only inside them.",
+        "section": "components"
+      },
+      {
+        "name": "The Motion Never Competes Rule",
+        "body": "Motion may explain progress or temporary state; it must never loop around, move, blur, or delay reading content.",
         "section": "components"
       }
     ],
     "dos": [
-      "Do lead with the positioning claim, explicit actions, and real evidence before optional spectacle.",
-      "Do preserve the seven-stage story: position → selected system → capabilities → journey → proof → targeted résumé → contact.",
-      "Do use chapter tints, CameraGlyph poses, sparse observations, and frame labels to distinguish registered viewpoints.",
-      "Do keep one active work, capability, proof, or résumé panel visible while preserving searchable archives and clearly labeled selectors.",
-      "Do keep Journey concise at four default entries and keep Share Bench collapsed until requested.",
-      "Do maintain the compact desktop AI and FX docks as a lower-right corner pair, while retaining explicit inline launchers for every viewport.",
-      "Do preserve visible focus, semantic headings and landmarks, active-label exposure on mobile, 2.75rem coarse-pointer targets, readable contrast, and meaningful alt text.",
-      "Do remove registration, panel, camera, progress, spatial, and decorative motion under reduced-motion preference."
+      "Do lead with Rahul's positioning, explicit actions, current evidence, and real work.",
+      "Do preserve the continuous story: position → selected work → experience → all projects → technical lab → capabilities → proof → résumés → contact.",
+      "Do use white space, one-pixel rules, and typographic hierarchy to organize dense evidence.",
+      "Do keep teal restrained and reserve amber and violet for focus or technical annotation.",
+      "Do keep the field engineer in a supporting desktop guide role and use the static evidence-first fallback on constrained devices.",
+      "Do expose AI, FX, and Spatial World in the mobile header menu while keeping fixed AI and FX controls desktop-only.",
+      "Do preserve visible focus, semantic landmarks, keyboard-operable filters and tabs, truthful disclaimers, and the complete project archive.",
+      "Do make reduced motion a static, fully readable version of the same experience."
     ],
     "donts": [
-      "Don't collapse the chapters back into one long ledger or an equal-weight wall of cards.",
-      "Don't turn the camera journey into a dominant game HUD, sticky obstruction, or unlabeled row of mystery icons.",
-      "Don't use chapter tints as unrelated themes; they are calibrated neutrals inside one paper-and-ink world.",
-      "Don't turn robotics, localization, mapping, probabilistic reasoning, reconstruction, or Gaussian-splatting motifs into unsupported experience claims.",
-      "Don't replace the world with generic AI gradients, neon cyber styling, SaaS chrome, stock robots, or copied reference-site imagery and shapes.",
-      "Don't use IBM Plex Mono for long reading copy or let decorative numbering crowd essential mobile content.",
-      "Don't let animation, pointer precision, optional tools, or heavy rendering block the default reading and action path."
+      "Don't reintroduce Build/Secure lenses, lens-specific palettes, or lens-dependent evidence.",
+      "Don't convert the portfolio into warm notebook paper, tinted chapter themes, a camera-rail journey, or a wall of rounded cards.",
+      "Don't let the guide, generated media, optional tools, or Three.js occupy the evidence hierarchy.",
+      "Don't imply professional robotics, SLAM, localization, mapping, or Gaussian-splatting delivery from the technical motifs or synthetic study.",
+      "Don't use generic AI gradients, neon or glitch styling, game HUD chrome, stock robots, or meaningless equations.",
+      "Don't set long reading copy in IBM Plex Mono or use low-contrast microtype for essential information.",
+      "Don't let motion, pointer precision, WebGL, or optional panels gate reading, résumé access, proof, or contact."
     ]
   }
 }

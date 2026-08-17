@@ -1,337 +1,306 @@
 ---
 name: "Rahul Mitra Engineering Portfolio"
-description: "A calibrated multi-camera survey of an intelligent-systems engineer's work, capabilities, proof, and trajectory."
+description: "A continuous field test where real engineering evidence leads and spatial guidance stays supportive."
 colors:
-  paper: "#f4f0e6"
-  paper-deep: "#e8e2d4"
-  paper-raised: "#fbf8f1"
-  ink: "#172624"
-  ink-soft: "#31413e"
-  muted: "#56635f"
-  faint: "#626e6a"
-  rule: "rgba(23, 38, 36, 0.18)"
-  rule-strong: "rgba(23, 38, 36, 0.34)"
-  signal-teal: "#167a72"
-  signal-teal-deep: "#0b514c"
-  optimization-amber: "#955410"
-  optimization-amber-deep: "#8a5415"
-  reconstruction-violet: "#745985"
-  secure-coral: "#a34249"
-  secure-coral-deep: "#6f2931"
-  chapter-work: "#e4ece5"
-  chapter-domains: "#e9e5ef"
-  chapter-experience: "#eee6d7"
-  chapter-proof: "#f0e3df"
-  chapter-resumes: "#dfeae8"
-  white: "#ffffff"
+  field-paper: "#ffffff"
+  field-soft: "#f5f8f7"
+  field-ink: "#111816"
+  field-muted: "#53605d"
+  field-rule: "#d9e0de"
+  field-rule-strong: "#aebbb8"
+  field-teal: "#0b7169"
+  field-teal-dark: "#07544f"
+  field-amber: "#95590e"
+  field-violet: "#6650a4"
+  focus-amber: "#df9f2f"
 typography:
   display:
-    fontFamily: "Archivo, 'Segoe UI', sans-serif"
-    fontSize: "clamp(2.7rem, 4.4vw, 4.9rem)"
-    fontWeight: 740
-    lineHeight: 0.94
+    fontFamily: "Archivo, Arial, sans-serif"
+    fontSize: "clamp(3.7rem, 7vw, 6rem)"
+    fontWeight: 760
+    lineHeight: 0.9
     letterSpacing: "-0.04em"
   headline:
-    fontFamily: "Archivo, 'Segoe UI', sans-serif"
-    fontSize: "clamp(2.35rem, 5vw, 5.2rem)"
+    fontFamily: "Archivo, Arial, sans-serif"
+    fontSize: "clamp(2.35rem, 4.6vw, 4.7rem)"
     fontWeight: 720
-    lineHeight: 0.95
+    lineHeight: 0.98
     letterSpacing: "-0.04em"
   title:
-    fontFamily: "Archivo, 'Segoe UI', sans-serif"
-    fontSize: "clamp(1.35rem, 2.5vw, 2.35rem)"
-    fontWeight: 700
-    lineHeight: 1.08
-    letterSpacing: "-0.035em"
+    fontFamily: "Archivo, Arial, sans-serif"
+    fontSize: "clamp(1.25rem, 2vw, 1.72rem)"
+    fontWeight: 690
+    lineHeight: 1.18
+    letterSpacing: "-0.03em"
   body:
-    fontFamily: "Archivo, 'Segoe UI', sans-serif"
+    fontFamily: "Archivo, Arial, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.65
     letterSpacing: "normal"
   label:
-    fontFamily: "'IBM Plex Mono', Consolas, monospace"
-    fontSize: "0.67rem"
-    fontWeight: 600
+    fontFamily: "'IBM Plex Mono', monospace"
+    fontSize: "0.68rem"
+    fontWeight: 500
     lineHeight: 1.5
-    letterSpacing: "0.06em"
+    letterSpacing: "0.065em"
 rounded:
-  sm: "0.2rem"
-  md: "0.45rem"
-spacing:
-  1: "0.25rem"
-  2: "0.5rem"
-  3: "0.75rem"
-  4: "1rem"
-  5: "1.5rem"
-  6: "2rem"
-  7: "3rem"
-  8: "4.5rem"
+  square: "0"
 components:
-  button-primary-build:
-    backgroundColor: "{colors.signal-teal-deep}"
-    textColor: "{colors.white}"
-    rounded: "{rounded.sm}"
-    padding: "0.68rem 1rem"
-    height: "2.9rem"
-  button-primary-secure:
-    backgroundColor: "{colors.secure-coral-deep}"
-    textColor: "{colors.white}"
-    rounded: "{rounded.sm}"
-    padding: "0.68rem 1rem"
-    height: "2.9rem"
-  button-secondary:
-    backgroundColor: "rgba(255, 255, 255, 0.35)"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
-    padding: "0.68rem 1rem"
-    height: "2.9rem"
-  button-quiet:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
-    padding: "0.68rem 1rem"
-    height: "2.9rem"
-  lens-option-active:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.paper}"
-    padding: "0.4rem 0.58rem"
-    height: "2.25rem"
-  filter-chip-active:
-    backgroundColor: "rgba(22, 122, 114, 0.1)"
-    textColor: "{colors.signal-teal-deep}"
-    padding: "0.5rem 0.7rem"
-    height: "2.55rem"
-  camera-selector-active:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.paper}"
-    padding: "0.65rem 0.75rem"
-    height: "5rem"
-  field-input:
-    backgroundColor: "{colors.paper-raised}"
-    textColor: "{colors.ink}"
-    rounded: "0"
-    padding: "0.65rem 0.8rem"
+  action-primary:
+    backgroundColor: "{colors.field-ink}"
+    textColor: "{colors.field-paper}"
+    typography: "{typography.body}"
+    rounded: "{rounded.square}"
+    padding: "0.8rem 1.05rem"
     height: "3rem"
-  evidence-cell:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink-soft}"
-    rounded: "0"
-    padding: "0.85rem"
+  action-primary-hover:
+    backgroundColor: "{colors.field-teal-dark}"
+    textColor: "{colors.field-paper}"
+    rounded: "{rounded.square}"
+  action-secondary:
+    backgroundColor: "{colors.field-paper}"
+    textColor: "{colors.field-ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.square}"
+    padding: "0.8rem 1.05rem"
+    height: "3rem"
+  action-text:
+    backgroundColor: "transparent"
+    textColor: "{colors.field-ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.square}"
+    padding: "0.8rem 0.25rem"
+    height: "2.5rem"
+  filter-chip:
+    backgroundColor: "{colors.field-paper}"
+    textColor: "{colors.field-muted}"
+    rounded: "{rounded.square}"
+    padding: "0.55rem 0.72rem"
+    height: "2.5rem"
+  filter-chip-active:
+    backgroundColor: "{colors.field-teal-dark}"
+    textColor: "{colors.field-paper}"
+    rounded: "{rounded.square}"
+    padding: "0.55rem 0.72rem"
+    height: "2.5rem"
+  search-field:
+    backgroundColor: "{colors.field-paper}"
+    textColor: "{colors.field-ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.square}"
+    padding: "0.65rem 0.8rem"
+    height: "2.8rem"
+  lab-tab-active:
+    backgroundColor: "{colors.field-teal-dark}"
+    textColor: "{colors.field-paper}"
+    rounded: "{rounded.square}"
+    padding: "0.55rem 0.72rem"
+    height: "4rem"
+  desktop-tool-dock:
+    backgroundColor: "{colors.field-paper}"
+    textColor: "{colors.field-ink}"
+    rounded: "{rounded.square}"
+    height: "3.25rem"
+    width: "3.25rem"
 ---
 
 # Design System: Rahul Mitra Engineering Portfolio
 
 ## Overview
 
-**Creative North Star: "The Calibrated Multi-Camera Survey"**
+**Creative North Star: "Continuous Field Test"**
 
-The portfolio is a code-led survey of one engineering practice from a sequence of deliberately registered viewpoints. It retains the warmth and truthfulness of a laboratory field notebook, but the governing composition is no longer one continuous ledger: Overview, Selected Work, Capabilities, Journey, Proof, Résumés, and Contact are distinct observation fields connected by a visible camera path. Each chapter controls its own paper tint, camera pose, registration label, sparse observations, and active evidence panel. Visual seed `4293f8f6` remains the reproducibility anchor for this world.
+The portfolio is a clean white laboratory record of an engineer making intelligent systems operational. It reads as one continuous field test under visual seed `4d83e73b`: Rahul's positioning, experience, selected systems, complete project archive, technical study, capabilities, proof, résumés, and contact path remain stationary, explicit, and easy to inspect. Near-black type and fine rules establish authority; restrained teal marks navigation, methods, state, and verification.
 
-The first viewport states Rahul's positioning and explicit actions on the left, localizes that claim through the spatial field on the right, and keeps the camera journey subordinate. Real projects, contributions, distinctions, dates, résumé files, and contact paths remain the primary material. Camera frustums, sparse points, pose paths, reconstruction marks, and uncertainty contours explain how the evidence is observed; they never upgrade an interest or academic foundation into unsupported professional robotics, SLAM, localization, mapping, or Gaussian-splatting delivery.
+The graphite-and-teal field engineer is a supporting guide, not the subject. On wide screens it occupies a sticky calibration stage beside the evidence and advances gently with the reader's scroll. On constrained devices it becomes a static poster after the first-view facts, so mobile always presents Rahul's claim and actions first. Sparse amber and violet belong to focus, survey stations, reconstruction, and other technical annotations; they do not become decorative themes or unsupported experience claims.
 
-Build and Secure are semantic lenses over the same world. Build teal or Secure coral owns active state and emphasis, while optimization amber and reconstruction violet keep stable technical meanings. The assistant, Effects Lab, and Spatial World are opt-in depth layers opened from explicit inline hero launchers. Above 860px, the assistant and Effects Lab also remain persistently available as a compact pair flushed to the lower-right viewport corner; below that breakpoint, the pair disappears and the inline launchers preserve access without covering the survey.
+The interface has one evidence model and no Build/Secure lenses. The assistant, Effects Lab, and Spatial World are optional depth layers: fixed AI and FX controls are desktop-only, while mobile exposes AI, FX, and Spatial World inside the header menu. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.
 
 **Key Characteristics:**
 
-- Seven registered camera stages connected by a fixed desktop rail or sticky horizontal responsive rail.
-- Warm laboratory paper, chapter-specific tinted neutrals, dark green-black ink, and sparse technical signals.
-- Archivo for claims and reading; IBM Plex Mono for frames, coordinates, counts, methods, dates, and state.
-- One active work, capability, proof, or résumé view at a time, with the complete factual archive still searchable.
-- CameraGlyph frustums, registration geometry, ruled selectors, and bounded observation panels instead of generic cards.
-- Restrained one-shot registration motion that is completely removed under reduced-motion preference.
+- White laboratory field with near-black editorial typography and hairline ledger rules.
+- Real experience, projects, outcomes, proof, and résumé links dominate every section.
+- A persistent desktop evidence-and-guide split that collapses to an evidence-first mobile column.
+- Archivo for claims and reading; IBM Plex Mono for methods, dates, counts, readouts, and state.
+- Square controls and ruled rows instead of floating cards, pills, or dashboard chrome.
+- Optional spatial and generative tools remain clearly labeled, accessible, and subordinate.
 
 ## Colors
 
-The palette treats each chapter as a calibrated sheet in the same laboratory-paper family, then reserves stronger hues for semantic observations and active lens state.
+The palette is almost entirely paper, graphite, and cool rules; teal communicates useful signal, while amber and violet appear only as sparse technical annotations.
 
 ### Primary
 
-- **Signal Teal** (`signal-teal` and `signal-teal-deep`): Build-lens observations, active links, selected controls, focus treatments, and primary actions. The deep tone carries legible text and fills; the brighter tone carries landmarks and state markers.
-- **Secure Coral** (`secure-coral` and `secure-coral-deep`): Secure-lens observations, responsible-disclosure emphasis, focus treatments, and primary actions. It replaces teal only where lens ownership is meaningful.
+- **Signal Teal** (`field-teal`): Marks the portfolio signature, project indices, progress, paths, and technical landmarks.
+- **Deep Signal Teal** (`field-teal-dark`): Carries selected filters and tabs, link emphasis, method text, hover states, and high-contrast status copy.
 
 ### Secondary
 
-- **Optimization Amber** (`optimization-amber` and `optimization-amber-deep`): Contours, trajectories, and optimization annotations. It is supporting geometry, not a general action color.
+- **Survey Amber** (`field-amber`): Reserved for calibration stations and technical callouts rather than general actions.
+- **Focus Amber** (`focus-amber`): The universal three-pixel keyboard focus outline; its distinct hue keeps focus visible against both white and teal.
 
 ### Tertiary
 
-- **Reconstruction Violet** (`reconstruction-violet`): Camera frustums, sparse reconstruction marks, and spatial-computing cues. Keep it translucent or line-based so it does not compete with selected evidence.
+- **Reconstruction Violet** (`field-violet`): Reserved for sparse reconstruction, pose, and perception annotations. It stays line-based or localized.
 
 ### Neutral
 
-- **Laboratory Paper** (`paper`), **Pressed Paper** (`paper-deep`), and **Raised Paper** (`paper-raised`): Base field, recessed utility regions, inputs, drawers, and localized sheets.
-- **Work Mist** (`chapter-work`): The selected-work capture stage.
-- **Calibration Lilac** (`chapter-domains`): The capabilities observatory.
-- **Trajectory Parchment** (`chapter-experience`): The compact chronological journey.
-- **Verification Blush** (`chapter-proof`): The evidence and achievement viewer.
-- **Targeting Glass** (`chapter-resumes`): The role-specific résumé bay.
-- **Field Ink** (`ink`) and **Soft Ink** (`ink-soft`): Claims, selected dark states, reading copy, paths, and footer ground.
-- **Muted Annotation** (`muted`) and **Faint Coordinate** (`faint`): Supporting copy, counts, dates, and readouts.
-- **Hairline Rule** (`rule`) and **Structural Rule** (`rule-strong`): Dividers, frames, selector boundaries, and registration geometry.
+- **Laboratory White** (`field-paper`): The page, controls, reading surfaces, and resting panels.
+- **Calibration Wash** (`field-soft`): Technical-lab consoles and faint measurement fields.
+- **Graphite Ink** (`field-ink`): Headlines, primary actions, structural top rules, and the strongest evidence text.
+- **Muted Graphite** (`field-muted`): Supporting copy, dates, metadata, readouts, and explanatory labels.
+- **Hairline Rule** (`field-rule`): Row boundaries, interior divisions, and low-priority frames.
+- **Structural Rule** (`field-rule-strong`): Sticky boundaries, section openings, inputs, active work frames, and modal edges.
 
 ### Named Rules
 
-**The Lens Is a Semantic Switch Rule.** Build teal and Secure coral may exchange accent ownership; amber and violet keep their technical meanings, and content priority changes without removing evidence.
+**The Evidence Owns the Page Rule.** White and graphite carry the page; color supports navigation, state, technical meaning, and focus.
 
-**The Registered Field Rule.** Chapter tints distinguish viewpoints without turning the portfolio into disconnected themes; every tint remains a restrained neutral sheet under the same ink and rule system.
+**The Sparse Signal Rule.** Teal is restrained and amber or violet is rarer still. Never use any signal color as a large atmospheric wash or decorative gradient.
 
-**The Paper, Not White, Rule.** Laboratory paper is the default field; pure white is reserved for text on deep filled actions.
+**The One Evidence Model Rule.** Do not reintroduce Build/Secure palettes, switches, or content lenses. Security evidence lives in the same hierarchy as every other discipline.
 
 ## Typography
 
-**Display Font:** Archivo (with Segoe UI and sans-serif fallback)  
-**Body Font:** Archivo (with Segoe UI and sans-serif fallback)  
-**Label/Mono Font:** IBM Plex Mono (with Consolas and monospace fallback)
+**Display Font:** Archivo (with Arial and sans-serif fallback)
 
-**Character:** Archivo makes the portfolio candid, editorial, and technically assured without mimicking a control dashboard. IBM Plex Mono gives camera frames, pose labels, methods, counts, dates, and evidence state the voice of a calibrated instrument.
+**Body Font:** Archivo (with Arial and sans-serif fallback)
+**Label/Mono Font:** IBM Plex Mono (with monospace fallback)
+
+**Character:** Archivo is dense, candid, and editorial enough to lead with direct claims while remaining highly readable through a long evidence archive. IBM Plex Mono gives methods, dates, metrics, filters, and field readouts the precision of an instrument without turning the interface into a HUD.
 
 ### Hierarchy
 
-- **Display:** Tightly tracked, condensed-feeling Archivo for the first-view positioning claim; keep it near a 16-character measure on wide screens and reduce deliberately at narrow widths.
-- **Headline:** Large Archivo for chapter openings and the footer proposition, balanced against a quieter explanatory paragraph and camera frame.
-- **Title:** Compact Archivo for the active project, capability, proof item, résumé, and panel headings.
-- **Body:** Regular Archivo with generous leading and a practical reading measure of roughly 44–60rem depending on the observation panel.
-- **Label:** Small, often uppercase IBM Plex Mono for coordinates, camera counts, frames, methods, dates, tags, state, and diagram annotations.
+- **Display** (760, `clamp(3.7rem, 7vw, 6rem)`, 0.9): The first-view positioning claim, held to roughly 13 characters per line on wide screens.
+- **Headline** (720, `clamp(2.35rem, 4.6vw, 4.7rem)`, 0.98): Major section openings and the contact proposition.
+- **Title** (690, `clamp(1.25rem, 2vw, 1.72rem)`, 1.18): Project, experience, capability, proof, and résumé titles.
+- **Body** (400, `1rem`, 1.65): Explanations and evidence copy, usually constrained by the 48rem reading target or a narrower ledger column.
+- **Label** (500, `0.68rem`, 0.065em tracking): Uppercase or compact metadata for domains, dates, methods, counts, states, and lab readouts.
 
 ### Named Rules
 
-**The Two-Voice Rule.** Archivo makes claims and carries reading; IBM Plex Mono registers the evidence. Never set long explanatory paragraphs in mono.
+**The Two-Voice Rule.** Archivo makes claims and carries the evidence; IBM Plex Mono measures and labels it. Never set long narrative paragraphs in mono.
+
+**The Claim Before Metadata Rule.** Large Archivo establishes what matters before small mono explains when, how, or where it was measured.
 
 ## Layout
 
-The shell is a sequence of seven observation fields: position → selected system → capabilities → journey → proof → targeted résumé → contact. The hero is capped at 82rem and pairs a left positioning-and-actions column with a right localization/spatial visual. Chapter frames are capped at 76rem and add a third heading column for a CameraGlyph and frame label on wide screens. Each major chapter has its own tinted neutral field, sparse observation points, uncertainty ellipses, a structural top rule, and enough stage depth to read as a registered viewpoint rather than another row in one page-long ledger.
+The desktop shell is capped at 92rem and divides into a maximum 59rem evidence column plus a 19–27rem guide stage, separated by a responsive 2–5rem gap. The header remains sticky at 4.75rem high. The first evidence view fills the available viewport beneath it and gives at least sixty percent of the composition to positioning, current proof, and explicit actions. The continuous document order is position → selected work → experience → all projects → technical lab → capabilities → proof → résumés → contact.
 
-Above 1100px, the camera journey is a fixed right-side rail with seven markers, a progress path, and an active frame readout when space permits. At 1100px and below it becomes a sticky horizontal rail beneath the header. At 640px and below, inactive markers collapse to glyphs while the active marker expands to expose its label, preserving orientation without consuming the viewport. The active chapter follows scrolling through intersection state, while every marker remains a real anchor link. Above 860px, the persistent AI and FX docks form a compact lower-right corner pair with no reserved page column; they sit below the vertically centred camera journey and expose labels above the controls on hover or keyboard focus.
+Sections are separated by structural top rules and generous vertical intervals of roughly 5–9rem. Headings use a wide claim/narrow context split. Selected systems use index, evidence, and optional media columns; experience and the complete project archive use conventional ledgers; proof uses a two-column ruled matrix; résumés use a four-column row. The All Projects controls become sticky below the header on wide screens, while the full archive remains visible, searchable, keyboard-steppable, and filterable.
 
-Selected Work uses a filter row, horizontal camera capture strip, one registered project panel, previous/next controls, and a searchable complete-archive drawer. Capabilities uses six camera markers and one active observation panel. Proof and Résumés use bounded selector rails with one active evidence or download surface. The Journey intentionally defaults to four compact ledger items and can expand after filtering or search. The Share Bench is a collapsed details surface until explicitly opened.
-
-At 860px and below, the fixed corner docks are removed, chapter headings and active views become single-column, and vertical selectors turn into horizontally scrollable camera strips. Inline hero launchers remain available for both AI and FX. At 640px, the hero actions become a deliberate grid, active views stack, the four-item ledger moves dates above content, and section camera frames become compact inline registrations. At 380px, the hero actions stack and optional links simplify further. The 320px layout remains the minimum supported width with no horizontal overflow or content obstruction.
-
-The background uses a quiet 32px graph-paper grid, tightening to 24px on mobile. Sticky navigation, visible focus outlines, thin but legible scrollbars, stable drawer gutters, semantic document order, and 2.75rem coarse-pointer targets are part of the layout contract.
+At 1180px the evidence layouts tighten. At 920px the right guide disappears, the shell becomes a single column capped at 50rem, navigation moves into an expanding header menu, and a static field-engineer image follows the mobile hero evidence. At 680px actions stack, headings and ledgers become one column, lab tabs become a horizontally scrolling strip, metrics stack, project controls stop sticking, and proof collapses to one column. The 320px layout remains the minimum supported width without horizontal overflow. Fixed AI and FX docks disappear at 860px; mobile and tablet access remains in the header menu.
 
 ### Named Rules
 
-**The Registered View Rule.** Work, capability, proof, and résumé chapters show one active observation at a time; adjacent evidence belongs in an explicit selector, bounded archive, or search surface.
+**The Continuous Evidence Rule.** Preserve the complete reading order and visible project archive; progressive interaction may filter or navigate evidence but must not hide the factual baseline.
 
-**The Journey Is Orientation Rule.** The camera rail explains position and progress. It stays visually subordinate to the hero claim and chapter evidence, never becoming game HUD chrome.
+**The Guide Yields Rule.** The guide may own a dedicated desktop column, but it disappears before it can compress evidence below a comfortable reading width.
 
-**The 320px Integrity Rule.** At the narrowest supported width, preserve the claim, active camera label, primary action, résumé path, assistant path, and optional-world links without overlap or horizontal scrolling.
+**The 320px Integrity Rule.** At the narrowest supported width, preserve the positioning claim, selected-work action, résumé path, optional-tool access, and every evidence record without overlap or horizontal scrolling.
 
 ## Elevation & Depth
 
-The system is flat by default. Chapter tint, rule density, grid texture, clipped registration, and overlap carry most hierarchy. Shadows are reserved for the hero's spatial sheet, the scrolled header, the active desktop journey marker, compact instrument docks, and modal side panels. There is no resting shadow vocabulary for ordinary observation panels, selectors, ledgers, or archives.
+The core portfolio has no resting shadows. Depth comes from white-on-white spacing, one-pixel rules, sticky positioning, the guide's grayscale/multiply treatment, and the contrast between the main paper and the soft technical-lab field. The sticky header separates itself with a structural rule and a translucent white backdrop blur rather than a drop shadow. Fixed AI and FX docks are explicitly shadowless.
 
 ### Shadow Vocabulary
 
-- **Field Sheet:** A broad, low-contrast lift under the hero spatial/localization sheet.
-- **Scrolled Header:** A shallow ambient shadow that appears only after the page moves.
-- **Active Journey Marker:** A compact lift that identifies the current registered camera on the desktop rail.
-- **Instrument Dock:** A restrained compact lift that separates the lower-right AI and FX corner controls from the page without turning them into floating spectacle.
-- **Panel Edge:** Directional depth on assistant and Effects Lab drawers, paired with a translucent ink backdrop.
+- **Modal Drawer** (`0 2rem 6rem rgb(20 35 31 / 18%)`): Directional separation for the assistant and Effects Lab panels above their backdrop.
+- **Tool Label** (`0 8px 24px rgba(23, 38, 36, 0.10)`): A small desktop-only lift for the label revealed above an AI or FX dock.
 
 ### Named Rules
 
-**The Flat-by-Default Rule.** Resting evidence uses tint, rules, clipping, and registration geometry; elevation appears only for localization, sticky state, active journey position, or a modal layer.
+**The Flat Evidence Rule.** Project, experience, capability, proof, résumé, filter, and laboratory surfaces stay flat at rest; use rules and spacing before elevation.
+
+**The Modal Exception Rule.** Shadow is reserved for temporary layers that must separate from the reading surface, never for making ordinary content look clickable.
 
 ## Shapes
 
-The form language is rectilinear, instrument-like, and outside-looking-in. Buttons use only the small radius token; inputs, observation panels, selector rails, evidence cells, ledgers, and archives remain square. One-pixel hairlines define most boundaries. Chapter reveals use alternating transform and clip directions, so the registered sheet appears to settle from the camera side rather than fade generically.
+The form language is rectilinear and instrument-like. Buttons, inputs, chips, tab strips, evidence media, lab consoles, guide stages, docks, and drawers use square corners. One-pixel rules establish structure; repeated horizontal lines create the archive rhythm. The only prominent non-rectilinear shapes come from the field engineer, camera trajectories, pose paths, survey markers, and the small rotated square checkpoint in the guide stage.
 
-CameraGlyph is the reusable geometric grammar: a shallow-radius camera body, circular lens, translucent triangular frustum, and dashed optical axes rotated around a stable lens origin. Full circles and ellipses are reserved for portraits, landmarks, uncertainty fields, timeline nodes, and scrollbar thumbs. Dashed outlines indicate axes, uncertainty, or experimental material rather than decoration.
+**The Ruled Ledger Rule.** Group evidence with shared top and bottom rules instead of rounding each record into an isolated card.
 
-### Named Rules
-
-**The Camera Must Observe Rule.** A camera glyph or frustum must identify a viewpoint, active selector, stage, or spatial relationship; never use it as an ornamental tech icon.
-
-**The Signal Geometry Rule.** Curves and circles describe a person, observation, trajectory, uncertainty, or state; the editorial container system stays predominantly square.
+**The Geometry Must Measure Rule.** Lines, diamonds, trajectories, points, and reconstruction marks must communicate a guide position, technical layer, measurement, or state—not generic technological decoration.
 
 ## Components
 
 ### Buttons
 
-Buttons are compact, sturdy, and editorial rather than pill-like.
-
-- **Shape:** A shallow corner using the small radius token, a one-pixel structural rule, and a minimum height of 2.9rem.
-- **Primary:** The active lens's deep signal color with white text and strong Archivo weight.
-- **Hover / Focus:** Lift by 2px over the fast motion token on hover; retain the global 3px mixed-signal focus outline with a 3px offset. Reduced motion removes transform feedback.
-- **Secondary:** Translucent raised paper with ink text and a structural border.
-- **Quiet:** Transparent and underlined; used for the assistant and other adjacent but important actions.
+- **Shape:** Square, one-pixel bordered, and at least 3rem high for hero actions; compact utility controls remain at least 2.4–2.9rem high.
+- **Primary:** Graphite fill with Laboratory White text and `0.8rem 1.05rem` padding. Hover changes the fill to Deep Signal Teal without lifting the reading surface.
+- **Secondary:** White fill with Graphite Ink and the same structural weight as the primary action.
+- **Text:** Transparent, underlined, and lightly padded for the tertiary reading route.
+- **Hover / Focus:** Links and light actions move to Deep Signal Teal. Every keyboard-focusable control receives the three-pixel Focus Amber outline with a three-pixel offset.
 
 ### Chips
 
-- **Style:** Square, hairline filter controls with muted text; method and evidence tags are smaller mono labels with compact padding.
-- **State:** Selected filters use the current lens wash, deep accent text, accent border, and `aria-pressed`; selection never depends on color alone.
+- **Style:** Small square filters with white fill, a one-pixel hairline border, compact Archivo text, and `0.55rem 0.72rem` padding.
+- **State:** The selected chip uses Deep Signal Teal with white text and `aria-pressed`; selection never depends on color alone.
 
 ### Cards / Containers
 
-- **Corner Style:** Square by default; shallow rounding is limited to actionable controls and the camera body.
-- **Background:** Chapter tint is the stage surface; raised paper is reserved for inputs, drawers, localized sheets, and translucent active panels.
-- **Shadow Strategy:** Follow the Flat-by-Default Rule; ordinary evidence and active-view panels have no shadow.
-- **Border:** One-pixel rules build selectors, observation bays, ledgers, evidence cells, and archives.
-- **Internal Padding:** Compact evidence begins at 0.85rem; active panels and workbenches use roughly 1.25–2rem.
+- **Corner Style:** Square throughout.
+- **Background:** Laboratory White for reading and Calibration Wash only for technical measurement fields.
+- **Shadow Strategy:** Follow the Flat Evidence Rule.
+- **Border:** Shared one-pixel rules create continuous ledgers, matrices, and consoles.
+- **Internal Padding:** Dense archive rows begin around 1.6rem vertically; primary evidence records expand to roughly 2–3.6rem.
 
 ### Inputs / Fields
 
-- **Style:** Raised-paper fill, square corners, structural one-pixel stroke, ink text, and a minimum height of 3rem.
-- **Focus:** Use the global signal-colored focus-visible outline; do not replace it with a border-only change.
-- **Error / Disabled:** Errors use Secure Coral with plain-language copy; disabled controls retain structure and reduce opacity without disappearing.
+- **Style:** White, square, and 2.8rem high with a Structural Rule border and Archivo input text; the label is compact uppercase mono.
+- **Focus:** The global three-pixel Focus Amber outline appears outside the control.
+- **Disabled:** Retain the frame, reduce opacity, and keep the state legible in text and cursor treatment.
 
 ### Navigation
 
-The header is a translucent laboratory-paper strip that becomes ruled and lightly elevated after scroll. Desktop links use compact semibold Archivo with a 2px current-lens underline. Below 860px the primary link row becomes an accessible expanding ledger. The separate camera journey rail owns chapter orientation and uses `aria-current="location"` for the active stage.
+The sticky header uses a translucent white strip, a Structural Rule bottom edge, a compact RM mark, centered desktop links, and a square Spatial World launcher. Link hover and focus reveal a two-pixel teal underline over 160ms. At 920px the links move into a full-width expanding menu; AI · Ask, FX · Lab, and Spatial World appear as three equally explicit tool buttons inside it.
 
-### Camera Journey and CameraGlyph
+### Selected Work and Evidence Ledgers
 
-The journey renders seven real anchor links over a ruled progress path. The active marker uses the deep lens signal, Raised Paper, structural border, and an exposed label. CameraGlyph carries a rotated rig, body, lens, frustum, and dashed axes; its angle changes with the registered stage. The progress path and rig rotation use restrained 460–520ms calibrated easing and become static under reduced motion.
+Selected systems lead with a teal number and mono domain/date column, then a title, context, Contribution/Approach/Outcome definition list, method trail, and proof links. Optional imagery occupies a framed field-evidence column with a low-saturation treatment and technical caption. Experience, All Projects, capabilities, proof, and résumés reuse the same ruled-ledger logic at different densities rather than becoming interchangeable cards.
 
-### Camera-Registered Selectors
+### Technical Lab
 
-Project, capability, proof, and résumé selectors pair CameraGlyph with a title and compact date, count, or recommendation label. Selected items use either Field Ink on Laboratory Paper or a current-lens wash, reinforced by `aria-selected`. Horizontal strips may scroll; vertical rails are bounded. Changing selection registers one active panel over roughly 420ms with a short transform, clip, opacity, and blur transition.
+The synthetic calibration study is a bounded console with a four-column tab strip, one 16:9 visual layer, a method/provenance caption, four ruled metrics, and two-column explanatory provenance. The active tab uses Deep Signal Teal and white; inactive tabs remain white. Its warm amber disclaimer explicitly identifies the study as an interactive portfolio experiment, not professional project delivery.
 
-### Chapter Registration
+### Field Engineer Guide
 
-Every chapter carries a camera frame label, sparse observation points, and restrained elliptical reconstruction geometry. SectionContainer alternates left- and right-origin transform/clip reveals according to the camera sequence. The reveal fires once, never gates content, and resolves immediately to its final state when IntersectionObserver is unavailable or reduced motion is requested.
+On wide screens, the guide is sticky within a ruled, faintly gridded stage. A compact mono readout names the active chapter, a progress line advances in teal, and the graphite-and-teal Three.js guide follows a damped course through survey stations. Reduced motion, constrained hardware, data-saving mode, or viewport width at or below 860px switches the WebGL scene to a static poster. At 920px the entire side stage yields to the single evidence column.
 
-### Spatial Field Diagram
+### Optional Tool Docks and Panels
 
-The hero's localization-inspired SVG combines a graph-paper field, landmarks, a pose path, uncertainty ellipses, camera frustums, contours, sparse violet reconstruction marks, and short mono annotations. It is a visual bridge between perception, uncertainty, optimization, and deployment—not a claim of professional SLAM delivery. Desktop pointer drift is gentle; mobile crops the diagram into a static pre-heading strip; reduced motion removes transforms.
-
-### Journey Ledger, Archives, and Share Bench
-
-The chronological Journey shows four compact records by default, with filters, search, and an explicit expansion control. Selected Work preserves the full searchable archive behind a clearly labeled drawer. The Share Bench is collapsed by default and lazy-loads its QR utility only when opened. These disclosures reduce page length without hiding the factual record.
-
-### Assistant, Effects Lab, and Spatial World
-
-Inline hero actions remain the universal launch points for the assistant, Effects Lab, and Spatial World. On desktop, compact AI and FX docks are also maintained as a lower-right pair; their labels appear above on hover or keyboard focus, and the initiating dock remains mounted while its drawer is open so focus returns correctly on close. Both assistant and Effects Lab drawers enter from the left with the same directional edge treatment. At 860px and below, the fixed docks are hidden and the inline launchers own access to prevent viewport obstruction. The Three.js world remains lazy and opt-in. Loading, fallback, error, and disabled states must remain explicit, and no recruiter-critical fact may exist only inside an optional layer.
+AI and FX are square 3.25rem fixed controls in the lower-right desktop corner. They are shadowless at rest and reveal a small label on hover or focus. At mobile sizes the fixed pair is hidden and the header menu owns AI, FX, and Spatial World access. Assistant and Effects Lab drawers are white, square, left-entering modal panels with a translucent graphite backdrop and directional shadow. No essential evidence or action may exist only inside these tools.
 
 ### Motion and Reduced Motion
 
-Normal motion registers viewpoint changes: chapter reveals alternate by camera side, active panels settle from a short clipped offset, the journey progress path advances, and CameraGlyph rigs rotate to their stored pose. Under `prefers-reduced-motion: reduce`, chapter transform/clip/blur reveals, active-panel animations, drawer/backdrop animations, journey progress transitions, camera rotation transitions, spatial drift, and decorative effects are removed; only brief color, background, border, and outline feedback remains.
+Motion is limited to the 160ms navigation underline, the 280ms guide progress response, damped guide travel, and temporary panel/backdrop entry. Reading surfaces do not animate while the visitor scans them. Under `prefers-reduced-motion: reduce`, transitions and animations collapse to 0.01ms, iteration is limited to one, scrolling becomes immediate, the field guide uses its static poster, and optional visual effects are removed.
 
 ### Named Rules
 
-**The Optional Worlds Rule.** Assistant, effects, and Three.js experiences may deepen the portfolio, but no recruiter-critical fact, proof, résumé, or contact action may exist only inside them.
+**The Optional Tools Rule.** Assistant, effects, and spatial experiences may deepen the portfolio, but no recruiter-critical fact, proof, résumé, or contact action may exist only inside them.
+
+**The Motion Never Competes Rule.** Motion may explain progress or temporary state; it must never loop around, move, blur, or delay reading content.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** lead with the positioning claim, explicit actions, and real evidence before optional spectacle.
-- **Do** preserve the seven-stage story: position → selected system → capabilities → journey → proof → targeted résumé → contact.
-- **Do** use chapter tints, CameraGlyph poses, sparse observations, and frame labels to distinguish registered viewpoints.
-- **Do** keep one active work, capability, proof, or résumé panel visible while preserving searchable archives and clearly labeled selectors.
-- **Do** keep Journey concise at four default entries and keep Share Bench collapsed until requested.
-- **Do** maintain the compact desktop AI and FX docks as a lower-right corner pair, while retaining explicit inline launchers for every viewport.
-- **Do** preserve visible focus, semantic headings and landmarks, active-label exposure on mobile, 2.75rem coarse-pointer targets, readable contrast, and meaningful alt text.
-- **Do** remove registration, panel, camera, progress, spatial, and decorative motion under reduced-motion preference.
+- **Do** lead with Rahul's positioning, explicit actions, current evidence, and real work.
+- **Do** preserve the continuous story: position → selected work → experience → all projects → technical lab → capabilities → proof → résumés → contact.
+- **Do** use white space, one-pixel rules, and typographic hierarchy to organize dense evidence.
+- **Do** keep teal restrained and reserve amber and violet for focus or technical annotation.
+- **Do** keep the field engineer in a supporting desktop guide role and use the static evidence-first fallback on constrained devices.
+- **Do** expose AI, FX, and Spatial World in the mobile header menu while keeping fixed AI and FX controls desktop-only.
+- **Do** preserve visible focus, semantic landmarks, keyboard-operable filters and tabs, truthful disclaimers, and the complete project archive.
+- **Do** make reduced motion a static, fully readable version of the same experience.
 
 ### Don't:
 
-- **Don't** collapse the chapters back into one long ledger or an equal-weight wall of cards.
-- **Don't** turn the camera journey into a dominant game HUD, sticky obstruction, or unlabeled row of mystery icons.
-- **Don't** use chapter tints as unrelated themes; they are calibrated neutrals inside one paper-and-ink world.
-- **Don't** turn robotics, localization, mapping, probabilistic reasoning, reconstruction, or Gaussian-splatting motifs into unsupported experience claims.
-- **Don't** replace the world with generic AI gradients, neon cyber styling, SaaS chrome, stock robots, or copied reference-site imagery and shapes.
-- **Don't** use IBM Plex Mono for long reading copy or let decorative numbering crowd essential mobile content.
-- **Don't** let animation, pointer precision, optional tools, or heavy rendering block the default reading and action path.
+- **Don't** reintroduce Build/Secure lenses, lens-specific palettes, or lens-dependent evidence.
+- **Don't** convert the portfolio into warm notebook paper, tinted chapter themes, a camera-rail journey, or a wall of rounded cards.
+- **Don't** let the guide, generated media, optional tools, or Three.js occupy the evidence hierarchy.
+- **Don't** imply professional robotics, SLAM, localization, mapping, or Gaussian-splatting delivery from the technical motifs or synthetic study.
+- **Don't** use generic AI gradients, neon or glitch styling, game HUD chrome, stock robots, or meaningless equations.
+- **Don't** set long reading copy in IBM Plex Mono or use low-contrast microtype for essential information.
+- **Don't** let motion, pointer precision, WebGL, or optional panels gate reading, résumé access, proof, or contact.

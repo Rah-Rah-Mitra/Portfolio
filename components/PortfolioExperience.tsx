@@ -59,8 +59,13 @@ const PortfolioHeader: React.FC = () => {
       </button>
       <nav id="portfolio-navigation" className={open ? 'is-open' : ''} aria-label="Portfolio sections">
         {navItems.map(([id, label]) => <a key={id} href={`#${id}`} onClick={() => { setOpen(false); track('nav_link_clicked', { destination: id }); }}>{label}</a>)}
+        <div className="portfolio-mobile-tools" aria-label="Optional portfolio tools">
+          <button type="button" data-open-assistant onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openAssistant', { detail: { source: 'mobile_menu' } }))}>AI · Ask</button>
+          <button type="button" data-open-effects onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openEffects', { detail: { source: 'mobile_menu' } }))}>FX · Lab</button>
+          <button type="button" data-open-world onClick={() => openWorld('header_mobile')}>Spatial World</button>
+        </div>
       </nav>
-      <button className="spatial-launch" type="button" onClick={() => openWorld('header')}>Spatial World</button>
+      <button className="spatial-launch spatial-launch-desktop" type="button" onClick={() => openWorld('header')}>Spatial World</button>
     </header>
   );
 };
@@ -70,9 +75,9 @@ const PortfolioHero: React.FC = () => {
   return (
     <section id="home" className="portfolio-hero" aria-labelledby="portfolio-title">
       <div className="hero-positioning">
-        <p className="hero-context">Singapore · NUS · Industrial Systems Engineering × Computer Science × Mathematics</p>
         <h1 id="portfolio-title">Intelligent systems, made operational.</h1>
         <p className="hero-introduction">I’m Rahul Mitra, an engineer working across applied AI, mathematical optimization, software architecture, 3D perception, and responsible security. I turn uncertain problems into systems that can be tested, deployed, and trusted.</p>
+        <p className="hero-facts">Based in Singapore · NUS Industrial Systems Engineering · Second Major in Computer Science · Minor in Mathematics</p>
         <p className="hero-role-line"><strong>Target roles</strong> Software engineering · Applied AI · Operations research · Solution architecture <span>Open to engineering roles and collaborations.</span></p>
         <div className="hero-actions">
           <a className="action-primary" href="#work" onClick={() => track('cta_clicked', { label: 'View selected work', profile: 'software_engineer' })}>View selected work</a>
@@ -126,7 +131,13 @@ const SelectedWork: React.FC = () => {
               <div className="method-list" aria-label={`${project.title} technologies`}>{project.tags.slice(0, 8).map((tag) => <span key={tag}>{tag}</span>)}</div>
               <ProjectLinks project={project} />
             </div>
-            {project.imageUrl && <img src={project.imageUrl} alt={`Project evidence for ${project.title}`} width="800" height="600" loading="lazy" decoding="async" />}
+            {project.imageUrl && (
+              <figure className="selected-project-media">
+                <span aria-hidden="true">{String(index + 1).padStart(2, '0')} / FIELD EVIDENCE</span>
+                <img src={project.imageUrl} alt={`Project evidence for ${project.title}`} width="800" height="600" loading="eager" decoding="async" />
+                <figcaption>{project.title} evidence preview</figcaption>
+              </figure>
+            )}
           </article>
         ))}
       </div>
@@ -223,7 +234,7 @@ const AllProjectsSection: React.FC = () => {
       <div className="project-stepper" aria-label="Project index navigation"><span>Use arrow keys when a project is focused.</span><div><button type="button" disabled={visible.length === 0 || activeProjectIndex <= 0} onClick={() => focusProjectAt(activeProjectIndex - 1)}>Previous</button><button type="button" disabled={visible.length === 0 || activeProjectIndex >= visible.length - 1} onClick={() => focusProjectAt(activeProjectIndex + 1)}>Next</button></div></div>
       <div className="project-index-list" onKeyDown={handleProjectKeys}>
         {visible.map((project, index) => (
-          <article key={project.id} id={`project-${project.id}`} tabIndex={0} ref={(node) => { if (node) projectRefs.current.set(project.id, node); else projectRefs.current.delete(project.id); }} onFocus={() => setActiveProjectIndex(index)}>
+          <article key={project.id} id={`project-${project.id}`} tabIndex={index === activeProjectIndex ? 0 : -1} ref={(node) => { if (node) projectRefs.current.set(project.id, node); else projectRefs.current.delete(project.id); }} onFocus={() => setActiveProjectIndex(index)}>
             <div className="project-index-meta"><time>{project.dateLabel ?? 'Archive'}</time><span>{domainLabels[project.accent]}</span></div>
             <div><h3>{project.title}</h3><p>{project.description}</p><div className="method-list">{project.tags.slice(0, 6).map((tag) => <span key={tag}>{tag}</span>)}</div></div>
             <ProjectLinks project={project} />

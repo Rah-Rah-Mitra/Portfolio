@@ -19,6 +19,7 @@ describe('unified portfolio record', () => {
     expect(experienceRecords.map((record) => record.sortDate)).toEqual(
       [...experienceRecords].sort((a, b) => b.sortDate.localeCompare(a.sortDate)).map((record) => record.sortDate),
     );
+    expect(experienceRecords[0].organization).toBe('Abbott');
   });
 
   it('provides one monotonic guide cue for every evidence chapter', () => {

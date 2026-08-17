@@ -927,7 +927,7 @@ const careerAndEducationNotes: FieldNote[] = [
     kind: 'education',
     kinds: ['education'],
     dateLabel: '2023-Present',
-    sortDate: '2026-01-01',
+    sortDate: '2023-08-01',
     source: 'Education',
     summary: 'Penultimate undergraduate in Industrial Systems Engineering with a Second Major in Computer Science and a Mathematics Minor.',
     tags: ['NUS', 'ISE', 'Computer Science', 'Mathematics', 'Undergraduate'],
@@ -939,7 +939,7 @@ const careerAndEducationNotes: FieldNote[] = [
     kind: 'career',
     kinds: ['career'],
     dateLabel: '2023-Present',
-    sortDate: '2026-01-01',
+    sortDate: '2023-01-01',
     source: 'Portfolio',
     summary: 'Active vulnerability research across government and transport targets, with work spanning SSRF, CSRF, SQL/NoSQL injection, authentication bypass, Burp Suite, Wireshark, and custom Python/Bash automation.',
     tags: ['Bug Bounty', 'YesWeHack', 'GovTech', 'LTA', 'Security'],
@@ -1230,13 +1230,24 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
   },
 };
 
+const experienceStartById: Record<string, string> = {
+  'abbott-internship': '2026-01-01',
+  'nus-education': '2023-08-01',
+  'career-yeswehack-independent-researcher': '2023-01-01',
+  'career-singapore-navy': '2022-01-01',
+  'education-asrjc-stem': '2019-01-01',
+};
+
 export const experienceRecords: ExperienceRecord[] = experienceNotes.map((note) => {
   const detail = experienceDetailById[note.id]
     ?? note.aliases?.map((alias) => experienceDetailById[alias]).find(Boolean);
+  const experienceStart = experienceStartById[note.id]
+    ?? note.aliases?.map((alias) => experienceStartById[alias]).find(Boolean)
+    ?? note.sortDate;
   return {
     id: note.id,
     dateLabel: note.dateLabel,
-    sortDate: note.sortDate,
+    sortDate: experienceStart,
     tags: note.tags,
     linkedProjectIds: note.linkedProjectIds ?? [],
     ...(detail ?? {
@@ -1249,7 +1260,7 @@ export const experienceRecords: ExperienceRecord[] = experienceNotes.map((note) 
       outcomes: [],
     }),
   };
-});
+}).sort((a, b) => b.sortDate.localeCompare(a.sortDate));
 
 export const unifiedPortfolioData: PortfolioData & Required<Pick<PortfolioData, 'experience' | 'projects' | 'capabilities' | 'resumes'>> = {
   ...softwareEngineerData,

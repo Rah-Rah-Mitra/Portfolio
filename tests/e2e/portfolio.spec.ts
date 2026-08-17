@@ -23,6 +23,7 @@ test('project search, filters, anchors, and keyboard stepping work', async ({ pa
   await expect(page.getByRole('status')).not.toContainText('Showing 0');
   await page.getByRole('button', { name: /^All 28$/ }).click();
   const first = page.locator('#all-work .project-index-list article').first();
+  await expect(page.locator('#all-work .project-index-list article[tabindex="0"]')).toHaveCount(1);
   await first.focus();
   await first.press('ArrowDown');
   await expect(page.locator('#all-work .project-index-list article').nth(1)).toBeFocused();
@@ -40,6 +41,31 @@ test.describe('capability fallbacks', () => {
     await page.goto('/');
     await expect(page.locator('.portfolio-guide')).toBeHidden();
     await expect(page.locator('.hero-guide-mobile')).toBeVisible();
+    await expect(page.getByRole('button', { name: /FX, open optional effects lab/ })).toBeHidden();
+    await expect(page.getByRole('button', { name: /AI, open Ask this portfolio/ })).toBeHidden();
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('button', { name: 'AI · Ask' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'FX · Lab' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Spatial World' })).toBeVisible();
+    await page.getByRole('button', { name: 'AI · Ask' }).click();
+    await expect(page.getByRole('dialog', { name: 'Ask this portfolio' })).toBeVisible();
+    await page.getByRole('dialog', { name: 'Ask this portfolio' }).getByRole('button', { name: 'Close' }).click();
+    await page.getByRole('button', { name: 'FX · Lab' }).click();
+    await expect(page.getByRole('dialog', { name: 'Effects lab' })).toBeVisible();
+  });
+
+  test('technical lab tabs support arrow, Home, End, and a focusable panel', async ({ page }) => {
+    await page.goto('/#technical-lab');
+    const rgb = page.getByRole('tab', { name: /RGB/ });
+    await rgb.focus();
+    await rgb.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: /Objects/ })).toBeFocused();
+    await page.keyboard.press('End');
+    await expect(page.getByRole('tab', { name: /Trajectory/ })).toBeFocused();
+    await page.keyboard.press('Home');
+    await expect(rgb).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('tabpanel')).toBeFocused();
   });
 
   test('reduced motion and Save-Data choose static media', async ({ page }) => {

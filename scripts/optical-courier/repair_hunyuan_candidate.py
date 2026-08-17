@@ -12,6 +12,7 @@ from mathutils import Matrix, Vector
 MATERIALS = {
     "Shell_OffWhite": ((0.80, 0.83, 0.81, 1.0), 0.82, 0.0),
     "Graphite_Visor": ((0.025, 0.038, 0.037, 1.0), 0.42, 0.18),
+    "Warm_Skin": ((0.62, 0.28, 0.16, 1.0), 0.58, 0.0),
     "Charcoal_Trousers": ((0.075, 0.088, 0.086, 1.0), 0.76, 0.0),
     "Black_GlovesBoots": ((0.009, 0.014, 0.014, 1.0), 0.66, 0.0),
     "Sole_Amber": ((0.55, 0.25, 0.025, 1.0), 0.55, 0.0),
@@ -75,6 +76,8 @@ def assign_clean_material_regions(body):
     geometry = nodes.new("ShaderNodeNewGeometry")
     separate = nodes.new("ShaderNodeSeparateXYZ")
     links.new(geometry.outputs["Position"], separate.inputs["Vector"])
+    separate_normal = nodes.new("ShaderNodeSeparateXYZ")
+    links.new(geometry.outputs["Normal"], separate_normal.inputs["Vector"])
 
     def compare(operation, socket, threshold):
         node = nodes.new("ShaderNodeMath")
@@ -118,6 +121,14 @@ def assign_clean_material_regions(body):
     hand_height = compare("GREATER_THAN", separate.outputs["Z"], 1.34)
     gloves = logical_and(outer_hand, hand_height)
     color = mix(color, gloves, "Black_GlovesBoots")
+    head = compare("GREATER_THAN", separate.outputs["Z"], 1.64)
+    color = mix(color, head, "Warm_Skin")
+    visor_low = compare("GREATER_THAN", separate.outputs["Z"], 1.69)
+    visor_high = compare("LESS_THAN", separate.outputs["Z"], 1.91)
+    visor_depth = compare("LESS_THAN", separate.outputs["Y"], -0.08)
+    visor_facing = compare("LESS_THAN", separate_normal.outputs["Y"], -0.15)
+    visor_band = logical_and(logical_and(visor_low, visor_high), logical_and(visor_depth, visor_facing))
+    color = mix(color, visor_band, "Graphite_Visor")
     front_surface = compare("LESS_THAN", separate.outputs["Y"], 0.0)
     detail_low = compare("GREATER_THAN", separate.outputs["Z"], 1.16)
     detail_high = compare("LESS_THAN", separate.outputs["Z"], 1.56)
@@ -150,6 +161,7 @@ def assign_clean_material_regions(body):
     body["material_boundary_mode"] = "continuous-position-masks"
     body["jacket_detail_mode"] = "bakeable-position-masks"
     body["jacket_detail_roles"] = json.dumps(["center-zipper", "paired-graphite-pocket-marks"])
+    body["head_material_rule"] = "warm-skin; visor iff 1.69<z<1.91 and y<-0.08 and normalY<-0.15"
 
 
 def create_signal(body):

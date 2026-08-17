@@ -56,7 +56,7 @@ export const validateCourierManifest = (value: unknown): ValidationResult => {
   }
   const visualCandidate = value.visualFidelityCandidate;
   if (!isRecord(visualCandidate)
-    || visualCandidate.status !== 'visual-review-required'
+    || visualCandidate.status !== 'upload-review-ready'
     || visualCandidate.source !== 'hunyuan-derived-retopology'
     || !isSha256(visualCandidate.sourceProofSha256)
     || !isSha256(visualCandidate.sourceBlendSha256)
@@ -64,6 +64,9 @@ export const validateCourierManifest = (value: unknown): ValidationResult => {
     || !isNonEmpty(visualCandidate.sourceBlend)
     || !isNonEmpty(visualCandidate.validation)
     || !isNonEmpty(visualCandidate.comparisonSheet)
+    || !isNonEmpty(visualCandidate.mixamoReviewFbx)
+    || !isSha256(visualCandidate.mixamoReviewFbxSha256)
+    || !isNonEmpty(visualCandidate.mixamoReviewFbxValidation)
     || visualCandidate.uploadApproved !== false
     || visualCandidate.mixamoUploadAsset !== null) {
     issues.push('visual fidelity candidate must preserve complete review-only provenance');

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "status": "upload-review-ready",
+  "source": "assets/optical-courier/review-v2/optical-courier-mixamo-review.fbx",
+  "sha256": "079f89a38e13df3d2c6aa0203daaa497446541dcd4342c8e624c173447a2de6a",
+  "bytes": 547036,
+  "meshObjectCount": 2,
+  "primaryObject": "OpticalCourier_ReviewBody",
+  "geometry": {
+    "vertices": 12002,
+    "triangles": 24000,
+    "components": 1,
+    "nonManifoldEdges": 0
+  },
+  "armatureCount": 0,
+  "animationCount": 0,
+  "materials": [
+    "Black_GlovesBoots",
+    "Charcoal_Trousers",
+    "Courier_ContinuousRegionShader",
+    "Graphite_Visor",
+    "Shell_OffWhite",
+    "Signal_Teal",
+    "Signal_Teal.001",
+    "Sole_Amber",
+    "Warm_Skin"
+  ],
+  "coordinateContract": {
+    "forward": "-Y",
+    "up": "+Z",
+    "units": "metres"
+  }
+}

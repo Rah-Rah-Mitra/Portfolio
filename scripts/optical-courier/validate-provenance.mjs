@@ -14,6 +14,7 @@ const geometry = await readJson('assets/optical-courier/pre-mixamo/validation-re
 const fbxRoundTrip = await readJson('assets/optical-courier/pre-mixamo/fbx-roundtrip-report.json');
 const proof = await readJson('assets/optical-courier/proofs/hunyuan-proof-report.json');
 const visualReview = await readJson('assets/optical-courier/review-v2/validation-report.json');
+const reviewFbx = await readJson('assets/optical-courier/review-v2/mixamo-review-fbx-report.json');
 
 if (manifest.status !== 'pre-rig-ready') fail(`Unexpected checkpoint status: ${manifest.status}`);
 if (manifest.generations?.length !== 3) fail('Exactly three fixed-seed candidate records are required');
@@ -29,13 +30,20 @@ if (await hashFile(fbxRoundTrip.source) !== fbxRoundTrip.sha256) fail('FBX hash 
 if (proof.decision !== 'rejected-for-deformation' && proof.decision !== 'accepted-for-deformation') fail('Hunyuan proof decision is missing');
 if (manifest.preMixamo?.visualStatus !== 'rejected-for-upload') fail('Rejected pre-Mixamo history must remain explicit');
 const candidate = manifest.visualFidelityCandidate;
-if (candidate?.status !== 'visual-review-required' || candidate.uploadApproved !== false || candidate.mixamoUploadAsset !== null) {
-  fail('Visual-fidelity candidate must remain review-only');
+if (candidate?.status !== 'upload-review-ready' || candidate.uploadApproved !== false || candidate.mixamoUploadAsset !== null) {
+  fail('Visual-fidelity candidate must be review-ready without granting upload approval');
 }
 if (await hashFile(candidate.sourceBlend) !== candidate.sourceBlendSha256) fail('Visual-fidelity source hash mismatch');
 if (await hashFile(candidate.comparisonSheet) !== candidate.comparisonSheetSha256) fail('Visual comparison hash mismatch');
 if (visualReview.geometry.primaryConnectedComponents !== 1 || visualReview.geometry.nonManifoldEdges !== 0) fail('Visual-fidelity candidate is not connected and manifold');
 if (visualReview.materialBoundaryMode !== 'continuous-position-masks' || visualReview.signalSurfaceGapMeters > 0.02) fail('Visual material/signal contract failed');
+if (visualReview.status !== 'upload-review-ready') fail('Visual validation status is stale');
+const head = visualReview.materialRegions?.head;
+if (!head || head.skinFaces <= 0 || head.graphiteVisorFaces <= 0 || head.visorBackFaceCount !== 0) fail('Head skin/visor region contract failed');
+if (await hashFile(candidate.mixamoReviewFbx) !== candidate.mixamoReviewFbxSha256) fail('Review FBX hash mismatch');
+if (reviewFbx.status !== 'upload-review-ready' || reviewFbx.geometry.components !== 1 || reviewFbx.geometry.nonManifoldEdges !== 0) fail('Review FBX round-trip contract failed');
+if (reviewFbx.armatureCount !== 0 || reviewFbx.animationCount !== 0) fail('Review FBX must remain unrigged and unanimated');
+if (!reviewFbx.materials.includes('Warm_Skin')) fail('Review FBX is missing the warm-skin material role');
 
 const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
 const forbidden = tracked.filter((file) => /\.(safetensors|ckpt|pt|pth|bin)$/i.test(file) || /(^|\/)(raw-mixamo|browser-state|cookies?|tokens?)(\/|$)/i.test(file));
@@ -53,6 +61,8 @@ console.log(JSON.stringify({
     triangles: visualReview.geometry.triangles,
     materialBoundaryMode: visualReview.materialBoundaryMode,
     signalSurfaceGapMeters: visualReview.signalSurfaceGapMeters,
+    headMaterialRegions: head,
+    reviewFbxBytes: reviewFbx.bytes,
   },
   mixamo: manifest.mixamo.status,
 }, null, 2));

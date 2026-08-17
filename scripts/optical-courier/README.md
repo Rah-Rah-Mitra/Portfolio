@@ -31,6 +31,10 @@ so there are no polygon-edge color spikes. `validate_review_candidate.py`
 measures topology, proportions, surface-mounted signal spacing, and vertex/
 cross-section density at shoulders, elbows, and knees.
 
-The result under `assets/optical-courier/review-v2/` is for visual review only.
-It is not the current Mixamo upload asset and must remain unrigged until the
-manifest records explicit upload approval.
+The result under `assets/optical-courier/review-v2/` includes a review-only FBX
+that round-trips as one manifold body plus its visor signal. The head material
+contract keeps warm skin on the scalp, crown, sides, and back while confining
+graphite to the front visor band. `upload-review-ready` means the file is ready
+for a final human upload decision; `uploadApproved` remains false. It is not the
+current Mixamo upload asset and must remain unrigged until the manifest records
+explicit upload approval.

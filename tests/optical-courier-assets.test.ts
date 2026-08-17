@@ -75,13 +75,14 @@ describe('Optical Courier pre-rig production checkpoint', () => {
 
   it('keeps the visual-fidelity replacement in review while proving clean geometry and bend zones', () => {
     expect(manifest.visualFidelityCandidate).toMatchObject({
-      status: 'visual-review-required',
+      status: 'upload-review-ready',
       source: 'hunyuan-derived-retopology',
+      uploadApproved: false,
     });
     const reportPath = manifest.visualFidelityCandidate.validation;
     expect(existsSync(repoPath(reportPath))).toBe(true);
     const report = JSON.parse(readFileSync(repoPath(reportPath), 'utf8'));
-    expect(report.status).toBe('visual-review-required');
+    expect(report.status).toBe('upload-review-ready');
     expect(report.geometry).toMatchObject({
       primaryConnectedComponents: 1,
       nonManifoldEdges: 0,
@@ -99,6 +100,38 @@ describe('Optical Courier pre-rig production checkpoint', () => {
     }
     expect(existsSync(repoPath(manifest.visualFidelityCandidate.comparisonSheet))).toBe(true);
     expect(COURIER_ASSET_CONTRACT.preMixamoSource).toBeNull();
+  });
+
+  it('keeps warm skin on the scalp and confines graphite to the front visor band', () => {
+    const report = JSON.parse(readFileSync(repoPath(manifest.visualFidelityCandidate.validation), 'utf8'));
+    expect(report.materials).toContain('Warm_Skin');
+    expect(report.materialRegions.head.skinFaces).toBeGreaterThan(0);
+    expect(report.materialRegions.head.graphiteVisorFaces).toBeGreaterThan(0);
+    expect(report.materialRegions.head.visorBackFaceCount).toBe(0);
+    expect(report.materialRegions.head.skinCoverage).toBeGreaterThan(0.45);
+    expect(report.materialRegions.head.graphiteCoverage).toBeGreaterThan(0.05);
+    expect(report.materialRegions.head.graphiteCoverage).toBeLessThan(0.45);
+  });
+
+  it('exports a review-only FBX without granting Mixamo upload approval', () => {
+    const candidate = manifest.visualFidelityCandidate;
+    expect(candidate.uploadApproved).toBe(false);
+    expect(candidate.mixamoUploadAsset).toBeNull();
+    expect(existsSync(repoPath(candidate.mixamoReviewFbx))).toBe(true);
+    expect(sha256(candidate.mixamoReviewFbx)).toBe(candidate.mixamoReviewFbxSha256);
+    const roundTrip = JSON.parse(readFileSync(repoPath(candidate.mixamoReviewFbxValidation), 'utf8'));
+    expect(roundTrip).toMatchObject({
+      status: 'upload-review-ready',
+      geometry: { components: 1, nonManifoldEdges: 0 },
+      armatureCount: 0,
+      animationCount: 0,
+    });
+    expect(roundTrip.materials).toContain('Warm_Skin');
+    expect(COURIER_ASSET_CONTRACT).toMatchObject({
+      status: 'upload-review-ready',
+      uploadApproved: false,
+      preMixamoSource: null,
+    });
   });
 
   it('rejects malformed visual-candidate provenance', () => {

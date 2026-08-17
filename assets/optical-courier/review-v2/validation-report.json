@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "status": "visual-review-required",
+  "status": "upload-review-ready",
   "source": "assets/optical-courier/review-v2/optical-courier-review-v2.blend",
-  "sourceSha256": "5b883dd8fd73f7b79d86846e620f9a06a4862632d19c4ad3a1c70582a74713f3",
+  "sourceSha256": "eacd970feccb5a74909fef58eebcefb6e436817583a23c217d18c3fbb58842ad",
   "geometry": {
     "meshObjectCount": 2,
     "primaryObject": "OpticalCourier_ReviewBody",
@@ -75,7 +75,8 @@
     "Shell_OffWhite",
     "Signal_Teal",
     "Signal_Teal.001",
-    "Sole_Amber"
+    "Sole_Amber",
+    "Warm_Skin"
   ],
   "retopology": {
     "error": "RuntimeError: QuadriFlow returned ['CANCELLED']",
@@ -100,6 +101,17 @@
     "center-zipper",
     "paired-graphite-pocket-marks"
   ],
+  "materialRegions": {
+    "head": {
+      "rule": "warm-skin; visor iff 1.69<z<1.91 and y<-0.08 and normalY<-0.15",
+      "totalFaces": 4810,
+      "skinFaces": 4362,
+      "graphiteVisorFaces": 448,
+      "visorBackFaceCount": 0,
+      "skinCoverage": 0.906861,
+      "graphiteCoverage": 0.093139
+    }
+  },
   "rig": {
     "armatures": 0,
     "actions": 0

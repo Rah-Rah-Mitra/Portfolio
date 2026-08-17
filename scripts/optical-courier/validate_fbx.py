@@ -25,7 +25,11 @@ def mesh_facts(obj):
     return {"vertices": len(obj.data.vertices), "triangles": sum(len(poly.vertices) - 2 for poly in obj.data.polygons), "components": components, "nonManifoldEdges": non_manifold}
 
 
-parser = argparse.ArgumentParser(); parser.add_argument("--input", required=True); parser.add_argument("--output", required=True)
+parser = argparse.ArgumentParser()
+parser.add_argument("--input", required=True)
+parser.add_argument("--output", required=True)
+parser.add_argument("--status", default="pre-rig-ready")
+parser.add_argument("--source-label", default="assets/optical-courier/pre-mixamo/optical-courier-upload.fbx")
 args = parser.parse_args(__import__('sys').argv[__import__('sys').argv.index("--") + 1:])
 source = Path(args.input).resolve()
 bpy.ops.object.select_all(action="SELECT"); bpy.ops.object.delete(use_global=False)
@@ -35,7 +39,8 @@ primary = max(meshes, key=lambda obj: len(obj.data.vertices))
 facts = mesh_facts(primary)
 report = {
     "schemaVersion": 1,
-    "source": "assets/optical-courier/pre-mixamo/optical-courier-upload.fbx",
+    "status": args.status,
+    "source": args.source_label,
     "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
     "bytes": source.stat().st_size,
     "meshObjectCount": len(meshes),
@@ -43,6 +48,7 @@ report = {
     "geometry": facts,
     "armatureCount": sum(1 for obj in bpy.context.scene.objects if obj.type == "ARMATURE"),
     "animationCount": len(bpy.data.actions),
+    "materials": sorted({slot.material.name for mesh in meshes for slot in mesh.material_slots if slot.material}),
     "coordinateContract": {"forward": "-Y", "up": "+Z", "units": "metres"},
 }
 Path(args.output).resolve().write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

@@ -112,22 +112,25 @@
     "publicDistribution": false,
     "report": "assets/optical-courier/proofs/hunyuan-proof-report.json",
     "decision": "rejected-for-deformation",
-    "measuredReason": "Blender 5.2 found 62,000 vertices, 126,044 triangles, one connected component, and 2,826 non-manifold edges. The raw voxel extraction was rejected for deformation. A later repaired derivative is tracked separately as visual-review-required; the original proof is never an upload source."
+    "measuredReason": "Blender 5.2 found 62,000 vertices, 126,044 triangles, one connected component, and 2,826 non-manifold edges. The raw voxel extraction was rejected for deformation. A later repaired derivative is tracked separately as upload-review-ready with uploadApproved false; the original proof is never an upload source."
   },
   "visualFidelityCandidate": {
-    "status": "visual-review-required",
+    "status": "upload-review-ready",
     "source": "hunyuan-derived-retopology",
     "sourceProofSha256": "1250e96e354aa76840f784d267932662d56d1b333b4591bb76d19fa05280002d",
     "sourceBlend": "assets/optical-courier/review-v2/optical-courier-review-v2.blend",
-    "sourceBlendSha256": "5b883dd8fd73f7b79d86846e620f9a06a4862632d19c4ad3a1c70582a74713f3",
+    "sourceBlendSha256": "eacd970feccb5a74909fef58eebcefb6e436817583a23c217d18c3fbb58842ad",
     "validation": "assets/optical-courier/review-v2/validation-report.json",
     "retopologyAttempt": "assets/optical-courier/review-v2/retopology-attempt.json",
     "comparisonSheet": "assets/optical-courier/review-v2/optical-courier-comparison.png",
-    "comparisonSheetSha256": "ebf147a2edd3da7edeec6b8199f4a591cb325d3f393392c245cb4e3f5ffa15f2",
+    "comparisonSheetSha256": "5095f717dcc18231b64d643883c988ecf88138566aed4a2037897761a6637ea5",
     "previewDirectory": "assets/optical-courier/review-v2/preview",
+    "mixamoReviewFbx": "assets/optical-courier/review-v2/optical-courier-mixamo-review.fbx",
+    "mixamoReviewFbxSha256": "079f89a38e13df3d2c6aa0203daaa497446541dcd4342c8e624c173447a2de6a",
+    "mixamoReviewFbxValidation": "assets/optical-courier/review-v2/mixamo-review-fbx-report.json",
     "uploadApproved": false,
     "mixamoUploadAsset": null,
-    "notes": "Seeded QuadriFlow was attempted and returned CANCELLED on the closed voxel-union source. The truthful fallback uses deterministic manifold voxel union plus controlled collapse to 24,000 triangles, continuous position-masked materials, a surface-mounted teal signal, and bakeable zipper/pocket masks. Parent review accepts this as a visual candidate only. Awaiting final upload authorization; this is not a Mixamo upload authorization."
+    "notes": "Seeded QuadriFlow was attempted and returned CANCELLED on the closed voxel-union source. The truthful fallback uses deterministic manifold voxel union plus controlled collapse to 24,000 triangles, continuous position-masked materials, a surface-mounted teal signal, and bakeable zipper/pocket masks. Round-two review corrected the helmet-like head: warm skin now covers the scalp, crown, sides, and back, while graphite is confined to the front visor band. The FBX is ready for final upload review only. uploadApproved remains false, mixamoUploadAsset remains null, and no Mixamo rigging has occurred."
   },
   "mixamo": {
     "status": "blocked-chrome-control",

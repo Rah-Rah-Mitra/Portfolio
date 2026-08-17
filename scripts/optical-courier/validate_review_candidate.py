@@ -63,6 +63,18 @@ signal_gap = None
 if signal is not None:
     signal_max_y = max((signal.matrix_world @ Vector(corner)).y for corner in signal.bound_box)
     signal_gap = max(0.0, head_front_y - signal_max_y)
+head_faces = []
+graphite_visor_faces = []
+for polygon in body.data.polygons:
+    center = body.matrix_world @ polygon.center
+    if center.z <= 1.64:
+        continue
+    normal = body.matrix_world.to_3x3() @ polygon.normal
+    head_faces.append((center, normal))
+    if 1.69 < center.z < 1.91 and center.y < -0.08 and normal.y < -0.15:
+        graphite_visor_faces.append((center, normal))
+skin_faces = len(head_faces) - len(graphite_visor_faces)
+visor_back_faces = sum(1 for center, normal in graphite_visor_faces if center.y >= 0 or normal.y >= 0)
 joint_sections = [
     joint_section(body, "left-shoulder", "X", (-0.31, 0, 1.50), (0.15, 0.24, 0.18), 0),
     joint_section(body, "right-shoulder", "X", (0.31, 0, 1.50), (0.15, 0.24, 0.18), 0),
@@ -73,7 +85,7 @@ joint_sections = [
 ]
 report = {
     "schemaVersion": 1,
-    "status": "visual-review-required",
+    "status": "upload-review-ready",
     "source": "assets/optical-courier/review-v2/optical-courier-review-v2.blend",
     "sourceSha256": hashlib.sha256(source.read_bytes()).hexdigest(),
     "geometry": {
@@ -94,6 +106,17 @@ report = {
     "signalSurfaceGapMeters": round(signal_gap, 6) if signal_gap is not None else None,
     "jacketDetailMode": body.get("jacket_detail_mode"),
     "jacketDetailRoles": json.loads(body.get("jacket_detail_roles", "[]")),
+    "materialRegions": {
+        "head": {
+            "rule": body.get("head_material_rule"),
+            "totalFaces": len(head_faces),
+            "skinFaces": skin_faces,
+            "graphiteVisorFaces": len(graphite_visor_faces),
+            "visorBackFaceCount": visor_back_faces,
+            "skinCoverage": round(skin_faces / len(head_faces), 6) if head_faces else 0,
+            "graphiteCoverage": round(len(graphite_visor_faces) / len(head_faces), 6) if head_faces else 0,
+        }
+    },
     "rig": {"armatures": sum(1 for obj in bpy.context.scene.objects if obj.type == "ARMATURE"), "actions": len(bpy.data.actions)},
 }
 output = Path(args.output).resolve()
@@ -103,3 +126,9 @@ if components != 1 or non_manifold != 0 or triangles < 10000 or triangles > 3000
     raise RuntimeError(f"review candidate geometry gate failed: {report['geometry']}")
 if any(section["vertices"] < 24 or section["crossSections"] < 3 for section in joint_sections):
     raise RuntimeError(f"review candidate joint-section gate failed: {joint_sections}")
+if not head_faces or skin_faces <= 0 or len(graphite_visor_faces) <= 0 or visor_back_faces != 0:
+    raise RuntimeError(f"review candidate head material-region gate failed: {report['materialRegions']['head']}")
+skin_coverage = skin_faces / len(head_faces)
+graphite_coverage = len(graphite_visor_faces) / len(head_faces)
+if skin_coverage <= 0.45 or not 0.05 < graphite_coverage < 0.45:
+    raise RuntimeError(f"review candidate head coverage gate failed: {report['materialRegions']['head']}")

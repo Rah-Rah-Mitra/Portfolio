@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import * as audioPolicy from '../lib/audioPolicy';
 import { AUDIO_CUES, createAudioPolicy, readSoundPreference } from '../lib/audioPolicy';
 
 describe('optional audio policy', () => {
@@ -14,5 +15,19 @@ describe('optional audio policy', () => {
     expect(readSoundPreference('false')).toBe(false);
     expect(readSoundPreference('garbage')).toBe(false);
     expect(Object.keys(AUDIO_CUES)).toEqual(['footstep', 'opticalClick', 'railServo', 'calibrationConfirm', 'sceneTransition']);
+  });
+
+  it('maps discrete traversal and Explore events to footstep and scene-transition cues', () => {
+    expect(audioPolicy.cueForWorldEvent?.({ type: 'COURIER_STEP_COMPLETED', chapterId: 'work', direction: 'forward' })).toBe('footstep');
+    expect(audioPolicy.cueForWorldEvent?.({ type: 'EXPLORE_ENTERED', sceneId: 'camera-laboratory', source: 'visitor' })).toBe('sceneTransition');
+  });
+
+  it('throttles continuous rail updates without suppressing later discrete cues', () => {
+    const gate = audioPolicy.createAudioCueGate?.(240);
+    expect(gate).toBeDefined();
+    expect(gate?.shouldPlay('railServo', 1000)).toBe(true);
+    expect(gate?.shouldPlay('railServo', 1100)).toBe(false);
+    expect(gate?.shouldPlay('railServo', 1240)).toBe(true);
+    expect(gate?.shouldPlay('footstep', 1241)).toBe(true);
   });
 });

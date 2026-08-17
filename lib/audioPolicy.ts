@@ -1,3 +1,5 @@
+import type { PortfolioWorldEvent } from '../types';
+
 export const SOUND_PREFERENCE_KEY = 'portfolio-sound-enabled';
 
 export const AUDIO_CUES = {
@@ -9,6 +11,28 @@ export const AUDIO_CUES = {
 } as const;
 
 export type AudioCue = keyof typeof AUDIO_CUES;
+
+export const cueForWorldEvent = (event: PortfolioWorldEvent): AudioCue | null => {
+  if (event.type === 'COURIER_STEP_COMPLETED') return 'footstep';
+  if (event.type === 'CAMERA_CALIBRATED' || event.type === 'STEREO_POINT_TRIANGULATED') return 'calibrationConfirm';
+  if (event.type === 'CAMERA_LAB_UPDATED') return 'railServo';
+  if (event.type === 'DEPARTURE_COMPLETED' || event.type === 'LAB_RESET') return 'opticalClick';
+  if (event.type === 'EXPLORE_ENTERED' || event.type === 'EXPLORE_EXITED') return 'sceneTransition';
+  return null;
+};
+
+export const createAudioCueGate = (railCooldownMilliseconds = 420) => {
+  let lastRailCueAt = Number.NEGATIVE_INFINITY;
+  return {
+    shouldPlay(cue: AudioCue, atMilliseconds = performance.now()) {
+      if (cue !== 'railServo') return true;
+      if (atMilliseconds - lastRailCueAt < railCooldownMilliseconds) return false;
+      lastRailCueAt = atMilliseconds;
+      return true;
+    },
+    reset() { lastRailCueAt = Number.NEGATIVE_INFINITY; },
+  };
+};
 
 export const readSoundPreference = (value: string | null): boolean => value === 'true';
 

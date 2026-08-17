@@ -5,6 +5,15 @@ export const DEFAULT_GEMINI_MODEL = 'gemma-4-26b-a4b-it';
 
 const labModes = new Set(['intrinsics', 'extrinsics', 'optics', 'stereo']);
 const sceneIds = new Set(['calibration', 'systems-in-motion', 'spatial-systems', 'selected-work', 'camera-laboratory', 'departure']);
+const canonicalProjectIds = new Set([
+  'on-the-spectrum', 'geometry', 'information-lab', 'arcane', 'hailo-training', 'hybrid-flow-shop-digital-twin',
+  'azure-apc-web-simulator', 'changeover-data-quality-pipeline', 'project-utopia', 'volt-pulse-sg', 'smart-exam',
+  'waaah-comics', 'ethos-lens', 'agewelllah-ai', 'maritime-deficiency-severity', 'churp', 'kaogenie', 'asyncddgs',
+  'portfolio-repo', 'github-profile-repo', 'kalidokit-fork', 'tp-java', 'ip-java', 'crawl4ai-deepseek-example',
+  'ie2110-grp-13', 'fine-tuning-llms-cybersecurity', 'references', 'eg1311-project',
+]);
+const canonicalExperienceIds = new Set(['abbott-internship', 'nus-education', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
+const canonicalChapterIds = new Set(['home', 'work', 'experience', 'all-work', 'technical-lab', 'domains', 'proof', 'resumes', 'contact']);
 
 const getGeminiModel = () => process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 const getGeminiApiKey = () => process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -17,11 +26,11 @@ const extractJson = (text) => {
   }
 };
 
-const sanitizeCommands = (commands, pageState = {}) => {
+export const sanitizeCommands = (commands, pageState = {}) => {
   if (!Array.isArray(commands)) return [];
-  const projectIds = new Set(Array.isArray(pageState.projects) ? pageState.projects.map((project) => project?.id).filter(Boolean) : []);
-  const experienceIds = new Set(Array.isArray(pageState.experience) ? pageState.experience.map((record) => record?.id).filter(Boolean) : []);
-  const chapterIds = new Set(Array.isArray(pageState.chapters) ? pageState.chapters.filter((id) => typeof id === 'string') : []);
+  const projectIds = new Set(Array.isArray(pageState.projects) ? pageState.projects.map((project) => project?.id).filter((id) => canonicalProjectIds.has(id)) : []);
+  const experienceIds = new Set(Array.isArray(pageState.experience) ? pageState.experience.map((record) => record?.id).filter((id) => canonicalExperienceIds.has(id)) : []);
+  const chapterIds = new Set(Array.isArray(pageState.chapters) ? pageState.chapters.filter((id) => typeof id === 'string' && canonicalChapterIds.has(id)) : []);
   const sanitized = [];
   for (const command of commands.slice(0, 6)) {
     if (!command || typeof command !== 'object' || typeof command.type !== 'string') continue;
@@ -44,12 +53,29 @@ const sanitizeReferences = (references, allowedLinks) => {
   });
 };
 
-const localAgent = (message, reason = 'model_unavailable') => {
+export const localAgent = (message, reason = 'model_unavailable') => {
   const text = String(message || '').toLowerCase();
   const commands = [];
   let reply = 'I could not find that in Rahul’s portfolio record. Ask about optimization, 3D computer vision, security, a résumé, or Explore World.';
   let references = [];
-  if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
+  if (text.includes('technical lab') || text.includes('camera lab') || text.includes('intrinsics') || text.includes('extrinsics') || text.includes('optics') || text.includes('stereo')) {
+    const mode = [...labModes].find((candidate) => text.includes(candidate));
+    reply = 'The Camera Laboratory exposes grounded intrinsics, extrinsics, optics, and stereo controls as a portfolio experiment.';
+    references = [{ label: 'Open the Camera Laboratory', href: '#technical-lab' }];
+    commands.push(mode ? { type: 'openTechnicalLab', mode } : { type: 'openTechnicalLab' });
+  } else if (text.includes('experience') || text.includes('timeline')) {
+    reply = 'The experience timeline keeps Rahul’s roles, responsibilities, and outcomes in conventional semantic HTML.';
+    references = [{ label: 'Read the experience timeline', href: '#experience' }];
+    commands.push({ type: 'focusExperience' });
+  } else if (text.includes('quick scan') || text.includes('concise')) {
+    reply = 'Quick Scan preserves the complete evidence document and omits optional world, video, and sound enhancements.';
+    references = [{ label: 'Quick Scan overview', href: '#home' }];
+    commands.push({ type: 'setQuickScan', enabled: true });
+  } else if (text.includes('guide') || text.includes('chapter')) {
+    reply = 'The guide points toward evidence while the portfolio record remains stationary and readable.';
+    references = [{ label: 'Selected work', href: '#work' }];
+    commands.push({ type: 'focusGuideChapter', chapterId: 'work' });
+  } else if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
     reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce.';
     references = [{ label: 'Hybrid Flow Shop Digital Twin Optimizer', href: '#project-hybrid-flow-shop-digital-twin' }, { label: 'Manufacturing Changeover Data Pipeline', href: '#project-changeover-data-quality-pipeline' }, { label: 'APC Simulator Cloud Operations', href: '#project-azure-apc-web-simulator' }];
     commands.push({ type: 'focusProject', projectId: 'hybrid-flow-shop-digital-twin' });

@@ -8,6 +8,7 @@ import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/a
 import { JOURNEY_STAGES } from '../constants';
 import type { SceneId } from '../types';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';
+import { dispatchExploreControl } from '../lib/worldEvents';
 
 type Reference = { label: string; href: string };
 type ChatMessage = { role: 'assistant' | 'user'; content: string; references?: Reference[] };
@@ -190,7 +191,7 @@ const AskThePage: React.FC = () => {
     } else if (valid.type === 'focusGuideChapter') document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     else if (valid.type === 'enterExploreMode') {
       document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      window.dispatchEvent(new CustomEvent('portfolio:explore', { detail: { action: 'enter', sceneId: valid.sceneId } }));
+      dispatchExploreControl({ action: 'enter', sceneId: valid.sceneId });
     } else if (valid.type === 'setQuickScan') chooseMode(valid.enabled ? 'scan' : 'guided');
   };
 

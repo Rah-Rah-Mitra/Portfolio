@@ -288,6 +288,7 @@ export type PortfolioWorldEvent =
   | { type: 'INTERACTION_RESET'; sceneId: SceneId; source: 'visitor' }
   | { type: 'EXPLORE_ENTERED'; sceneId: SceneId; source: 'visitor' }
   | { type: 'EXPLORE_EXITED'; sceneId: SceneId; source: 'visitor' }
+  | { type: 'COURIER_STEP_COMPLETED'; chapterId: string; direction: 'forward' | 'reverse' }
   | { type: 'JOB_REORDERED'; oldMakespan: number; newMakespan: number; makespanDelta: number; order: string[] }
   | { type: 'MAP_MARKER_MOVED'; markerId: string; coordinates: [number, number]; selectedPlot: string; distance: number }
   | { type: 'PROJECT_OPENED'; projectId: string; selectedId: string; selectedIndex: number }

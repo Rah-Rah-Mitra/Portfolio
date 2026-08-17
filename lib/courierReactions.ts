@@ -17,7 +17,8 @@ const build = (id: string, alias: CourierReactionAlias, priority: number, coales
 export const reactionForEvent = (event: PortfolioWorldEvent): CourierReaction => {
   switch (event.type) {
     case 'QUALITY_CHANGED': return build('quality-change', 'stepAside', 100, event.type);
-    case 'EXPLORE_ENTERED': case 'EXPLORE_EXITED': return build('ownership-change', 'stepAside', 100, event.type);
+    case 'EXPLORE_ENTERED': return build('explore-entered', 'stepAside', 100, event.type);
+    case 'EXPLORE_EXITED': return build('explore-exited', 'look', 100, event.type);
     case 'LAB_RESET': case 'INTERACTION_RESET': return build('reset', 'reset', 100, 'reset');
     case 'CAMERA_CALIBRATED': return event.reprojectionError < 1
       ? build('calibration-success', 'success', 60, 'camera-calibration')

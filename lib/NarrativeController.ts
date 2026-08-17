@@ -10,7 +10,7 @@ export interface NarrativeState {
   characterPoseId: string;
   controlOwner: SceneControlOwner;
   exploreSceneId: SceneId | null;
-  reaction: { id: string; priority: number } | null;
+  reaction: Pick<CourierReaction, 'id' | 'priority' | 'alias' | 'clip'> | null;
   qualityTier: QualityTier;
 }
 
@@ -54,9 +54,8 @@ export class NarrativeController {
 
   enterExplore(sceneId: SceneId) {
     if (this.destroyed) return;
-    this.state = { ...this.state, controlOwner: 'visitor', exploreSceneId: sceneId, reaction: { id: 'ownership-change', priority: 100 } };
+    this.state = { ...this.state, controlOwner: 'visitor', exploreSceneId: sceneId };
     this.notify();
-    this.scheduleReactionClear();
   }
 
   exitExplore(_reason: 'escape' | 'exit' | 'scroll' | 'capability-change') {
@@ -92,7 +91,7 @@ export class NarrativeController {
     const courierReaction = reactionForEvent(event);
     if (this.state.reaction && this.state.reaction.priority > courierReaction.priority) return;
     if (!shouldRestartReaction(this.activeReaction, courierReaction, performance.now() - this.reactionStartedAt)) return;
-    const reaction = { id: courierReaction.id, priority: courierReaction.priority };
+    const reaction = { id: courierReaction.id, priority: courierReaction.priority, alias: courierReaction.alias, clip: courierReaction.clip };
     this.activeReaction = courierReaction;
     this.reactionStartedAt = performance.now();
     if (event.type === 'QUALITY_CHANGED') {

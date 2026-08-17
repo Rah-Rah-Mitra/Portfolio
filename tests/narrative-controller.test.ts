@@ -26,11 +26,20 @@ describe('NarrativeController', () => {
     controller.dispatch({ type: 'PROJECT_OPENED', projectId: 'churp', selectedId: 'map', selectedIndex: 0 });
     controller.dispatch({ type: 'INTERACTION_CHANGED', sceneId: 'spatial-systems', source: 'visitor', detail: 'hover-a' });
     controller.dispatch({ type: 'INTERACTION_CHANGED', sceneId: 'spatial-systems', source: 'visitor', detail: 'hover-b' });
-    expect(controller.getState().reaction?.id).toBe('inspect-project');
+    expect(controller.getState().reaction).toMatchObject({ id: 'inspect-project', alias: 'inspect', clip: 'inspect-object' });
     controller.dispatch({ type: 'QUALITY_CHANGED', tier: 'reduced' });
     expect(controller.getState()).toMatchObject({ qualityTier: 'reduced', reaction: { id: 'quality-change' } });
     controller.clearReaction();
     expect(controller.getState()).toMatchObject({ reaction: null, characterPoseId: 'idle-home' });
+  });
+
+  it('applies distinct typed Explore enter and exit reactions without equal-priority deadlock', () => {
+    const controller = new NarrativeController({ chapterId: 'home', cameraShotId: 'shot-home', characterPoseId: 'idle-home' });
+    controller.enterExplore('camera-laboratory');
+    controller.dispatch({ type: 'EXPLORE_ENTERED', sceneId: 'camera-laboratory', source: 'visitor' });
+    expect(controller.getState()).toMatchObject({ controlOwner: 'visitor', reaction: { id: 'explore-entered', alias: 'stepAside' } });
+    controller.dispatch({ type: 'EXPLORE_EXITED', sceneId: 'camera-laboratory', source: 'visitor' });
+    expect(controller.getState().reaction).toMatchObject({ id: 'explore-exited', alias: 'look' });
   });
 
   it('exits Explore on a capability change and tears down subscribers', () => {
@@ -73,7 +82,8 @@ describe('NarrativeController', () => {
     vi.useFakeTimers();
     const controller = new NarrativeController({ chapterId: 'home', cameraShotId: 'shot-home', characterPoseId: 'idle-home', reactionDurationMs: 300 });
     controller.enterExplore('camera-laboratory');
-    expect(controller.getState().reaction).toEqual({ id: 'ownership-change', priority: 100 });
+    controller.dispatch({ type: 'EXPLORE_ENTERED', sceneId: 'camera-laboratory', source: 'visitor' });
+    expect(controller.getState().reaction).toMatchObject({ id: 'explore-entered', priority: 100, alias: 'stepAside' });
     vi.advanceTimersByTime(300);
     expect(controller.getState()).toMatchObject({ controlOwner: 'visitor', reaction: null, characterPoseId: 'idle-home' });
     controller.destroy();

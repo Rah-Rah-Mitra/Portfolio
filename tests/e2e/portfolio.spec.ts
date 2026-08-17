@@ -205,3 +205,16 @@ test('camera geometry remains interactive in Quick Scan without loading the worl
   await page.getByRole('button', { name: 'Show Engineer View' }).click();
   await expect(page.getByRole('region', { name: 'Engineer View' })).toContainText('Intrinsic matrix K');
 });
+
+test('AI Explore command transfers the shared world to visitor ownership', async ({ page }) => {
+  await page.route('**/api/page-agent', (route) => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ reply: 'Opening the shared optical test bench.', commands: [{ type: 'enterExploreMode', sceneId: 'camera-laboratory' }] }),
+  }));
+  await page.goto('/');
+  await page.getByRole('button', { name: /AI, open Ask this portfolio/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Ask this portfolio' });
+  await dialog.getByRole('textbox', { name: 'Question or page command' }).fill('Open Explore World');
+  await dialog.getByRole('button', { name: 'Send' }).click();
+  await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'visitor');
+});

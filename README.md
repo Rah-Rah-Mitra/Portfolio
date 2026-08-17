@@ -2,7 +2,7 @@
 
 Production: [rahul-mitra.com](https://rahul-mitra.com/)
 
-An evidence-first engineering portfolio spanning software systems, AI and perception, operations research, solution architecture, 3D, civic work, and responsible security. Experience, projects, outcomes, resumes, and contact paths remain semantic HTML; the generated field engineer, Effects Lab, AI assistant, video, and Spatial World are optional supporting layers.
+An evidence-first engineering portfolio spanning software systems, AI and perception, operations research, solution architecture, 3D, civic work, and responsible security. Experience, projects, outcomes, resumes, and contact paths remain semantic HTML; the generated field engineer, Effects Lab, AI assistant, and video are optional supporting layers. Explore World currently links to the shared `#world` optical-test-bench anchor; the combined enhancement is pending.
 
 ## Run locally
 

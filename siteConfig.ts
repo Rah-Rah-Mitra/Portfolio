@@ -19,7 +19,7 @@ export const ASSISTANT_STARTERS = [
   'What did Rahul study in 3D computer vision?',
   'Which résumé should I download?',
   'Show security experience.',
-  'Open the spatial portfolio world.',
+  'Go to the Explore World optical test bench anchor.',
 ] as const;
 
 export const resumeAssetUrl = (slug: string, format: 'docx' | 'pdf') => (

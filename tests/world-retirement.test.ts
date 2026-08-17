@@ -29,4 +29,26 @@ describe('retired separate spatial world', () => {
     expect(design).toContain('Quick Scan');
     expect(design).not.toContain('Spatial World');
   });
+
+  it('keeps active copy and design metadata free of shipped separate-world claims', async () => {
+    const designSidecarUrl = new URL('../.impeccable/design.json', import.meta.url);
+    const [siteConfig, readme, historicalPrompt] = await Promise.all([
+      '../siteConfig.ts',
+      '../README.md',
+      '../SPATIAL_WORLD_UPGRADE_PROMPT.md',
+    ].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
+    const designSidecar = existsSync(designSidecarUrl) ? await readFile(designSidecarUrl, 'utf8') : null;
+
+    expect(siteConfig).toContain('Go to the Explore World optical test bench anchor.');
+    expect(siteConfig).not.toContain('Open the spatial portfolio world.');
+    expect(readme).toContain('shared `#world` optical-test-bench anchor');
+    expect(readme).not.toMatch(/Spatial World (?:is|are)|and Spatial World are optional/i);
+    if (designSidecar) {
+      expect(designSidecar).toContain('Explore World');
+      expect(designSidecar).not.toContain('Spatial World');
+    }
+    expect(historicalPrompt).toContain('Superseded historical migration input');
+    expect(historicalPrompt).toContain('Retired source at the time');
+    expect(historicalPrompt).not.toMatch(/Current world:|Baseline current world|existing Portfolio World|Upgrade the lazy-loaded Three\.js Portfolio World/i);
+  });
 });

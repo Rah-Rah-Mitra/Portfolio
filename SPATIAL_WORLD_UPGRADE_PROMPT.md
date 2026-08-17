@@ -1,30 +1,32 @@
-# Spatial World Upgrade — Implementation Prompt
+# Archived Spatial World Upgrade — Historical Migration Prompt
 
 Use the prompt below for a dedicated implementation task. It is intentionally written as an execution brief rather than a mood-board request.
 
+> **Superseded historical migration input (2026-08-17):** This brief predates the continuous optical-test-bench plan. The separate `PortfolioWorld` modal and its FX state were retired in commit `ffceca5`. Preserve this document as architecture, performance, licensing, and asset provenance only; do not execute its separate-world assumptions as current product requirements. Any future implementation must use the shared `#world` optical-test-bench boundary and the current `PRODUCT.md` and `DESIGN.md`.
+
 ---
 
-You are the principal real-time 3D engineer, technical artist, interaction designer, accessibility engineer, and web performance lead responsible for rebuilding Rahul Mitra's existing Portfolio World.
+This historical brief addressed a principal real-time 3D engineer, technical artist, interaction designer, accessibility engineer, and web performance lead responsible for replacing Rahul Mitra's now-retired separate Portfolio World.
 
 ## Mission
 
-Upgrade the lazy-loaded Three.js Portfolio World into a memorable spatial journey with the interaction density, animation polish, environmental cohesion, sound design, and technical discipline demonstrated by [Messenger by Abeto](https://messenger.abeto.co/), without copying its planet, art, characters, story, UI, topology, or delivery mechanics.
+The proposed migration was to replace the former lazy-loaded Three.js modal with a memorable spatial journey matching the interaction density, animation polish, environmental cohesion, sound design, and technical discipline demonstrated by [Messenger by Abeto](https://messenger.abeto.co/), without copying its planet, art, characters, story, UI, topology, or delivery mechanics.
 
 The result must remain Rahul's professional portfolio: a human-centred robotics and intelligent-systems field notebook experienced through registered camera viewpoints. It must foreground truthful work across software and systems engineering, AI, operations research, optimization, 3D computer vision, spatial computing, probabilistic reasoning, solution architecture, and responsible cybersecurity. It must never become a generic game, a cyberpunk lobby, or a collection of purchased assets without narrative purpose.
 
 Do not stop after recommendations, mockups, or a graybox. Inspect the existing code and assets, write the architecture decision, implement the approved delivery tiers, profile them, and verify the result. If proprietary assets, GPU infrastructure, credentials, or license rights are unavailable, finish every independent layer, provide exact integration interfaces and a reproducible handoff, and report the blocked gate precisely.
 
-## Existing system to preserve
+## Historical system and provenance to preserve
 
 - Workspace: `D:\Portfolio`
 - Production site: `https://rahul-mitra.com/`
 - Stack: React 19, TypeScript, Vite, Tailwind, Three.js, Matter.js, PostHog, server-side `/api/page-agent`
-- Current world: `components/PortfolioWorld.tsx`
+- Retired source at the time: `components/PortfolioWorld.tsx` (deleted in `ffceca5`; available in Git history)
 - Existing GLBs: `public/models/*.glb`
 - Factual sources: `portfolioData.ts`, `PRODUCT.md`, `DESIGN.md`, current résumé sources and generated résumés
 - Preserve the AI assistant, local fallback, UI commands, FX Lab, Build/Secure lenses, analytics, focus management, reduced-motion behavior, data-driven project content, and complete cleanup of renderers, resources, events, animation frames, pointer lock, and audio.
 - Do not fabricate projects, metrics, robotics or SLAM experience, Gaussian-splatting research, professional localization work, or outcomes.
-- Do not replace the accessible portfolio page. The spatial world is an optional deeper route, never the only way to reach evidence, résumés, contact information, or projects.
+- Do not replace the accessible portfolio page. Any future shared optical test bench is an optional deeper route, never the only way to reach evidence, résumés, contact information, or projects.
 
 ## Reference interpretation
 
@@ -201,7 +203,7 @@ Measure on representative hardware and connection profiles; do not declare succe
 
 ### Phase 0 — Audit and ADR
 
-- Baseline current world on desktop, tablet, mobile, reduced motion, low-power GPU, and no-WebGL/failure paths.
+- Recover and baseline the retired world from Git history only when its measurements inform the shared test-bench ADR; cover desktop, tablet, mobile, reduced motion, low-power GPU, and no-WebGL/failure paths.
 - Produce asset inventory, dependency map, flame charts, GPU captures, network waterfall, accessibility tree notes, current cleanup audit, risk register, and cost model.
 - Write the three-option ADR and select the delivery model.
 
@@ -280,4 +282,4 @@ Measure on representative hardware and connection profiles; do not declare succe
 
 ---
 
-The intended result is not “the current world with better models.” It is a measured, optional spatial product: web-native by default, Unreal-enhanced by consent, and unmistakably part of Rahul Mitra's portfolio.
+The historical intended result was not “the retired world with better models.” Its useful target remains a measured, optional spatial product: web-native by default, Unreal-enhanced by consent, and unmistakably part of Rahul Mitra's portfolio.

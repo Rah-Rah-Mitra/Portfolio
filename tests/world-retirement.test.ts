@@ -48,6 +48,9 @@ describe('retired separate spatial world', () => {
       expect(designSidecar).not.toContain('Spatial World');
     }
     expect(historicalPrompt).toContain('Superseded historical migration input');
+    expect(historicalPrompt).toContain(
+      'All remaining Build/Secure and lens references below are historical and non-executable; the current product has no lenses.',
+    );
     expect(historicalPrompt).toContain('Retired source at the time');
     expect(historicalPrompt).not.toMatch(/Current world:|Baseline current world|existing Portfolio World|Upgrade the lazy-loaded Three\.js Portfolio World/i);
   });

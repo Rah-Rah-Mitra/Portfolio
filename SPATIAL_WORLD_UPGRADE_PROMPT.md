@@ -2,7 +2,7 @@
 
 Use the prompt below for a dedicated implementation task. It is intentionally written as an execution brief rather than a mood-board request.
 
-> **Superseded historical migration input (2026-08-17):** This brief predates the continuous optical-test-bench plan. The separate `PortfolioWorld` modal and its FX state were retired in commit `ffceca5`. Preserve this document as architecture, performance, licensing, and asset provenance only; do not execute its separate-world assumptions as current product requirements. Any future implementation must use the shared `#world` optical-test-bench boundary and the current `PRODUCT.md` and `DESIGN.md`.
+> **Superseded historical migration input (2026-08-17):** This brief predates the continuous optical-test-bench plan. The separate `PortfolioWorld` modal and its FX state were retired in commit `ffceca5`. Preserve this document as architecture, performance, licensing, and asset provenance only; do not execute its separate-world assumptions as current product requirements. Any future implementation must use the shared `#world` optical-test-bench boundary and the current `PRODUCT.md` and `DESIGN.md`. All remaining Build/Secure and lens references below are historical and non-executable; the current product has no lenses.
 
 ---
 

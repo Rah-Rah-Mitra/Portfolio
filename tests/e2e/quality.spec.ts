@@ -45,6 +45,23 @@ test('the first recruiter view names recent experience and two leading projects'
     for (const path of ['/', '/?mode=scan']) {
       await page.goto(path);
       await page.evaluate(() => window.scrollTo(0, 0));
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+      const firstView = await page.evaluate(() => {
+        const header = document.querySelector('.portfolio-header')?.getBoundingClientRect();
+        const heading = document.querySelector('#portfolio-title')?.getBoundingClientRect();
+        return {
+          scrollY: window.scrollY,
+          header: header ? { top: header.top, bottom: header.bottom } : null,
+          heading: heading ? { top: heading.top, bottom: heading.bottom } : null,
+        };
+      });
+      expect(firstView.scrollY).toBe(0);
+      expect(firstView.header).not.toBeNull();
+      expect(firstView.header!.top).toBeGreaterThanOrEqual(0);
+      expect(firstView.header!.bottom).toBeLessThanOrEqual(viewport.height);
+      expect(firstView.heading).not.toBeNull();
+      expect(firstView.heading!.top).toBeGreaterThanOrEqual(firstView.header!.bottom);
+      expect(firstView.heading!.bottom).toBeLessThanOrEqual(viewport.height);
       const proof = page.getByLabel('Current proof');
       await expect(proof).toContainText('Abbott');
       await expect(proof).toContainText('Hybrid Flow Shop');

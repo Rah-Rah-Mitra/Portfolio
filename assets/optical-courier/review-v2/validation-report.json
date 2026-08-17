@@ -67,6 +67,7 @@
       "crossSections": 5
     }
   ],
+  "jointSectionInterpretation": "occupancy-bins-not-verified-edge-loops",
   "materials": [
     "Black_GlovesBoots",
     "Charcoal_Trousers",

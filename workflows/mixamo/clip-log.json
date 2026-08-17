@@ -2,14 +2,17 @@
   "schemaVersion": 1,
   "status": "blocked-chrome-control",
   "model": "Optical Courier",
-  "uploadAsset": null,
-  "uploadAssetSha256": null,
+  "uploadAsset": "assets/optical-courier/review-v2/optical-courier-mixamo-review.fbx",
+  "uploadAssetSha256": "079f89a38e13df3d2c6aa0203daaa497446541dcd4342c8e624c173447a2de6a",
+  "productionApproved": false,
   "reviewCandidateAsset": {
     "path": "assets/optical-courier/review-v2/optical-courier-mixamo-review.fbx",
     "sha256": "079f89a38e13df3d2c6aa0203daaa497446541dcd4342c8e624c173447a2de6a",
     "status": "upload-review-ready",
-    "uploadApproved": false,
-    "mustNotUploadWithoutFinalApproval": true
+    "uploadApproved": true,
+    "productionApproved": false,
+    "approvalScope": "one-constrained-mixamo-upload-rig-test",
+    "jointSectionInterpretation": "occupancy-bins-not-verified-edge-loops"
   },
   "rejectedUploadAsset": {
     "path": "assets/optical-courier/pre-mixamo/optical-courier-upload.fbx",
@@ -48,5 +51,5 @@
       "root and scale consistency"
     ]
   },
-  "notes": "Resume only after Chrome control is available. Record exact search terms, selected Mixamo names, parameters, format, skin choice, untouched download, and production derivative; never infer or fabricate a clip selection."
+  "notes": "Resume only after Chrome control is available. Upload only uploadAsset for one constrained rig test. Joint-section counts are occupancy bins, not verified deformation edge loops. Record exact search terms, selected Mixamo names, parameters, format, skin choice, untouched download, and production derivative; never infer or fabricate a clip selection. This approval does not authorize a production GLB."
 }

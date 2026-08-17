@@ -67,9 +67,12 @@ export const validateCourierManifest = (value: unknown): ValidationResult => {
     || !isNonEmpty(visualCandidate.mixamoReviewFbx)
     || !isSha256(visualCandidate.mixamoReviewFbxSha256)
     || !isNonEmpty(visualCandidate.mixamoReviewFbxValidation)
-    || visualCandidate.uploadApproved !== false
-    || visualCandidate.mixamoUploadAsset !== null) {
-    issues.push('visual fidelity candidate must preserve complete review-only provenance');
+    || visualCandidate.uploadApproved !== true
+    || visualCandidate.productionApproved !== false
+    || visualCandidate.mixamoUploadAsset !== visualCandidate.mixamoReviewFbx
+    || visualCandidate.approvalScope !== 'one-constrained-mixamo-upload-rig-test'
+    || visualCandidate.jointSectionInterpretation !== 'occupancy-bins-not-verified-edge-loops') {
+    issues.push('visual fidelity candidate must preserve constrained upload approval and non-production provenance');
   }
   return { valid: issues.length === 0, issues };
 };

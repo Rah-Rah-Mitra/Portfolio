@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import manifest from '../workflows/optical-courier/prompt-manifest.json';
 import validationReport from '../assets/optical-courier/pre-mixamo/validation-report.json';
 import proofReport from '../assets/optical-courier/proofs/hunyuan-proof-report.json';
+import mixamoLog from '../workflows/mixamo/clip-log.json';
 import { COURIER_ASSET_CONTRACT } from '../world/courierAssetContract';
 import { validateCourierManifest, validatePreMixamoReport } from '../lib/courierAssetValidation';
 
@@ -47,6 +48,10 @@ describe('Optical Courier pre-rig production checkpoint', () => {
       reason: expect.stringMatching(/ragged|silhouette|fidelity/i),
     }));
     expect(COURIER_ASSET_CONTRACT.preMixamoSource).toBeNull();
+    expect('sourceBlend' in COURIER_ASSET_CONTRACT).toBe(false);
+    expect(COURIER_ASSET_CONTRACT.rejectedSourceBlend).toBe('assets/optical-courier/pre-mixamo/optical-courier-source.blend');
+    expect('sourceBlend' in manifest.preMixamo).toBe(false);
+    expect(manifest.preMixamo.rejectedSourceBlend).toBe('assets/optical-courier/pre-mixamo/optical-courier-source.blend');
     expect(COURIER_ASSET_CONTRACT.visualStatus).toBe('rejected-for-upload');
     expect(COURIER_ASSET_CONTRACT.productionGlb).toBeNull();
     expect(COURIER_ASSET_CONTRACT.runtimeFallback).toBe('procedural-optical-courier');
@@ -73,16 +78,19 @@ describe('Optical Courier pre-rig production checkpoint', () => {
     expect(report.jacketDetailRoles).toEqual(['center-zipper', 'paired-graphite-pocket-marks']);
   });
 
-  it('keeps the visual-fidelity replacement in review while proving clean geometry and bend zones', () => {
+  it('approves the visual-fidelity replacement only for the constrained Mixamo test', () => {
     expect(manifest.visualFidelityCandidate).toMatchObject({
       status: 'upload-review-ready',
       source: 'hunyuan-derived-retopology',
-      uploadApproved: false,
+      uploadApproved: true,
+      productionApproved: false,
+      mixamoUploadAsset: 'assets/optical-courier/review-v2/optical-courier-mixamo-review.fbx',
     });
     const reportPath = manifest.visualFidelityCandidate.validation;
     expect(existsSync(repoPath(reportPath))).toBe(true);
     const report = JSON.parse(readFileSync(repoPath(reportPath), 'utf8'));
     expect(report.status).toBe('upload-review-ready');
+    expect(report.jointSectionInterpretation).toBe('occupancy-bins-not-verified-edge-loops');
     expect(report.geometry).toMatchObject({
       primaryConnectedComponents: 1,
       nonManifoldEdges: 0,
@@ -113,10 +121,11 @@ describe('Optical Courier pre-rig production checkpoint', () => {
     expect(report.materialRegions.head.graphiteCoverage).toBeLessThan(0.45);
   });
 
-  it('exports a review-only FBX without granting Mixamo upload approval', () => {
+  it('authorizes the exact reviewed FBX without claiming a rig or production asset', () => {
     const candidate = manifest.visualFidelityCandidate;
-    expect(candidate.uploadApproved).toBe(false);
-    expect(candidate.mixamoUploadAsset).toBeNull();
+    expect(candidate.uploadApproved).toBe(true);
+    expect(candidate.productionApproved).toBe(false);
+    expect(candidate.mixamoUploadAsset).toBe(candidate.mixamoReviewFbx);
     expect(existsSync(repoPath(candidate.mixamoReviewFbx))).toBe(true);
     expect(sha256(candidate.mixamoReviewFbx)).toBe(candidate.mixamoReviewFbxSha256);
     const roundTrip = JSON.parse(readFileSync(repoPath(candidate.mixamoReviewFbxValidation), 'utf8'));
@@ -129,8 +138,21 @@ describe('Optical Courier pre-rig production checkpoint', () => {
     expect(roundTrip.materials).toContain('Warm_Skin');
     expect(COURIER_ASSET_CONTRACT).toMatchObject({
       status: 'upload-review-ready',
-      uploadApproved: false,
+      uploadApproved: true,
+      productionApproved: false,
       preMixamoSource: null,
+      productionGlb: null,
+    });
+    expect(mixamoLog).toMatchObject({
+      status: 'blocked-chrome-control',
+      uploadAsset: candidate.mixamoReviewFbx,
+      uploadAssetSha256: candidate.mixamoReviewFbxSha256,
+      productionApproved: false,
+      authoritativeSkinDownload: null,
+      reviewCandidateAsset: {
+        uploadApproved: true,
+        productionApproved: false,
+      },
     });
   });
 

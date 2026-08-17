@@ -49,7 +49,7 @@ def main():
     report = {
         "schemaVersion": 1,
         "status": "pre-rig-ready",
-        "sourceBlend": "assets/optical-courier/pre-mixamo/optical-courier-source.blend",
+        "rejectedSourceBlend": "assets/optical-courier/pre-mixamo/optical-courier-source.blend",
         "geometry": {
             "meshObjectCount": len(meshes),
             "primaryObject": body.name,

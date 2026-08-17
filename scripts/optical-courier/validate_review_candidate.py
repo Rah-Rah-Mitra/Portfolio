@@ -100,6 +100,7 @@ report = {
     },
     "bounds": {"min": [round(value, 6) for value in minimum], "max": [round(value, 6) for value in maximum]},
     "jointSections": joint_sections,
+    "jointSectionInterpretation": "occupancy-bins-not-verified-edge-loops",
     "materials": sorted({slot.material.name for mesh in meshes for slot in mesh.material_slots if slot.material}),
     "retopology": json.loads(body.get("retopology_attempt", "{}")),
     "materialBoundaryMode": body.get("material_boundary_mode"),

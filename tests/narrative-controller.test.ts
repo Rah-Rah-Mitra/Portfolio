@@ -88,4 +88,17 @@ describe('NarrativeController', () => {
     expect(states).toEqual(['visitor', 'transition']);
     expect(controller.getState().cameraShotId).toBe('shot-home');
   });
+
+  it('resolves a policy unmount synchronously to story and cancels bounded reactions', () => {
+    vi.useFakeTimers();
+    const controller = new NarrativeController({ chapterId: 'home', cameraShotId: 'shot-home', characterPoseId: 'idle-home' });
+    controller.enterExplore('camera-laboratory');
+    const resolvePolicy = (controller as NarrativeController & { resolveCapabilityPolicy?: (tier: 'static') => ReturnType<NarrativeController['getState']> }).resolveCapabilityPolicy;
+    expect(resolvePolicy).toBeTypeOf('function');
+    const state = resolvePolicy?.call(controller, 'static');
+    expect(state).toMatchObject({ controlOwner: 'story', exploreSceneId: null, qualityTier: 'static', reaction: null });
+    const notifications: string[] = []; controller.subscribe((snapshot) => notifications.push(snapshot.controlOwner));
+    vi.runAllTimers(); expect(notifications).toEqual([]);
+    controller.destroy(); vi.useRealTimers();
+  });
 });

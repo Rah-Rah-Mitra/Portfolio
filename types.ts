@@ -234,6 +234,14 @@ export type ResolvedWorldAnchor = WorldAnchorDefinition & {
 
 export type CameraShotOverride = Partial<Omit<CameraShotDefinition, 'id' | 'chapterId' | 'responsive'>>;
 
+export type CameraLightingDefinition = {
+  key: number;
+  fill: number;
+  environment: number;
+  keyColor?: string;
+  fillColor?: string;
+};
+
 export type CameraShotDefinition = {
   id: string;
   chapterId: string;
@@ -250,7 +258,7 @@ export type CameraShotDefinition = {
   scrollRange: [number, number];
   transition: { duration: number; easing: string };
   safeTextRegionIds?: string[];
-  lighting?: { key: number; fill: number; environment: number };
+  lighting?: CameraLightingDefinition;
   characterFraming?: { scale: number; offset: Vector3Tuple };
   responsive?: Partial<Record<'tablet' | 'mobile', CameraShotOverride>>;
 };

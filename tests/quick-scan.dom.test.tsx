@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ExperienceModeProvider, useExperienceMode } from '../contexts/ExperienceModeContext';
 import { ExperienceModeControl, PortfolioHeader } from '../components/PortfolioExperience';
 
@@ -49,6 +49,21 @@ describe('Guided and Quick Scan control', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Quick Scan' }).getAttribute('aria-pressed')).toBe('true'));
     fireEvent.click(screen.getByRole('button', { name: 'Guided' }));
     expect(screen.getByRole('button', { name: 'Guided' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('signals the mounted world synchronously before Quick Scan policy is applied', async () => {
+    const handoff = vi.fn();
+    window.addEventListener('portfolio:world-policy-change', handoff);
+    render(
+      <ExperienceModeProvider capabilities={{ saveData: false, reducedMotion: false, webgl: 'full' }}>
+        <ExperienceModeControl />
+      </ExperienceModeProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guided' }).getAttribute('aria-pressed')).toBe('true'));
+    fireEvent.click(screen.getByRole('button', { name: 'Quick Scan' }));
+    expect(handoff).toHaveBeenCalledTimes(1);
+    expect((handoff.mock.calls[0][0] as CustomEvent).detail).toMatchObject({ allowWorld: false, qualityTier: 'static' });
+    window.removeEventListener('portfolio:world-policy-change', handoff);
   });
 
   it('enables enhancements after an explicit reduced-motion Guided opt-in', async () => {

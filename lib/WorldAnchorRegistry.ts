@@ -93,7 +93,8 @@ export class WorldAnchorRegistry {
       const offsetX = (centerX / viewport.width * 2 - 1) * halfWidth;
       const offsetY = (1 - centerY / viewport.height * 2) * halfHeight;
       const onRay = add(add(add(shot.position, scale(forward, depth)), scale(right, offsetX)), scale(up, offsetY));
-      const safeTextRects = (definition.occluderElementIds ?? []).flatMap((id) => {
+      const safeTextIds = [...new Set([...(definition.occluderElementIds ?? []), ...(shot.safeTextRegionIds ?? [])])];
+      const safeTextRects = safeTextIds.flatMap((id) => {
         const occluder = document.getElementById(id);
         return occluder ? [occluder.getBoundingClientRect()] : [];
       });

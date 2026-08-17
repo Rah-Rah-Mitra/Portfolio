@@ -8,6 +8,7 @@ import {
   resolveExperiencePolicy,
   withExperienceMode,
 } from '../lib/experienceMode';
+import { signalWorldPolicyChange } from '../lib/worldPolicyHandoff';
 
 const SESSION_MODE_KEY = 'portfolio-experience-mode';
 const staticPolicy: ExperiencePolicy = {
@@ -32,6 +33,10 @@ interface ExperienceModeContextValue {
 
 const ExperienceModeContext = createContext<ExperienceModeContextValue | null>(null);
 
+const signalPolicyHandoff = (policy: ExperiencePolicy) => {
+  if (!policy.allowHeavyAssets) signalWorldPolicyChange({ allowWorld: false, qualityTier: 'static' });
+};
+
 export const useExperienceMode = () => {
   const value = useContext(ExperienceModeContext);
   if (!value) throw new Error('useExperienceMode must be used within ExperienceModeProvider');
@@ -55,6 +60,7 @@ export const ExperienceModeProvider: React.FC<{
       modeFromSearch(window.location.search),
     );
     const next = resolveLocation(null, true);
+    signalPolicyHandoff(next);
     setCapabilities(detected);
     setPolicy(next);
     if (next.mode === 'scan' && modeFromSearch(window.location.search) !== 'scan') {
@@ -63,6 +69,7 @@ export const ExperienceModeProvider: React.FC<{
     const synchronizeHistory = (event: PopStateEvent) => {
       const historyChoice = modeFromHistoryState(event.state);
       const restored = resolveLocation(historyChoice, false);
+      signalPolicyHandoff(restored);
       setPolicy(restored);
       if (historyChoice) sessionStorage.setItem(SESSION_MODE_KEY, historyChoice);
     };
@@ -74,6 +81,7 @@ export const ExperienceModeProvider: React.FC<{
     if (!capabilities || (policy.hardFailure && mode === 'guided')) return;
     sessionStorage.setItem(SESSION_MODE_KEY, mode);
     const next = resolveExperiencePolicy(capabilities, mode);
+    signalPolicyHandoff(next);
     setPolicy(next);
     window.history.pushState({ ...window.history.state, portfolioExperienceMode: mode }, '', withExperienceMode(window.location.href, mode));
   };

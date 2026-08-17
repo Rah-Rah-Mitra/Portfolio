@@ -82,6 +82,14 @@ export class NarrativeController {
     this.notify();
   }
 
+  resolveCapabilityPolicy(qualityTier: QualityTier) {
+    if (this.reactionTimer) clearTimeout(this.reactionTimer);
+    this.reactionTimer = null;
+    this.state = { ...this.state, controlOwner: 'story', exploreSceneId: null, cameraShotId: this.storyShotId, characterPoseId: this.storyPoseId, reaction: null, qualityTier };
+    this.notify();
+    return this.getState();
+  }
+
   authorCameraShot(cameraShotId: string) {
     if (this.destroyed) return;
     this.storyShotId = cameraShotId;

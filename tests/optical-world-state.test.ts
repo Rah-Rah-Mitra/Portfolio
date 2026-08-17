@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyCameraShotToAdapter, applyOpticalGeometryToAdapter, deriveOpticalGeometry, resolveSafePlacement } from '../world/opticalWorldState';
+import * as worldState from '../world/opticalWorldState';
 import { cameraShots } from '../world/narrativeManifest';
 import type { CameraLabSnapshot } from '../types';
 
@@ -36,9 +37,41 @@ describe('optical renderer state adapters', () => {
   });
 
   it('applies every live director camera property', () => {
+    const adapter = { position: [0, 0, 0] as [number, number, number], target: [0, 0, 0] as [number, number, number], fov: 0, near: 0, far: 0, roll: 0, exposure: 0, focusDistance: 0, lighting: { key: 0, fill: 0, environment: 0, keyColor: '#ffffff', fillColor: '#ffffff' }, renderCount: 0 };
+    applyCameraShotToAdapter({ ...cameraShots[0], roll: .2, exposure: 1.2, focusDistance: 7, lighting: { key: 3, fill: 2, environment: 1, keyColor: '#d9fffb', fillColor: '#fff4dc' } }, adapter);
+    expect(adapter).toMatchObject({ position: cameraShots[0].position, target: cameraShots[0].target, fov: cameraShots[0].fov, roll: .2, exposure: 1.2, focusDistance: 7, lighting: { key: 3, fill: 2, environment: 1, keyColor: '#d9fffb', fillColor: '#fff4dc' }, renderCount: 1 });
+  });
+
+  it('applies dolly distance along the authored camera-to-target line', () => {
     const adapter = { position: [0, 0, 0] as [number, number, number], target: [0, 0, 0] as [number, number, number], fov: 0, near: 0, far: 0, roll: 0, exposure: 0, focusDistance: 0, lighting: { key: 0, fill: 0, environment: 0 }, renderCount: 0 };
-    applyCameraShotToAdapter({ ...cameraShots[0], roll: .2, exposure: 1.2, focusDistance: 7, lighting: { key: 3, fill: 2, environment: 1 } }, adapter);
-    expect(adapter).toMatchObject({ position: cameraShots[0].position, target: cameraShots[0].target, fov: cameraShots[0].fov, roll: .2, exposure: 1.2, focusDistance: 7, lighting: { key: 3, fill: 2, environment: 1 }, renderCount: 1 });
+    applyCameraShotToAdapter({ ...cameraShots[0], position: [0, 0, 10], target: [0, 0, 0], dollyDistance: 4 }, adapter);
+    expect(adapter.position).toEqual([0, 0, 4]);
+  });
+
+  it('clamps live Explore orbit state to authored azimuth, polar, and distance limits', () => {
+    const constrain = (worldState as typeof worldState & { constrainOrbitState?: (state: { azimuth: number; polar: number; distance: number }, limits: { azimuth: [number, number]; polar: [number, number]; distance: [number, number] }) => { azimuth: number; polar: number; distance: number } }).constrainOrbitState;
+    expect(constrain).toBeTypeOf('function');
+    expect(constrain?.({ azimuth: 2, polar: -1, distance: 20 }, { azimuth: [-.5, .5], polar: [.2, 1], distance: [4, 8] })).toEqual({ azimuth: .5, polar: .2, distance: 8 });
+  });
+
+  it('applies live Courier framing scale and world offset', () => {
+    const frame = (worldState as typeof worldState & { applyCharacterFraming?: (position: [number, number, number], framing?: { scale: number; offset: [number, number, number] }) => { position: [number, number, number]; scale: number } }).applyCharacterFraming;
+    expect(frame).toBeTypeOf('function');
+    expect(frame?.([1, 2, 3], { scale: .75, offset: [1, -1, .5] })).toEqual({ position: [2, 1, 3.5], scale: .75 });
+  });
+
+  it.each([
+    ['mobile', [0, 2.6, 9], 48],
+    ['tablet', [1.2, 2.1, 8.2], 44],
+  ] as const)('retains the active %s shot for Explore restore', (tier, expectedPosition, expectedFov) => {
+    const Store = (worldState as typeof worldState & { ActiveResponsiveShot?: new (shot: typeof cameraShots[number]) => { update: (shot: typeof cameraShots[number], tier: 'mobile' | 'tablet' | 'desktop') => typeof cameraShots[number]; current: typeof cameraShots[number] } }).ActiveResponsiveShot;
+    expect(Store).toBeTypeOf('function');
+    const authored = cameraShots.find((shot) => shot.id === 'camera-lab')!;
+    const base = { ...authored, responsive: { ...authored.responsive, tablet: { position: [1.2, 2.1, 8.2] as [number, number, number], fov: 44 } } };
+    const store = Store ? new Store(base) : null;
+    const responsive = store?.update(base, tier);
+    expect(responsive).toMatchObject({ position: expectedPosition, fov: expectedFov });
+    expect(store?.current).toBe(responsive);
   });
 
   it('moves or hides world placement that overlaps semantic exclusions', () => {

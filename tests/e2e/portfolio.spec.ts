@@ -144,6 +144,16 @@ test.describe('capability fallbacks', () => {
     await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'story');
   });
 
+  test('Quick Scan synchronously releases Explore before the optional world unmounts', async ({ page }) => {
+    await page.goto('/#world');
+    await expect(page.locator('.optical-world')).toBeAttached();
+    await page.getByRole('button', { name: 'Enter Explore' }).click();
+    await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'visitor');
+    await page.getByRole('button', { name: 'Quick Scan' }).click();
+    await expect(page.getByRole('button', { name: 'Quick Scan' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.optical-world')).toHaveCount(0);
+  });
+
   test('Effects Lab hands Explore World to the shared optical test bench anchor', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /FX, open optional effects lab/ }).click();

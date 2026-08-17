@@ -1,5 +1,32 @@
 import { computeIntrinsics, computeStereo } from '../lib/cameraMath';
-import type { CameraLabSnapshot, CameraShotDefinition, Vector3Tuple } from '../types';
+import type { CameraLabSnapshot, CameraShotDefinition, ResponsiveTier, Vector3Tuple } from '../types';
+
+export type OrbitState = { azimuth: number; polar: number; distance: number };
+export type OrbitLimits = NonNullable<CameraShotDefinition['orbitLimits']>;
+
+const clamp = (value: number, range: [number, number]) => Math.max(range[0], Math.min(range[1], value));
+
+export const constrainOrbitState = (state: OrbitState, limits: OrbitLimits): OrbitState => ({
+  azimuth: clamp(state.azimuth, limits.azimuth),
+  polar: clamp(state.polar, limits.polar),
+  distance: clamp(state.distance, limits.distance),
+});
+
+export const applyCharacterFraming = (position: Vector3Tuple, framing?: CameraShotDefinition['characterFraming']) => ({
+  position: framing ? [position[0] + framing.offset[0], position[1] + framing.offset[1], position[2] + framing.offset[2]] as Vector3Tuple : [...position] as Vector3Tuple,
+  scale: framing?.scale ?? 1,
+});
+
+export const resolveResponsiveCameraShot = (shot: CameraShotDefinition, tier: ResponsiveTier): CameraShotDefinition => (
+  tier === 'desktop' ? shot : { ...shot, ...shot.responsive?.[tier] }
+);
+
+export class ActiveResponsiveShot {
+  current: CameraShotDefinition;
+  constructor(shot: CameraShotDefinition) { this.current = shot; }
+  update(shot: CameraShotDefinition, tier: ResponsiveTier) { this.current = resolveResponsiveCameraShot(shot, tier); return this.current; }
+  set(shot: CameraShotDefinition) { this.current = shot; return this.current; }
+}
 
 export type ScreenRect = { left: number; top: number; right: number; bottom: number };
 export const resolveSafePlacement = (point: { x: number; y: number }, exclusions: readonly ScreenRect[], viewport: { width: number; height: number }) => {
@@ -51,10 +78,14 @@ export const applyOpticalGeometryToAdapter = (snapshot: CameraLabSnapshot, adapt
 
 export interface CameraAdapter {
   position: Vector3Tuple; target: Vector3Tuple; fov: number; near: number; far: number; roll: number;
-  exposure: number; focusDistance: number; lighting: { key: number; fill: number; environment: number }; renderCount: number;
+  exposure: number; focusDistance: number; lighting: { key: number; fill: number; environment: number; keyColor?: string; fillColor?: string }; renderCount: number;
 }
 export const applyCameraShotToAdapter = (shot: CameraShotDefinition, adapter: CameraAdapter) => {
-  adapter.position = [...shot.position]; adapter.target = [...shot.target]; adapter.fov = shot.fov; adapter.near = shot.near; adapter.far = shot.far;
+  const delta: Vector3Tuple = [shot.position[0] - shot.target[0], shot.position[1] - shot.target[1], shot.position[2] - shot.target[2]];
+  const length = Math.hypot(...delta);
+  const direction: Vector3Tuple = length > 0 ? [delta[0] / length, delta[1] / length, delta[2] / length] : [0, 0, 1];
+  adapter.position = shot.dollyDistance === undefined ? [...shot.position] : [shot.target[0] + direction[0] * shot.dollyDistance, shot.target[1] + direction[1] * shot.dollyDistance, shot.target[2] + direction[2] * shot.dollyDistance];
+  adapter.target = [...shot.target]; adapter.fov = shot.fov; adapter.near = shot.near; adapter.far = shot.far;
   adapter.roll = shot.roll ?? 0; adapter.exposure = shot.exposure ?? 1; adapter.focusDistance = shot.focusDistance ?? 6;
-  adapter.lighting = { ...(shot.lighting ?? { key: 3, fill: 2.1, environment: 1 }) }; adapter.renderCount += 1;
+  adapter.lighting = { ...(shot.lighting ?? { key: 3, fill: 2.1, environment: 1, keyColor: '#ffffff', fillColor: '#ffffff' }) }; adapter.renderCount += 1;
 };

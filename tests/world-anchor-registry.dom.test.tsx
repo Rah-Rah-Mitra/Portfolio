@@ -39,6 +39,17 @@ describe('WorldAnchorRegistry', () => {
     anchor.remove(); copy.remove();
   });
 
+  it('resolves director-selected safe text IDs in addition to authored occluders', () => {
+    const anchor = document.createElement('section'); anchor.id = 'technical-lab'; anchor.getBoundingClientRect = () => rect(0, 0, 100, 100);
+    const authored = document.createElement('p'); authored.id = 'lab-copy'; authored.getBoundingClientRect = () => rect(5, 5, 20, 20);
+    const directed = document.createElement('p'); directed.id = 'director-safe'; directed.getBoundingClientRect = () => rect(30, 30, 40, 20);
+    document.body.append(anchor, authored, directed);
+    const registry = new WorldAnchorRegistry({ getViewport: () => ({ width: 1000, height: 600 }), refresh: vi.fn() }); registry.register(definition);
+    const resolved = registry.resolve({ ...shot, safeTextRegionIds: ['director-safe'] }, 'desktop')[0];
+    expect(resolved.safeTextRects.map((value) => value.left)).toEqual([5, 30]);
+    registry.destroy(); anchor.remove(); authored.remove(); directed.remove();
+  });
+
   it('batches invalidations, applies responsive overrides, refreshes after settle, and cleans up', async () => {
     vi.useFakeTimers();
     const anchor = document.createElement('section'); anchor.id = 'technical-lab'; anchor.getBoundingClientRect = () => rect(0, 0, 100, 100); document.body.append(anchor);

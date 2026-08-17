@@ -18,3 +18,19 @@ checkpoint. They do not claim that the character has been rigged or animated.
 Mixamo session is complete. Untouched downloads belong in the gitignored
 `assets/optical-courier/raw-mixamo/` directory. A production GLB must not be
 exported until all required motion families and deformation checks pass.
+
+## Visual-fidelity review candidate
+
+`repair_hunyuan_candidate.py` imports the ignored Hunyuan proof, normalizes it,
+performs a closed voxel union, and makes a seeded QuadriFlow attempt. Blender
+returns `CANCELLED` for this source even though the union measures as one closed
+manifold; that result is recorded rather than misreported. The deterministic
+fallback uses controlled collapse to 24,000 triangles. Materials use continuous
+position masks, including a bakeable zipper and paired graphite pocket marks,
+so there are no polygon-edge color spikes. `validate_review_candidate.py`
+measures topology, proportions, surface-mounted signal spacing, and vertex/
+cross-section density at shoulders, elbows, and knees.
+
+The result under `assets/optical-courier/review-v2/` is for visual review only.
+It is not the current Mixamo upload asset and must remain unrigged until the
+manifest records explicit upload approval.

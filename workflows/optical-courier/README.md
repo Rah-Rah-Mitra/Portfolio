@@ -13,11 +13,15 @@ outputs that are not required by the site outside the public bundle and avoids
 redistributing Hunyuan output without reviewing its territory-specific
 community-license obligations.
 
-The deterministic Blender 5.2 fallback and upload-ready FBX are documented in
+The first deterministic Blender fallback is retained as rejected history and
+must not be uploaded. A substantially cleaner Hunyuan-derived candidate and
+comparison renders live under `assets/optical-courier/review-v2/`; it remains
+`visual-review-required`, has no upload authorization, and is documented in
 `scripts/optical-courier/README.md`. The checkpoint is **pre-rig**, not a
-production animation package. Mixamo remains blocked until the required Google
-Chrome Browser extension/native host is available. No Adobe session, marker
-placement, skin download, animation selection, or production GLB is claimed.
+production animation package. Mixamo remains blocked until a candidate is
+approved and the required Google Chrome Browser extension/native host is
+available. No Adobe session, marker placement, skin download, animation
+selection, or production GLB is claimed.
 
 Model weights, browser state, credentials, cookies, tokens, and untouched
 Mixamo downloads must never be committed.

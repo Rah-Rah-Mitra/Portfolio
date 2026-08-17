@@ -16,6 +16,8 @@ scene = bpy.context.scene
 scene.render.engine = "BLENDER_EEVEE"
 scene.render.resolution_x = 640; scene.render.resolution_y = 640; scene.render.resolution_percentage = 100
 scene.render.image_settings.file_format = "PNG"
+if scene.world is None:
+    scene.world = bpy.data.worlds.new("OpticalCourier_PreviewWorld")
 scene.world.use_nodes = True
 background = scene.world.node_tree.nodes.get("Background")
 background.inputs["Color"].default_value = (0.88, 0.90, 0.89, 1.0)

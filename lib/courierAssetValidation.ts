@@ -54,6 +54,20 @@ export const validateCourierManifest = (value: unknown): ValidationResult => {
   if (!isRecord(value.mixamo) || typeof value.mixamo.rigged !== 'boolean' || !isNonEmpty(value.mixamo.status)) {
     issues.push('Mixamo status must be explicit');
   }
+  const visualCandidate = value.visualFidelityCandidate;
+  if (!isRecord(visualCandidate)
+    || visualCandidate.status !== 'visual-review-required'
+    || visualCandidate.source !== 'hunyuan-derived-retopology'
+    || !isSha256(visualCandidate.sourceProofSha256)
+    || !isSha256(visualCandidate.sourceBlendSha256)
+    || !isSha256(visualCandidate.comparisonSheetSha256)
+    || !isNonEmpty(visualCandidate.sourceBlend)
+    || !isNonEmpty(visualCandidate.validation)
+    || !isNonEmpty(visualCandidate.comparisonSheet)
+    || visualCandidate.uploadApproved !== false
+    || visualCandidate.mixamoUploadAsset !== null) {
+    issues.push('visual fidelity candidate must preserve complete review-only provenance');
+  }
   return { valid: issues.length === 0, issues };
 };
 

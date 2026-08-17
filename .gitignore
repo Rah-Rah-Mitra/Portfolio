@@ -15,7 +15,7 @@ artifacts/
 assets/optical-courier/raw-mixamo/
 assets/optical-courier/browser-state/
 assets/optical-courier/hunyuan-raw/
-assets/optical-courier/pre-mixamo/*.blend1
+assets/optical-courier/**/*.blend1
 .env
 *.local
 

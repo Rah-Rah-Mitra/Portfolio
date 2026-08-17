@@ -35,13 +35,19 @@ describe('Optical Courier pre-rig production checkpoint', () => {
     expect(manifest.mixamo.rigged).toBe(false);
   });
 
-  it('ships a clean connected upload-ready FBX contract while keeping the runtime fallback', () => {
+  it('retains the rejected connected FBX as history while keeping the runtime fallback', () => {
     expect(validatePreMixamoReport(validationReport)).toEqual({ valid: true, issues: [] });
     expect(validationReport.geometry.primaryConnectedComponents).toBe(1);
     expect(validationReport.geometry.nonManifoldEdges).toBe(0);
     expect(validationReport.geometry.headRatio).toBeGreaterThanOrEqual(6.9);
     expect(validationReport.geometry.headRatio).toBeLessThanOrEqual(7.6);
-    expect(existsSync(repoPath(COURIER_ASSET_CONTRACT.preMixamoSource))).toBe(true);
+    expect(manifest.preMixamo.visualStatus).toBe('rejected-for-upload');
+    expect(manifest.preMixamo.rejectionHistory).toContainEqual(expect.objectContaining({
+      assetSha256: '1749d6b88e93331cf46a922460b018896bf6c5eabd9d0b18bed83ca56d86b71b',
+      reason: expect.stringMatching(/ragged|silhouette|fidelity/i),
+    }));
+    expect(COURIER_ASSET_CONTRACT.preMixamoSource).toBeNull();
+    expect(COURIER_ASSET_CONTRACT.visualStatus).toBe('rejected-for-upload');
     expect(COURIER_ASSET_CONTRACT.productionGlb).toBeNull();
     expect(COURIER_ASSET_CONTRACT.runtimeFallback).toBe('procedural-optical-courier');
   });
@@ -54,6 +60,54 @@ describe('Optical Courier pre-rig production checkpoint', () => {
       expect(proofReport.reasons.length).toBeGreaterThan(0);
       expect(manifest.geometrySource).toBe('blender-procedural-shell');
     }
+  });
+
+  it('uses continuous position masks and a surface-mounted visor signal', () => {
+    const reportPath = 'assets/optical-courier/review-v2/validation-report.json';
+    expect(existsSync(repoPath(reportPath))).toBe(true);
+    const report = JSON.parse(readFileSync(repoPath(reportPath), 'utf8'));
+    expect(report.materialBoundaryMode).toBe('continuous-position-masks');
+    expect(report.signalSurfaceGapMeters).toBeGreaterThanOrEqual(0);
+    expect(report.signalSurfaceGapMeters).toBeLessThanOrEqual(0.02);
+    expect(report.jacketDetailMode).toBe('bakeable-position-masks');
+    expect(report.jacketDetailRoles).toEqual(['center-zipper', 'paired-graphite-pocket-marks']);
+  });
+
+  it('keeps the visual-fidelity replacement in review while proving clean geometry and bend zones', () => {
+    expect(manifest.visualFidelityCandidate).toMatchObject({
+      status: 'visual-review-required',
+      source: 'hunyuan-derived-retopology',
+    });
+    const reportPath = manifest.visualFidelityCandidate.validation;
+    expect(existsSync(repoPath(reportPath))).toBe(true);
+    const report = JSON.parse(readFileSync(repoPath(reportPath), 'utf8'));
+    expect(report.status).toBe('visual-review-required');
+    expect(report.geometry).toMatchObject({
+      primaryConnectedComponents: 1,
+      nonManifoldEdges: 0,
+      triangles: expect.any(Number),
+    });
+    expect(report.geometry.triangles).toBeGreaterThanOrEqual(10_000);
+    expect(report.geometry.triangles).toBeLessThanOrEqual(30_000);
+    expect(report.jointSections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ joint: 'left-elbow', vertices: expect.any(Number), crossSections: expect.any(Number) }),
+      expect.objectContaining({ joint: 'right-knee', vertices: expect.any(Number), crossSections: expect.any(Number) }),
+    ]));
+    for (const section of report.jointSections) {
+      expect(section.vertices).toBeGreaterThanOrEqual(24);
+      expect(section.crossSections).toBeGreaterThanOrEqual(3);
+    }
+    expect(existsSync(repoPath(manifest.visualFidelityCandidate.comparisonSheet))).toBe(true);
+    expect(COURIER_ASSET_CONTRACT.preMixamoSource).toBeNull();
+  });
+
+  it('rejects malformed visual-candidate provenance', () => {
+    const corrupted = structuredClone(manifest) as typeof manifest;
+    corrupted.visualFidelityCandidate.sourceBlendSha256 = 'not-a-sha256';
+    expect(validateCourierManifest(corrupted)).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.stringMatching(/visual fidelity candidate/i)]),
+    });
   });
 
   it('does not track model weights, browser state, or raw Mixamo downloads', () => {

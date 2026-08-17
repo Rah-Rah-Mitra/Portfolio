@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "status": "visual-review-required",
+  "source": "assets/optical-courier/review-v2/optical-courier-review-v2.blend",
+  "sourceSha256": "5b883dd8fd73f7b79d86846e620f9a06a4862632d19c4ad3a1c70582a74713f3",
+  "geometry": {
+    "meshObjectCount": 2,
+    "primaryObject": "OpticalCourier_ReviewBody",
+    "vertices": 12002,
+    "triangles": 24000,
+    "primaryConnectedComponents": 1,
+    "nonManifoldEdges": 0,
+    "dimensionsMeters": [
+      1.905881,
+      0.40949,
+      2.02
+    ],
+    "headRatio": 7.2401
+  },
+  "bounds": {
+    "min": [
+      -0.952941,
+      -0.204745,
+      0.0
+    ],
+    "max": [
+      0.952941,
+      0.204745,
+      2.02
+    ]
+  },
+  "jointSections": [
+    {
+      "joint": "left-shoulder",
+      "axis": "X",
+      "vertices": 535,
+      "crossSections": 5
+    },
+    {
+      "joint": "right-shoulder",
+      "axis": "X",
+      "vertices": 598,
+      "crossSections": 5
+    },
+    {
+      "joint": "left-elbow",
+      "axis": "X",
+      "vertices": 462,
+      "crossSections": 5
+    },
+    {
+      "joint": "right-elbow",
+      "axis": "X",
+      "vertices": 461,
+      "crossSections": 5
+    },
+    {
+      "joint": "left-knee",
+      "axis": "Z",
+      "vertices": 541,
+      "crossSections": 5
+    },
+    {
+      "joint": "right-knee",
+      "axis": "Z",
+      "vertices": 525,
+      "crossSections": 5
+    }
+  ],
+  "materials": [
+    "Black_GlovesBoots",
+    "Charcoal_Trousers",
+    "Courier_ContinuousRegionShader",
+    "Graphite_Visor",
+    "Shell_OffWhite",
+    "Signal_Teal",
+    "Signal_Teal.001",
+    "Sole_Amber"
+  ],
+  "retopology": {
+    "error": "RuntimeError: QuadriFlow returned ['CANCELLED']",
+    "fallback": {
+      "method": "voxel-union-controlled-collapse",
+      "outputTriangles": 24000,
+      "targetTriangles": 24000
+    },
+    "inputFaces": 69280,
+    "method": "QuadriFlow",
+    "operatorResult": [
+      "CANCELLED"
+    ],
+    "seed": 231119,
+    "succeeded": false,
+    "targetFaces": 12000
+  },
+  "materialBoundaryMode": "continuous-position-masks",
+  "signalSurfaceGapMeters": 0.0,
+  "jacketDetailMode": "bakeable-position-masks",
+  "jacketDetailRoles": [
+    "center-zipper",
+    "paired-graphite-pocket-marks"
+  ],
+  "rig": {
+    "armatures": 0,
+    "actions": 0
+  }
+}

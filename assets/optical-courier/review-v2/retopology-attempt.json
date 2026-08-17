@@ -1,0 +1,16 @@
+{
+  "method": "QuadriFlow",
+  "targetFaces": 12000,
+  "seed": 231119,
+  "succeeded": false,
+  "inputFaces": 69280,
+  "operatorResult": [
+    "CANCELLED"
+  ],
+  "error": "RuntimeError: QuadriFlow returned ['CANCELLED']",
+  "fallback": {
+    "method": "voxel-union-controlled-collapse",
+    "targetTriangles": 24000,
+    "outputTriangles": 24000
+  }
+}

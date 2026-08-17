@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CompetencyCluster, EventHighlight, FieldNote, FieldNoteLink, PortfolioData, ProjectHighlight, ResumeProfile } from './types';
+import { CompetencyCluster, EventHighlight, ExperienceRecord, FieldNote, FieldNoteLink, PortfolioData, ProjectHighlight, ResumeProfile } from './types';
 import { CodeBracketIcon, AcademicCapIcon, CommandLineIcon, DevicePhoneMobileIcon, ServerStackIcon } from './components/icons/TechIcons';
 import * as assets from './assets';
 import { resumeAssetUrl, SITE_CONFIG } from './siteConfig';
@@ -700,6 +700,10 @@ export const projectArchive: ProjectHighlight[] = [
   },
 ];
 
+export const allProjects: ProjectHighlight[] = Array.from(
+  new Map([...projectHighlights, ...projectArchive].map((project) => [project.id, project])).values(),
+).sort((a, b) => (b.sortDate ?? '').localeCompare(a.sortDate ?? ''));
+
 export const eventHighlights: EventHighlight[] = [
   {
     id: 'nus-3d-cv-award',
@@ -1163,6 +1167,100 @@ const rawFieldNotes: FieldNote[] = [
 ];
 
 export const fieldNotes: FieldNote[] = mergeFieldNotes(rawFieldNotes);
+
+export const experienceNotes: FieldNote[] = fieldNotes.filter((note) => (
+  note.kinds.includes('career') || note.kinds.includes('education')
+));
+
+const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLabel' | 'sortDate' | 'tags' | 'linkedProjectIds'>> = {
+  'abbott-internship': {
+    kind: 'professional',
+    role: 'Operational AI Systems & Data Engineer',
+    organization: 'Abbott',
+    location: 'Singapore',
+    scope: 'Manufacturing decision support, operational data quality, cloud operations, and regional AI enablement.',
+    responsibilities: [
+      'Built a hybrid flow-shop digital twin using SimPy and OR-Tools CP-SAT and researched robust optimization for operational uncertainty.',
+      'Designed a non-destructive 15-stage transformation and audit workflow for complex historical changeover matrices.',
+      'Productionized, supported, and documented an internal APC simulator on Docker and Azure App Service; delivered practical AI upskilling.',
+    ],
+    outcomes: [
+      'Processed five years of previously unseen, unclean operational data without errors.',
+      'Supported an actively used manufacturing and engineer-training simulator while preserving the originating team’s authorship.',
+    ],
+  },
+  'career-yeswehack-independent-researcher': {
+    kind: 'professional',
+    role: 'Independent Bug Bounty Researcher',
+    organization: 'YesWeHack programs · GovTech · LTA',
+    location: 'Singapore / remote',
+    scope: 'Responsible security research across public and private vulnerability-disclosure programs.',
+    responsibilities: [
+      'Tested web applications and APIs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and adjacent trust-boundary failures.',
+      'Built Python and Bash automation around Burp Suite and Wireshark-assisted investigation.',
+    ],
+    outcomes: ['Submitted responsible disclosures across government, transport, and other public/private programs without publishing sensitive target details.'],
+  },
+  'career-singapore-navy': {
+    kind: 'professional',
+    role: 'Base Support Assistant',
+    organization: 'Republic of Singapore Navy',
+    location: 'Singapore',
+    scope: 'Operational reporting and process improvement inside a security-constrained environment.',
+    responsibilities: ['Mapped the food-waste reporting process and automated its calculations and reporting steps with Excel VBA.'],
+    outcomes: ['Reduced a six-month manual reporting cycle to a repeatable workflow completing in under three minutes.'],
+  },
+  'nus-education': {
+    kind: 'education',
+    role: 'BEng, Industrial Systems Engineering',
+    organization: 'National University of Singapore',
+    location: 'Singapore',
+    scope: 'Second Major in Computer Science and Minor in Mathematics, connecting systems engineering with computing and quantitative methods.',
+    responsibilities: ['Applied optimization, simulation, software engineering, and multi-view geometry through coursework and project systems.'],
+    outcomes: ['Awarded the CS4277 Certificate of Outstanding Performance as top student in a class of 24 for 3D Computer Vision.'],
+  },
+  'education-asrjc-stem': {
+    kind: 'education',
+    role: 'STEM Inc. member and outreach lead',
+    organization: 'Anderson Serangoon Junior College',
+    location: 'Singapore',
+    scope: 'Astronomy outreach, autonomous robotics, competition work, and technical leadership.',
+    responsibilities: ['Led astronomy outreach, competed in the Singapore Astronomical Olympiad, and built autonomous robotics systems.'],
+    outcomes: ['Received the ASRJC Outstanding Contribution Award.'],
+  },
+};
+
+export const experienceRecords: ExperienceRecord[] = experienceNotes.map((note) => {
+  const detail = experienceDetailById[note.id];
+  return {
+    id: note.id,
+    dateLabel: note.dateLabel,
+    sortDate: note.sortDate,
+    tags: note.tags,
+    linkedProjectIds: note.linkedProjectIds ?? [],
+    ...(detail ?? {
+      kind: note.kind === 'education' ? 'education' as const : 'professional' as const,
+      role: note.title,
+      organization: note.organizations?.join(' · ') ?? 'Independent',
+      location: 'Singapore',
+      scope: note.summary,
+      responsibilities: [note.summary],
+      outcomes: [],
+    }),
+  };
+});
+
+export const unifiedPortfolioData: PortfolioData & Required<Pick<PortfolioData, 'experience' | 'projects' | 'capabilities' | 'resumes'>> = {
+  ...softwareEngineerData,
+  tagline: 'Intelligent Systems Engineer · AI, Optimization, Software & 3D Perception',
+  bio: 'NUS Industrial Systems Engineering student with a Second Major in Computer Science and a Mathematics Minor. I turn ambiguous operational problems into evidence-led systems across applied AI, mathematical optimization, software architecture, 3D perception, and responsible security.',
+  achievements: [...softwareEngineerData.achievements, ...cybersecurityData.achievements],
+  skills: [...softwareEngineerData.skills, ...cybersecurityData.skills],
+  experience: experienceRecords,
+  projects: allProjects,
+  capabilities: coreCompetencies,
+  resumes: resumeProfiles,
+};
 
 export const fieldNoteByIdOrAlias = new Map<string, FieldNote>(
   fieldNotes.flatMap((note) => (

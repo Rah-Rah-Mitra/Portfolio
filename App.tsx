@@ -1,22 +1,11 @@
 import React from 'react';
-import Navbar from './components/Navbar';
-import HeroSection from './components/HeroSection';
-import SkillsSection from './components/SkillsSection';
-import Footer from './components/Footer';
-import { SECTION_IDS } from './constants';
 import { EffectsProvider, useEffects } from './contexts/PhysicsContext';
 import EffectsLabPanel from './components/EffectsLabPanel';
-import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-import { coreCompetencies, cybersecurityData, fieldNotes, projectArchive, projectHighlights, resumeProfiles, softwareEngineerData } from './portfolioData';
 import FluidBackground from './components/FluidBackground';
-import ProjectsSection from './components/ProjectsSection';
-import AchievementsSection from './components/AchievementsSection';
-import EventsTimeline from './components/EventsTimeline';
 import AskThePage from './components/AskThePage';
-import ResumesSection from './components/ResumesSection';
-import ToolsSection from './components/ToolsSection';
 import { useScrollDepth } from './hooks/useScrollDepth';
-import JourneyNavigator from './components/JourneyNavigator';
+import { track } from './lib/analytics';
+import PortfolioExperience from './components/PortfolioExperience';
 
 const PortfolioWorld = React.lazy(() => import('./components/PortfolioWorld'));
 
@@ -36,13 +25,14 @@ const OptionalExperienceLayers: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { theme } = useTheme();
-  const portfolioData = theme === 'light' ? softwareEngineerData : cybersecurityData;
-  useScrollDepth(theme);
+  useScrollDepth();
   React.useEffect(() => {
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (!motionQuery.matches) document.documentElement.classList.add('motion-ready');
     return () => document.documentElement.classList.remove('motion-ready');
+  }, []);
+  React.useEffect(() => {
+    track('portfolio_viewed', { surface: 'continuous_field_test' });
   }, []);
   React.useEffect(() => {
     const timers = new Set<number>();
@@ -71,35 +61,11 @@ const AppContent: React.FC = () => {
       window.removeEventListener('hashchange', scheduleAlignment);
     };
   }, []);
-  const allAchievements = theme === 'light'
-    ? [...softwareEngineerData.achievements, ...cybersecurityData.achievements]
-    : [...cybersecurityData.achievements, ...softwareEngineerData.achievements];
-
   return (
-    <EffectsProvider theme={theme}>
-      <div className="site-shell min-h-screen flex flex-col" data-lens={theme === 'light' ? 'build' : 'secure'}>
+    <EffectsProvider>
+      <div className="site-shell min-h-screen">
         <FluidBackground />
-        <Navbar name={portfolioData.name} />
-        <JourneyNavigator />
-        <main id="main-content" className="flex-grow relative z-10">
-          <HeroSection id={SECTION_IDS.HOME} data={portfolioData} />
-          <ProjectsSection id={SECTION_IDS.PROJECTS} projects={projectHighlights} archiveProjects={projectArchive} />
-          <SkillsSection id={SECTION_IDS.DOMAINS} clusters={coreCompetencies} />
-          <EventsTimeline id={SECTION_IDS.EXPERIENCE} notes={fieldNotes} projects={projectHighlights} archiveProjects={projectArchive} />
-          <AchievementsSection id={SECTION_IDS.ACHIEVEMENTS} achievements={allAchievements} />
-          <ResumesSection id={SECTION_IDS.RESUMES} resumes={resumeProfiles} />
-          <ToolsSection id={SECTION_IDS.TOOLS} />
-        </main>
-        <div className="relative z-10">
-          <Footer
-            id={SECTION_IDS.CONTACT}
-            name={portfolioData.name}
-            email={portfolioData.contactEmail}
-            linkedinUrl={portfolioData.linkedinUrl}
-            githubUrl={portfolioData.githubUrl}
-            instagramUrl={portfolioData.instagramUrl}
-          />
-        </div>
+        <PortfolioExperience />
         <OptionalExperienceLayers />
       </div>
     </EffectsProvider>
@@ -108,11 +74,7 @@ const AppContent: React.FC = () => {
 
 
 const App: React.FC = () => {
-  return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
-  );
+  return <AppContent />;
 };
 
 export default App;

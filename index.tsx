@@ -5,6 +5,7 @@ import App from './App';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import { initAnalytics } from './lib/analytics';
 import './index.css';
+import './field-test.css';
 
 // Queue early events, then load PostHog after first interaction or a bounded idle fallback.
 initAnalytics();

@@ -1,9 +1,8 @@
 import React, { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { SECTION_IDS } from '../constants';
 import { ASSISTANT_STARTERS } from '../siteConfig';
-import { fieldNoteByIdOrAlias, fieldNotes, projectArchive, projectHighlights, resumeProfiles } from '../portfolioData';
+import { allProjects, fieldNoteByIdOrAlias, fieldNotes, resumeProfiles } from '../portfolioData';
 import { EffectId, NumericEffectId, useEffects } from '../contexts/PhysicsContext';
-import { useTheme } from '../contexts/ThemeContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/analytics';
 
@@ -12,8 +11,11 @@ type ChatMessage = { role: 'assistant' | 'user'; content: string; references?: R
 type PageCommand =
   | { type: 'setEffectEnabled'; effect: EffectId; enabled: boolean }
   | { type: 'setEffectParam'; effect: NumericEffectId; param: string; value: number }
-  | { type: 'switchProfile'; profile: 'software' | 'cybersecurity' }
   | { type: 'focusSection'; sectionId: string }
+  | { type: 'focusExperience' }
+  | { type: 'focusProject'; projectId: string }
+  | { type: 'openTechnicalLab' }
+  | { type: 'focusGuideChapter'; sectionId: string }
   | { type: 'focusEvent'; eventId: string }
   | { type: 'openWorld' }
   | { type: 'closeWorld' }
@@ -28,7 +30,6 @@ const numericParams: Record<NumericEffectId, Set<string>> = {
 const effectIds = new Set<EffectId>(['smash', 'gravity', 'fluid', 'pretext', 'world']);
 const sectionIds = new Set<string>(Object.values(SECTION_IDS));
 const eventIds = new Set(fieldNoteByIdOrAlias.keys());
-const allProjects = [...projectHighlights, ...projectArchive];
 const allowedLinks = new Set([
   ...Object.values(SECTION_IDS).map((id) => `#${id}`),
   ...allProjects.flatMap((project) => [`#project-${project.id}`, project.repoUrl, project.liveUrl, ...(project.links ?? []).map((link) => link.url)]).filter((link): link is string => Boolean(link)),
@@ -84,7 +85,7 @@ const localAgent = (message: string): AgentResponse => {
   } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty') || text.includes('adversarial')) {
     reply = 'Rahul’s security record includes responsible bug-bounty research for government and transport programs, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';
     references = [projectRef('arcane', 'Arcane security tooling'), { label: 'Security experience and proof', href: '#proof' }];
-    commands.push({ type: 'switchProfile', profile: 'cybersecurity' }, { type: 'focusSection', sectionId: SECTION_IDS.ACHIEVEMENTS });
+    commands.push({ type: 'focusSection', sectionId: SECTION_IDS.ACHIEVEMENTS });
   } else if (text.includes('world') || text.includes('map')) {
     reply = 'Opening the optional spatial portfolio map. It uses the existing Three.js and GLB environment as an exploratory layer; the main portfolio remains available without it.';
     references = [{ label: 'Return to selected work', href: '#work' }];
@@ -114,16 +115,15 @@ const AskThePage: React.FC = () => {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const openedAt = useRef<number | null>(null);
   const effects = useEffects();
-  const { theme, toggleTheme } = useTheme();
   useFocusTrap(open, panelRef, '[data-open-assistant], .ask-dock');
 
   const pageState = useMemo(() => ({
-    profile: theme === 'dark' ? 'cybersecurity' : 'software', effects: effects.settings,
+    surface: 'continuous-field-test', effects: effects.settings,
     sections: Object.values(SECTION_IDS), allowedLinks: Array.from(allowedLinks),
     projects: allProjects.map(({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links }) => ({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links })),
     events: fieldNotes.map(({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links }) => ({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links })),
     resumes: resumeProfiles.map(({ id, role, headline, keywords, pdfUrl, docxUrl }) => ({ id, role, headline, keywords, pdfUrl, docxUrl })),
-  }), [effects.settings, theme]);
+  }), [effects.settings]);
 
   const close = (reason: string) => {
     setOpen(false);
@@ -156,10 +156,11 @@ const AskThePage: React.FC = () => {
   const applyCommand = (command: PageCommand) => {
     if (command.type === 'setEffectEnabled' && effectIds.has(command.effect)) effects.setEffectEnabled(command.effect, command.enabled);
     else if (command.type === 'setEffectParam' && numericParams[command.effect]?.has(command.param) && Number.isFinite(command.value)) effects.setEffectParam(command.effect, command.param, command.value);
-    else if (command.type === 'switchProfile') {
-      if (command.profile === 'cybersecurity' && theme !== 'dark') toggleTheme();
-      if (command.profile === 'software' && theme !== 'light') toggleTheme();
-    } else if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) document.getElementById(command.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) document.getElementById(command.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (command.type === 'focusExperience') document.getElementById('experience')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (command.type === 'focusProject' && allProjects.some((project) => project.id === command.projectId)) document.getElementById(`project-${command.projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    else if (command.type === 'openTechnicalLab') document.getElementById('technical-lab')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (command.type === 'focusGuideChapter' && sectionIds.has(command.sectionId)) document.getElementById(command.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     else if (command.type === 'focusEvent' && eventIds.has(command.eventId)) {
       const note = fieldNoteByIdOrAlias.get(command.eventId);
       if (note) document.getElementById(`event-${note.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });

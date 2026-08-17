@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { useEffects } from '../contexts/PhysicsContext';
-import { useTheme } from '../contexts/ThemeContext';
 
 type Fbo = {
   texture: WebGLTexture;
@@ -244,7 +243,6 @@ const hslToRgb = (h: number, s: number, l: number): [number, number, number] => 
 const FluidBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { settings } = useEffects();
-  const { theme } = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -417,7 +415,7 @@ const FluidBackground: React.FC = () => {
 
       if (!previous && !strong) return;
 
-      const color = hslToRgb((hue + performance.now() * 0.00003) % 1, 0.92, theme === 'light' ? 0.58 : 0.62);
+      const color = hslToRgb((hue + performance.now() * 0.00003) % 1, 0.78, 0.48);
       const radius = Math.max(0.0006, (settings.fluid.splatRadius / 100) * 0.026);
       const force = strong ? 900 : 8;
       splats.push({
@@ -450,7 +448,7 @@ const FluidBackground: React.FC = () => {
       if (idleTime > 0.22) {
         idleTime = 0;
         const t = time * 0.00018;
-        const color = hslToRgb((t * 0.6 + (theme === 'light' ? 0.52 : 0.95)) % 1, 0.88, 0.58);
+        const color = hslToRgb((t * 0.2 + 0.48) % 1, 0.72, 0.46);
         splats.push({
           x: 0.5 + Math.sin(t * 2.1) * 0.32,
           y: 0.52 + Math.cos(t * 1.7) * 0.24,
@@ -581,7 +579,6 @@ const FluidBackground: React.FC = () => {
     settings.fluid.splatRadius,
     settings.fluid.curl,
     settings.fluid.quality,
-    theme,
   ]);
 
   return <canvas ref={canvasRef} className="fluid-background" aria-hidden="true" />;

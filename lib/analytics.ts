@@ -29,10 +29,11 @@ type ReplayReason =
   | 'world_opened';
 
 export type AnalyticsEvent =
+  | { event: 'portfolio_viewed'; props: { surface: 'continuous_field_test' } }
   | { event: 'profile_viewed'; props: { profile: Profile } }
   | { event: 'profile_switched'; props: { from: Profile; to: Profile } }
   | { event: 'section_viewed'; props: { section: string; profile: Profile } }
-  | { event: 'scroll_depth_reached'; props: { depth: 25 | 50 | 75 | 90; profile: Profile } }
+  | { event: 'scroll_depth_reached'; props: { depth: 25 | 50 | 75 | 90; surface: 'continuous_field_test' } }
   | { event: 'nav_link_clicked'; props: { destination: string } }
   | { event: 'journey_marker_clicked'; props: { section: string; camera_index: number } }
   | { event: 'cta_clicked'; props: { label: string; profile: Profile } }
@@ -48,6 +49,7 @@ export type AnalyticsEvent =
   | { event: 'selected_project_view_changed'; props: { project: string; source: string } }
   | { event: 'featured_projects_toggled'; props: { expanded: boolean; visible_count: number } }
   | { event: 'project_archive_toggled'; props: { expanded: boolean; visible_count: number } }
+  | { event: 'project_filter_changed'; props: { filter: string; result_count: number } }
   | { event: 'archive_search_changed'; props: { query_length: number; result_count: number } }
   | { event: 'resume_download_clicked'; props: { role: string; format: 'docx' | 'pdf' } }
   | { event: 'qr_target_selected'; props: UrlTargetSummary }
@@ -66,6 +68,8 @@ export type AnalyticsEvent =
   | { event: 'pointer_lock_changed'; props: { locked: boolean } }
   | { event: 'npc_dialogue_opened'; props: { npc_id: string; title: string; method: string } }
   | { event: 'world_link_clicked'; props: { npc_id: string; title: string; destination_host: string } }
+  | { event: 'guide_capability_detected'; props: { mode: string; chapter: string } }
+  | { event: 'technical_layer_changed'; props: { layer: string; method: string } }
   | { event: 'session_replay_triggered'; props: { reason: ReplayReason; source?: string } }
   | { event: 'frontend_exception_captured'; props: { area: string; error_name: string } };
 
@@ -99,14 +103,9 @@ const getReferrerHost = () => {
   }
 };
 
-const getCurrentProfile = (): Profile => {
-  if (typeof window === 'undefined') return 'software_engineer';
-  return themeToProfile(window.localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
-};
-
 const getBaseProperties = (): Properties => ({
   app_surface: 'portfolio',
-  active_profile: getCurrentProfile(),
+  surface_mode: 'continuous_field_test',
   viewport_bucket: getViewportBucket(),
   referrer_host: getReferrerHost(),
 });
@@ -201,7 +200,7 @@ const loadAnalytics = async (): Promise<boolean> => {
           events_burst_limit: 32,
         },
         loaded(ph) {
-          ph.register_once({ first_seen_profile: getCurrentProfile() });
+          ph.register_once({ first_seen_surface: 'continuous_field_test' });
           ph.register(getBaseProperties());
           if (ANALYTICS_DEBUG) console.log('[analytics] PostHog ready. Distinct ID:', ph.get_distinct_id());
         },

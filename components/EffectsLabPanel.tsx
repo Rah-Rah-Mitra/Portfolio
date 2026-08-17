@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { EffectId, FluidQuality, NumericEffectId, TextEffectMode, useEffects, WorldQuality } from '../contexts/PhysicsContext';
-import { useTheme } from '../contexts/ThemeContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import BreakableText from './BreakableText';
 import { track } from '../lib/analytics';
@@ -35,7 +34,6 @@ const EffectsLabPanel: React.FC = () => {
   const panelRef = useRef<HTMLElement>(null);
   const suppressFocusRestore = useRef(false);
   const openedAt = useRef<number | null>(null);
-  const { theme } = useTheme();
   const { settings, toggleEffect, setEffectParam, setPretextMode, setWorldQuality, setFluidQuality, openWorld, restoreAll, pauseAll } = useEffects();
   useFocusTrap(open, panelRef, '[data-open-effects], .effects-dock', suppressFocusRestore);
 
@@ -133,7 +131,7 @@ const EffectsLabPanel: React.FC = () => {
             <EffectToggle enabled={settings.world.enabled} title="Spatial portfolio map" description="Lazy-loaded Three.js environment" onClick={() => toggle('world')} />
             <label className="lab-select"><span>Quality</span><select value={settings.world.quality} onChange={(event) => setWorldQuality(event.target.value as WorldQuality)}><option value="balanced">Balanced</option><option value="high">High</option></select></label>
             <button type="button" disabled={!settings.world.enabled} onClick={() => { suppressFocusRestore.current = true; close('open_world'); openWorld('effects_lab'); }}>Open spatial map</button>
-            <p>Current professional lens: {theme === 'light' ? 'Build' : 'Secure'}.</p>
+            <p>The spatial map is optional; the complete portfolio remains available in the document.</p>
           </section>
         </div>
         </aside>

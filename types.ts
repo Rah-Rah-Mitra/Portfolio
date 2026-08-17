@@ -89,6 +89,21 @@ export interface FieldNote {
   npcDialogue?: string;
 }
 
+export interface ExperienceRecord {
+  id: string;
+  kind: 'professional' | 'education';
+  role: string;
+  organization: string;
+  location: string;
+  dateLabel: string;
+  sortDate: string;
+  scope: string;
+  responsibilities: string[];
+  outcomes: string[];
+  tags: string[];
+  linkedProjectIds: string[];
+}
+
 export interface EventHighlight {
   id: string;
   title: string;
@@ -116,6 +131,53 @@ export interface PortfolioData {
   instagramUrl?: string;
   achievements: AchievementItem[];
   skills: SkillItem[];
+  experience?: ExperienceRecord[];
+  projects?: ProjectHighlight[];
+  capabilities?: CompetencyCluster[];
+  resumes?: ResumeProfile[];
+  guideChapters?: GuideChapter[];
+  technicalDemos?: TechnicalDemo[];
+}
+
+export interface ProjectMedia {
+  id: string;
+  kind: 'poster' | 'video' | 'interactive';
+  posterSrc: string;
+  webmSrc?: string;
+  mp4Src?: string;
+  durationSeconds?: number;
+  width: number;
+  height: number;
+  alt: string;
+  transcript?: string;
+  workflowId?: string;
+  loadPriority?: 'critical' | 'near-viewport' | 'lazy';
+}
+
+export interface GuideChapter {
+  sectionId: string;
+  label: string;
+  cue: 'idle' | 'walk' | 'run' | 'inspect' | 'calibrate';
+  pathProgress: number;
+  camera: [number, number, number];
+  annotation: string;
+  reducedMotionLabel: string;
+}
+
+export interface TechnicalDemoLayer {
+  id: 'rgb' | 'detection' | 'segmentation' | 'features' | 'matches' | 'map' | 'trajectory';
+  label: string;
+  method: string;
+  description: string;
+}
+
+export interface TechnicalDemo {
+  id: string;
+  title: string;
+  disclaimer: string;
+  provenance: string;
+  metrics: Array<{ label: string; value: string }>;
+  layers: TechnicalDemoLayer[];
 }
 
 export interface NavLink {

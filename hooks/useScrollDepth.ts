@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { track, themeToProfile } from '../lib/analytics';
-import type { Theme } from '../contexts/ThemeContext';
+import { track } from '../lib/analytics';
 
 const MILESTONES = [25, 50, 75, 90] as const;
 
-export function useScrollDepth(theme: Theme): void {
+export function useScrollDepth(): void {
   const fired = useRef<Set<number>>(new Set());
 
   useEffect(() => {
@@ -21,7 +20,7 @@ export function useScrollDepth(theme: Theme): void {
           fired.current.add(milestone);
           track('scroll_depth_reached', {
             depth: milestone,
-            profile: themeToProfile(theme),
+            surface: 'continuous_field_test',
           });
         }
       });
@@ -30,5 +29,5 @@ export function useScrollDepth(theme: Theme): void {
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [theme]);
+  }, []);
 }

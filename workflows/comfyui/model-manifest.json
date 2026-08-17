@@ -25,6 +25,24 @@
       "source": "https://github.com/NVlabs/RADIO"
     }
   ],
-  "assets": []
+  "assets": [
+    {
+      "id": "field-engineer-guide",
+      "workflow": "Character Builder - 1 Part Image.json",
+      "model": "z_image_turbo-Q5_K_S.gguf",
+      "promptSeed": 4837373,
+      "dimensions": "768x1024",
+      "outputs": ["public/images/field-engineer-guide.webp"],
+      "purpose": "mobile and reduced-motion guide poster"
+    },
+    {
+      "id": "continuous-field-test-comp",
+      "workflow": "Character Builder - 1 Part Image.json",
+      "model": "z_image_turbo-Q5_K_S.gguf",
+      "promptSeed": 4837374,
+      "dimensions": "1360x896",
+      "outputs": [".impeccable/mocks/decision/continuous-field-test.png"],
+      "purpose": "approved composition reference; generated text is not production copy"
+    }
+  ]
 }
-

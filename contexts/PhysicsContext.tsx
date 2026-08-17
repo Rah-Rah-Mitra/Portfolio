@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import Matter from 'matter-js';
-import { Theme } from './ThemeContext';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
 import { track, triggerSessionReplay } from '../lib/analytics';
@@ -116,7 +115,7 @@ const { Engine, Runner, Bodies, Composite, World, Body } = Matter;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = ({ children, theme }) => {
+export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<EffectSettings>(defaultSettings);
   const [worldOpen, setWorldOpen] = useState(false);
   const engineRef = useRef(Engine.create());
@@ -266,14 +265,6 @@ export const EffectsProvider: React.FC<{ children: ReactNode; theme: Theme }> = 
       document.body.classList.remove('no-select');
     };
   }, [settings.smash.enabled, settings.gravity.enabled]);
-
-  useEffect(() => {
-    setSettings((prev) => ({
-      ...prev,
-      smash: { ...prev.smash, enabled: false },
-      gravity: { ...prev.gravity, enabled: false },
-    }));
-  }, [theme]);
 
   useSmashInteraction(engineRef, bodiesRef, settings.smash.enabled, {
     intensity: settings.smash.intensity,

@@ -6,6 +6,7 @@ import { resumeAssetUrl } from '../siteConfig';
 import { track } from '../lib/analytics';
 import TechnicalLabSection from './TechnicalLabSection';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';
+import { DepartureIris, FlowShopExhibit, ProjectSystemInspector, SpatialSystemsExhibit } from './InteractiveExhibits';
 
 const FieldGuideStage = React.lazy(() => import('./FieldGuideStage'));
 
@@ -161,6 +162,9 @@ export const SelectedWork: React.FC = () => {
               )}
               <div className="method-list" aria-label={`${project.title} technologies`}>{project.tags.slice(0, 8).map((tag) => <span key={tag}>{tag}</span>)}</div>
               <ProjectLinks project={project} />
+              {project.id === 'hybrid-flow-shop-digital-twin' && <><FlowShopExhibit /><ProjectSystemInspector kind="flow-shop" /></>}
+              {project.id === 'churp' && <SpatialSystemsExhibit />}
+              {project.id === 'on-the-spectrum' && <ProjectSystemInspector kind="on-the-spectrum" />}
             </div>
             {project.imageUrl && (
               <figure className="selected-project-media">
@@ -366,7 +370,7 @@ const ResumeSection: React.FC = () => (
 const ContactFooter: React.FC = () => (
   <footer id="contact" className="portfolio-contact">
     <div><h2>Let’s build an intelligent system worth trusting.</h2><p>For engineering roles, collaborations, or a deeper discussion of the work, contact Rahul directly.</p></div>
-    <div className="contact-actions"><a href={`mailto:${unifiedPortfolioData.contactEmail}`}>{unifiedPortfolioData.contactEmail}</a>{unifiedPortfolioData.linkedinUrl && <a href={unifiedPortfolioData.linkedinUrl} target="_blank" rel="noreferrer">LinkedIn<ExternalLabel /></a>}{unifiedPortfolioData.githubUrl && <a href={unifiedPortfolioData.githubUrl} target="_blank" rel="noreferrer">GitHub<ExternalLabel /></a>}</div>
+    <DepartureIris />
     <small>Rahul Mitra · Singapore · Evidence-led engineering across AI, optimization, software, perception, and security.</small>
   </footer>
 );

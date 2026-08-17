@@ -172,7 +172,7 @@ export type SceneId =
   | 'camera-laboratory'
   | 'departure';
 
-export type SceneControlOwner = 'narrative' | 'visitor' | 'system';
+export type SceneControlOwner = 'story' | 'visitor' | 'transition';
 
 export type SemanticFallbackAnchor =
   | '#home'
@@ -230,6 +230,21 @@ export type CameraShot = {
 };
 
 export type QualityTier = 'full' | 'balanced' | 'reduced' | 'static';
+
+export type PortfolioWorldEvent =
+  | { type: 'INTERACTION_PRIMED'; sceneId: SceneId; source: 'visitor' }
+  | { type: 'INTERACTION_CHANGED'; sceneId: SceneId; source: 'visitor'; detail: string }
+  | { type: 'INTERACTION_RESET'; sceneId: SceneId; source: 'visitor' }
+  | { type: 'EXPLORE_ENTERED'; sceneId: SceneId; source: 'visitor' }
+  | { type: 'EXPLORE_EXITED'; sceneId: SceneId; source: 'visitor' }
+  | { type: 'JOB_REORDERED'; oldMakespan: number; newMakespan: number; makespanDelta: number; order: string[] }
+  | { type: 'MAP_MARKER_MOVED'; markerId: string; coordinates: [number, number]; selectedPlot: string; distance: number }
+  | { type: 'PROJECT_OPENED'; projectId: string; selectedId: string; selectedIndex: number }
+  | { type: 'CAMERA_CALIBRATED'; reprojectionError: number }
+  | { type: 'STEREO_POINT_TRIANGULATED'; depthError: number }
+  | { type: 'DEPARTURE_COMPLETED'; state: 'closed' | 'calibrated' }
+  | { type: 'LAB_RESET'; sceneId?: SceneId }
+  | { type: 'QUALITY_CHANGED'; tier: QualityTier };
 
 export type QualityTierDefinition = {
   id: QualityTier;

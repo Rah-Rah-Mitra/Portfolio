@@ -1,5 +1,5 @@
 import React from 'react';
-import { EffectsProvider, useEffects } from './contexts/PhysicsContext';
+import { EffectsProvider } from './contexts/PhysicsContext';
 import EffectsLabPanel from './components/EffectsLabPanel';
 import FluidBackground from './components/FluidBackground';
 import AskThePage from './components/AskThePage';
@@ -8,20 +8,11 @@ import { track } from './lib/analytics';
 import PortfolioExperience from './components/PortfolioExperience';
 import { ExperienceModeProvider, useExperienceMode } from './contexts/ExperienceModeContext';
 
-const PortfolioWorld = React.lazy(() => import('./components/PortfolioWorld'));
-
 export const OptionalExperienceLayers: React.FC = () => {
-  const { worldOpen } = useEffects();
-  const { policy } = useExperienceMode();
   return (
     <>
       <EffectsLabPanel />
       <AskThePage />
-      {policy.mode === 'guided' && policy.allowHeavyAssets && worldOpen && (
-        <React.Suspense fallback={<div className="world-loading" role="status">Preparing the spatial portfolio map...</div>}>
-          <PortfolioWorld />
-        </React.Suspense>
-      )}
     </>
   );
 };

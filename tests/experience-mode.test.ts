@@ -36,6 +36,18 @@ describe('portfolio experience mode', () => {
       lowMotion: true,
       hardFailure: false,
       reason: 'reduced-motion',
+      choice: 'automatic',
+    });
+  });
+
+  it('enables enhancements when reduced-motion is explicitly overridden for the session', () => {
+    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: true, webgl: 'full' }, 'guided')).toEqual({
+      mode: 'guided',
+      allowHeavyAssets: true,
+      lowMotion: false,
+      hardFailure: false,
+      reason: 'session-choice',
+      choice: 'explicit',
     });
   });
 

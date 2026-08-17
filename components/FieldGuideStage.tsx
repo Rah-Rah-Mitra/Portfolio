@@ -11,14 +11,16 @@ gsap.registerPlugin(ScrollTrigger);
 
 interface FieldGuideStageProps {
   chapters: GuideChapter[];
+  allowPreferenceOverride?: boolean;
 }
 
 type GuideMode = 'webgl' | 'static';
 
-const isConstrainedDevice = () => {
+const isConstrainedDevice = (allowPreferenceOverride: boolean) => {
   const navigatorWithHints = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  if (window.matchMedia('(max-width: 860px)').matches) return true;
+  if (allowPreferenceOverride) return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    || window.matchMedia('(max-width: 860px)').matches
     || navigatorWithHints.connection?.saveData === true
     || (navigatorWithHints.deviceMemory !== undefined && navigatorWithHints.deviceMemory < 4);
 };
@@ -73,13 +75,13 @@ const buildFallbackGuide = () => {
   return guide;
 };
 
-const FieldGuideStage: React.FC<FieldGuideStageProps> = ({ chapters }) => {
+const FieldGuideStage: React.FC<FieldGuideStageProps> = ({ chapters, allowPreferenceOverride = false }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [mode, setMode] = useState<GuideMode>('webgl');
 
   useEffect(() => {
-    if (isConstrainedDevice()) {
+    if (isConstrainedDevice(allowPreferenceOverride)) {
       setMode('static');
       track('guide_capability_detected', { mode: 'static', chapter: chapters[0]?.sectionId ?? 'home' });
       return undefined;
@@ -247,7 +249,7 @@ const FieldGuideStage: React.FC<FieldGuideStageProps> = ({ chapters }) => {
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [chapters]);
+  }, [allowPreferenceOverride, chapters]);
 
   const activeChapter = chapters[activeIndex] ?? chapters[0];
 

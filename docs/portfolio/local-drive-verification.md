@@ -7,4 +7,4 @@ $env:PORTFOLIO_VERIFY_MIRROR = 'C:\codex-verify\portfolio'
 node scripts/verify-local-mirror.mjs
 ```
 
-Use a dedicated local destination. The script rejects a destination that is the source directory or a child of it. Do not point it at a user workspace, a repository root, or a directory containing uncommitted work you need to retain.
+Use a dedicated local destination. The script rejects a destination equal to, an ancestor of, or a descendant of the source workspace. Do not point it at a user workspace, a repository root, or a directory containing uncommitted work you need to retain.

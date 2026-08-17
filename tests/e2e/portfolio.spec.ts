@@ -79,6 +79,16 @@ test.describe('capability fallbacks', () => {
     await expect(page.locator('video')).toHaveCount(0);
   });
 
+  test('an explicit Guided choice overrides the reduced-motion static default', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await expect(page.getByText('Guided, low-motion rendering')).toBeAttached();
+    await page.getByRole('button', { name: 'Guided' }).click();
+    await expect(page.locator('.site-shell')).toHaveAttribute('data-motion', 'full');
+    await expect(page.locator('.field-guide-stage')).toHaveAttribute('data-mode', 'webgl');
+    await expect(page.locator('.field-guide-stage video')).toHaveCount(1);
+  });
+
   test('WebGL failure retains the static guide and portfolio record', async ({ page }) => {
     await page.addInitScript(() => {
       const original = HTMLCanvasElement.prototype.getContext;
@@ -100,5 +110,26 @@ test.describe('capability fallbacks', () => {
     await expect(page.locator('.portfolio-world')).toHaveCount(0);
     await expect(page.locator('video')).toHaveCount(0);
     await expect(page).toHaveURL(/\?mode=scan#work$/);
+  });
+
+  test('Back and Forward restore the historical experience mode', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Quick Scan' }).click();
+    await expect(page).toHaveURL(/\?mode=scan$/);
+    await page.getByRole('button', { name: 'Guided' }).click();
+    await expect(page).not.toHaveURL(/mode=scan/);
+    await page.goBack();
+    await expect(page.getByRole('button', { name: 'Quick Scan' })).toHaveAttribute('aria-pressed', 'true');
+    await page.goForward();
+    await expect(page.getByRole('button', { name: 'Guided' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('Explore World navigates to the future anchor without opening the old modal', async ({ page }) => {
+    await page.goto('/');
+    const explore = page.locator('.spatial-launch-desktop');
+    await expect(explore).toHaveAttribute('href', '#world');
+    await explore.click();
+    await expect(page).toHaveURL(/#world$/);
+    await expect(page.locator('.portfolio-world')).toHaveCount(0);
   });
 });

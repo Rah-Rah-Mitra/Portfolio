@@ -180,12 +180,11 @@ const AskThePage: React.FC = () => {
     else if (command.type === 'focusEvent' && eventIds.has(command.eventId)) {
       const note = fieldNoteByIdOrAlias.get(command.eventId);
       if (note) document.getElementById(`event-${note.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (command.type === 'openWorld') effects.openWorld('ask_this_portfolio');
+    } else if (command.type === 'openWorld') document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     else if (command.type === 'closeWorld') effects.closeWorld('ask_this_portfolio');
     else if (command.type === 'restoreText') effects.restoreAll();
     else if (command.type === 'startNpcDialogue') {
-      effects.openWorld('ask_this_portfolio');
-      window.setTimeout(() => window.dispatchEvent(new CustomEvent('portfolio:npcDialogue', { detail: { npcId: command.npcId } })), 150);
+      document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 

@@ -12,8 +12,10 @@ describe('semantic build pipeline', () => {
   it('runs prerender during production builds and hydrates valid markup', async () => {
     const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')) as { scripts: Record<string, string> };
     const entry = await readFile(new URL('../index.tsx', import.meta.url), 'utf8');
+    const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
     expect(packageJson.scripts.build).toContain('prerender-semantic.mjs');
     expect(entry).toContain('hydrateRoot');
     expect(entry).toContain('createRoot');
+    expect(app).not.toContain("import('./components/PortfolioWorld')");
   });
 });

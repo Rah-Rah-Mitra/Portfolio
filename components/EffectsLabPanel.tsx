@@ -34,7 +34,7 @@ const EffectsLabPanel: React.FC = () => {
   const panelRef = useRef<HTMLElement>(null);
   const suppressFocusRestore = useRef(false);
   const openedAt = useRef<number | null>(null);
-  const { settings, toggleEffect, setEffectParam, setPretextMode, setWorldQuality, setFluidQuality, openWorld, restoreAll, pauseAll } = useEffects();
+  const { settings, toggleEffect, setEffectParam, setPretextMode, setWorldQuality, setFluidQuality, restoreAll, pauseAll } = useEffects();
   useFocusTrap(open, panelRef, '[data-open-effects], .effects-dock', suppressFocusRestore);
 
   const close = (reason: string) => {
@@ -130,7 +130,7 @@ const EffectsLabPanel: React.FC = () => {
           <section className="world-control">
             <EffectToggle enabled={settings.world.enabled} title="Spatial portfolio map" description="Lazy-loaded Three.js environment" onClick={() => toggle('world')} />
             <label className="lab-select"><span>Quality</span><select value={settings.world.quality} onChange={(event) => setWorldQuality(event.target.value as WorldQuality)}><option value="balanced">Balanced</option><option value="high">High</option></select></label>
-            <button type="button" disabled={!settings.world.enabled} onClick={() => { suppressFocusRestore.current = true; close('open_world'); openWorld('effects_lab'); }}>Open spatial map</button>
+            <a href="#world" onClick={() => close('explore_world')}>Explore World</a>
             <p>The spatial map is optional; the complete portfolio remains available in the document.</p>
           </section>
         </div>

@@ -16,6 +16,13 @@ const staticPolicy: ExperiencePolicy = {
   lowMotion: true,
   hardFailure: false,
   reason: 'default',
+  choice: 'automatic',
+};
+
+const modeFromHistoryState = (state: unknown): ExperienceMode | null => {
+  if (!state || typeof state !== 'object') return null;
+  const mode = (state as { portfolioExperienceMode?: unknown }).portfolioExperienceMode;
+  return mode === 'guided' || mode === 'scan' ? mode : null;
 };
 
 interface ExperienceModeContextValue {
@@ -40,15 +47,27 @@ export const ExperienceModeProvider: React.FC<{
 
   useEffect(() => {
     const detected = suppliedCapabilities ?? detectExperienceCapabilities();
-    const queryMode = modeFromSearch(window.location.search);
     const saved = sessionStorage.getItem(SESSION_MODE_KEY);
     const sessionChoice: ExperienceMode | null = saved === 'guided' || saved === 'scan' ? saved : null;
-    const next = resolveExperiencePolicy(detected, sessionChoice, queryMode);
+    const resolveLocation = (historyChoice: ExperienceMode | null, useSessionChoice: boolean) => resolveExperiencePolicy(
+      detected,
+      historyChoice ?? (useSessionChoice ? sessionChoice : null),
+      modeFromSearch(window.location.search),
+    );
+    const next = resolveLocation(null, true);
     setCapabilities(detected);
     setPolicy(next);
-    if (next.mode === 'scan' && queryMode !== 'scan') {
-      window.history.replaceState(window.history.state, '', withExperienceMode(window.location.href, 'scan'));
+    if (next.mode === 'scan' && modeFromSearch(window.location.search) !== 'scan') {
+      window.history.replaceState({ ...window.history.state, portfolioExperienceMode: 'scan' }, '', withExperienceMode(window.location.href, 'scan'));
     }
+    const synchronizeHistory = (event: PopStateEvent) => {
+      const historyChoice = modeFromHistoryState(event.state);
+      const restored = resolveLocation(historyChoice, false);
+      setPolicy(restored);
+      if (historyChoice) sessionStorage.setItem(SESSION_MODE_KEY, historyChoice);
+    };
+    window.addEventListener('popstate', synchronizeHistory);
+    return () => window.removeEventListener('popstate', synchronizeHistory);
   }, [suppliedCapabilities]);
 
   const chooseMode = (mode: ExperienceMode) => {
@@ -56,7 +75,7 @@ export const ExperienceModeProvider: React.FC<{
     sessionStorage.setItem(SESSION_MODE_KEY, mode);
     const next = resolveExperiencePolicy(capabilities, mode);
     setPolicy(next);
-    window.history.pushState(window.history.state, '', withExperienceMode(window.location.href, mode));
+    window.history.pushState({ ...window.history.state, portfolioExperienceMode: mode }, '', withExperienceMode(window.location.href, mode));
   };
 
   const value = useMemo(() => ({ policy, chooseMode }), [policy]);

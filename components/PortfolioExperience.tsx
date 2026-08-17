@@ -4,7 +4,6 @@ import { guideChapters } from '../fieldTestData';
 import { ProjectHighlight } from '../types';
 import { resumeAssetUrl } from '../siteConfig';
 import { track } from '../lib/analytics';
-import { useEffects } from '../contexts/PhysicsContext';
 import TechnicalLabSection from './TechnicalLabSection';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';
 
@@ -59,16 +58,8 @@ const ProjectLinks: React.FC<{ project: ProjectHighlight }> = ({ project }) => {
   );
 };
 
-const PortfolioHeader: React.FC = () => {
+export const PortfolioHeader: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const { openWorld } = useEffects();
-  const { policy } = useExperienceMode();
-
-  const exploreWorld = (event: React.MouseEvent<HTMLAnchorElement>, source: string) => {
-    if (policy.mode === 'scan' || !policy.allowHeavyAssets) return;
-    event.preventDefault();
-    openWorld(source);
-  };
 
   return (
     <header className="portfolio-header">
@@ -82,10 +73,10 @@ const PortfolioHeader: React.FC = () => {
         <div className="portfolio-mobile-tools" aria-label="Optional portfolio tools">
           <button type="button" data-open-assistant onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openAssistant', { detail: { source: 'mobile_menu' } }))}>AI · Ask</button>
           <button type="button" data-open-effects onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openEffects', { detail: { source: 'mobile_menu' } }))}>FX · Lab</button>
-          <a href="#world" data-open-world onClick={(event) => exploreWorld(event, 'header_mobile')}>Explore World</a>
+          <a href="#world" data-open-world>Explore World</a>
         </div>
       </nav>
-      <a className="spatial-launch spatial-launch-desktop" href="#world" onClick={(event) => exploreWorld(event, 'header')}>Explore World</a>
+      <a className="spatial-launch spatial-launch-desktop" href="#world">Explore World</a>
     </header>
   );
 };
@@ -127,7 +118,7 @@ const PortfolioHero: React.FC = () => {
 
       <div className="hero-world-stage" aria-label="Field guide rendering layer">
         {policy.allowHeavyAssets && policy.mode === 'guided' ? (
-          <Suspense fallback={<StaticGuideMarker />}><FieldGuideStage chapters={guideChapters} /></Suspense>
+          <Suspense fallback={<StaticGuideMarker />}><FieldGuideStage chapters={guideChapters} allowPreferenceOverride={policy.choice === 'explicit'} /></Suspense>
         ) : <StaticGuideMarker />}
       </div>
     </section>
@@ -174,7 +165,7 @@ export const SelectedWork: React.FC = () => {
             {project.imageUrl && (
               <figure className="selected-project-media">
                 <span aria-hidden="true">{String(index + 1).padStart(2, '0')} / FIELD EVIDENCE</span>
-                <img src={project.imageUrl} alt={`Project evidence for ${project.title}`} width="800" height="600" loading="eager" decoding="async" />
+                <img src={project.imageUrl} alt={`Project evidence for ${project.title}`} width="800" height="600" loading={index === 0 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} decoding="async" />
                 <figcaption>{project.title} evidence preview</figcaption>
               </figure>
             )}

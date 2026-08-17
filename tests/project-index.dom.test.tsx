@@ -15,6 +15,10 @@ describe('recruiter project evidence', () => {
     expect(titles).toHaveLength(5);
     expect(titles.slice(0, 3)).toEqual(['Hybrid Flow Shop Digital Twin Optimizer', 'Churp', 'OnTheSpectrum']);
     expect(container.querySelectorAll('.project-evidence')).toHaveLength(5);
+    Array.from(container.querySelectorAll<HTMLElement>('.selected-project')).forEach((project, index) => {
+      const image = project.querySelector<HTMLImageElement>('.selected-project-media img');
+      if (image && index > 0) expect(image.getAttribute('loading')).toBe('lazy');
+    });
   });
 
   it('compacts to eight projects after hydration and loads four more', async () => {

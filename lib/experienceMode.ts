@@ -13,6 +13,7 @@ export interface ExperiencePolicy {
   lowMotion: boolean;
   hardFailure: boolean;
   reason: 'query' | 'session-choice' | 'save-data' | 'reduced-motion' | 'low-webgl' | 'webgl-failure' | 'default';
+  choice: 'automatic' | 'explicit';
 }
 
 interface CapabilityProbe {
@@ -68,28 +69,29 @@ export const resolveExperiencePolicy = (
   queryMode: ExperienceMode | null = null,
 ): ExperiencePolicy => {
   if (capabilities.webgl === 'failed') {
-    return { mode: 'scan', allowHeavyAssets: false, lowMotion: true, hardFailure: true, reason: 'webgl-failure' };
+    return { mode: 'scan', allowHeavyAssets: false, lowMotion: true, hardFailure: true, reason: 'webgl-failure', choice: 'automatic' };
   }
 
   const explicit = queryMode ?? choice;
   if (explicit) {
     return {
       mode: explicit,
-      allowHeavyAssets: explicit === 'guided' && !capabilities.reducedMotion,
-      lowMotion: explicit === 'scan' || capabilities.reducedMotion,
+      allowHeavyAssets: explicit === 'guided',
+      lowMotion: explicit === 'scan',
       hardFailure: false,
       reason: queryMode ? 'query' : 'session-choice',
+      choice: 'explicit',
     };
   }
 
   if (capabilities.saveData) {
-    return { mode: 'scan', allowHeavyAssets: false, lowMotion: true, hardFailure: false, reason: 'save-data' };
+    return { mode: 'scan', allowHeavyAssets: false, lowMotion: true, hardFailure: false, reason: 'save-data', choice: 'automatic' };
   }
   if (capabilities.webgl === 'low') {
-    return { mode: 'scan', allowHeavyAssets: false, lowMotion: true, hardFailure: false, reason: 'low-webgl' };
+    return { mode: 'scan', allowHeavyAssets: false, lowMotion: true, hardFailure: false, reason: 'low-webgl', choice: 'automatic' };
   }
   if (capabilities.reducedMotion) {
-    return { mode: 'guided', allowHeavyAssets: false, lowMotion: true, hardFailure: false, reason: 'reduced-motion' };
+    return { mode: 'guided', allowHeavyAssets: false, lowMotion: true, hardFailure: false, reason: 'reduced-motion', choice: 'automatic' };
   }
-  return { mode: 'guided', allowHeavyAssets: true, lowMotion: false, hardFailure: false, reason: 'default' };
+  return { mode: 'guided', allowHeavyAssets: true, lowMotion: false, hardFailure: false, reason: 'default', choice: 'automatic' };
 };

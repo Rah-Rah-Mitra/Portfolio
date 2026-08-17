@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "runtime": {
+    "endpoint": "http://127.0.0.1:8188",
+    "comfyui": "0.33.0",
+    "pytorch": "2.9.1+rocm7.2.1",
+    "device": "AMD Radeon 890M"
+  },
+  "models": [
+    {
+      "id": "ltxv-2b-distilled",
+      "file": "ltxv-2b-0.9.8-distilled.safetensors",
+      "role": "fast local text-to-video baseline",
+      "status": "verified-local"
+    },
+    {
+      "id": "ltx-2.3-distilled",
+      "role": "optional final-quality benchmark",
+      "status": "benchmark-required"
+    },
+    {
+      "id": "c-radio-v4-so400m",
+      "role": "optional offline dense feature extraction",
+      "status": "benchmark-required",
+      "source": "https://github.com/NVlabs/RADIO"
+    }
+  ],
+  "assets": []
+}
+

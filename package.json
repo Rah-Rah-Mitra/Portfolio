@@ -9,7 +9,8 @@
     "api": "node server.mjs",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "comfy:smoke": "node scripts/comfyui/smoke-test.mjs"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.7",

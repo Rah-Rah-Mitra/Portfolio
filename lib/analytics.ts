@@ -10,7 +10,6 @@ import type {
 
 type PostHogClient = (typeof import('posthog-js'))['default'];
 
-export type Profile = 'software_engineer' | 'cybersecurity';
 export type PanelName = 'effects_lab' | 'ask_the_page' | 'ask_this_portfolio';
 
 export type UrlTargetSummary = {
@@ -30,16 +29,14 @@ type ReplayReason =
 
 export type AnalyticsEvent =
   | { event: 'portfolio_viewed'; props: { surface: 'continuous_field_test' } }
-  | { event: 'profile_viewed'; props: { profile: Profile } }
-  | { event: 'profile_switched'; props: { from: Profile; to: Profile } }
-  | { event: 'section_viewed'; props: { section: string; profile: Profile } }
+  | { event: 'section_viewed'; props: { section: string } }
   | { event: 'scroll_depth_reached'; props: { depth: 25 | 50 | 75 | 90; surface: 'continuous_field_test' } }
   | { event: 'nav_link_clicked'; props: { destination: string } }
   | { event: 'journey_marker_clicked'; props: { section: string; camera_index: number } }
-  | { event: 'cta_clicked'; props: { label: string; profile: Profile } }
+  | { event: 'cta_clicked'; props: { label: string } }
   | { event: 'social_link_clicked'; props: { platform: 'linkedin' | 'github' | 'instagram'; location: 'hero' | 'contact' | 'footer' } }
   | { event: 'contact_email_clicked'; props: Partial<{ location: 'contact' | 'footer' }> }
-  | { event: 'achievement_viewed'; props: { title: string; category: string; index: number; profile: Profile } }
+  | { event: 'achievement_viewed'; props: { title: string; category: string; index: number } }
   | { event: 'achievement_proof_opened'; props: { title: string } }
   | { event: 'achievement_hovered'; props: { title: string; hover_duration_ms: number } }
   | { event: 'physics_mode_toggled'; props: { mode: 'hammer' | 'gravity_well'; action: 'activated' | 'deactivated' } }
@@ -337,8 +334,4 @@ export function summarizeUrlTarget(rawTarget: string, targetLabel?: string): Url
       target_host: 'invalid',
     };
   }
-}
-
-export function themeToProfile(theme: 'light' | 'dark'): Profile {
-  return theme === 'light' ? 'software_engineer' : 'cybersecurity';
 }

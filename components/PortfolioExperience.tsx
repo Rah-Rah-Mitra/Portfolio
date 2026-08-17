@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { allProjects, coreCompetencies, experienceRecords, resumeProfiles, unifiedPortfolioData } from '../portfolioData';
 import { guideChapters } from '../fieldTestData';
 import { ProjectHighlight } from '../types';
@@ -6,6 +6,7 @@ import { resumeAssetUrl } from '../siteConfig';
 import { track } from '../lib/analytics';
 import { useEffects } from '../contexts/PhysicsContext';
 import TechnicalLabSection from './TechnicalLabSection';
+import { useExperienceMode } from '../contexts/ExperienceModeContext';
 
 const FieldGuideStage = React.lazy(() => import('./FieldGuideStage'));
 
@@ -29,6 +30,17 @@ const navItems = [
 
 const ExternalLabel: React.FC = () => <span className="sr-only"> (opens in a new tab)</span>;
 
+export const ExperienceModeControl: React.FC = () => {
+  const { policy, chooseMode } = useExperienceMode();
+  return (
+    <div className="experience-mode-control" aria-label="Portfolio rendering mode">
+      <button type="button" aria-pressed={policy.mode === 'guided'} disabled={policy.hardFailure} onClick={() => chooseMode('guided')}>Guided</button>
+      <button type="button" aria-pressed={policy.mode === 'scan'} onClick={() => chooseMode('scan')}>Quick Scan</button>
+      <span role="status">{policy.mode === 'scan' ? 'Static, evidence-first rendering' : policy.lowMotion ? 'Guided, low-motion rendering' : 'Guided rendering'}</span>
+    </div>
+  );
+};
+
 const ProjectLinks: React.FC<{ project: ProjectHighlight }> = ({ project }) => {
   const links = [
     ...(project.repoUrl ? [{ label: 'Repository', url: project.repoUrl }] : []),
@@ -50,10 +62,18 @@ const ProjectLinks: React.FC<{ project: ProjectHighlight }> = ({ project }) => {
 const PortfolioHeader: React.FC = () => {
   const [open, setOpen] = useState(false);
   const { openWorld } = useEffects();
+  const { policy } = useExperienceMode();
+
+  const exploreWorld = (event: React.MouseEvent<HTMLAnchorElement>, source: string) => {
+    if (policy.mode === 'scan' || !policy.allowHeavyAssets) return;
+    event.preventDefault();
+    openWorld(source);
+  };
 
   return (
     <header className="portfolio-header">
       <a className="portfolio-mark" href="#home" aria-label="Rahul Mitra, home">RM<span>/ systems</span></a>
+      <ExperienceModeControl />
       <button className="portfolio-menu" type="button" aria-expanded={open} aria-controls="portfolio-navigation" onClick={() => setOpen((current) => !current)}>
         {open ? 'Close' : 'Menu'}
       </button>
@@ -62,16 +82,24 @@ const PortfolioHeader: React.FC = () => {
         <div className="portfolio-mobile-tools" aria-label="Optional portfolio tools">
           <button type="button" data-open-assistant onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openAssistant', { detail: { source: 'mobile_menu' } }))}>AI · Ask</button>
           <button type="button" data-open-effects onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openEffects', { detail: { source: 'mobile_menu' } }))}>FX · Lab</button>
-          <button type="button" data-open-world onClick={() => openWorld('header_mobile')}>Spatial World</button>
+          <a href="#world" data-open-world onClick={(event) => exploreWorld(event, 'header_mobile')}>Explore World</a>
         </div>
       </nav>
-      <button className="spatial-launch spatial-launch-desktop" type="button" onClick={() => openWorld('header')}>Spatial World</button>
+      <a className="spatial-launch spatial-launch-desktop" href="#world" onClick={(event) => exploreWorld(event, 'header')}>Explore World</a>
     </header>
   );
 };
 
+const StaticGuideMarker: React.FC = () => (
+  <figure className="hero-guide-static">
+    <img src="/images/field-engineer-guide.webp" alt="Abstract graphite and teal field engineer carrying a survey camera" width="768" height="1024" />
+    <figcaption>Static field marker · recruiter evidence remains fully available</figcaption>
+  </figure>
+);
+
 const PortfolioHero: React.FC = () => {
   const generalResume = resumeProfiles.find((resume) => resume.id === 'general');
+  const { policy } = useExperienceMode();
   return (
     <section id="home" className="portfolio-hero" aria-labelledby="portfolio-title">
       <div className="hero-positioning">
@@ -80,7 +108,7 @@ const PortfolioHero: React.FC = () => {
         <p className="hero-facts">Based in Singapore · NUS Industrial Systems Engineering · Second Major in Computer Science · Minor in Mathematics</p>
         <p className="hero-role-line"><strong>Target roles</strong> Software engineering · Applied AI · Operations research · Solution architecture <span>Open to engineering roles and collaborations.</span></p>
         <div className="hero-actions">
-          <a className="action-primary" href="#work" onClick={() => track('cta_clicked', { label: 'View selected work', profile: 'software_engineer' })}>View selected work</a>
+          <a className="action-primary" href="#work" onClick={() => track('cta_clicked', { label: 'View selected work' })}>View selected work</a>
           <a className="action-secondary" href={generalResume?.pdfUrl ?? resumeAssetUrl('general', 'pdf')} target="_blank" rel="noreferrer" onClick={() => track('resume_download_clicked', { role: 'General / Master CV', format: 'pdf' })}>Download résumé<ExternalLabel /></a>
           <a className="action-text" href="#experience">Read experience</a>
         </div>
@@ -97,16 +125,28 @@ const PortfolioHero: React.FC = () => {
         <div><dt>Open systems</dt><dd>Maintainer of AsyncDDGS, an asyncio-first search library published on PyPI.</dd></div>
       </dl>
 
-      <img className="hero-guide-mobile" src="/images/field-engineer-guide.webp" alt="Abstract graphite and teal field engineer carrying a survey camera" width="768" height="1024" />
+      <div className="hero-world-stage" aria-label="Field guide rendering layer">
+        {policy.allowHeavyAssets && policy.mode === 'guided' ? (
+          <Suspense fallback={<StaticGuideMarker />}><FieldGuideStage chapters={guideChapters} /></Suspense>
+        ) : <StaticGuideMarker />}
+      </div>
     </section>
   );
 };
 
-const SelectedWork: React.FC = () => {
-  const selected = useMemo(() => allProjects
-    .filter((project) => project.spotlight)
-    .sort((a, b) => (a.featuredPriority ?? 99) - (b.featuredPriority ?? 99))
-    .slice(0, 5), []);
+const selectedWorkLeaders = ['hybrid-flow-shop-digital-twin', 'churp', 'on-the-spectrum'];
+
+export const SelectedWork: React.FC = () => {
+  const selected = useMemo(() => {
+    const spotlights = allProjects
+      .filter((project) => project.spotlight)
+      .sort((a, b) => (a.featuredPriority ?? 99) - (b.featuredPriority ?? 99));
+    const leaderSet = new Set(selectedWorkLeaders);
+    return [
+      ...selectedWorkLeaders.map((id) => spotlights.find((project) => project.id === id)),
+      ...spotlights.filter((project) => !leaderSet.has(project.id)),
+    ].filter((project): project is ProjectHighlight => Boolean(project)).slice(0, 5);
+  }, []);
 
   return (
     <section id="work" className="evidence-section selected-work" aria-labelledby="selected-work-title">
@@ -174,10 +214,15 @@ const ExperienceSection: React.FC = () => (
   </section>
 );
 
-const AllProjectsSection: React.FC = () => {
+const INITIAL_PROJECT_COUNT = 8;
+const PROJECT_BATCH_SIZE = 4;
+
+export const AllProjectsSection: React.FC = () => {
   const [query, setQuery] = useState('');
   const [domain, setDomain] = useState<'all' | ProjectHighlight['accent']>('all');
   const [activeProjectIndex, setActiveProjectIndex] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(allProjects.length);
   const projectRefs = useRef(new Map<string, HTMLElement>());
   const normalized = query.trim().toLowerCase();
   const visible = allProjects.filter((project) => {
@@ -186,6 +231,27 @@ const AllProjectsSection: React.FC = () => {
     return matchesDomain && (!normalized || searchText.includes(normalized));
   });
 
+  const isFiltering = domain !== 'all' || normalized.length > 0;
+  const renderedProjects = isFiltering ? visible : visible.slice(0, visibleCount);
+
+  useEffect(() => {
+    const revealHashBatch = () => {
+      const projectId = decodeURIComponent(window.location.hash).replace('#project-', '');
+      const projectIndex = allProjects.findIndex((project) => project.id === projectId);
+      setVisibleCount(projectIndex >= 0
+        ? Math.max(INITIAL_PROJECT_COUNT, Math.ceil((projectIndex + 1) / PROJECT_BATCH_SIZE) * PROJECT_BATCH_SIZE)
+        : INITIAL_PROJECT_COUNT);
+    };
+    setHydrated(true);
+    revealHashBatch();
+    window.addEventListener('hashchange', revealHashBatch);
+    return () => window.removeEventListener('hashchange', revealHashBatch);
+  }, []);
+
+  useEffect(() => {
+    setActiveProjectIndex((current) => Math.min(current, Math.max(0, renderedProjects.length - 1)));
+  }, [renderedProjects.length]);
+
   const changeDomain = (next: 'all' | ProjectHighlight['accent']) => {
     setDomain(next);
     setActiveProjectIndex(0);
@@ -193,10 +259,10 @@ const AllProjectsSection: React.FC = () => {
   };
 
   const focusProjectAt = (index: number) => {
-    if (visible.length === 0) return;
-    const next = Math.max(0, Math.min(visible.length - 1, index));
+    if (renderedProjects.length === 0) return;
+    const next = Math.max(0, Math.min(renderedProjects.length - 1, index));
     setActiveProjectIndex(next);
-    projectRefs.current.get(visible[next].id)?.focus();
+    projectRefs.current.get(renderedProjects[next].id)?.focus();
   };
 
   const handleProjectKeys = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -211,7 +277,7 @@ const AllProjectsSection: React.FC = () => {
       focusProjectAt(0);
     } else if (event.key === 'End') {
       event.preventDefault();
-      focusProjectAt(visible.length - 1);
+      focusProjectAt(renderedProjects.length - 1);
     }
   };
 
@@ -230,10 +296,10 @@ const AllProjectsSection: React.FC = () => {
           ))}
         </div>
       </div>
-      <p className="project-result-count" role="status">Showing {visible.length} of {allProjects.length} projects</p>
-      <div className="project-stepper" aria-label="Project index navigation"><span>Use arrow keys when a project is focused.</span><div><button type="button" disabled={visible.length === 0 || activeProjectIndex <= 0} onClick={() => focusProjectAt(activeProjectIndex - 1)}>Previous</button><button type="button" disabled={visible.length === 0 || activeProjectIndex >= visible.length - 1} onClick={() => focusProjectAt(activeProjectIndex + 1)}>Next</button></div></div>
+      <p className="project-result-count" role="status">Showing {renderedProjects.length} of {allProjects.length} projects</p>
+      <div className="project-stepper" aria-label="Project index navigation"><span>Use arrow keys when a project is focused.</span><div><button type="button" aria-label="Previous project" disabled={renderedProjects.length === 0 || activeProjectIndex <= 0} onClick={() => focusProjectAt(activeProjectIndex - 1)}>Previous</button><button type="button" aria-label="Next project" disabled={renderedProjects.length === 0 || activeProjectIndex >= renderedProjects.length - 1} onClick={() => focusProjectAt(activeProjectIndex + 1)}>Next</button></div></div>
       <div className="project-index-list" onKeyDown={handleProjectKeys}>
-        {visible.map((project, index) => (
+        {renderedProjects.map((project, index) => (
           <article key={project.id} id={`project-${project.id}`} tabIndex={index === activeProjectIndex ? 0 : -1} ref={(node) => { if (node) projectRefs.current.set(project.id, node); else projectRefs.current.delete(project.id); }} onFocus={() => setActiveProjectIndex(index)}>
             <div className="project-index-meta"><time>{project.dateLabel ?? 'Archive'}</time><span>{domainLabels[project.accent]}</span></div>
             <div><h3>{project.title}</h3><p>{project.description}</p><div className="method-list">{project.tags.slice(0, 6).map((tag) => <span key={tag}>{tag}</span>)}</div></div>
@@ -241,6 +307,11 @@ const AllProjectsSection: React.FC = () => {
           </article>
         ))}
       </div>
+      {hydrated && !isFiltering && visibleCount < visible.length && (
+        <button className="project-load-more" type="button" onClick={() => setVisibleCount((current) => Math.min(visible.length, current + PROJECT_BATCH_SIZE))}>
+          Load {Math.min(PROJECT_BATCH_SIZE, visible.length - visibleCount)} more projects
+        </button>
+      )}
       {visible.length === 0 && <p className="empty-state">No project matches that combination. Clear the search or choose another domain.</p>}
     </section>
   );
@@ -313,8 +384,7 @@ const PortfolioExperience: React.FC = () => (
   <div className="portfolio-field-test">
     <a className="skip-link" href="#main-content">Skip to portfolio evidence</a>
     <PortfolioHeader />
-    <div className="portfolio-layout">
-      <main id="main-content" className="portfolio-evidence">
+    <main id="main-content" className="portfolio-evidence">
         <PortfolioHero />
         <SelectedWork />
         <ExperienceSection />
@@ -324,13 +394,10 @@ const PortfolioExperience: React.FC = () => (
         <ProofSection />
         <ResumeSection />
         <ContactFooter />
-      </main>
-      <aside className="portfolio-guide" aria-label="Continuous field test guide">
-        <Suspense fallback={<img className="field-guide-loading" src="/images/field-engineer-guide.webp" alt="Abstract field engineer guide" width="768" height="1024" />}>
-          <FieldGuideStage chapters={guideChapters} />
-        </Suspense>
-      </aside>
-    </div>
+      <section id="world" className="portfolio-world-mount" aria-label="Explore World mount point">
+        <p>Explore World is an optional spatial layer. Every portfolio fact is already available in the evidence above.</p>
+      </section>
+    </main>
   </div>
 );
 

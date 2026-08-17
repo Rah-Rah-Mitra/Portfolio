@@ -1,6 +1,6 @@
 
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import App from './App';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import { initAnalytics } from './lib/analytics';
@@ -15,12 +15,14 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-const root = ReactDOM.createRoot(rootElement);
-root.render(
+const application = (
   <React.StrictMode>
     <AppErrorBoundary>
       <App />
     </AppErrorBoundary>
   </React.StrictMode>
 );
+
+if (rootElement.hasChildNodes()) hydrateRoot(rootElement, application);
+else createRoot(rootElement).render(application);
     

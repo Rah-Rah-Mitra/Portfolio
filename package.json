@@ -7,7 +7,7 @@
     "dev": "node dev.mjs",
     "dev:vite": "vite",
     "api": "node server.mjs",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender-semantic.mjs",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "comfy:smoke": "node scripts/comfyui/smoke-test.mjs",

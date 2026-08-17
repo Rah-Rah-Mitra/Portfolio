@@ -6,16 +6,18 @@ import AskThePage from './components/AskThePage';
 import { useScrollDepth } from './hooks/useScrollDepth';
 import { track } from './lib/analytics';
 import PortfolioExperience from './components/PortfolioExperience';
+import { ExperienceModeProvider, useExperienceMode } from './contexts/ExperienceModeContext';
 
 const PortfolioWorld = React.lazy(() => import('./components/PortfolioWorld'));
 
-const OptionalExperienceLayers: React.FC = () => {
+export const OptionalExperienceLayers: React.FC = () => {
   const { worldOpen } = useEffects();
+  const { policy } = useExperienceMode();
   return (
     <>
       <EffectsLabPanel />
       <AskThePage />
-      {worldOpen && (
+      {policy.mode === 'guided' && policy.allowHeavyAssets && worldOpen && (
         <React.Suspense fallback={<div className="world-loading" role="status">Preparing the spatial portfolio map...</div>}>
           <PortfolioWorld />
         </React.Suspense>
@@ -25,12 +27,13 @@ const OptionalExperienceLayers: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
+  const { policy } = useExperienceMode();
   useScrollDepth();
   React.useEffect(() => {
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (!motionQuery.matches) document.documentElement.classList.add('motion-ready');
+    if (!motionQuery.matches && !policy.lowMotion) document.documentElement.classList.add('motion-ready');
     return () => document.documentElement.classList.remove('motion-ready');
-  }, []);
+  }, [policy.lowMotion]);
   React.useEffect(() => {
     track('portfolio_viewed', { surface: 'continuous_field_test' });
   }, []);
@@ -63,8 +66,8 @@ const AppContent: React.FC = () => {
   }, []);
   return (
     <EffectsProvider>
-      <div className="site-shell min-h-screen">
-        <FluidBackground />
+      <div className="site-shell min-h-screen" data-experience-mode={policy.mode} data-motion={policy.lowMotion ? 'low' : 'full'}>
+        {policy.allowHeavyAssets && <FluidBackground />}
         <PortfolioExperience />
         <OptionalExperienceLayers />
       </div>
@@ -74,7 +77,7 @@ const AppContent: React.FC = () => {
 
 
 const App: React.FC = () => {
-  return <AppContent />;
+  return <ExperienceModeProvider><AppContent /></ExperienceModeProvider>;
 };
 
 export default App;

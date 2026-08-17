@@ -93,12 +93,6 @@ img { max-width: 100%; }
 .error-boundary h1 { max-width: 12ch; margin: .5rem 0 1.25rem; font-size: clamp(3rem, 8vw, 6rem); letter-spacing: -.04em; line-height: .95; }
 .error-boundary p:not(.eyebrow) { max-width: 60ch; margin-bottom: 2rem; color: var(--muted); }
 
-.site-shell[data-lens='secure'] {
-  --accent: var(--coral);
-  --accent-deep: #6f2931;
-  --accent-wash: rgba(163, 66, 73, 0.1);
-}
-
 .eyebrow,
 .coordinate-label,
 .hero-coordinate {
@@ -163,10 +157,6 @@ img { max-width: 100%; }
 .desktop-nav a:hover::after, .desktop-nav a[aria-current]::after { transform: scaleX(1); }
 .desktop-nav a[aria-current] { color: var(--accent-deep); }
 .nav-actions { display: flex; align-items: center; gap: 0.65rem; }
-.lens-switch { display: flex; padding: 0.2rem; border: 1px solid var(--rule-strong); background: rgba(255,255,255,0.28); }
-.lens-option { display: inline-flex; min-height: 2.25rem; align-items: center; gap: 0.38rem; padding: 0.4rem 0.58rem; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 0.72rem; font-weight: 700; }
-.lens-option.is-active { background: var(--ink); color: var(--paper); }
-.lens-label-short { display: none; }
 .menu-button { display: none; width: 2.65rem; height: 2.65rem; place-items: center; border: 1px solid var(--rule-strong); background: transparent; cursor: pointer; }
 .mobile-nav { display: none; }
 
@@ -188,8 +178,6 @@ img { max-width: 100%; }
 .hero-identity p span { display: block; margin-bottom: 0.2rem; color: var(--ink); font-family: var(--font-sans); font-size: 1.12rem; font-weight: 750; letter-spacing: -0.02em; text-transform: none; }
 .hero-copy h1 { max-width: 16ch; margin: 0; font-size: clamp(2.7rem, 4.4vw, 4.9rem); font-stretch: 82%; font-weight: 740; letter-spacing: -0.04em; line-height: 0.94; }
 .hero-summary { max-width: 45rem; margin: 1.15rem 0 0; color: var(--ink-soft); font-size: clamp(.96rem, 1.2vw, 1.1rem); line-height: 1.62; }
-.hero-lens-note { display: flex; max-width: 47rem; align-items: flex-start; gap: 0.65rem; margin-top: 1rem; color: var(--muted); font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.5; }
-.hero-lens-note > span { width: 0.55rem; height: 0.55rem; flex: none; margin-top: 0.27rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0.25rem var(--accent-wash); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1.35rem; }
 .button, .hero-actions a, .hero-actions button {
   display: inline-flex;
@@ -433,8 +421,6 @@ img { max-width: 100%; }
 @media (max-width: 1100px) {
   .desktop-nav { gap: .7rem; }
   .desktop-nav a { font-size: .76rem; }
-  .lens-label-long { display: none; }
-  .lens-label-short { display: inline; }
   .hero-layout { grid-template-columns: minmax(0,1fr) minmax(20rem,.75fr); }
   .case-study { grid-template-columns: minmax(0,1fr) minmax(15rem,.48fr); gap: 1.35rem; }
   .case-study:nth-child(even) { grid-template-columns: minmax(15rem,.48fr) minmax(0,1fr); }
@@ -480,8 +466,6 @@ img { max-width: 100%; }
   .nav-frame { width: min(100% - 1.25rem, 82rem); min-height: 4.4rem; gap: .5rem; }
   .brand-copy small { display: none; }
   .brand-mark { width: 2.15rem; height: 2.15rem; }
-  .lens-option { min-height: 2.1rem; padding: .35rem .42rem; }
-  .lens-option svg { display: none; }
   .section-frame { width: min(100% - 1.25rem, 76rem); padding: 4.5rem 0; }
   .section-heading { gap: 1rem; margin-bottom: 2.6rem; }
   .section-heading h2 { font-size: clamp(2.2rem, 12vw, 3.4rem); }
@@ -493,7 +477,6 @@ img { max-width: 100%; }
   .hero-identity { margin-bottom: .75rem; }
   .hero-identity img { width: 3.25rem; height: 3.25rem; }
   .hero-summary { margin-top: .85rem; font-size: .92rem; line-height: 1.52; }
-  .hero-lens-note { margin-top: .7rem; font-size: .63rem; }
   .hero-actions { margin-top: .9rem; }
   .hero-links { margin-top: .35rem; }
   .spatial-field { order: -1; width: 100%; height: 7.5rem; overflow: hidden; box-shadow: none; }
@@ -546,7 +529,6 @@ img { max-width: 100%; }
   .spatial-field { height: 6.25rem; }
   .hero-copy h1 { font-size: 2.05rem; line-height: .92; }
   .hero-summary { font-size: .86rem; line-height: 1.45; }
-  .hero-lens-note { font-size: .58rem; line-height: 1.42; }
   .hero-actions { gap: .4rem; }
   .hero-actions { grid-template-columns: 1fr; }
   .hero-actions .button-primary { grid-column: 1; }
@@ -557,7 +539,6 @@ img { max-width: 100%; }
 
 @media (pointer: coarse), (max-width: 640px) {
   .brand-lockup,
-  .lens-option,
   .menu-button,
   .filter-row button,
   .preset-row button,
@@ -570,7 +551,6 @@ img { max-width: 100%; }
     min-height: 2.75rem;
   }
 
-  .lens-option,
   .menu-button,
   .case-links a,
   .ledger-links a,

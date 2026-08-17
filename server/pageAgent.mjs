@@ -37,7 +37,6 @@ const sanitizeCommands = (commands, eventIds = new Set()) => {
       const [min, max] = numericRanges[command.effect]?.[command.param] || [-Infinity, Infinity];
       sanitized.push({ type: command.type, effect: command.effect, param: command.param, value: Math.min(max, Math.max(min, Number(command.value))) });
     }
-    if (command.type === 'switchProfile' && ['software', 'cybersecurity'].includes(command.profile)) sanitized.push({ type: command.type, profile: command.profile });
     if (command.type === 'focusSection' && sectionIds.has(command.sectionId)) sanitized.push({ type: command.type, sectionId: command.sectionId });
     if (command.type === 'focusEvent' && eventIds.has(command.eventId)) sanitized.push({ type: command.type, eventId: command.eventId });
     if (command.type === 'startNpcDialogue' && npcIds.has(command.npcId)) sanitized.push({ type: command.type, npcId: command.npcId });
@@ -79,7 +78,7 @@ const localAgent = (message, reason = 'model_unavailable') => {
   } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty')) {
     reply = 'Rahul’s security record covers responsible bug-bounty research, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';
     references = [{ label: 'Arcane security tooling', href: '#project-arcane' }, { label: 'Security experience and proof', href: '#proof' }];
-    commands.push({ type: 'switchProfile', profile: 'cybersecurity' }, { type: 'focusSection', sectionId: 'proof' });
+    commands.push({ type: 'focusSection', sectionId: 'proof' });
   } else if (text.includes('world') || text.includes('map')) {
     reply = 'Opening the optional spatial portfolio map. The primary portfolio remains fully usable without this Three.js layer.';
     references = [{ label: 'Selected work', href: '#work' }];
@@ -103,7 +102,6 @@ References must use exact values from allowedLinks. Prefer relevant section/proj
 Allowed commands:
 - {"type":"setEffectEnabled","effect":"smash|gravity|fluid|pretext|world","enabled":true|false}
 - {"type":"setEffectParam","effect":"smash|gravity|fluid|pretext","param":"intensity|radius|strength|speed|opacity|splatRadius|curl","value":number}
-- {"type":"switchProfile","profile":"software|cybersecurity"}
 - {"type":"focusSection","sectionId":"home|work|domains|experience|proof|methods|resumes|share|contact"}
 - {"type":"focusEvent","eventId":"an event id from page state"}
 - {"type":"openWorld"} or {"type":"closeWorld"} or {"type":"restoreText"}

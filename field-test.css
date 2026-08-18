@@ -1,6 +1,28 @@
 :root {
+  --field-paper: #0b0e12;
+  --field-soft: #13191f;
+  --field-raised: #191f26;
+  --field-ink: #f3f7f5;
+  --field-muted: #a8b3af;
+  --field-rule: #2c353d;
+  --field-rule-strong: #4a565e;
+  --field-teal: #63d7ca;
+  --field-teal-dark: #8ce5da;
+  --field-amber: #f0ae55;
+  --field-violet: #b8a2f3;
+  --field-focus: #f6bd60;
+  --desktop-field: #080b0f;
+  --header-surface: rgb(11 14 18 / 94%);
+  --accent-rgb: 99 215 202;
+  --field-width: 92rem;
+  --field-copy: 48rem;
+  color-scheme: dark;
+}
+
+html[data-color-scheme="light"] {
   --field-paper: #ffffff;
   --field-soft: #f5f8f7;
+  --field-raised: #ffffff;
   --field-ink: #111816;
   --field-muted: #53605d;
   --field-rule: #d9e0de;
@@ -9,8 +31,25 @@
   --field-teal-dark: #07544f;
   --field-amber: #95590e;
   --field-violet: #6650a4;
-  --field-width: 92rem;
-  --field-copy: 48rem;
+  --field-focus: #9a5d05;
+  --desktop-field: #e9efed;
+  --header-surface: rgb(255 255 255 / 94%);
+  --accent-rgb: 11 113 105;
+  color-scheme: light;
+}
+
+html[data-accent="sky"] { --field-teal: #62b9ef; --field-teal-dark: #9ad7ff; --accent-rgb: 98 185 239; }
+html[data-accent="amber"] { --field-teal: #f0ae55; --field-teal-dark: #ffd08a; --accent-rgb: 240 174 85; }
+html[data-accent="violet"] { --field-teal: #b8a2f3; --field-teal-dark: #d7caff; --accent-rgb: 184 162 243; }
+html[data-accent="rose"] { --field-teal: #ef8fa9; --field-teal-dark: #ffb7c9; --accent-rgb: 239 143 169; }
+
+html[data-color-scheme="light"][data-accent="sky"] { --field-teal: #176f9e; --field-teal-dark: #0c526f; }
+html[data-color-scheme="light"][data-accent="amber"] { --field-teal: #95590e; --field-teal-dark: #6a3b05; }
+html[data-color-scheme="light"][data-accent="violet"] { --field-teal: #6650a4; --field-teal-dark: #49347f; }
+html[data-color-scheme="light"][data-accent="rose"] { --field-teal: #a43c5a; --field-teal-dark: #782840; }
+
+html[data-reduce-transparency="true"] {
+  --header-surface: var(--field-paper);
 }
 
 html {
@@ -35,7 +74,7 @@ body::after {
   min-height: 100vh;
   background:
     linear-gradient(var(--field-rule) 1px, transparent 1px) 0 0 / 100% 6rem no-repeat,
-    var(--field-paper);
+    transparent;
 }
 
 .portfolio-field-test {
@@ -69,7 +108,7 @@ body::after {
 .portfolio-field-test :focus-visible,
 .effects-dock:focus-visible,
 .ask-dock:focus-visible {
-  outline: 3px solid #df9f2f;
+  outline: 3px solid var(--field-focus);
   outline-offset: 3px;
 }
 
@@ -99,7 +138,7 @@ body::after {
   min-height: 4.75rem;
   padding: 0 max(1rem, calc((100vw - var(--field-width)) / 2));
   border-bottom: 1px solid var(--field-rule-strong);
-  background: rgb(255 255 255 / 94%);
+  background: var(--header-surface);
   backdrop-filter: blur(10px);
 }
 
@@ -130,7 +169,7 @@ body::after {
 .portfolio-header nav a {
   position: relative;
   padding: .7rem 0;
-  color: #34403d;
+  color: var(--field-muted);
   font-size: .74rem;
   font-weight: 650;
   text-decoration: none;

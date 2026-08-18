@@ -9,6 +9,7 @@ import PortfolioExperience from './components/PortfolioExperience';
 import { ExperienceModeProvider, useExperienceMode } from './contexts/ExperienceModeContext';
 import AudioSpriteController from './components/AudioSpriteController';
 import { WorkstationProvider } from './contexts/WorkstationContext';
+import { AppearanceProvider } from './contexts/AppearanceContext';
 
 export const OptionalExperienceLayers: React.FC = () => {
   return (
@@ -73,7 +74,7 @@ const AppContent: React.FC = () => {
 
 
 const App: React.FC = () => {
-  return <ExperienceModeProvider><AppContent /></ExperienceModeProvider>;
+  return <AppearanceProvider><ExperienceModeProvider><AppContent /></ExperienceModeProvider></AppearanceProvider>;
 };
 
 export default App;

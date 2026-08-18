@@ -1,6 +1,6 @@
 # Dark Optical Desktop Progress
 
-Last updated: 2026-08-18 21:01 SGT
+Last updated: 2026-08-18 21:10 SGT
 
 ## Handoff state
 
@@ -8,9 +8,9 @@ Last updated: 2026-08-18 21:01 SGT
 - Base: `main` at `e2e23d162e0d28665c5b6238845daccbc2cb5fb4`
 - Branch: `codex/dark-optical-desktop`
 - Worktree: `C:\codex-worktrees\portfolio-dark-optical`
-- Current checkpoint: 1 — specification and progress ledger
-- Last completed commit: none on feature branch
-- Next action: commit checkpoint 1, then start appearance-state tests in RED.
+- Current checkpoint: 2 — appearance state and dark-first tokens
+- Last completed commit: `0610e5a` — specification, implementation plan, progress ledger, and attribution
+- Next action: commit the verified appearance foundation, then write RED tests for Preferences, desktop menus, close behavior, and Mac-style window controls.
 
 ## Accepted decisions
 
@@ -24,8 +24,8 @@ Last updated: 2026-08-18 21:01 SGT
 
 ## Checkpoints
 
-- [ ] 1. Specification, plan, progress ledger, attribution
-- [ ] 2. Appearance state and dark-first tokens
+- [x] 1. Specification, plan, progress ledger, attribution
+- [x] 2. Appearance state and dark-first tokens
 - [ ] 3. Preferences and Mac-style workstation chrome
 - [ ] 4. FMM mathematics and Worker contract
 - [ ] 5. N-body background and controls
@@ -38,6 +38,10 @@ Last updated: 2026-08-18 21:01 SGT
 | Commit | Command | Result |
 | --- | --- | --- |
 | baseline `e2e23d1` | `npm test` | 39 files, 223 tests passed |
+| checkpoint 1 `0610e5a` | `git diff --cached --check` | passed; four documentation/notice files committed |
+| checkpoint 2 pending commit | `npm test` | 41 files, 228 tests passed |
+| checkpoint 2 pending commit | `npm run typecheck` | passed |
+| checkpoint 2 pending commit | `npm run build` | passed; semantic prerender completed |
 
 ## Performance budgets
 

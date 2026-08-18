@@ -176,6 +176,67 @@ export type DesktopAppId =
   | 'proof-vault'
   | 'resumes-contact';
 
+export type ColorSchemePreference = 'dark' | 'light' | 'system';
+export type ResolvedColorScheme = 'dark' | 'light';
+export type AccentId = 'teal' | 'sky' | 'amber' | 'violet' | 'rose';
+export type BackgroundThemeId = 'nbody' | 'fluid';
+export type WindowTint = 'neutral' | 'graphite' | 'accent';
+export type DockSize = 'small' | 'medium' | 'large';
+export type NBodyPreset = 'galaxy' | 'binary' | 'field';
+export type NBodyExpansionOrder = 4 | 6 | 8 | 10;
+export type NBodyLeafCapacity = 24 | 48 | 72 | 96;
+
+export interface NBodyPreferences {
+  preset: NBodyPreset;
+  particleCount: number;
+  timeScale: number;
+  gravity: number;
+  softening: number;
+  trailPersistence: number;
+  expansionOrder: NBodyExpansionOrder;
+  leafCapacity: NBodyLeafCapacity;
+  pointerAttraction: boolean;
+  seed: number;
+  showTree: boolean;
+}
+
+export interface FluidPreferences {
+  speed: number;
+  intensity: number;
+  opacity: number;
+  splatRadius: number;
+  curl: number;
+  quality: 'balanced' | 'high';
+  pointerInteraction: boolean;
+}
+
+export interface AppearancePreferences {
+  scheme: ColorSchemePreference;
+  accent: AccentId;
+  background: BackgroundThemeId;
+  backgroundPaused: boolean;
+  windowTint: WindowTint;
+  titlebarOpacity: number;
+  reduceTransparency: boolean;
+  dockSize: DockSize;
+  nbody: NBodyPreferences;
+  fluid: FluidPreferences;
+}
+
+export type AppearancePreferenceAction =
+  | { type: 'SET_SCHEME'; scheme: ColorSchemePreference }
+  | { type: 'SET_ACCENT'; accent: AccentId }
+  | { type: 'SET_BACKGROUND'; background: BackgroundThemeId }
+  | { type: 'SET_BACKGROUND_PAUSED'; paused: boolean }
+  | { type: 'SET_WINDOW_TINT'; tint: WindowTint }
+  | { type: 'SET_TITLEBAR_OPACITY'; opacity: number }
+  | { type: 'SET_REDUCE_TRANSPARENCY'; reduce: boolean }
+  | { type: 'SET_DOCK_SIZE'; size: DockSize }
+  | { type: 'PATCH_NBODY'; patch: Partial<NBodyPreferences> }
+  | { type: 'PATCH_FLUID'; patch: Partial<FluidPreferences> }
+  | { type: 'RESET_BACKGROUND' }
+  | { type: 'RESET_ALL' };
+
 export type DesktopToolAppId = Exclude<DesktopAppId, 'home'>;
 
 export type DesktopAppKind = 'dossier' | 'evidence' | 'lab' | 'world' | 'proof';

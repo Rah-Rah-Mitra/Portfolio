@@ -3,23 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --paper: #f4f0e6;
-  --paper-deep: #e8e2d4;
-  --paper-raised: #fbf8f1;
-  --ink: #172624;
-  --ink-soft: #31413e;
-  --muted: #56635f;
-  --faint: #626e6a;
-  --rule: rgba(23, 38, 36, 0.18);
-  --rule-strong: rgba(23, 38, 36, 0.34);
-  --teal: #167a72;
-  --teal-deep: #0b514c;
-  --amber: #955410;
-  --violet: #745985;
-  --coral: #a34249;
+  --paper: #0b0e12;
+  --paper-deep: #080b0f;
+  --paper-raised: #151b21;
+  --ink: #f3f7f5;
+  --ink-soft: #d4dcda;
+  --muted: #a8b3af;
+  --faint: #87928e;
+  --rule: rgba(226, 239, 235, 0.16);
+  --rule-strong: rgba(226, 239, 235, 0.32);
+  --teal: #63d7ca;
+  --teal-deep: #8ce5da;
+  --amber: #f0ae55;
+  --violet: #b8a2f3;
+  --coral: #ef8fa9;
   --accent: var(--teal);
   --accent-deep: var(--teal-deep);
-  --accent-wash: rgba(22, 122, 114, 0.1);
+  --accent-wash: rgba(99, 215, 202, 0.1);
   --font-sans: 'Archivo', 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', Consolas, monospace;
   --space-1: 0.25rem;
@@ -40,8 +40,27 @@
   --chapter-experience: #eee6d7;
   --chapter-proof: #f0e3df;
   --chapter-resumes: #dfeae8;
-  color-scheme: light;
+  color-scheme: dark;
   font-synthesis: none;
+}
+
+html[data-color-scheme="light"] {
+  --paper: #f4f0e6;
+  --paper-deep: #e8e2d4;
+  --paper-raised: #fbf8f1;
+  --ink: #172624;
+  --ink-soft: #31413e;
+  --muted: #56635f;
+  --faint: #626e6a;
+  --rule: rgba(23, 38, 36, 0.18);
+  --rule-strong: rgba(23, 38, 36, 0.34);
+  --teal: #167a72;
+  --teal-deep: #0b514c;
+  --amber: #955410;
+  --violet: #745985;
+  --coral: #a34249;
+  --accent-wash: rgba(22, 122, 114, 0.1);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }

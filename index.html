@@ -5,8 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Rahul Mitra | Intelligent Systems, AI, Optimization &amp; 3D Perception</title>
     <meta name="description" content="Rahul Mitra is a multidisciplinary engineer working across software systems, AI engineering, operations research, 3D computer vision, solution architecture, and cybersecurity." />
-    <meta name="theme-color" content="#ffffff" />
-    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#0b0e12" />
+    <meta name="color-scheme" content="dark light" />
+    <script>
+      (() => {
+        const root = document.documentElement;
+        let scheme = 'dark';
+        let accent = 'teal';
+        let background = 'nbody';
+        let windowTint = 'graphite';
+        let dockSize = 'medium';
+        let opacity = 92;
+        let reduceTransparency = false;
+        try {
+          const saved = JSON.parse(localStorage.getItem('portfolio-appearance-v1') || 'null');
+          if (saved && ['dark', 'light', 'system'].includes(saved.scheme)) scheme = saved.scheme;
+          if (saved && ['teal', 'sky', 'amber', 'violet', 'rose'].includes(saved.accent)) accent = saved.accent;
+          if (saved && ['nbody', 'fluid'].includes(saved.background)) background = saved.background;
+          if (saved && ['neutral', 'graphite', 'accent'].includes(saved.windowTint)) windowTint = saved.windowTint;
+          if (saved && ['small', 'medium', 'large'].includes(saved.dockSize)) dockSize = saved.dockSize;
+          if (saved && Number.isFinite(saved.titlebarOpacity) && saved.titlebarOpacity >= 85 && saved.titlebarOpacity <= 100) opacity = saved.titlebarOpacity;
+          if (saved && typeof saved.reduceTransparency === 'boolean') reduceTransparency = saved.reduceTransparency;
+        } catch {}
+        const resolved = scheme === 'system' && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : scheme === 'light' ? 'light' : 'dark';
+        root.dataset.colorScheme = resolved;
+        root.dataset.accent = accent;
+        root.dataset.desktopBackground = background;
+        root.dataset.windowTint = windowTint;
+        root.dataset.dockSize = dockSize;
+        root.dataset.reduceTransparency = String(reduceTransparency);
+        root.style.setProperty('--titlebar-opacity', String(opacity / 100));
+        root.style.colorScheme = resolved;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'dark' ? '#0b0e12' : '#ffffff');
+      })();
+    </script>
     <link rel="canonical" href="https://rahul-mitra.com/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 

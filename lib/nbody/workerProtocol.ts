@@ -11,6 +11,7 @@ export interface NBodyWorkerConfig {
   expansionOrder: NBodyExpansionOrder;
   leafCapacity: NBodyLeafCapacity;
   pointerAttraction: boolean;
+  showTree: boolean;
 }
 
 export type NBodyWorkerMessage =
@@ -38,6 +39,7 @@ export const createWorkerConfig = (overrides: Partial<NBodyWorkerConfig> = {}): 
   expansionOrder: 8,
   leafCapacity: 48,
   pointerAttraction: true,
+  showTree: false,
   ...overrides,
 });
 
@@ -53,7 +55,8 @@ const isConfig = (value: unknown): value is NBodyWorkerConfig => {
     && finite(config.softening, 0.002, 0.04)
     && isOrder(config.expansionOrder)
     && isLeafCapacity(config.leafCapacity)
-    && typeof config.pointerAttraction === 'boolean';
+    && typeof config.pointerAttraction === 'boolean'
+    && typeof config.showTree === 'boolean';
 };
 
 export const normalizeNBodyWorkerMessage = (value: unknown): NBodyWorkerMessage | null => {

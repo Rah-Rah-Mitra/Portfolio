@@ -519,4 +519,17 @@ export class FmmSolver2D {
       }
     }
   }
+
+  writeLeafBounds(output: Float32Array) {
+    let count = 0;
+    for (let node = 0; node < this.nodeCount && (count + 1) * 3 <= output.length; node += 1) {
+      if (!this.isLeaf(node)) continue;
+      const offset = count * 3;
+      output[offset] = this.nodeCx[node]!;
+      output[offset + 1] = this.nodeCy[node]!;
+      output[offset + 2] = this.nodeHalf[node]!;
+      count += 1;
+    }
+    return count;
+  }
 }

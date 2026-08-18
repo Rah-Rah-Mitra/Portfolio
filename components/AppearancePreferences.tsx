@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import type { AccentId, AppearancePanelTab, ColorSchemePreference, DockSize, WindowTint } from '../types';
+import React, { useEffect, useRef, useState } from 'react';
+import type { AccentId, AppearancePanelTab, ColorSchemePreference, DockSize, NBodyExpansionOrder, NBodyLeafCapacity, WindowTint } from '../types';
 import { useAppearance } from '../contexts/AppearanceContext';
 
 const tabs: ReadonlyArray<{ id: AppearancePanelTab; label: string }> = [
@@ -29,6 +29,7 @@ const RadioGroup = <T extends string>({ legend, value, values, onChange }: {
 const AppearancePreferences: React.FC = () => {
   const appearance = useAppearance();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [metrics, setMetrics] = useState<{ elapsed?: number; p95?: number; effectiveParticleCount?: number; metrics?: { treeDepth?: number; m2lInteractions?: number; directInteractions?: number } }>({});
   const { preferences, preferencesOpen, preferencesTab } = appearance;
 
   useEffect(() => {
@@ -43,6 +44,12 @@ const AppearancePreferences: React.FC = () => {
     window.addEventListener('keydown', onEscape);
     return () => window.removeEventListener('keydown', onEscape);
   }, [appearance, preferencesOpen]);
+
+  useEffect(() => {
+    const update = (event: Event) => setMetrics((event as CustomEvent<typeof metrics>).detail);
+    window.addEventListener('portfolio:nbody-metrics', update);
+    return () => window.removeEventListener('portfolio:nbody-metrics', update);
+  }, []);
 
   if (!preferencesOpen) return null;
   return (
@@ -67,6 +74,29 @@ const AppearancePreferences: React.FC = () => {
           {preferencesTab === 'desktop' && <>
             <div className="preferences-heading"><span>02</span><div><h3>Desktop field</h3><p>Only the selected field loads. The document remains readable above it.</p></div></div>
             <RadioGroup legend="Desktop background" value={preferences.background} onChange={appearance.setBackgroundTheme} values={[{ id: 'nbody', label: 'N-body Field' }, { id: 'fluid', label: 'Fluid Field' }]} />
+            {preferences.background === 'nbody' && <div className="nbody-preference-controls">
+              <RadioGroup legend="Initial condition" value={preferences.nbody.preset} onChange={(preset) => appearance.patchNBody({ preset })} values={[{ id: 'galaxy', label: 'Galaxy' }, { id: 'binary', label: 'Binary' }, { id: 'field', label: 'Field' }]} />
+              <label className="preference-slider"><span>Bodies <output>{preferences.nbody.particleCount}</output></span><input type="range" min="256" max="4096" step="256" value={preferences.nbody.particleCount} onChange={(event) => appearance.patchNBody({ particleCount: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Time scale <output>{preferences.nbody.timeScale.toFixed(2)}×</output></span><input type="range" min="0.25" max="2" step="0.05" value={preferences.nbody.timeScale} onChange={(event) => appearance.patchNBody({ timeScale: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Gravity <output>{preferences.nbody.gravity.toFixed(2)}×</output></span><input type="range" min="0.2" max="2" step="0.05" value={preferences.nbody.gravity} onChange={(event) => appearance.patchNBody({ gravity: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Softening <output>{preferences.nbody.softening.toFixed(3)}</output></span><input type="range" min="0.002" max="0.04" step="0.001" value={preferences.nbody.softening} onChange={(event) => appearance.patchNBody({ softening: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Trail persistence <output>{preferences.nbody.trailPersistence}%</output></span><input type="range" min="0" max="90" value={preferences.nbody.trailPersistence} onChange={(event) => appearance.patchNBody({ trailPersistence: Number(event.target.value) })} /></label>
+              <div className="preference-select-grid">
+                <label><span>Expansion order</span><select value={preferences.nbody.expansionOrder} onChange={(event) => appearance.patchNBody({ expansionOrder: Number(event.target.value) as NBodyExpansionOrder })}>{[4, 6, 8, 10].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                <label><span>Leaf capacity</span><select value={preferences.nbody.leafCapacity} onChange={(event) => appearance.patchNBody({ leafCapacity: Number(event.target.value) as NBodyLeafCapacity })}>{[24, 48, 72, 96].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                <label><span>Deterministic seed</span><input type="number" min="0" max="2147483647" value={preferences.nbody.seed} onChange={(event) => appearance.patchNBody({ seed: Math.max(0, Number(event.target.value)) })} /></label>
+              </div>
+              <label className="preference-check"><input type="checkbox" checked={preferences.nbody.pointerAttraction} onChange={(event) => appearance.patchNBody({ pointerAttraction: event.target.checked })} /><span>Pointer attraction</span></label>
+              <label className="preference-check"><input type="checkbox" checked={preferences.nbody.showTree} onChange={(event) => appearance.patchNBody({ showTree: event.target.checked })} /><span>Quadtree overlay</span></label>
+              <dl className="nbody-engineer-readout" aria-label="N-body engineer readout">
+                <div><dt>Effective bodies</dt><dd>{metrics.effectiveParticleCount ?? 'Standby'}</dd></div>
+                <div><dt>Tree depth</dt><dd>{metrics.metrics?.treeDepth ?? '—'}</dd></div>
+                <div><dt>Expansion</dt><dd>P{preferences.nbody.expansionOrder}</dd></div>
+                <div><dt>Step</dt><dd>{metrics.elapsed === undefined ? '—' : `${metrics.elapsed.toFixed(1)}ms`}</dd></div>
+                <div><dt>p95</dt><dd>{metrics.p95 === undefined ? '—' : `${metrics.p95.toFixed(1)}ms`}</dd></div>
+              </dl>
+              <button type="button" className="preference-retry" onClick={() => window.dispatchEvent(new CustomEvent('portfolio:nbody-retry'))}>Retry requested particle tier</button>
+            </div>}
             <div className="preference-action-row">
               <button type="button" onClick={() => appearance.setBackgroundPaused(!preferences.backgroundPaused)}>{preferences.backgroundPaused ? 'Resume background' : 'Pause background'}</button>
               <button type="button" onClick={appearance.resetBackground}>Reset background</button>

@@ -8,6 +8,7 @@ import { track } from './lib/analytics';
 import PortfolioExperience from './components/PortfolioExperience';
 import { ExperienceModeProvider, useExperienceMode } from './contexts/ExperienceModeContext';
 import AudioSpriteController from './components/AudioSpriteController';
+import { WorkstationProvider } from './contexts/WorkstationContext';
 
 export const OptionalExperienceLayers: React.FC = () => {
   return (
@@ -59,11 +60,13 @@ const AppContent: React.FC = () => {
   }, []);
   return (
     <EffectsProvider>
-      <div className="site-shell min-h-screen" data-experience-mode={policy.mode} data-motion={policy.lowMotion ? 'low' : 'full'}>
-        {policy.allowHeavyAssets && <FluidBackground />}
-        <PortfolioExperience />
-        <OptionalExperienceLayers />
-      </div>
+      <WorkstationProvider enabled={policy.mode === 'guided'}>
+        <div className="site-shell min-h-screen" data-experience-mode={policy.mode} data-motion={policy.lowMotion ? 'low' : 'full'}>
+          {policy.allowHeavyAssets && <FluidBackground />}
+          <PortfolioExperience />
+          <OptionalExperienceLayers />
+        </div>
+      </WorkstationProvider>
     </EffectsProvider>
   );
 }

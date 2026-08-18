@@ -164,6 +164,67 @@ export interface ProjectMedia {
   };
 }
 
+export type DesktopAppId =
+  | 'home'
+  | 'selected-work'
+  | 'experience'
+  | 'project-archive'
+  | 'systems-lab'
+  | 'camera-lab'
+  | 'world-3d'
+  | 'capabilities'
+  | 'proof-vault'
+  | 'resumes-contact';
+
+export type DesktopAppKind = 'dossier' | 'evidence' | 'lab' | 'world' | 'proof';
+
+export interface DesktopAppDefinition {
+  id: DesktopAppId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  kind: DesktopAppKind;
+  fallbackAnchor: `#${string}`;
+  iconAsset: string;
+  loadStrategy: 'eager' | 'lazy';
+}
+
+export interface WindowBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type WindowSnapState = 'floating' | 'left' | 'right' | 'maximized';
+export type WindowControlOwner = 'document' | 'app' | 'transition';
+
+export interface WorkstationSessionState {
+  activeAppId: DesktopAppId;
+  minimizedAppIds: DesktopAppId[];
+  boundsByApp: Partial<Record<DesktopAppId, WindowBounds>>;
+  snapByApp: Partial<Record<DesktopAppId, WindowSnapState>>;
+  controlOwner: WindowControlOwner;
+}
+
+export type WorkstationEvent =
+  | { type: 'APP_OPENED'; appId: DesktopAppId; source: 'rail' | 'link' | 'ai' | 'history' }
+  | { type: 'APP_MINIMIZED'; appId: DesktopAppId }
+  | { type: 'APP_SNAPPED'; appId: DesktopAppId; snap: WindowSnapState }
+  | { type: 'APP_MOVED'; appId: DesktopAppId; bounds: WindowBounds }
+  | { type: 'UTILITY_OPENED'; utility: 'ai' | 'fx' };
+
+export interface RenderedAppAsset {
+  id: string;
+  appId: DesktopAppId;
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  provenanceId: string;
+  kind: 'rendered-icon' | 'poster' | 'glb';
+}
+
 export type ExperiencePath = {
   id: string;
   label: string;

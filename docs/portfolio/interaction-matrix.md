@@ -2,6 +2,16 @@
 
 Recruiter evidence remains semantic HTML at each response target. The optional scene treatment can never be the only way to read project facts, equations, contact details, or resume links.
 
+## Workstation shell
+
+| Interaction | Purpose | Input | State and feedback | Reset / fallback | Coverage |
+| --- | --- | --- | --- | --- | --- |
+| Application module | Open a named evidence or lab surface | Pointer, touch, Enter, Space | One module latches into the active bay; the prior module becomes minimized | Minimize or Escape returns Home and restores trigger focus; anchors remain in static rendering | `workstation.test.ts`, `workstation.dom.test.tsx` |
+| Window controls | Reframe a technical tool without moving evidence | Pointer, touch, labelled keyboard controls | Bounds clamp to the usable viewport; left/right/maximize states are explicit | Mobile uses a full-screen sheet; Quick Scan has no window controls | `workstation.test.ts`, browser acceptance |
+| Browser history | Share and revisit a focused application | URL, Back, Forward | `?app=` follows the active module and preserves unrelated query/hash state | Invalid apps resolve to Home; `?mode=scan` suppresses workstation state | `workstation.test.ts`, `workstation.dom.test.tsx` |
+
+## Technical exhibits
+
 | Scene | Purpose / model | Primary manipulation | Secondary detail | Ambient motion / character reaction | Controls and reset | Reduced motion, Quick Scan, and no-WebGL fallback | Response target | Test coverage |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Calibration | Orient the visitor with the Optical Courier arrival model. | Choose Guided Story or Explore. | Read the evidence index and journey cue. | A restrained calibration field; Courier idles. | Mouse/touch select; keyboard focus and Escape return to Guided Story; Reset restores Guided Story. | Static overview with all evidence links; no video or canvas required. | `#home` | Semantic overview, Quick Scan, reduced motion. |

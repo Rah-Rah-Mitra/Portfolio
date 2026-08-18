@@ -10,6 +10,9 @@ import { useEffects } from '../contexts/PhysicsContext';
 import { resolveMediaPolicy } from '../lib/mediaPolicy';
 import { supportingMedia } from '../mediaManifest';
 import { SupportingMedia } from './SupportingMedia';
+import { WorkstationAppSurface, WorkstationRail } from './WorkstationShell';
+import { useOptionalWorkstation } from '../contexts/WorkstationContext';
+import type { DesktopAppId } from '../types';
 
 const OpticalBenchWorld = React.lazy(() => import('./OpticalBenchWorld'));
 
@@ -22,13 +25,13 @@ const domainLabels: Record<ProjectHighlight['accent'], string> = {
   blue: 'Architecture',
 };
 
-const navItems = [
-  ['work', 'Work'],
-  ['experience', 'Experience'],
-  ['all-work', 'Projects'],
-  ['technical-lab', 'Technical Lab'],
-  ['proof', 'Proof'],
-  ['resumes', 'Résumés'],
+const navItems: ReadonlyArray<[string, string, DesktopAppId]> = [
+  ['work', 'Work', 'selected-work'],
+  ['experience', 'Experience', 'experience'],
+  ['all-work', 'Projects', 'project-archive'],
+  ['technical-lab', 'Camera Lab', 'camera-lab'],
+  ['proof', 'Proof', 'proof-vault'],
+  ['resumes', 'Résumés', 'resumes-contact'],
 ] as const;
 
 const ExternalLabel: React.FC = () => <span className="sr-only"> (opens in a new tab)</span>;
@@ -64,6 +67,14 @@ const ProjectLinks: React.FC<{ project: ProjectHighlight }> = ({ project }) => {
 
 export const PortfolioHeader: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const workstation = useOptionalWorkstation();
+
+  const openFromLink = (event: React.MouseEvent<HTMLAnchorElement>, appId: DesktopAppId) => {
+    if (!workstation?.enabled || !workstation.enhanced) return;
+    event.preventDefault();
+    setOpen(false);
+    workstation.openApp(appId, 'link');
+  };
 
   return (
     <header className="portfolio-header">
@@ -73,14 +84,14 @@ export const PortfolioHeader: React.FC = () => {
         {open ? 'Close' : 'Menu'}
       </button>
       <nav id="portfolio-navigation" className={open ? 'is-open' : ''} aria-label="Portfolio sections">
-        {navItems.map(([id, label]) => <a key={id} href={`#${id}`} onClick={() => { setOpen(false); track('nav_link_clicked', { destination: id }); }}>{label}</a>)}
+        {navItems.map(([id, label, appId]) => <a key={id} href={`#${id}`} onClick={(event) => { openFromLink(event, appId); track('nav_link_clicked', { destination: id }); }}>{label}</a>)}
         <div className="portfolio-mobile-tools" aria-label="Optional portfolio tools">
           <button type="button" data-open-assistant onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openAssistant', { detail: { source: 'mobile_menu' } }))}>AI · Ask</button>
           <button type="button" data-open-effects onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openEffects', { detail: { source: 'mobile_menu' } }))}>FX · Lab</button>
-          <a href="#world" data-open-world>Explore World</a>
+          <a href="#world" data-open-world onClick={(event) => openFromLink(event, 'world-3d')}>Explore World</a>
         </div>
       </nav>
-      <a className="spatial-launch spatial-launch-desktop" href="#world">Explore World</a>
+      <a className="spatial-launch spatial-launch-desktop" href="#world" onClick={(event) => openFromLink(event, 'world-3d')}>Explore World</a>
     </header>
   );
 };
@@ -106,6 +117,12 @@ const PortfolioHero: React.FC = () => {
   const { policy, capabilities } = useExperienceMode();
   const { enhancements } = useEffects();
   const [mediaViewport, setMediaViewport] = useState(false);
+  const workstation = useOptionalWorkstation();
+  const openAppLink = (event: React.MouseEvent<HTMLAnchorElement>, appId: DesktopAppId) => {
+    if (!workstation?.enabled || !workstation.enhanced) return;
+    event.preventDefault();
+    workstation.openApp(appId, 'link');
+  };
   useEffect(() => {
     const query = window.matchMedia('(min-width: 681px)');
     const update = () => setMediaViewport(query.matches);
@@ -122,15 +139,15 @@ const PortfolioHero: React.FC = () => {
         <p className="hero-role-line"><strong>Target roles</strong> Software engineering · Applied AI · Operations research · Solution architecture <span>Open to engineering roles and collaborations.</span></p>
         <nav className="hero-current-proof" aria-label="Current proof">
           <strong>Current proof</strong>
-          <a href="#experience-abbott-internship">Abbott</a>
-          <a href="#selected-hybrid-flow-shop-digital-twin">Hybrid Flow Shop</a>
-          <a href="#selected-churp">Churp</a>
-          <a href="#selected-on-the-spectrum">OnTheSpectrum</a>
+          <a href="#experience-abbott-internship" onClick={(event) => openAppLink(event, 'experience')}>Abbott</a>
+          <a href="#selected-hybrid-flow-shop-digital-twin" onClick={(event) => openAppLink(event, 'selected-work')}>Hybrid Flow Shop</a>
+          <a href="#selected-churp" onClick={(event) => openAppLink(event, 'selected-work')}>Churp</a>
+          <a href="#selected-on-the-spectrum" onClick={(event) => openAppLink(event, 'selected-work')}>OnTheSpectrum</a>
         </nav>
         <div className="hero-actions">
-          <a className="action-primary" href="#work" onClick={() => track('cta_clicked', { label: 'View selected work' })}>View selected work</a>
+          <a className="action-primary" href="#work" onClick={(event) => { openAppLink(event, 'selected-work'); track('cta_clicked', { label: 'View selected work' }); }}>View selected work</a>
           <a className="action-secondary" href={generalResume?.pdfUrl ?? resumeAssetUrl('general', 'pdf')} target="_blank" rel="noreferrer" onClick={() => track('resume_download_clicked', { role: 'General / Master CV', format: 'pdf' })}>Download résumé<ExternalLabel /></a>
-          <a className="action-text" href="#experience">Read experience</a>
+          <a className="action-text" href="#experience" onClick={(event) => openAppLink(event, 'experience')}>Read experience</a>
         </div>
         <div className="hero-socials" aria-label="External profiles">
           {unifiedPortfolioData.githubUrl && <a href={unifiedPortfolioData.githubUrl} target="_blank" rel="noreferrer">GitHub<ExternalLabel /></a>}
@@ -190,8 +207,7 @@ export const SelectedWork: React.FC = () => {
               )}
               <div className="method-list" aria-label={`${project.title} technologies`}>{project.tags.slice(0, 8).map((tag) => <span key={tag}>{tag}</span>)}</div>
               <ProjectLinks project={project} />
-              {project.id === 'hybrid-flow-shop-digital-twin' && <><FlowShopExhibit /><ProjectSystemInspector kind="flow-shop" /></>}
-              {project.id === 'churp' && <SpatialSystemsExhibit />}
+              {project.id === 'hybrid-flow-shop-digital-twin' && <ProjectSystemInspector kind="flow-shop" />}
               {project.id === 'on-the-spectrum' && <ProjectSystemInspector kind="on-the-spectrum" />}
             </div>
             {project.imageUrl && (
@@ -208,7 +224,7 @@ export const SelectedWork: React.FC = () => {
   );
 };
 
-const ExperienceSection: React.FC = () => (
+export const ExperienceSection: React.FC = () => (
   <section id="experience" className="evidence-section experience-section" aria-labelledby="experience-title">
     <header className="evidence-heading">
       <h2 id="experience-title">Experience and education</h2>
@@ -340,7 +356,7 @@ export const AllProjectsSection: React.FC = () => {
   );
 };
 
-const CapabilitiesSection: React.FC = () => (
+export const CapabilitiesSection: React.FC = () => (
   <section id="domains" className="evidence-section capabilities-section" aria-labelledby="capabilities-title">
     <header className="evidence-heading"><h2 id="capabilities-title">Capabilities, linked to proof</h2><p>Methods are useful only when they connect to work. Each capability names the systems that support it.</p></header>
     <div className="capability-list">
@@ -365,7 +381,7 @@ const CapabilitiesSection: React.FC = () => (
   </section>
 );
 
-const ProofSection: React.FC = () => (
+export const ProofSection: React.FC = () => (
   <section id="proof" className="evidence-section proof-section" aria-labelledby="proof-title">
     <header className="evidence-heading"><h2 id="proof-title">Proof, distinctions, and credentials</h2><p>Awards, open-source delivery, security practice, and applied AI evidence remain independently inspectable.</p></header>
     <div className="proof-list">
@@ -381,7 +397,7 @@ const ProofSection: React.FC = () => (
   </section>
 );
 
-const ResumeSection: React.FC = () => (
+export const ResumeSection: React.FC = () => (
   <section id="resumes" className="evidence-section resume-section" aria-labelledby="resumes-title">
     <header className="evidence-heading"><h2 id="resumes-title">Role-targeted résumés</h2><p>Choose the evidence path closest to the role. The general résumé keeps the complete cross-disciplinary profile.</p></header>
     <div className="resume-list">
@@ -395,7 +411,7 @@ const ResumeSection: React.FC = () => (
   </section>
 );
 
-const ContactFooter: React.FC = () => (
+export const ContactFooter: React.FC = () => (
   <footer id="contact" className="portfolio-contact">
     <div><h2>Let’s build an intelligent system worth trusting.</h2><p>For engineering roles, collaborations, or a deeper discussion of the work, contact Rahul directly.</p></div>
     <DepartureIris />
@@ -408,20 +424,28 @@ const PortfolioExperience: React.FC = () => {
   return <div className="portfolio-field-test">
     <a className="skip-link" href="#main-content">Skip to portfolio evidence</a>
     <PortfolioHeader />
-    <main id="main-content" className="portfolio-evidence">
-        <PortfolioHero />
-        <SelectedWork />
-        <ExperienceSection />
-        <AllProjectsSection />
-        <TechnicalLabSection />
+    <WorkstationRail />
+    <main id="main-content" className="portfolio-evidence workstation-evidence">
+      <WorkstationAppSurface appId="home"><PortfolioHero /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="selected-work"><SelectedWork /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="experience"><ExperienceSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="project-archive"><AllProjectsSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="systems-lab">
+        <section id="systems-lab" className="evidence-section systems-lab-application" aria-labelledby="systems-lab-title">
+          <header className="evidence-heading"><h2 id="systems-lab-title">Systems Laboratory</h2><p>Deterministic scheduling and spatial allocation models. Visitor input changes the computed system, not a decorative animation.</p></header>
+          <FlowShopExhibit /><SpatialSystemsExhibit />
+        </section>
+      </WorkstationAppSurface>
+      <WorkstationAppSurface appId="camera-lab"><TechnicalLabSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="world-3d">
         <section id="world" className="portfolio-world-mount" aria-labelledby="world-title">
           <header><h2 id="world-title">Explore the shared optical test bench</h2><p>The same world supports the guided story and local inspection. Scroll stays native; Explore temporarily hands this scene’s camera to you.</p></header>
           {policy.allowHeavyAssets && policy.mode === 'guided' && !policy.lowMotion ? <Suspense fallback={<p role="status">Preparing the optional optical bench…</p>}><OpticalBenchWorld /></Suspense> : <p className="world-static-fallback">Static mode is active. Every Camera Laboratory control, equation, result, and portfolio record above remains available.</p>}
         </section>
-        <CapabilitiesSection />
-        <ProofSection />
-        <ResumeSection />
-        <ContactFooter />
+      </WorkstationAppSurface>
+      <WorkstationAppSurface appId="capabilities"><CapabilitiesSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="proof-vault"><ProofSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="resumes-contact"><ResumeSection /><ContactFooter /></WorkstationAppSurface>
     </main>
   </div>;
 };

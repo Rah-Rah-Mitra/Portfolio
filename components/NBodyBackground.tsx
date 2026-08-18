@@ -12,7 +12,7 @@ interface WorkerFrameMessage {
   metrics?: { elapsed: number; p95: number; metrics: { treeDepth: number; m2lInteractions: number; directInteractions: number } };
 }
 
-const drawFallback = (canvas: HTMLCanvasElement, positions: Float32Array, count: number, trail: number, accent: string) => {
+const drawFallback = (canvas: HTMLCanvasElement, positions: Float32Array, count: number, trail: number, accent: string, surface: string, darkSurface: boolean) => {
   const context = canvas.getContext('2d');
   if (!context) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -20,9 +20,11 @@ const drawFallback = (canvas: HTMLCanvasElement, positions: Float32Array, count:
   const height = Math.max(1, Math.round(canvas.clientHeight * dpr));
   if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
   context.globalCompositeOperation = 'source-over';
-  context.fillStyle = `rgb(8 11 15 / ${Math.max(0.06, 1 - trail / 100)})`;
+  context.globalAlpha = Math.max(0.06, 1 - trail / 100);
+  context.fillStyle = surface;
   context.fillRect(0, 0, width, height);
   context.globalCompositeOperation = 'lighter';
+  context.globalAlpha = darkSurface ? .82 : .72;
   context.fillStyle = accent;
   const scale = Math.min(width, height) * 0.48;
   for (let body = 0; body < count; body += 1) {
@@ -33,7 +35,7 @@ const drawFallback = (canvas: HTMLCanvasElement, positions: Float32Array, count:
 };
 
 const NBodyBackground: React.FC<NBodyBackgroundProps> = ({ active }) => {
-  const { preferences } = useAppearance();
+  const { preferences, resolvedScheme } = useAppearance();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerRef = useRef<Worker | null>(null);
   const readyRef = useRef(false);
@@ -80,7 +82,10 @@ const NBodyBackground: React.FC<NBodyBackgroundProps> = ({ active }) => {
       inFlightRef.current = false;
       bufferRef.current = message.buffer;
       setEffectiveCount(message.effectiveParticleCount ?? effectiveParticleCount);
-      if (!offscreenRef.current) drawFallback(canvas, new Float32Array(message.buffer), message.bodyCount ?? 0, preferences.nbody.trailPersistence, getComputedStyle(document.documentElement).getPropertyValue('--field-teal').trim() || '#63d7ca');
+      if (!offscreenRef.current) {
+        const styles = getComputedStyle(document.documentElement);
+        drawFallback(canvas, new Float32Array(message.buffer), message.bodyCount ?? 0, preferences.nbody.trailPersistence, styles.getPropertyValue('--field-teal').trim() || '#63d7ca', styles.getPropertyValue('--desktop-field').trim() || '#080b0f', document.documentElement.dataset.colorScheme !== 'light');
+      }
       if (message.metrics) window.dispatchEvent(new CustomEvent('portfolio:nbody-metrics', { detail: { ...message.metrics, effectiveParticleCount: message.effectiveParticleCount ?? effectiveParticleCount } }));
     };
     worker.addEventListener('message', handleMessage);
@@ -124,19 +129,22 @@ const NBodyBackground: React.FC<NBodyBackgroundProps> = ({ active }) => {
         bufferRef.current = null;
         inFlightRef.current = true;
         const canvas = canvasRef.current;
+        const styles = getComputedStyle(document.documentElement);
         worker.postMessage({
           type: 'step', dt: elapsed, buffer,
           width: canvas?.clientWidth ?? 0, height: canvas?.clientHeight ?? 0,
           dpr: Math.min(window.devicePixelRatio || 1, 2),
           trailPersistence: preferences.nbody.trailPersistence,
-          accent: getComputedStyle(document.documentElement).getPropertyValue('--field-teal').trim() || '#63d7ca',
+          accent: styles.getPropertyValue('--field-teal').trim() || '#63d7ca',
+          surface: styles.getPropertyValue('--desktop-field').trim() || '#080b0f',
+          darkSurface: resolvedScheme === 'dark',
         }, [buffer]);
       }
       frameRef.current = requestAnimationFrame(tick);
     };
     frameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [active, preferences.nbody.trailPersistence]);
+  }, [active, preferences.nbody.trailPersistence, resolvedScheme]);
 
   const pointer = (event: React.PointerEvent<HTMLCanvasElement>, activePointer: boolean) => {
     const bounds = event.currentTarget.getBoundingClientRect();

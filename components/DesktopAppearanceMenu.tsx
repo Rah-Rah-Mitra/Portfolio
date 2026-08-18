@@ -12,6 +12,7 @@ const DesktopAppearanceMenu: React.FC = () => {
 
   useEffect(() => {
     const open = (event: MouseEvent) => {
+      if (window.matchMedia?.('(max-width: 920px)').matches) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
       const field = target?.closest<HTMLElement>('[data-desktop-field]');
       if (!target || !field || target.closest(nativeContextTargets)) return;

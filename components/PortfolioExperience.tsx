@@ -258,7 +258,7 @@ export const ExperienceSection: React.FC = () => (
 const INITIAL_PROJECT_COUNT = 8;
 const PROJECT_BATCH_SIZE = 4;
 
-export const AllProjectsSection: React.FC = () => {
+export const AllProjectsSection: React.FC<{ showAllByDefault?: boolean }> = ({ showAllByDefault = false }) => {
   const [query, setQuery] = useState('');
   const [domain, setDomain] = useState<'all' | ProjectHighlight['accent']>('all');
   const [activeProjectIndex, setActiveProjectIndex] = useState(0);
@@ -277,6 +277,10 @@ export const AllProjectsSection: React.FC = () => {
 
   useEffect(() => {
     const revealHashBatch = () => {
+      if (showAllByDefault) {
+        setVisibleCount(allProjects.length);
+        return;
+      }
       const projectId = decodeURIComponent(window.location.hash).replace('#project-', '');
       const projectIndex = allProjects.findIndex((project) => project.id === projectId);
       setVisibleCount(projectIndex >= 0
@@ -287,7 +291,7 @@ export const AllProjectsSection: React.FC = () => {
     revealHashBatch();
     window.addEventListener('hashchange', revealHashBatch);
     return () => window.removeEventListener('hashchange', revealHashBatch);
-  }, []);
+  }, [showAllByDefault]);
 
   useEffect(() => {
     setActiveProjectIndex((current) => Math.min(current, Math.max(0, renderedProjects.length - 1)));
@@ -348,7 +352,7 @@ export const AllProjectsSection: React.FC = () => {
           </article>
         ))}
       </div>
-      {hydrated && !isFiltering && visibleCount < visible.length && (
+      {hydrated && !showAllByDefault && !isFiltering && visibleCount < visible.length && (
         <button className="project-load-more" type="button" onClick={() => { setVisibleCount((current) => Math.min(visible.length, current + PROJECT_BATCH_SIZE)); window.dispatchEvent(new CustomEvent('portfolio:projects-expanded')); }}>
           Load {Math.min(PROJECT_BATCH_SIZE, visible.length - visibleCount)} more projects
         </button>
@@ -451,7 +455,7 @@ const PortfolioExperience: React.FC = () => {
       <WorkstationAppSurface appId="home"><PortfolioHero /></WorkstationAppSurface>
       <WorkstationAppSurface appId="selected-work"><SelectedWork /></WorkstationAppSurface>
       <WorkstationAppSurface appId="experience"><ExperienceSection /></WorkstationAppSurface>
-      <WorkstationAppSurface appId="project-archive"><AllProjectsSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="project-archive"><AllProjectsSection showAllByDefault={policy.mode === 'scan'} /></WorkstationAppSurface>
       <WorkstationAppSurface appId="systems-lab">
         <SystemsLabApplication enhanced={heavyAppIsFocused('systems-lab')} />
       </WorkstationAppSurface>

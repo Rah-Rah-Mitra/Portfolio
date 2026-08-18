@@ -28,6 +28,12 @@ describe('recruiter project evidence', () => {
     expect(container.querySelectorAll('.project-index-list article')).toHaveLength(12);
   });
 
+  it('keeps every project visible after hydration in Quick Scan', async () => {
+    const { container } = render(<AllProjectsSection showAllByDefault />);
+    await waitFor(() => expect(container.querySelectorAll('.project-index-list article')).toHaveLength(28));
+    expect(screen.queryByRole('button', { name: /Load .* more projects/ })).toBeNull();
+  });
+
   it('searches all 28 records, including projects outside the first batch', async () => {
     const hiddenProject = allProjects[20];
     const { container } = render(<AllProjectsSection />);

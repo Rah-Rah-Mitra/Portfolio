@@ -16,7 +16,7 @@ export interface NBodyWorkerConfig {
 
 export type NBodyWorkerMessage =
   | { type: 'initialize'; config: NBodyWorkerConfig; canvas?: OffscreenCanvas; width?: number; height?: number; dpr?: number }
-  | { type: 'step'; dt: number; buffer: ArrayBuffer; width?: number; height?: number; dpr?: number; trailPersistence?: number; accent?: string }
+  | { type: 'step'; dt: number; buffer: ArrayBuffer; width?: number; height?: number; dpr?: number; trailPersistence?: number; accent?: string; surface?: string; darkSurface?: boolean }
   | { type: 'pause'; paused: boolean }
   | { type: 'reset'; seed: number }
   | { type: 'pointer'; x: number; y: number; active: boolean }
@@ -27,6 +27,7 @@ const integer = (value: unknown, minimum: number, maximum: number) => Number.isI
 const isPreset = (value: unknown): value is NBodyPreset => value === 'galaxy' || value === 'binary' || value === 'field';
 const isOrder = (value: unknown): value is NBodyExpansionOrder => value === 4 || value === 6 || value === 8 || value === 10;
 const isLeafCapacity = (value: unknown): value is NBodyLeafCapacity => value === 24 || value === 48 || value === 72 || value === 96;
+const isHexColor = (value: unknown) => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
 
 export const createWorkerConfig = (overrides: Partial<NBodyWorkerConfig> = {}): NBodyWorkerConfig => ({
   particleCount: 2048,
@@ -66,7 +67,12 @@ export const normalizeNBodyWorkerMessage = (value: unknown): NBodyWorkerMessage 
     if (message.canvas !== undefined && !(typeof OffscreenCanvas !== 'undefined' && message.canvas instanceof OffscreenCanvas)) return null;
     return message as unknown as NBodyWorkerMessage;
   }
-  if (message.type === 'step' && finite(message.dt, 0, 0.25) && message.buffer instanceof ArrayBuffer) return message as unknown as NBodyWorkerMessage;
+  if (message.type === 'step' && finite(message.dt, 0, 0.25) && message.buffer instanceof ArrayBuffer) {
+    if (message.accent !== undefined && !isHexColor(message.accent)) return null;
+    if (message.surface !== undefined && !isHexColor(message.surface)) return null;
+    if (message.darkSurface !== undefined && typeof message.darkSurface !== 'boolean') return null;
+    return message as unknown as NBodyWorkerMessage;
+  }
   if (message.type === 'pause' && typeof message.paused === 'boolean') return { type: 'pause', paused: message.paused };
   if (message.type === 'reset' && integer(message.seed, 0, 2_147_483_647)) return { type: 'reset', seed: message.seed as number };
   if (message.type === 'pointer' && finite(message.x, -2, 2) && finite(message.y, -2, 2) && typeof message.active === 'boolean') return { type: 'pointer', x: message.x as number, y: message.y as number, active: message.active };

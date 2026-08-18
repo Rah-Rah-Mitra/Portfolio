@@ -60,7 +60,11 @@ test('supporting media and optional output controls stay accessible and user-con
   await expect.poll(() => page.evaluate(() => localStorage.getItem('portfolio-sound-enabled'))).toBe('true');
   await expect(dialog.getByLabel('Visual density')).toHaveValue('balanced');
   await expect(dialog.getByLabel('World quality')).toHaveValue('balanced');
-  await expect(dialog.getByRole('button', { name: /Fluid field/i })).toHaveAttribute('aria-pressed', 'false');
+  await dialog.getByRole('button', { name: 'Open Fluid desktop settings' }).click();
+  const preferences = page.getByRole('dialog', { name: 'Desktop Preferences' });
+  await expect(preferences).toBeVisible();
+  await expect(preferences.getByRole('tab', { name: 'Desktop' })).toHaveAttribute('aria-selected', 'true');
+  await expect(preferences.getByRole('radio', { name: 'N-body Field' })).toBeChecked();
 });
 
 test.describe('capability fallbacks', () => {

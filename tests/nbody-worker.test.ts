@@ -17,6 +17,13 @@ describe('N-body Worker protocol', () => {
     expect(normalizeNBodyWorkerMessage({ type: 'recycle', buffer: new ArrayBuffer(64) })?.type).toBe('recycle');
   });
 
+  it('accepts only bounded render palette values on a step message', () => {
+    const buffer = new ArrayBuffer(64);
+    expect(normalizeNBodyWorkerMessage({ type: 'step', dt: 1 / 30, buffer, surface: '#e9efed', darkSurface: false })?.type).toBe('step');
+    expect(normalizeNBodyWorkerMessage({ type: 'step', dt: 1 / 30, buffer, surface: 'url(javascript:bad)', darkSurface: false })).toBeNull();
+    expect(normalizeNBodyWorkerMessage({ type: 'step', dt: 1 / 30, buffer, surface: '#080b0f', darkSurface: 'yes' })).toBeNull();
+  });
+
   it('only downgrades effective count after slow p95 and never auto-upgrades', () => {
     expect(resolveEffectiveParticleCount(2048, 2048, 18)).toBe(2048);
     expect(resolveEffectiveParticleCount(2048, 2048, 25)).toBe(1536);

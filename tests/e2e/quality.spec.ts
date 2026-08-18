@@ -86,14 +86,15 @@ test('active technical layers cannot wash through semantic headings or sticky pr
   await page.getByRole('button', { name: 'Open Project Archive' }).click();
   const projectControls = page.locator('.project-controls');
   await projectControls.scrollIntoViewIfNeeded();
-  await expect(projectControls).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  const readingSurface = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
+  await expect(projectControls).toHaveCSS('background-color', readingSurface);
 
   await page.getByRole('button', { name: 'Open 3D World' }).click();
   const worldHeading = page.locator('.portfolio-world-mount > header');
   await worldHeading.scrollIntoViewIfNeeded();
   await expect(worldHeading).toHaveCSS('position', 'relative');
   await expect(worldHeading).toHaveCSS('z-index', '1');
-  await expect(worldHeading).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(worldHeading).toHaveCSS('background-color', readingSurface);
 
   const worldSurface = page.locator('.optical-world');
   await worldSurface.scrollIntoViewIfNeeded();

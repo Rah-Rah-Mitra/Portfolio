@@ -54,26 +54,28 @@ const stepP95 = () => {
   return sortedStepTimes[Math.min(count - 1, Math.floor(count * 0.95))]!;
 };
 
-const render = (widthCss: number, heightCss: number, dpr: number, trailPersistence: number, accent: string) => {
+const render = (widthCss: number, heightCss: number, dpr: number, trailPersistence: number, accent: string, surface: string, darkSurface: boolean) => {
   if (!renderCanvas || !renderContext) return;
   const width = Math.max(1, Math.round(widthCss * dpr));
   const height = Math.max(1, Math.round(heightCss * dpr));
   if (renderCanvas.width !== width || renderCanvas.height !== height) { renderCanvas.width = width; renderCanvas.height = height; }
-  if (!sprite || spriteColor !== accent) {
+  const nextSpriteColor = `${accent}:${darkSurface ? 'dark' : 'light'}`;
+  if (!sprite || spriteColor !== nextSpriteColor) {
     sprite = new OffscreenCanvas(12, 12);
     const context = sprite.getContext('2d');
     if (context) {
       const gradient = context.createRadialGradient(6, 6, 0, 6, 6, 6);
-      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(0, darkSurface ? '#ffffff' : '#06110f');
       gradient.addColorStop(0.22, accent);
       gradient.addColorStop(1, 'transparent');
       context.fillStyle = gradient;
       context.fillRect(0, 0, 12, 12);
     }
-    spriteColor = accent;
+    spriteColor = nextSpriteColor;
   }
   renderContext.globalCompositeOperation = 'source-over';
-  renderContext.fillStyle = `rgb(8 11 15 / ${Math.max(0.06, 1 - trailPersistence / 100)})`;
+  renderContext.globalAlpha = Math.max(0.06, 1 - trailPersistence / 100);
+  renderContext.fillStyle = surface;
   renderContext.fillRect(0, 0, width, height);
   const scale = Math.min(width, height) * 0.48;
   renderContext.globalCompositeOperation = 'lighter';
@@ -162,7 +164,7 @@ worker.addEventListener('message', (event: MessageEvent<unknown>) => {
       return;
     }
     const performanceMetrics = simulate(message.dt);
-    render(message.width ?? 0, message.height ?? 0, message.dpr ?? 1, message.trailPersistence ?? 38, message.accent ?? '#63d7ca');
+    render(message.width ?? 0, message.height ?? 0, message.dpr ?? 1, message.trailPersistence ?? 38, message.accent ?? '#63d7ca', message.surface ?? '#080b0f', message.darkSurface ?? true);
     const destination = new Float32Array(message.buffer);
     const bodyCount = Math.min(masses.length, Math.floor(destination.length / 2));
     for (let index = 0; index < bodyCount * 2; index += 1) destination[index] = positions[index]!;

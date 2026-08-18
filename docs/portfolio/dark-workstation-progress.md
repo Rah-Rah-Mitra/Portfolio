@@ -1,6 +1,6 @@
 # Dark Optical Desktop Progress
 
-Last updated: 2026-08-18 21:33 SGT
+Last updated: 2026-08-18 21:50 SGT
 
 ## Handoff state
 
@@ -8,9 +8,9 @@ Last updated: 2026-08-18 21:33 SGT
 - Base: `main` at `e2e23d162e0d28665c5b6238845daccbc2cb5fb4`
 - Branch: `codex/dark-optical-desktop`
 - Worktree: `C:\codex-worktrees\portfolio-dark-optical`
-- Current checkpoint: 6 — Fluid migration, FX handoff, and GPU arbitration
-- Last completed commit: `909658f` — lazy Worker-driven N-body renderer, controls, Engineer readout, pointer response, dynamic tiering, and static policy
-- Next action: commit Fluid migration, then add RED browser tests for dark/light startup, context-menu scope, Preferences/mobile behavior, Quick Scan import suppression, accessibility, and bounded performance.
+- Current checkpoint: 7 — responsive, accessibility, contrast, and performance hardening (verification complete; commit pending)
+- Last completed commit: `0fce7e2` — Fluid migration, FX-to-Preferences handoff, and exclusive background/world GPU policy
+- Next action: commit checkpoint 7, perform the final Impeccable confirmation pass, update release documentation, push the branch, and verify the Vercel preview without promoting production.
 
 ## Accepted decisions
 
@@ -30,7 +30,7 @@ Last updated: 2026-08-18 21:33 SGT
 - [x] 4. FMM mathematics and Worker contract
 - [x] 5. N-body background and controls
 - [x] 6. Fluid migration and GPU arbitration
-- [ ] 7. Responsive/accessibility/performance hardening
+- [x] 7. Responsive/accessibility/performance hardening
 - [ ] 8. Impeccable finish review and Vercel preview
 
 ## Verification ledger
@@ -54,6 +54,13 @@ Last updated: 2026-08-18 21:33 SGT
 | checkpoint 6 pending commit | `npm test` | 47 files, 254 tests passed |
 | checkpoint 6 pending commit | `npm run typecheck` | passed |
 | checkpoint 6 pending commit | `npm run build` | passed; Fluid remains a separate 4.00KB gzip selected-theme chunk |
+| checkpoint 7 pending commit | `npm test` | 47 files, 256 tests passed |
+| checkpoint 7 pending commit | `npm run typecheck` | passed |
+| checkpoint 7 pending commit | `npm run build` | passed; semantic prerender completed |
+| checkpoint 7 pending commit | `npm run test:e2e` | 46 browser/axe tests passed after focused RED/GREEN fixes |
+| checkpoint 7 pending commit | `npm run media:check && npm run media:provenance && npm run courier:validate` | passed; 1.56MB shipped media, truthful Courier provenance |
+| checkpoint 7 pending commit | 10-second Chromium N-body diagnostic | zero main-thread long tasks; LCP 308ms; CLS 0.0148; 2,048-body effective tier retained |
+| checkpoint 7 pending commit | Dark/Light Guided + Quick Scan visual matrix | 20 captures inspected at 1440, 1024, 768, 390, and 320px |
 
 ## Performance budgets
 
@@ -70,6 +77,7 @@ Last updated: 2026-08-18 21:33 SGT
 - Never stage the separate Courier-production files from the original checkout.
 - The source FMM uses a 2D logarithmic kernel; public copy must not call it a 3D inverse-square solver.
 - Main-thread Canvas2D fallback intentionally caps the automatic effective tier at 768 bodies; Preferences reports that tier and offers a manual retry.
+- The generic Vite warning for the pre-existing raw Three.js chunk remains; its gzip size is within the separate lazy-world budget and Quick Scan never requests it.
 
 ## Continuation prompt
 

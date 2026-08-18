@@ -1,6 +1,6 @@
 # Dark Optical Desktop Progress
 
-Last updated: 2026-08-18 21:50 SGT
+Last updated: 2026-08-18 21:54 SGT
 
 ## Handoff state
 
@@ -8,9 +8,9 @@ Last updated: 2026-08-18 21:50 SGT
 - Base: `main` at `e2e23d162e0d28665c5b6238845daccbc2cb5fb4`
 - Branch: `codex/dark-optical-desktop`
 - Worktree: `C:\codex-worktrees\portfolio-dark-optical`
-- Current checkpoint: 7 — responsive, accessibility, contrast, and performance hardening (verification complete; commit pending)
-- Last completed commit: `0fce7e2` — Fluid migration, FX-to-Preferences handoff, and exclusive background/world GPU policy
-- Next action: commit checkpoint 7, perform the final Impeccable confirmation pass, update release documentation, push the branch, and verify the Vercel preview without promoting production.
+- Current checkpoint: 8 — Impeccable confirmation and preview delivery
+- Current implementation commit: `28665e9` — responsive, accessibility, contrast, Quick Scan, and performance hardening
+- Next action: commit this documentation closeout, push `codex/dark-optical-desktop`, verify its Vercel preview in both schemes, then record the preview URL without promoting production.
 
 ## Accepted decisions
 
@@ -54,13 +54,13 @@ Last updated: 2026-08-18 21:50 SGT
 | checkpoint 6 pending commit | `npm test` | 47 files, 254 tests passed |
 | checkpoint 6 pending commit | `npm run typecheck` | passed |
 | checkpoint 6 pending commit | `npm run build` | passed; Fluid remains a separate 4.00KB gzip selected-theme chunk |
-| checkpoint 7 pending commit | `npm test` | 47 files, 256 tests passed |
-| checkpoint 7 pending commit | `npm run typecheck` | passed |
-| checkpoint 7 pending commit | `npm run build` | passed; semantic prerender completed |
-| checkpoint 7 pending commit | `npm run test:e2e` | 46 browser/axe tests passed after focused RED/GREEN fixes |
-| checkpoint 7 pending commit | `npm run media:check && npm run media:provenance && npm run courier:validate` | passed; 1.56MB shipped media, truthful Courier provenance |
-| checkpoint 7 pending commit | 10-second Chromium N-body diagnostic | zero main-thread long tasks; LCP 308ms; CLS 0.0148; 2,048-body effective tier retained |
-| checkpoint 7 pending commit | Dark/Light Guided + Quick Scan visual matrix | 20 captures inspected at 1440, 1024, 768, 390, and 320px |
+| checkpoint 7 `28665e9` | `npm test` | 47 files, 256 tests passed |
+| checkpoint 7 `28665e9` | `npm run typecheck` | passed |
+| checkpoint 7 `28665e9` | `npm run build` | passed; semantic prerender completed |
+| checkpoint 7 `28665e9` | `npm run test:e2e` | 46 browser/axe tests passed after focused RED/GREEN fixes |
+| checkpoint 7 `28665e9` | `npm run media:check && npm run media:provenance && npm run courier:validate` | passed; 1.56MB shipped media, truthful Courier provenance |
+| checkpoint 7 `28665e9` | 10-second Chromium N-body diagnostic | zero main-thread long tasks; LCP 308ms; CLS 0.0148; 2,048-body effective tier retained |
+| checkpoint 7 `28665e9` | Dark/Light Guided + Quick Scan visual matrix | 20 captures inspected at 1440, 1024, 768, 390, and 320px |
 
 ## Performance budgets
 

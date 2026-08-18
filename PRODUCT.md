@@ -29,7 +29,7 @@ This portfolio explains intelligent systems as one connected engineering practic
 - Role-targeted resume library with seven DOCX/PDF pairs.
 - "Ask this portfolio" assistant backed by the private `/api/page-agent` endpoint and a safe local fallback.
 - Optional Effects Lab plus an Explore World link to the shared `#world` optical-test-bench anchor. Guided and Explore use the same lazy renderer and no separate world modal ships.
-- Quick Scan is the canonical light, static-first route and keeps recruiter evidence available without heavy rendering.
+- Quick Scan is the canonical static-first route. It preserves the resolved Dark or Light scheme and keeps recruiter evidence available without background simulation, video, or heavy rendering.
 - PostHog analytics and feature flags remain part of the runtime.
 
 ## Capabilities and Constraints

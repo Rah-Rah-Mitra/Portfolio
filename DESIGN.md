@@ -170,16 +170,16 @@ The palette is almost entirely paper, graphite, and cool rules; teal communicate
 
 ### Neutral
 
-- **Laboratory White** (`field-paper`): The page, controls, reading surfaces, and resting panels.
-- **Calibration Wash** (`field-soft`): Technical-lab consoles and faint measurement fields.
-- **Graphite Ink** (`field-ink`): Headlines, primary actions, structural top rules, and the strongest evidence text.
-- **Muted Graphite** (`field-muted`): Supporting copy, dates, metadata, readouts, and explanatory labels.
+- **Reading Surface** (`field-paper`): Near-black in Dark and white in Light; it owns the page, controls, opaque copy regions, and resting panels.
+- **Calibration Wash** (`field-soft`): Scheme-aware technical-lab consoles and faint measurement fields.
+- **Primary Ink** (`field-ink`): Near-white in Dark and graphite in Light; it carries headlines, primary actions, structural top rules, and the strongest evidence text.
+- **Muted Ink** (`field-muted`): Supporting copy, dates, metadata, readouts, and explanatory labels in both schemes.
 - **Hairline Rule** (`field-rule`): Row boundaries, interior divisions, and low-priority frames.
 - **Structural Rule** (`field-rule-strong`): Sticky boundaries, section openings, inputs, active work frames, and modal edges.
 
 ### Named Rules
 
-**The Evidence Owns the Page Rule.** White and graphite carry the page; color supports navigation, state, technical meaning, and focus.
+**The Evidence Owns the Page Rule.** Opaque scheme-aware reading surfaces and high-contrast ink carry the page; color supports navigation, state, technical meaning, and focus.
 
 **The Sparse Signal Rule.** Teal is restrained and amber or violet is rarer still. Never use any signal color as a large atmospheric wash or decorative gradient.
 
@@ -256,7 +256,7 @@ The form language is rectilinear and instrument-like. Buttons, inputs, chips, ta
 ### Buttons
 
 - **Shape:** Square, one-pixel bordered, and at least 3rem high for hero actions; compact utility controls remain at least 2.4–2.9rem high.
-- **Primary:** Graphite fill with Laboratory White text and `0.8rem 1.05rem` padding. Hover changes the fill to Deep Signal Teal without lifting the reading surface.
+- **Primary:** Primary Ink fill with Reading Surface text and `0.8rem 1.05rem` padding. Hover changes the fill to Deep Signal Teal without lifting the reading surface.
 - **Secondary:** White fill with Graphite Ink and the same structural weight as the primary action.
 - **Text:** Transparent, underlined, and lightly padded for the tertiary reading route.
 - **Hover / Focus:** Links and light actions move to Deep Signal Teal. Every keyboard-focusable control receives the three-pixel Focus Amber outline with a three-pixel offset.
@@ -269,7 +269,7 @@ The form language is rectilinear and instrument-like. Buttons, inputs, chips, ta
 ### Cards / Containers
 
 - **Corner Style:** Square throughout.
-- **Background:** Laboratory White for reading and Calibration Wash only for technical measurement fields.
+- **Background:** the opaque Reading Surface for copy and Calibration Wash only for technical measurement fields.
 - **Shadow Strategy:** Follow the Flat Evidence Rule.
 - **Border:** Shared one-pixel rules create continuous ledgers, matrices, and consoles.
 - **Internal Padding:** Dense archive rows begin around 1.6rem vertically; primary evidence records expand to roughly 2–3.6rem.
@@ -312,7 +312,7 @@ One lazy Three.js renderer builds the optical rail, iris, image plane, frustum, 
 
 AI and FX are square 3.25rem fixed controls above the desktop rail. They are shadowless at rest and reveal a small label on hover or focus. At mobile sizes the fixed pair is hidden and the header menu owns AI, FX, and Explore World access. The assistant enters from the right as a copilot panel; Effects Lab enters from the left as a utility tray. Both use a translucent graphite backdrop and directional separation. No essential evidence or action may exist only inside these tools.
 
-FX also owns the optional-output contract: global motion pause, visual density, supporting-media playback, muted sound cues, and quality tier. Fluid remains off by default. Sound uses one original deterministic nonverbal sprite, is muted until an explicit gesture and preference, and is suppressed by Quick Scan, Save-Data, reduced stimulation, and global pause. Supporting video uses poster-first semantic figures with a visible play/pause control and transcript; sources are omitted in constrained modes and paused offscreen. Task 6's two new LTXV environment studies were rejected after visual inspection for channel separation and tiling, so only the previously reviewed hero ambience ships.
+FX owns the optional-output contract: global motion pause, visual density, supporting-media playback, muted sound cues, and quality tier. Fluid is the second selectable desktop background; its former FX control now opens the Desktop tab in Preferences. The N-body field is the default. Sound uses one original deterministic nonverbal sprite, is muted until an explicit gesture and preference, and is suppressed by Quick Scan, Save-Data, reduced stimulation, and global pause. Supporting video uses poster-first semantic figures with a visible play/pause control and transcript; sources are omitted in constrained modes and paused offscreen. Task 6's two new LTXV environment studies were rejected after visual inspection for channel separation and tiling, so only the previously reviewed hero ambience ships.
 
 ### Motion and Reduced Motion
 

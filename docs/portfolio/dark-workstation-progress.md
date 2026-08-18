@@ -1,6 +1,6 @@
 # Dark Optical Desktop Progress
 
-Last updated: 2026-08-18 21:54 SGT
+Last updated: 2026-08-18 21:57 SGT
 
 ## Handoff state
 
@@ -8,9 +8,10 @@ Last updated: 2026-08-18 21:54 SGT
 - Base: `main` at `e2e23d162e0d28665c5b6238845daccbc2cb5fb4`
 - Branch: `codex/dark-optical-desktop`
 - Worktree: `C:\codex-worktrees\portfolio-dark-optical`
-- Current checkpoint: 8 — Impeccable confirmation and preview delivery
-- Current implementation commit: `28665e9` — responsive, accessibility, contrast, Quick Scan, and performance hardening
-- Next action: commit this documentation closeout, push `codex/dark-optical-desktop`, verify its Vercel preview in both schemes, then record the preview URL without promoting production.
+- Current checkpoint: 8 complete — Impeccable confirmation and preview delivery
+- Current pushed commit: `b8422a9` — implementation plus design-review documentation (this ledger closeout follows as a documentation-only commit)
+- Preview: `https://portfolio-git-codex-dark-0dd29b-rahul-mitras-projects-21145dc9.vercel.app/`
+- Next action: user review of the preview. Production promotion remains a separate, explicit approval.
 
 ## Accepted decisions
 
@@ -31,7 +32,7 @@ Last updated: 2026-08-18 21:54 SGT
 - [x] 5. N-body background and controls
 - [x] 6. Fluid migration and GPU arbitration
 - [x] 7. Responsive/accessibility/performance hardening
-- [ ] 8. Impeccable finish review and Vercel preview
+- [x] 8. Impeccable finish review and Vercel preview
 
 ## Verification ledger
 
@@ -61,6 +62,8 @@ Last updated: 2026-08-18 21:54 SGT
 | checkpoint 7 `28665e9` | `npm run media:check && npm run media:provenance && npm run courier:validate` | passed; 1.56MB shipped media, truthful Courier provenance |
 | checkpoint 7 `28665e9` | 10-second Chromium N-body diagnostic | zero main-thread long tasks; LCP 308ms; CLS 0.0148; 2,048-body effective tier retained |
 | checkpoint 7 `28665e9` | Dark/Light Guided + Quick Scan visual matrix | 20 captures inspected at 1440, 1024, 768, 390, and 320px |
+| checkpoint 8 `b8422a9` | Impeccable confirmation | no blocking design, responsive, contrast, motion, or information-hierarchy findings remain |
+| Vercel preview for `b8422a9` | signed-in live verification | Dark default and 2,048-body N-body enhancement passed; Light applied/restored; Quick Scan showed 28 projects and 5 experience records with zero background canvas/controller |
 
 ## Performance budgets
 
@@ -81,4 +84,4 @@ Last updated: 2026-08-18 21:54 SGT
 
 ## Continuation prompt
 
-Continue the Dark Optical Desktop implementation in `C:\codex-worktrees\portfolio-dark-optical` on `codex/dark-optical-desktop`. Read `docs/superpowers/specs/2026-08-18-dark-optical-desktop-design.md`, `docs/superpowers/plans/2026-08-18-dark-optical-desktop.md`, and this progress file. Confirm `git status`, then resume the exact Next action above with test-first development. Preserve `.claude/` and the separate Courier experiment. Update this file after every verified checkpoint and commit regularly.
+Review the Vercel preview at `https://portfolio-git-codex-dark-0dd29b-rahul-mitras-projects-21145dc9.vercel.app/`. If changes are requested, continue in `C:\codex-worktrees\portfolio-dark-optical` on `codex/dark-optical-desktop`; read the specification, implementation plan, and this ledger, then confirm `git status` before editing. Preserve `.claude/` and the separate Courier experiment. Do not promote production without explicit approval.

@@ -184,6 +184,22 @@ export const minimizeDesktopApp = (state: WorkstationSessionState, appId: Deskto
   };
 };
 
+export const closeDesktopApp = (state: WorkstationSessionState, appId: DesktopToolAppId): WorkstationSessionState => {
+  if (!state.openAppIds.includes(appId)) return state;
+  const openAppIds = state.openAppIds.filter((id) => id !== appId);
+  const minimizedAppIds = state.minimizedAppIds.filter((id) => id !== appId);
+  const windowStack = state.windowStack.filter((id) => id !== appId);
+  const focusedAppId = [...windowStack].reverse().find((id) => !minimizedAppIds.includes(id)) ?? 'home';
+  return {
+    ...state,
+    focusedAppId,
+    openAppIds,
+    minimizedAppIds,
+    windowStack,
+    controlOwner: focusedAppId === 'home' ? 'document' : 'app',
+  };
+};
+
 export const showWorkstationDesktop = (state: WorkstationSessionState): WorkstationSessionState => ({
   ...state,
   focusedAppId: 'home',

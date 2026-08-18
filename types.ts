@@ -182,6 +182,8 @@ export type AccentId = 'teal' | 'sky' | 'amber' | 'violet' | 'rose';
 export type BackgroundThemeId = 'nbody' | 'fluid';
 export type WindowTint = 'neutral' | 'graphite' | 'accent';
 export type DockSize = 'small' | 'medium' | 'large';
+export type AppearancePanelTab = 'appearance' | 'desktop' | 'window' | 'accessibility';
+export type PreferenceOpenSource = 'header' | 'titlebar' | 'context-menu' | 'keyboard' | 'fx' | 'mobile' | 'test';
 export type NBodyPreset = 'galaxy' | 'binary' | 'field';
 export type NBodyExpansionOrder = 4 | 6 | 8 | 10;
 export type NBodyLeafCapacity = 24 | 48 | 72 | 96;
@@ -277,6 +279,7 @@ export type WorkstationEvent =
   | { type: 'APP_OPENED'; appId: DesktopAppId; source: 'rail' | 'link' | 'ai' | 'history' }
   | { type: 'APP_FOCUSED'; appId: DesktopToolAppId }
   | { type: 'APP_MINIMIZED'; appId: DesktopAppId }
+  | { type: 'APP_CLOSED'; appId: DesktopToolAppId }
   | { type: 'DESKTOP_SHOWN' }
   | { type: 'APP_SNAPPED'; appId: DesktopAppId; snap: WindowSnapState }
   | { type: 'APP_MOVED'; appId: DesktopAppId; bounds: WindowBounds }

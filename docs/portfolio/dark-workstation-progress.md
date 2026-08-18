@@ -1,6 +1,6 @@
 # Dark Optical Desktop Progress
 
-Last updated: 2026-08-18 21:10 SGT
+Last updated: 2026-08-18 21:18 SGT
 
 ## Handoff state
 
@@ -8,9 +8,9 @@ Last updated: 2026-08-18 21:10 SGT
 - Base: `main` at `e2e23d162e0d28665c5b6238845daccbc2cb5fb4`
 - Branch: `codex/dark-optical-desktop`
 - Worktree: `C:\codex-worktrees\portfolio-dark-optical`
-- Current checkpoint: 2 — appearance state and dark-first tokens
-- Last completed commit: `0610e5a` — specification, implementation plan, progress ledger, and attribution
-- Next action: commit the verified appearance foundation, then write RED tests for Preferences, desktop menus, close behavior, and Mac-style window controls.
+- Current checkpoint: 3 — Preferences and Mac-style workstation chrome
+- Last completed commit: `5b1c97c` — dark-first appearance state, validation, pre-paint bootstrap, persistence, and scheme/accent tokens
+- Next action: commit the verified workstation chrome, then write RED numerical tests for the softened direct solver, deterministic presets, quadtree/FMM accuracy, leapfrog stability, and Worker protocol.
 
 ## Accepted decisions
 
@@ -26,7 +26,7 @@ Last updated: 2026-08-18 21:10 SGT
 
 - [x] 1. Specification, plan, progress ledger, attribution
 - [x] 2. Appearance state and dark-first tokens
-- [ ] 3. Preferences and Mac-style workstation chrome
+- [x] 3. Preferences and Mac-style workstation chrome
 - [ ] 4. FMM mathematics and Worker contract
 - [ ] 5. N-body background and controls
 - [ ] 6. Fluid migration and GPU arbitration
@@ -42,6 +42,9 @@ Last updated: 2026-08-18 21:10 SGT
 | checkpoint 2 pending commit | `npm test` | 41 files, 228 tests passed |
 | checkpoint 2 pending commit | `npm run typecheck` | passed |
 | checkpoint 2 pending commit | `npm run build` | passed; semantic prerender completed |
+| checkpoint 3 pending commit | `npm test` | 42 files, 233 tests passed |
+| checkpoint 3 pending commit | `npm run typecheck` | passed |
+| checkpoint 3 pending commit | `npm run build` | passed; semantic prerender completed |
 
 ## Performance budgets
 

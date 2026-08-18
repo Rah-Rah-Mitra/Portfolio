@@ -14,6 +14,7 @@ import { WorkstationAppSurface, WorkstationRail } from './WorkstationShell';
 import { useOptionalWorkstation } from '../contexts/WorkstationContext';
 import type { DesktopAppId } from '../types';
 import MechanicalExhibitViewport, { type MechanismAssetId } from './MechanicalExhibitViewport';
+import AppearanceViewMenu from './AppearanceViewMenu';
 
 const OpticalBenchWorld = React.lazy(() => import('./OpticalBenchWorld'));
 
@@ -81,6 +82,7 @@ export const PortfolioHeader: React.FC = () => {
     <header className="portfolio-header">
       <a className="portfolio-mark" href="#home" aria-label="Rahul Mitra, home">RM<span>/ optical workstation</span></a>
       <ExperienceModeControl />
+      <AppearanceViewMenu />
       <button className="portfolio-menu" type="button" aria-expanded={open} aria-controls="portfolio-navigation" onClick={() => setOpen((current) => !current)}>
         {open ? 'Close' : 'Menu'}
       </button>
@@ -89,6 +91,7 @@ export const PortfolioHeader: React.FC = () => {
         <div className="portfolio-mobile-tools" aria-label="Optional portfolio tools">
           <button type="button" data-open-assistant onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openAssistant', { detail: { source: 'mobile_menu' } }))}>AI · Ask</button>
           <button type="button" data-open-effects onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openEffects', { detail: { source: 'mobile_menu' } }))}>FX · Lab</button>
+          <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openPreferences', { detail: { source: 'mobile' } }))}>Preferences</button>
           <a href="#world" data-open-world onClick={(event) => openFromLink(event, 'world-3d')}>Explore World</a>
         </div>
       </nav>

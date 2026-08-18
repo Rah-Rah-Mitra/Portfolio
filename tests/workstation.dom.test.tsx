@@ -126,4 +126,23 @@ describe('workstation shell', () => {
     state = JSON.parse(screen.getByTestId('workstation-state').textContent ?? '{}');
     expect(state.snapByApp['camera-lab']).toBe('left');
   });
+
+  it('provides Mac-style close, minimize, and maximize controls with titlebar restore', async () => {
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Open Camera Lab' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Maximize Camera Lab' }));
+    let state = JSON.parse(screen.getByTestId('workstation-state').textContent ?? '{}');
+    expect(state.snapByApp['camera-lab']).toBe('maximized');
+
+    fireEvent.doubleClick(screen.getByTestId('workstation-titlebar-camera-lab'));
+    state = JSON.parse(screen.getByTestId('workstation-state').textContent ?? '{}');
+    expect(state.snapByApp['camera-lab']).toBe('floating');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close Camera Lab' }));
+    expect(screen.queryByRole('dialog', { name: 'Camera Lab' })).toBeNull();
+    expect(screen.getByTestId('workstation-state').textContent).toContain('"openAppIds":[]');
+    expect(screen.getByRole('button', { name: 'Open Camera Lab' }).textContent).toContain('Status: Closed');
+  });
 });

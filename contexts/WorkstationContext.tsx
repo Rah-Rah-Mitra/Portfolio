@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import type { DesktopAppId, DesktopToolAppId, WindowBounds, WindowSnapState, WorkstationSessionState } from '../types';
 import {
   clampWindowBounds,
+  closeDesktopApp as reduceCloseDesktopApp,
   createWorkstationState,
   desktopAppFromSearch,
   focusDesktopApp as reduceFocusDesktopApp,
@@ -29,6 +30,7 @@ interface WorkstationContextValue {
   openApp: (appId: DesktopAppId, source?: NavigationSource) => void;
   focusApp: (appId: DesktopToolAppId, historyMode?: 'replace' | 'push') => void;
   minimizeApp: (appId: DesktopAppId) => void;
+  closeApp: (appId: DesktopAppId) => void;
   showDesktop: (source?: NavigationSource) => void;
   snapApp: (appId: DesktopToolAppId, snap: Exclude<WindowSnapState, 'floating'>) => void;
   moveApp: (appId: DesktopToolAppId, bounds: WindowBounds) => void;
@@ -166,6 +168,17 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
     window.setTimeout(() => window.dispatchEvent(new CustomEvent('portfolio:workstation-focus', { detail: { appId } })), 0);
   }, [commitState, enabled, writeRoute]);
 
+  const closeApp = useCallback((appId: DesktopAppId) => {
+    if (!enabled || appId === 'home') return;
+    const current = stateRef.current;
+    const next = reduceCloseDesktopApp(current, appId);
+    if (next === current) return;
+    commitState(next);
+    if (current.focusedAppId === appId) writeRoute(next.focusedAppId, 'push');
+    window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'APP_CLOSED', appId } }));
+    window.setTimeout(() => window.dispatchEvent(new CustomEvent('portfolio:workstation-focus', { detail: { appId } })), 0);
+  }, [commitState, enabled, writeRoute]);
+
   const snapApp = useCallback((appId: DesktopToolAppId, snap: Exclude<WindowSnapState, 'floating'>) => {
     if (!enabled) return;
     const focused = reduceFocusDesktopApp(stateRef.current, appId);
@@ -215,8 +228,8 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
   }, [enabled, minimizeApp, state.focusedAppId]);
 
   const value = useMemo<WorkstationContextValue>(() => ({
-    enabled, enhanced, isCompact, state, openApp, focusApp, minimizeApp, showDesktop, snapApp, moveApp,
-  }), [enabled, enhanced, focusApp, isCompact, minimizeApp, moveApp, openApp, showDesktop, snapApp, state]);
+    enabled, enhanced, isCompact, state, openApp, focusApp, minimizeApp, closeApp, showDesktop, snapApp, moveApp,
+  }), [closeApp, enabled, enhanced, focusApp, isCompact, minimizeApp, moveApp, openApp, showDesktop, snapApp, state]);
 
   return <WorkstationContext.Provider value={value}>{children}</WorkstationContext.Provider>;
 };

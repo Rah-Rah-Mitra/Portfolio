@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampWindowBounds,
+  closeDesktopApp,
   createWorkstationState,
   desktopAppFromSearch,
   focusDesktopApp,
@@ -93,6 +94,22 @@ describe('retro optical workstation contract', () => {
     expect(minimizedCamera.minimizedAppIds).toEqual(['systems-lab', 'camera-lab']);
     expect(minimizedCamera.windowStack).toEqual(['camera-lab', 'systems-lab']);
     expect(minimizedCamera.controlOwner).toBe('document');
+  });
+
+  it('closes one tool instance and focuses the next visible window without discarding its geometry', () => {
+    const camera = openDesktopApp(createWorkstationState(), 'camera-lab', { x: 90, y: 120, width: 760, height: 540 });
+    const systems = openDesktopApp(camera, 'systems-lab', { x: 120, y: 140, width: 780, height: 560 });
+    const closed = closeDesktopApp(systems, 'systems-lab');
+    expect(closed.focusedAppId).toBe('camera-lab');
+    expect(closed.openAppIds).toEqual(['camera-lab']);
+    expect(closed.windowStack).toEqual(['camera-lab']);
+    expect(closed.minimizedAppIds).toEqual([]);
+    expect(closed.boundsByApp['systems-lab']).toEqual(systems.boundsByApp['systems-lab']);
+
+    const home = closeDesktopApp(closed, 'camera-lab');
+    expect(home.focusedAppId).toBe('home');
+    expect(home.openAppIds).toEqual([]);
+    expect(home.controlOwner).toBe('document');
   });
 
   it('restores a minimized tool through open and delegates home to the desktop view', () => {

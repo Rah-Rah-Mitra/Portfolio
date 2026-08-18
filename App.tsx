@@ -10,6 +10,8 @@ import { ExperienceModeProvider, useExperienceMode } from './contexts/Experience
 import AudioSpriteController from './components/AudioSpriteController';
 import { WorkstationProvider } from './contexts/WorkstationContext';
 import { AppearanceProvider } from './contexts/AppearanceContext';
+import AppearancePreferences from './components/AppearancePreferences';
+import DesktopAppearanceMenu from './components/DesktopAppearanceMenu';
 
 export const OptionalExperienceLayers: React.FC = () => {
   return (
@@ -17,6 +19,8 @@ export const OptionalExperienceLayers: React.FC = () => {
       <EffectsLabPanel />
       <AskThePage />
       <AudioSpriteController />
+      <DesktopAppearanceMenu />
+      <AppearancePreferences />
     </>
   );
 };

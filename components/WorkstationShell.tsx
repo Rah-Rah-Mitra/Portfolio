@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import type { DesktopAppId, DesktopToolAppId } from '../types';
 import { resizeWindowBounds, resolveCascadeBounds, workstationApps } from '../lib/workstation';
 import { useWorkstation } from '../contexts/WorkstationContext';
+import AppearanceViewMenu from './AppearanceViewMenu';
 
 export const WorkstationRail: React.FC = () => {
   const { enabled, enhanced, state, openApp, showDesktop } = useWorkstation();
@@ -56,7 +57,7 @@ export const WorkstationRail: React.FC = () => {
 };
 
 export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: React.ReactNode }> = ({ appId, children }) => {
-  const { enabled, enhanced, isCompact, state, focusApp, minimizeApp, snapApp, moveApp } = useWorkstation();
+  const { enabled, enhanced, isCompact, state, focusApp, minimizeApp, closeApp, snapApp, moveApp } = useWorkstation();
   const app = useMemo(() => workstationApps.find((candidate) => candidate.id === appId)!, [appId]);
   const viewportWidth = typeof window === 'undefined' ? 1280 : window.innerWidth;
   const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
@@ -72,6 +73,7 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
     ? { left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height, zIndex: 60 + stackIndex }
     : undefined;
   const pointerAction = useRef<null | { kind: 'move' | 'resize'; pointerId: number; x: number; y: number; bounds: typeof bounds }>(null);
+  const restoreBounds = useRef(bounds);
 
   useEffect(() => {
     if (!enabled || !enhanced || hidden || typeof window === 'undefined') return undefined;
@@ -123,6 +125,13 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
   };
 
   const titleId = `workstation-window-${appId}-title`;
+  const toggleMaximize = () => {
+    if (state.snapByApp[appId] === 'maximized') moveApp(appId, restoreBounds.current);
+    else {
+      restoreBounds.current = bounds;
+      snapApp(appId, 'maximized');
+    }
+  };
   return (
     <section
       className="workstation-window"
@@ -135,14 +144,18 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
       style={style}
       onPointerDownCapture={() => { if (!focused) focusApp(appId); }}
     >
-      <header className="workstation-titlebar">
+      <header className="workstation-titlebar" data-testid={`workstation-titlebar-${appId}`} onDoubleClick={(event) => { if (!(event.target as HTMLElement).closest('button')) toggleMaximize(); }}>
+        <div className="workstation-traffic-controls">
+          <button type="button" className="traffic-close" onClick={() => closeApp(appId)} aria-label={`Close ${app.label}`}><span aria-hidden="true">×</span></button>
+          <button type="button" className="traffic-minimize" onClick={() => minimizeApp(appId)} aria-label={`Minimize ${app.label}`}><span aria-hidden="true">−</span></button>
+          <button type="button" className="traffic-maximize" onClick={toggleMaximize} aria-label={`${state.snapByApp[appId] === 'maximized' ? 'Restore' : 'Maximize'} ${app.label}`}><span aria-hidden="true">+</span></button>
+        </div>
         <button type="button" className="workstation-titlebar-grip" aria-label={`Move ${app.label} window`} onPointerDown={(event) => startPointerAction('move', event)} onKeyDown={moveFromKeyboard}><i /><i /><i /><i /><i /></button>
         <div><span>{app.kind.toUpperCase()} MODULE</span><h2 id={titleId}>{app.label}</h2></div>
         <div className="workstation-window-controls">
           <button type="button" onClick={() => snapApp(appId, 'left')} aria-label={`Snap ${app.label} left`}>L</button>
           <button type="button" onClick={() => snapApp(appId, 'right')} aria-label={`Snap ${app.label} right`}>R</button>
-          <button type="button" onClick={() => snapApp(appId, 'maximized')} aria-label={`Maximize ${app.label}`}>M</button>
-          <button type="button" onClick={() => minimizeApp(appId)} aria-label={`Minimize ${app.label}`}>—</button>
+          <AppearanceViewMenu compact />
         </div>
       </header>
       <div className="workstation-window-body">{children}</div>
@@ -156,7 +169,7 @@ export const WorkstationAppSurface: React.FC<{ appId: DesktopAppId; children: Re
   const { enabled, enhanced } = useWorkstation();
   if (!enabled || !enhanced) return <div className="workstation-static-surface" data-app-id={appId}>{children}</div>;
   if (appId === 'home') return (
-    <section className="workstation-home-surface" data-app-id="home" data-window-state="maximized" aria-label="Home / Dossier application">
+    <section className="workstation-home-surface" data-app-id="home" data-desktop-field data-window-state="maximized" aria-label="Home / Dossier application">
       <div className="workstation-dossier-bar">
         <div><span>PORTFOLIO WORKSTATION</span><strong>HOME / DOSSIER</strong></div>
         <dl>

@@ -1,6 +1,6 @@
 # Dark Optical Desktop Progress
 
-Last updated: 2026-08-18 21:18 SGT
+Last updated: 2026-08-18 21:25 SGT
 
 ## Handoff state
 
@@ -8,9 +8,9 @@ Last updated: 2026-08-18 21:18 SGT
 - Base: `main` at `e2e23d162e0d28665c5b6238845daccbc2cb5fb4`
 - Branch: `codex/dark-optical-desktop`
 - Worktree: `C:\codex-worktrees\portfolio-dark-optical`
-- Current checkpoint: 3 — Preferences and Mac-style workstation chrome
-- Last completed commit: `5b1c97c` — dark-first appearance state, validation, pre-paint bootstrap, persistence, and scheme/accent tokens
-- Next action: commit the verified workstation chrome, then write RED numerical tests for the softened direct solver, deterministic presets, quadtree/FMM accuracy, leapfrog stability, and Worker protocol.
+- Current checkpoint: 4 — FMM mathematics and Worker contract
+- Last completed commit: `f9b21e8` — Preferences, View/context menus, traffic-light controls, rounded windows, and floating dock
+- Next action: commit the verified numerical core, then write RED DOM/policy tests for lazy background loading, visible-tick ownership, controls, metrics, pointer response, and static fallbacks.
 
 ## Accepted decisions
 
@@ -27,7 +27,7 @@ Last updated: 2026-08-18 21:18 SGT
 - [x] 1. Specification, plan, progress ledger, attribution
 - [x] 2. Appearance state and dark-first tokens
 - [x] 3. Preferences and Mac-style workstation chrome
-- [ ] 4. FMM mathematics and Worker contract
+- [x] 4. FMM mathematics and Worker contract
 - [ ] 5. N-body background and controls
 - [ ] 6. Fluid migration and GPU arbitration
 - [ ] 7. Responsive/accessibility/performance hardening
@@ -45,6 +45,9 @@ Last updated: 2026-08-18 21:18 SGT
 | checkpoint 3 pending commit | `npm test` | 42 files, 233 tests passed |
 | checkpoint 3 pending commit | `npm run typecheck` | passed |
 | checkpoint 3 pending commit | `npm run build` | passed; semantic prerender completed |
+| checkpoint 4 pending commit | `npm test` | 44 files, 241 tests passed |
+| checkpoint 4 pending commit | `npm run typecheck` | passed |
+| checkpoint 4 pending commit | `npm run build` | passed; FMM remains unreferenced until the lazy background checkpoint |
 
 ## Performance budgets
 

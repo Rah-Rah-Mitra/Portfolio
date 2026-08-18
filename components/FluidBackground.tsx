@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useEffects } from '../contexts/PhysicsContext';
+import { useAppearance } from '../contexts/AppearanceContext';
 
 type Fbo = {
   texture: WebGLTexture;
@@ -240,15 +240,16 @@ const hslToRgb = (h: number, s: number, l: number): [number, number, number] => 
   return [hueToRgb(p, q, h + 1 / 3), hueToRgb(p, q, h), hueToRgb(p, q, h - 1 / 3)];
 };
 
-const FluidBackground: React.FC = () => {
+const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { settings } = useEffects();
+  const { preferences } = useAppearance();
+  const fluid = preferences.fluid;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const constrainedMobile = window.innerWidth < 700 && (navigator.hardwareConcurrency ?? 4) <= 4;
-    if (!canvas || !settings.fluid.enabled || reducedMotion.matches || constrainedMobile) return undefined;
+    if (!canvas || !active || reducedMotion.matches || constrainedMobile) return undefined;
 
     const gl = canvas.getContext('webgl2', {
       alpha: true,
@@ -370,8 +371,8 @@ const FluidBackground: React.FC = () => {
     const initFramebuffers = () => {
       allocatedFbos.forEach(releaseFbo);
       resizeCanvas();
-      const simBase = settings.fluid.quality === 'high' ? 192 : 128;
-      const dyeBase = settings.fluid.quality === 'high' ? 1024 : 768;
+      const simBase = fluid.quality === 'high' ? 192 : 128;
+      const dyeBase = fluid.quality === 'high' ? 1024 : 768;
       const simRes = getResolution(simBase);
       const dyeRes = getResolution(dyeBase);
       velocity = createDoubleFbo(simRes.width, simRes.height);
@@ -416,14 +417,14 @@ const FluidBackground: React.FC = () => {
       if (!previous && !strong) return;
 
       const color = hslToRgb((hue + performance.now() * 0.00003) % 1, 0.78, 0.48);
-      const radius = Math.max(0.0006, (settings.fluid.splatRadius / 100) * 0.026);
+      const radius = Math.max(0.0006, (fluid.splatRadius / 100) * 0.026);
       const force = strong ? 900 : 8;
       splats.push({
         x,
         y,
         dx: dx * force,
         dy: dy * force,
-        color: color.map((value) => value * (settings.fluid.intensity / 65)) as [number, number, number],
+        color: color.map((value) => value * (fluid.intensity / 65)) as [number, number, number],
         radius,
       });
     };
@@ -437,7 +438,7 @@ const FluidBackground: React.FC = () => {
     let animationId = 0;
 
     const draw = (time: number) => {
-      const dt = Math.min(0.033, (time - lastTime) / 1000) * settings.fluid.speed;
+      const dt = Math.min(0.033, (time - lastTime) / 1000) * fluid.speed;
       lastTime = time;
       resizeCanvas();
 
@@ -454,8 +455,8 @@ const FluidBackground: React.FC = () => {
           y: 0.52 + Math.cos(t * 1.7) * 0.24,
           dx: Math.cos(t * 3.0) * 80,
           dy: Math.sin(t * 2.4) * 80,
-          color: color.map((value) => value * 0.18 * (settings.fluid.intensity / 60)) as [number, number, number],
-          radius: Math.max(0.0005, (settings.fluid.splatRadius / 100) * 0.018),
+          color: color.map((value) => value * 0.18 * (fluid.intensity / 60)) as [number, number, number],
+          radius: Math.max(0.0005, (fluid.splatRadius / 100) * 0.018),
         });
       }
 
@@ -475,7 +476,7 @@ const FluidBackground: React.FC = () => {
       gl.uniform2f(uniforms.vorticity.texelSize, velocity.read.texelSizeX, velocity.read.texelSizeY);
       gl.uniform1i(uniforms.vorticity.uVelocity, bindTexture(velocity.read.texture, 0));
       gl.uniform1i(uniforms.vorticity.uCurl, bindTexture(curl.texture, 1));
-      gl.uniform1f(uniforms.vorticity.curl, settings.fluid.curl);
+      gl.uniform1f(uniforms.vorticity.curl, fluid.curl);
       gl.uniform1f(uniforms.vorticity.dt, dt);
       blit(velocity.write);
       velocity.swap();
@@ -491,7 +492,7 @@ const FluidBackground: React.FC = () => {
       blit(pressure.write);
       pressure.swap();
 
-      const pressureIterations = settings.fluid.quality === 'high' ? 18 : 12;
+      const pressureIterations = fluid.quality === 'high' ? 18 : 12;
       for (let i = 0; i < pressureIterations; i += 1) {
         gl.useProgram(programs.pressure);
         gl.uniform2f(uniforms.pressure.texelSize, pressure.read.texelSizeX, pressure.read.texelSizeY);
@@ -528,8 +529,8 @@ const FluidBackground: React.FC = () => {
 
       gl.useProgram(programs.display);
       gl.uniform1i(uniforms.display.uTexture, bindTexture(dye.read.texture, 0));
-      gl.uniform1f(uniforms.display.opacity, settings.fluid.opacity / 100);
-      gl.uniform1f(uniforms.display.boost, 0.9 + settings.fluid.intensity / 80);
+      gl.uniform1f(uniforms.display.opacity, fluid.opacity / 100);
+      gl.uniform1f(uniforms.display.boost, 0.9 + fluid.intensity / 80);
       blit(null);
 
       if (!document.hidden) animationId = requestAnimationFrame(draw);
@@ -546,10 +547,12 @@ const FluidBackground: React.FC = () => {
     try {
       initFramebuffers();
       window.addEventListener('resize', initFramebuffers);
-      window.addEventListener('pointermove', handlePointerMove, { passive: true });
-      window.addEventListener('pointerdown', handlePointerDown, { passive: true });
-      window.addEventListener('pointerup', handlePointerLeave, { passive: true });
-      window.addEventListener('pointercancel', handlePointerLeave, { passive: true });
+      if (fluid.pointerInteraction) {
+        window.addEventListener('pointermove', handlePointerMove, { passive: true });
+        window.addEventListener('pointerdown', handlePointerDown, { passive: true });
+        window.addEventListener('pointerup', handlePointerLeave, { passive: true });
+        window.addEventListener('pointercancel', handlePointerLeave, { passive: true });
+      }
       document.addEventListener('visibilitychange', handleVisibility);
       animationId = requestAnimationFrame(draw);
     } catch {
@@ -572,13 +575,14 @@ const FluidBackground: React.FC = () => {
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, [
-    settings.fluid.enabled,
-    settings.fluid.speed,
-    settings.fluid.intensity,
-    settings.fluid.opacity,
-    settings.fluid.splatRadius,
-    settings.fluid.curl,
-    settings.fluid.quality,
+    active,
+    fluid.speed,
+    fluid.intensity,
+    fluid.opacity,
+    fluid.splatRadius,
+    fluid.curl,
+    fluid.quality,
+    fluid.pointerInteraction,
   ]);
 
   return <canvas ref={canvasRef} className="fluid-background" aria-hidden="true" />;

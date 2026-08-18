@@ -57,7 +57,7 @@ export const useOptionalAppearance = () => useContext(AppearanceContext);
 export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [preferences, dispatch] = useReducer(appearanceReducer, undefined, initialPreferences);
   const [systemDark, setSystemDark] = useState(() => (
-    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches
   ));
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [preferencesTab, setPreferencesTab] = useState<AppearancePanelTab>('appearance');
@@ -65,6 +65,7 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const resolvedScheme = resolveColorScheme(preferences.scheme, systemDark);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return undefined;
     const query = window.matchMedia('(prefers-color-scheme: dark)');
     const update = (event: MediaQueryListEvent | MediaQueryList) => setSystemDark(event.matches);
     update(query);

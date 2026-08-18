@@ -1,6 +1,6 @@
 # Dark Optical Desktop Progress
 
-Last updated: 2026-08-18 21:30 SGT
+Last updated: 2026-08-18 21:33 SGT
 
 ## Handoff state
 
@@ -8,9 +8,9 @@ Last updated: 2026-08-18 21:30 SGT
 - Base: `main` at `e2e23d162e0d28665c5b6238845daccbc2cb5fb4`
 - Branch: `codex/dark-optical-desktop`
 - Worktree: `C:\codex-worktrees\portfolio-dark-optical`
-- Current checkpoint: 5 — N-body background, controls, metrics, and ownership policy
-- Last completed commit: `6111631` — adaptive 2D logarithmic FMM, deterministic presets, softened near field, leapfrog integrator, and Worker protocol
-- Next action: commit the verified N-body surface, then write RED tests for Fluid preference migration, FX handoff, selected-theme loading, GPU exclusivity, and frozen/static fallback behavior.
+- Current checkpoint: 6 — Fluid migration, FX handoff, and GPU arbitration
+- Last completed commit: `909658f` — lazy Worker-driven N-body renderer, controls, Engineer readout, pointer response, dynamic tiering, and static policy
+- Next action: commit Fluid migration, then add RED browser tests for dark/light startup, context-menu scope, Preferences/mobile behavior, Quick Scan import suppression, accessibility, and bounded performance.
 
 ## Accepted decisions
 
@@ -29,7 +29,7 @@ Last updated: 2026-08-18 21:30 SGT
 - [x] 3. Preferences and Mac-style workstation chrome
 - [x] 4. FMM mathematics and Worker contract
 - [x] 5. N-body background and controls
-- [ ] 6. Fluid migration and GPU arbitration
+- [x] 6. Fluid migration and GPU arbitration
 - [ ] 7. Responsive/accessibility/performance hardening
 - [ ] 8. Impeccable finish review and Vercel preview
 
@@ -51,6 +51,9 @@ Last updated: 2026-08-18 21:30 SGT
 | checkpoint 5 pending commit | `npm test` | 46 files, 251 tests passed |
 | checkpoint 5 pending commit | `npm run typecheck` | passed |
 | checkpoint 5 pending commit | `npm run build` | passed; Worker 13.85KB minified, controller + N-body 2.69KB gzip |
+| checkpoint 6 pending commit | `npm test` | 47 files, 254 tests passed |
+| checkpoint 6 pending commit | `npm run typecheck` | passed |
+| checkpoint 6 pending commit | `npm run build` | passed; Fluid remains a separate 4.00KB gzip selected-theme chunk |
 
 ## Performance budgets
 

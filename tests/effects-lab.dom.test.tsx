@@ -4,6 +4,8 @@ import AskThePage from '../components/AskThePage';
 import EffectsLabPanel from '../components/EffectsLabPanel';
 import { EffectsProvider, useEffects } from '../contexts/PhysicsContext';
 import { ExperienceModeProvider } from '../contexts/ExperienceModeContext';
+import { AppearanceProvider } from '../contexts/AppearanceContext';
+import AppearancePreferences from '../components/AppearancePreferences';
 
 afterEach(() => {
   cleanup();
@@ -21,9 +23,11 @@ describe('effects lab world handoff', () => {
     fireEvent.click(screen.getByRole('button', { name: /FX, open optional effects lab/ }));
     const dialog = screen.getByRole('dialog', { name: 'Effects lab' });
 
-    ['Smash', 'Gravity', 'Fluid field', 'Text signal'].forEach((label) => {
+    ['Smash', 'Gravity', 'Text signal'].forEach((label) => {
       expect(within(dialog).getByRole('button', { name: new RegExp(label, 'i') })).not.toBeNull();
     });
+    expect(within(dialog).getByRole('button', { name: 'Open Fluid desktop settings' })).not.toBeNull();
+    expect(within(dialog).queryByRole('button', { name: /Fluid field/i })).toBeNull();
     expect(dialog.textContent).not.toMatch(/Spatial portfolio map|Lazy-loaded Three\.js environment/i);
     expect(dialog.textContent).toContain('The shared optical test bench is this site’s enhancement target.');
     expect(within(dialog).getByRole('link', { name: 'Explore World' }).getAttribute('href')).toBe('#world');
@@ -38,7 +42,16 @@ describe('effects lab world handoff', () => {
     expect(within(dialog).getByRole('button', { name: /Sound cues/i }).getAttribute('aria-pressed')).toBe('false');
     expect((within(dialog).getByLabelText('Visual density') as HTMLSelectElement).value).toBe('balanced');
     expect((within(dialog).getByLabelText('World quality') as HTMLSelectElement).value).toBe('balanced');
-    expect(within(dialog).getByRole('button', { name: /Fluid field/i }).getAttribute('aria-pressed')).toBe('false');
+    expect(within(dialog).getByRole('button', { name: 'Open Fluid desktop settings' })).not.toBeNull();
+  });
+
+  it('hands Fluid configuration to Desktop Preferences', async () => {
+    render(<AppearanceProvider><EffectsProvider><EffectsLabPanel /><AppearancePreferences /></EffectsProvider></AppearanceProvider>);
+    fireEvent.click(screen.getByRole('button', { name: /FX, open optional effects lab/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Fluid desktop settings' }));
+    const preferences = await screen.findByRole('dialog', { name: 'Desktop Preferences' });
+    expect(within(preferences).getByRole('tab', { name: 'Desktop' }).getAttribute('aria-selected')).toBe('true');
+    expect(within(preferences).getByRole('radio', { name: 'Fluid Field' })).not.toBeNull();
   });
 });
 

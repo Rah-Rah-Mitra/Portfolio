@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { EffectId, FluidQuality, NumericEffectId, TextEffectMode, useEffects, VisualDensity } from '../contexts/PhysicsContext';
+import { EffectId, NumericEffectId, TextEffectMode, useEffects, VisualDensity } from '../contexts/PhysicsContext';
 import type { QualityTier } from '../types';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import BreakableText from './BreakableText';
@@ -36,7 +36,7 @@ const EffectsLabPanel: React.FC = () => {
   const panelRef = useRef<HTMLElement>(null);
   const suppressFocusRestore = useRef(false);
   const openedAt = useRef<number | null>(null);
-  const { settings, enhancements, toggleEffect, setEffectParam, setPretextMode, setFluidQuality, restoreAll, pauseAll, setMotionPaused, setVisualDensity, setMediaEnabled, setSoundEnabled, setQuality } = useEffects();
+  const { settings, enhancements, toggleEffect, setEffectParam, setPretextMode, restoreAll, pauseAll, setMotionPaused, setVisualDensity, setMediaEnabled, setSoundEnabled, setQuality } = useEffects();
   const workstation = useOptionalWorkstation();
   useFocusTrap(open, panelRef, '[data-open-effects], .effects-dock', suppressFocusRestore);
 
@@ -123,13 +123,13 @@ const EffectsLabPanel: React.FC = () => {
             <RangeField label="Strength" value={settings.gravity.strength} min={0} max={100} onChange={(value) => setEffectParam('gravity', 'strength', value)} />
             <RangeField label="Radius" value={settings.gravity.radius} min={20} max={75} onChange={(value) => setEffectParam('gravity', 'radius', value)} />
           </section>
-          <section>
-            <EffectToggle enabled={settings.fluid.enabled} title="Fluid field" description="Translucent pointer-driven WebGL layer" onClick={() => toggle('fluid')} />
-            <PresetRow id="fluid" />
-            <RangeField label="Speed" value={settings.fluid.speed} min={0.2} max={2.4} step={0.1} suffix="×" onChange={(value) => setEffectParam('fluid', 'speed', value)} />
-            <RangeField label="Opacity" value={settings.fluid.opacity} min={0} max={80} onChange={(value) => setEffectParam('fluid', 'opacity', value)} />
-            <RangeField label="Curl" value={settings.fluid.curl} min={0} max={90} onChange={(value) => setEffectParam('fluid', 'curl', value)} />
-            <label className="lab-select"><span>Quality</span><select value={settings.fluid.quality} onChange={(event) => setFluidQuality(event.target.value as FluidQuality)}><option value="balanced">Balanced</option><option value="high">High</option></select></label>
+          <section className="desktop-background-handoff">
+            <h3>Fluid desktop</h3>
+            <p>Fluid is now one of the two desktop backgrounds, with its settings and GPU ownership managed in Desktop Preferences.</p>
+            <button type="button" aria-label="Open Fluid desktop settings" onClick={() => {
+              window.dispatchEvent(new CustomEvent('portfolio:openPreferences', { detail: { source: 'fx', tab: 'desktop' } }));
+              close('fluid_desktop_settings');
+            }}>Open Fluid desktop settings</button>
           </section>
           <section>
             <EffectToggle enabled={settings.pretext.enabled} title="Text signal" description="Decode, scan, or pulse on marked text" onClick={() => toggle('pretext')} />

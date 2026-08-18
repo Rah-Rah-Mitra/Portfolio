@@ -1595,7 +1595,9 @@ body::after {
 .fluid-background {
   z-index: 0 !important;
   opacity: .58;
+  mix-blend-mode: screen;
 }
+html[data-color-scheme="light"] .fluid-background { mix-blend-mode: multiply; }
 
 .effects-dock,
 .ask-dock {
@@ -2787,6 +2789,7 @@ html[data-color-scheme="light"] .workstation-module:hover { background: rgb(13 3
 .nbody-field-caption { position: fixed; right: 1rem; bottom: calc(var(--workstation-rail-height) + 1.15rem); z-index: 2; color: rgb(209 230 224 / 56%); font: 520 .52rem/1 "IBM Plex Mono", monospace; letter-spacing: .08em; }
 .site-shell > .portfolio-field-test { position: relative; z-index: 1; }
 .desktop-background-static { background: radial-gradient(circle at 72% 18%, rgb(var(--accent-rgb) / 12%), transparent 34rem), var(--desktop-field); }
+.desktop-background-static[data-frozen-theme="fluid"] { background: radial-gradient(ellipse at 24% 34%, rgb(var(--accent-rgb) / 16%), transparent 34rem), radial-gradient(ellipse at 78% 68%, rgb(184 162 243 / 12%), transparent 38rem), var(--desktop-field); }
 html[data-color-scheme="light"] .nbody-reset { background: rgb(255 255 255 / 82%); color: #111816; }
 
 @media (max-width: 920px) {

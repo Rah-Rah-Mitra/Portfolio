@@ -97,6 +97,16 @@ const AppearancePreferences: React.FC = () => {
               </dl>
               <button type="button" className="preference-retry" onClick={() => window.dispatchEvent(new CustomEvent('portfolio:nbody-retry'))}>Retry requested particle tier</button>
             </div>}
+            {preferences.background === 'fluid' && <div className="nbody-preference-controls">
+              <div className="preferences-heading"><span>F</span><div><h3>Fluid field</h3><p>Pointer-driven WebGL dye and velocity, mutually exclusive with active 3D applications.</p></div></div>
+              <label className="preference-slider"><span>Speed <output>{preferences.fluid.speed.toFixed(1)}×</output></span><input type="range" min="0.2" max="2.4" step="0.1" value={preferences.fluid.speed} onChange={(event) => appearance.patchFluid({ speed: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Intensity <output>{preferences.fluid.intensity}%</output></span><input type="range" min="0" max="100" value={preferences.fluid.intensity} onChange={(event) => appearance.patchFluid({ intensity: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Opacity <output>{preferences.fluid.opacity}%</output></span><input type="range" min="0" max="80" value={preferences.fluid.opacity} onChange={(event) => appearance.patchFluid({ opacity: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Splat radius <output>{preferences.fluid.splatRadius}%</output></span><input type="range" min="10" max="85" value={preferences.fluid.splatRadius} onChange={(event) => appearance.patchFluid({ splatRadius: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Curl <output>{preferences.fluid.curl}%</output></span><input type="range" min="0" max="90" value={preferences.fluid.curl} onChange={(event) => appearance.patchFluid({ curl: Number(event.target.value) })} /></label>
+              <div className="preference-select-grid"><label><span>Quality</span><select value={preferences.fluid.quality} onChange={(event) => appearance.patchFluid({ quality: event.target.value as 'balanced' | 'high' })}><option value="balanced">Balanced</option><option value="high">High</option></select></label></div>
+              <label className="preference-check"><input type="checkbox" checked={preferences.fluid.pointerInteraction} onChange={(event) => appearance.patchFluid({ pointerInteraction: event.target.checked })} /><span>Pointer interaction</span></label>
+            </div>}
             <div className="preference-action-row">
               <button type="button" onClick={() => appearance.setBackgroundPaused(!preferences.backgroundPaused)}>{preferences.backgroundPaused ? 'Resume background' : 'Pause background'}</button>
               <button type="button" onClick={appearance.resetBackground}>Reset background</button>

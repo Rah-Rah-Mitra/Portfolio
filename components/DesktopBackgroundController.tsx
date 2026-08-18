@@ -37,8 +37,9 @@ const DesktopBackgroundController: React.FC = () => {
       <Suspense fallback={<div className="desktop-background-static" />}>
         {activity.theme === 'nbody'
           ? <NBodyBackground active={activity.active} />
-          : <FluidBackground />}
+          : <FluidBackground active={activity.active} />}
       </Suspense>
+      {!activity.active && <div className="desktop-background-static" data-frozen-theme={activity.theme} />}
     </div>
   );
 };

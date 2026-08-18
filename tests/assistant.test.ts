@@ -26,15 +26,18 @@ describe('portfolio AI commands', () => {
     expect(response.commands).toContainEqual({ type: 'enterExploreMode', sceneId: 'camera-laboratory' });
   });
 
-  it('exposes only validated evidence, lab, chapter, explore, and mode commands', () => {
+  it('exposes only validated evidence, workstation, lab, chapter, explore, and mode commands', () => {
     expect(validatePageCommand({ type: 'focusExperience' })).toEqual({ type: 'focusExperience' });
     expect(validatePageCommand({ type: 'focusProject', projectId: 'churp' })).toEqual({ type: 'focusProject', projectId: 'churp' });
     expect(validatePageCommand({ type: 'openTechnicalLab', mode: 'stereo' })).toEqual({ type: 'openTechnicalLab', mode: 'stereo' });
     expect(validatePageCommand({ type: 'focusGuideChapter', chapterId: 'work' })).toEqual({ type: 'focusGuideChapter', chapterId: 'work' });
     expect(validatePageCommand({ type: 'enterExploreMode', sceneId: 'camera-laboratory' })).toEqual({ type: 'enterExploreMode', sceneId: 'camera-laboratory' });
     expect(validatePageCommand({ type: 'setQuickScan', enabled: true })).toEqual({ type: 'setQuickScan', enabled: true });
+    expect(validatePageCommand({ type: 'openDesktopApp', appId: 'camera-lab' })).toEqual({ type: 'openDesktopApp', appId: 'camera-lab' });
+    expect(validatePageCommand({ type: 'minimizeDesktopApp', appId: 'camera-lab' })).toEqual({ type: 'minimizeDesktopApp', appId: 'camera-lab' });
     expect(validatePageCommand({ type: 'openTechnicalLab', mode: 'slam' })).toBeNull();
     expect(validatePageCommand({ type: 'focusProject', projectId: 'made-up' })).toBeNull();
+    expect(validatePageCommand({ type: 'openDesktopApp', appId: 'made-up' })).toBeNull();
     expect(validatePageCommand({ type: 'openWorld' })).toBeNull();
   });
 

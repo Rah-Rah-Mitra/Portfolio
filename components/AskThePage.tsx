@@ -6,9 +6,11 @@ import { useEffects } from '../contexts/PhysicsContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/analytics';
 import { JOURNEY_STAGES } from '../constants';
-import type { SceneId } from '../types';
+import type { DesktopAppId, SceneId } from '../types';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';
 import { dispatchExploreControl } from '../lib/worldEvents';
+import { workstationApps } from '../lib/workstation';
+import { useOptionalWorkstation } from '../contexts/WorkstationContext';
 
 type Reference = { label: string; href: string };
 type ChatMessage = { role: 'assistant' | 'user'; content: string; references?: Reference[] };
@@ -18,6 +20,8 @@ export type PageCommand =
   | { type: 'openTechnicalLab'; mode?: 'intrinsics' | 'extrinsics' | 'optics' | 'stereo' }
   | { type: 'focusGuideChapter'; chapterId: string }
   | { type: 'enterExploreMode'; sceneId: SceneId }
+  | { type: 'openDesktopApp'; appId: DesktopAppId }
+  | { type: 'minimizeDesktopApp'; appId: DesktopAppId }
   | { type: 'setQuickScan'; enabled: boolean };
 type AgentResponse = { reply: string; references?: Reference[]; commands?: PageCommand[]; modelUsed?: boolean; model?: string; reason?: string };
 
@@ -26,6 +30,8 @@ const projectIds = new Set(allProjects.map((project) => project.id));
 const chapterIds: Set<string> = new Set(JOURNEY_STAGES.map((stage) => stage.id));
 const labModes = new Set(['intrinsics', 'extrinsics', 'optics', 'stereo']);
 const sceneIds = new Set<SceneId>(['calibration', 'systems-in-motion', 'spatial-systems', 'selected-work', 'camera-laboratory', 'departure']);
+const desktopAppIds = new Set<DesktopAppId>(workstationApps.map((app) => app.id));
+const appByAnchor = new Map(workstationApps.map((app) => [app.fallbackAnchor.slice(1), app.id] as const));
 
 export const validatePageCommand = (value: unknown): PageCommand | null => {
   if (!value || typeof value !== 'object') return null;
@@ -35,6 +41,8 @@ export const validatePageCommand = (value: unknown): PageCommand | null => {
   if (command.type === 'openTechnicalLab' && (command.mode === undefined || (typeof command.mode === 'string' && labModes.has(command.mode)))) return { type: 'openTechnicalLab', ...(command.mode ? { mode: command.mode as 'intrinsics' | 'extrinsics' | 'optics' | 'stereo' } : {}) };
   if (command.type === 'focusGuideChapter' && typeof command.chapterId === 'string' && chapterIds.has(command.chapterId)) return { type: 'focusGuideChapter', chapterId: command.chapterId };
   if (command.type === 'enterExploreMode' && typeof command.sceneId === 'string' && sceneIds.has(command.sceneId as SceneId)) return { type: 'enterExploreMode', sceneId: command.sceneId as SceneId };
+  if (command.type === 'openDesktopApp' && typeof command.appId === 'string' && desktopAppIds.has(command.appId as DesktopAppId)) return { type: 'openDesktopApp', appId: command.appId as DesktopAppId };
+  if (command.type === 'minimizeDesktopApp' && typeof command.appId === 'string' && desktopAppIds.has(command.appId as DesktopAppId)) return { type: 'minimizeDesktopApp', appId: command.appId as DesktopAppId };
   if (command.type === 'setQuickScan' && typeof command.enabled === 'boolean') return { type: 'setQuickScan', enabled: command.enabled };
   return null;
 };
@@ -140,12 +148,14 @@ const AskThePage: React.FC = () => {
   const openedAt = useRef<number | null>(null);
   const effects = useEffects();
   const { chooseMode } = useExperienceMode();
+  const workstation = useOptionalWorkstation();
   useFocusTrap(open, panelRef, '[data-open-assistant], .ask-dock');
 
   const pageState = useMemo(() => ({
     surface: 'continuous-field-test', effects: effects.settings,
     sections: Object.values(SECTION_IDS), allowedLinks: Array.from(allowedLinks),
     chapters: JOURNEY_STAGES.map((stage) => stage.id),
+    apps: workstationApps.map((app) => app.id),
     experience: experienceRecords.map(({ id, role, organization, dateLabel, scope, outcomes }) => ({ id, role, organization, dateLabel, scope, outcomes })),
     projects: allProjects.map(({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links }) => ({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links })),
     events: fieldNotes.map(({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links }) => ({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links })),
@@ -180,19 +190,43 @@ const AskThePage: React.FC = () => {
     return () => window.removeEventListener('keydown', escape);
   }, [open]);
 
+  const runInApp = (appId: DesktopAppId, action: () => void) => {
+    if (workstation?.enabled && workstation.enhanced) {
+      workstation.openApp(appId, 'ai');
+      window.setTimeout(action, 0);
+    } else action();
+  };
+
+  const appForAnchor = (anchor: string): DesktopAppId | undefined => {
+    const id = anchor.replace(/^#/, '');
+    if (id.startsWith('project-')) return 'project-archive';
+    if (id.startsWith('experience-')) return 'experience';
+    return appByAnchor.get(id);
+  };
+
   const applyCommand = (command: PageCommand) => {
     const valid = validatePageCommand(command);
     if (!valid) return;
-    if (valid.type === 'focusExperience') document.getElementById(valid.experienceId ? `experience-${valid.experienceId}` : 'experience')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else if (valid.type === 'focusProject') document.getElementById(`project-${valid.projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (valid.type === 'focusExperience') runInApp('experience', () => document.getElementById(valid.experienceId ? `experience-${valid.experienceId}` : 'experience')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    else if (valid.type === 'focusProject') runInApp('project-archive', () => document.getElementById(`project-${valid.projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
     else if (valid.type === 'openTechnicalLab') {
-      document.getElementById('technical-lab')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (valid.mode) window.dispatchEvent(new CustomEvent('portfolio:camera-lab-mode', { detail: { mode: valid.mode } }));
-    } else if (valid.type === 'focusGuideChapter') document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      runInApp('camera-lab', () => {
+        document.getElementById('technical-lab')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (valid.mode) window.dispatchEvent(new CustomEvent('portfolio:camera-lab-mode', { detail: { mode: valid.mode } }));
+      });
+    } else if (valid.type === 'focusGuideChapter') {
+      const appId = appForAnchor(`#${valid.chapterId}`);
+      if (appId) runInApp(appId, () => document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      else document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     else if (valid.type === 'enterExploreMode') {
-      document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      dispatchExploreControl({ action: 'enter', sceneId: valid.sceneId });
-    } else if (valid.type === 'setQuickScan') chooseMode(valid.enabled ? 'scan' : 'guided');
+      runInApp('world-3d', () => {
+        document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        dispatchExploreControl({ action: 'enter', sceneId: valid.sceneId });
+      });
+    } else if (valid.type === 'openDesktopApp') workstation?.openApp(valid.appId, 'ai');
+    else if (valid.type === 'minimizeDesktopApp') workstation?.minimizeApp(valid.appId);
+    else if (valid.type === 'setQuickScan') chooseMode(valid.enabled ? 'scan' : 'guided');
   };
 
   const submitMessage = async (message: string) => {
@@ -252,7 +286,15 @@ const AskThePage: React.FC = () => {
               <p>{message.content}</p>
               {message.references?.length ? <div className="assistant-references">{message.references.map((reference) => {
                 const external = reference.href.startsWith('http');
-                return <a key={`${reference.href}-${reference.label}`} href={reference.href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} onClick={() => { if (reference.href.startsWith('#')) close('reference'); }}>{reference.label}{external && <span className="sr-only"> (opens in a new tab)</span>}</a>;
+                return <a key={`${reference.href}-${reference.label}`} href={reference.href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} onClick={(event) => {
+                  if (!reference.href.startsWith('#')) return;
+                  const appId = appForAnchor(reference.href);
+                  if (appId && workstation?.enabled && workstation.enhanced) {
+                    event.preventDefault();
+                    workstation.openApp(appId, 'ai');
+                  }
+                  close('reference');
+                }}>{reference.label}{external && <span className="sr-only"> (opens in a new tab)</span>}</a>;
               })}</div> : null}
             </article>
           ))}

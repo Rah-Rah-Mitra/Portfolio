@@ -182,6 +182,7 @@ export interface DesktopAppDefinition {
   id: DesktopAppId;
   label: string;
   shortLabel: string;
+  compactLabel: string;
   description: string;
   kind: DesktopAppKind;
   fallbackAnchor: `#${string}`;

@@ -27,6 +27,9 @@ describe('retro optical workstation contract', () => {
     ]);
     expect(new Set(workstationApps.map((app) => app.id)).size).toBe(10);
     expect(workstationApps.every((app) => app.fallbackAnchor.startsWith('#'))).toBe(true);
+    expect(workstationApps.map((app) => app.compactLabel)).toEqual([
+      'Home', 'Work', 'Exp', 'Arc', 'Sys', 'Cam', '3D', 'Cap', 'Proof', 'CV',
+    ]);
   });
 
   it('opens one tool at a time and remembers prior modules as minimized', () => {
@@ -59,16 +62,17 @@ describe('retro optical workstation contract', () => {
   });
 
   it('resolves predictable half-screen and maximized bounds inside the usable desktop', () => {
-    const viewport = { width: 1440, height: 1000, taskbarHeight: 76 };
-    expect(resolveSnapBounds('left', viewport)).toEqual({ x: 0, y: 0, width: 720, height: 924 });
-    expect(resolveSnapBounds('right', viewport)).toEqual({ x: 720, y: 0, width: 720, height: 924 });
-    expect(resolveSnapBounds('maximized', viewport)).toEqual({ x: 0, y: 0, width: 1440, height: 924 });
+    const viewport = { width: 1440, height: 1000, taskbarHeight: 96, topBarHeight: 76 };
+    expect(resolveSnapBounds('left', viewport)).toEqual({ x: 0, y: 76, width: 720, height: 828 });
+    expect(resolveSnapBounds('right', viewport)).toEqual({ x: 720, y: 76, width: 720, height: 828 });
+    expect(resolveSnapBounds('maximized', viewport)).toEqual({ x: 0, y: 76, width: 1440, height: 828 });
   });
 
-  it('clamps floating moves and resizes to a usable, readable desktop window', () => {
-    const viewport = { width: 1440, height: 1000, taskbarHeight: 76 };
-    expect(clampWindowBounds({ x: 1400, y: 900, width: 800, height: 600 }, viewport)).toEqual({ x: 640, y: 324, width: 800, height: 600 });
-    expect(resizeWindowBounds({ x: 80, y: 60, width: 760, height: 520 }, -500, -400, viewport)).toEqual({ x: 80, y: 60, width: 620, height: 420 });
-    expect(resizeWindowBounds({ x: 80, y: 60, width: 760, height: 520 }, 2000, 2000, viewport)).toEqual({ x: 80, y: 60, width: 1360, height: 864 });
+  it('clamps floating moves and resizes between the menu bar and application rail', () => {
+    const viewport = { width: 1440, height: 1000, taskbarHeight: 96, topBarHeight: 76 };
+    expect(clampWindowBounds({ x: 1400, y: 900, width: 800, height: 600 }, viewport)).toEqual({ x: 640, y: 304, width: 800, height: 600 });
+    expect(clampWindowBounds({ x: 40, y: 0, width: 800, height: 600 }, viewport).y).toBe(76);
+    expect(resizeWindowBounds({ x: 80, y: 76, width: 760, height: 520 }, -500, -400, viewport)).toEqual({ x: 80, y: 76, width: 620, height: 420 });
+    expect(resizeWindowBounds({ x: 80, y: 76, width: 760, height: 520 }, 2000, 2000, viewport)).toEqual({ x: 80, y: 76, width: 1360, height: 828 });
   });
 });

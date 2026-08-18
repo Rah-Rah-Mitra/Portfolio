@@ -4,6 +4,7 @@ import type { QualityTier } from '../types';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import BreakableText from './BreakableText';
 import { track } from '../lib/analytics';
+import { useOptionalWorkstation } from '../contexts/WorkstationContext';
 
 const RangeField: React.FC<{ label: string; value: number; min: number; max: number; step?: number; suffix?: string; onChange: (value: number) => void }> = ({ label, value, min, max, step = 1, suffix = '%', onChange }) => (
   <label className="lab-range">
@@ -36,6 +37,7 @@ const EffectsLabPanel: React.FC = () => {
   const suppressFocusRestore = useRef(false);
   const openedAt = useRef<number | null>(null);
   const { settings, enhancements, toggleEffect, setEffectParam, setPretextMode, setFluidQuality, restoreAll, pauseAll, setMotionPaused, setVisualDensity, setMediaEnabled, setSoundEnabled, setQuality } = useEffects();
+  const workstation = useOptionalWorkstation();
   useFocusTrap(open, panelRef, '[data-open-effects], .effects-dock', suppressFocusRestore);
 
   const close = (reason: string) => {
@@ -138,7 +140,13 @@ const EffectsLabPanel: React.FC = () => {
           <section className="world-control">
             <h3>Explore World</h3>
             <p>The shared optical test bench is this site’s enhancement target. This anchor marks its integration point; the evidence document remains the shipped experience.</p>
-            <a href="#world" onClick={() => close('explore_world')}>Explore World</a>
+            <a href="#world" onClick={(event) => {
+              if (workstation?.enabled && workstation.enhanced) {
+                event.preventDefault();
+                workstation.openApp('world-3d', 'link');
+              }
+              close('explore_world');
+            }}>Explore World</a>
           </section>
         </div>
         </aside>

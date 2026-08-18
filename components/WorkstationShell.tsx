@@ -38,7 +38,8 @@ export const WorkstationRail: React.FC = () => {
               onClick={() => openApp(app.id, 'rail')}
             >
               <span className="workstation-module-socket" aria-hidden="true"><img src={app.iconAsset} alt="" width="48" height="48" /></span>
-              <span>{app.shortLabel}</span>
+              <span className="workstation-module-label">{app.shortLabel}</span>
+              <small className="workstation-module-compact" aria-hidden="true">{app.compactLabel}</small>
               <i className="workstation-status-lamp" aria-hidden="true" />
             </button>
           );
@@ -59,12 +60,13 @@ export const WorkstationAppFrame: React.FC<{
   const app = useMemo(() => workstationApps.find((candidate) => candidate.id === appId)!, [appId]);
   const viewportWidth = typeof window === 'undefined' ? 1280 : window.innerWidth;
   const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
-  const viewport = { width: viewportWidth, height: viewportHeight, taskbarHeight: 76 };
+  const viewport = { width: viewportWidth, height: viewportHeight, taskbarHeight: 96, topBarHeight: 76 };
+  const workAreaHeight = viewportHeight - viewport.taskbarHeight - viewport.topBarHeight;
   const bounds = state.boundsByApp[appId] ?? clampWindowBounds({
-    x: Math.max(32, (viewportWidth - 960) / 2),
-    y: 64,
-    width: Math.min(960, viewportWidth - 64),
-    height: Math.min(700, viewportHeight - 140),
+    x: Math.max(24, (viewportWidth - 1120) / 2),
+    y: viewport.topBarHeight + 16,
+    width: Math.min(1120, viewportWidth - 48),
+    height: Math.min(780, workAreaHeight - 32),
   }, viewport);
   const style = viewportWidth >= 921 ? { left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height } : undefined;
   const pointerAction = useRef<null | { kind: 'move' | 'resize'; pointerId: number; x: number; y: number; bounds: typeof bounds }>(null);
@@ -145,6 +147,18 @@ export const WorkstationAppSurface: React.FC<{
     return <div className="workstation-static-surface" data-app-id={appId}>{children}</div>;
   }
   if (state.activeAppId !== appId) return null;
-  if (appId === 'home') return <div className="workstation-home-surface" data-app-id="home">{children}</div>;
+  if (appId === 'home') return (
+    <section className="workstation-home-surface" data-app-id="home" data-window-state="maximized" aria-label="Home / Dossier application">
+      <div className="workstation-dossier-bar">
+        <div><span>PORTFOLIO WORKSTATION</span><strong>HOME / DOSSIER</strong></div>
+        <dl>
+          <div><dt>SESSION</dt><dd>RECRUITER EVIDENCE</dd></div>
+          <div><dt>STATE</dt><dd>AVAILABLE · SINGAPORE</dd></div>
+        </dl>
+        <span>MAXIMIZED</span>
+      </div>
+      {children}
+    </section>
+  );
   return <WorkstationAppFrame appId={appId}>{children}</WorkstationAppFrame>;
 };

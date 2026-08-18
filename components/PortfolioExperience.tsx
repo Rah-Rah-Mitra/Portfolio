@@ -79,7 +79,7 @@ export const PortfolioHeader: React.FC = () => {
 
   return (
     <header className="portfolio-header">
-      <a className="portfolio-mark" href="#home" aria-label="Rahul Mitra, home">RM<span>/ systems</span></a>
+      <a className="portfolio-mark" href="#home" aria-label="Rahul Mitra, home">RM<span>/ optical workstation</span></a>
       <ExperienceModeControl />
       <button className="portfolio-menu" type="button" aria-expanded={open} aria-controls="portfolio-navigation" onClick={() => setOpen((current) => !current)}>
         {open ? 'Close' : 'Menu'}

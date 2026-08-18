@@ -76,19 +76,19 @@ test('the first recruiter view names recent experience and two leading projects'
 test('offscreen optical world is visually dormant while recruiter evidence is read', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  const world = page.locator('.optical-world-canvas');
-  await expect(world).toBeAttached();
-  await expect(world).not.toHaveAttribute('data-scene-visible', '');
-  await expect(world).toHaveCSS('opacity', '0');
+  await expect(page.locator('.optical-world')).toHaveCount(0);
+  await expect(page.locator('.optical-world-canvas canvas')).toHaveCount(0);
 });
 
 test('active technical layers cannot wash through semantic headings or sticky project controls', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Open Project Archive' }).click();
   const projectControls = page.locator('.project-controls');
   await projectControls.scrollIntoViewIfNeeded();
   await expect(projectControls).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 
+  await page.getByRole('button', { name: 'Open 3D World' }).click();
   const worldHeading = page.locator('.portfolio-world-mount > header');
   await worldHeading.scrollIntoViewIfNeeded();
   await expect(worldHeading).toHaveCSS('position', 'relative');
@@ -98,10 +98,8 @@ test('active technical layers cannot wash through semantic headings or sticky pr
   const worldSurface = page.locator('.optical-world');
   await worldSurface.scrollIntoViewIfNeeded();
   await expect(page.locator('.optical-world-canvas')).toHaveAttribute('data-scene-visible', '');
-  await page.locator('#domains').scrollIntoViewIfNeeded();
-  await page.waitForTimeout(50);
-  const departingOpacity = Number(await page.locator('.optical-world-canvas').evaluate((element) => getComputedStyle(element).opacity));
-  expect(departingOpacity).toBeLessThanOrEqual(0.01);
+  await page.getByRole('button', { name: 'Open Capabilities' }).click();
+  await expect(page.locator('.optical-world')).toHaveCount(0);
 });
 
 test('forced-colors preserves visible controls and keyboard focus', async ({ page }) => {
@@ -113,29 +111,29 @@ test('forced-colors preserves visible controls and keyboard focus', async ({ pag
   await expect(page.getByRole('button', { name: 'Quick Scan' })).toBeVisible();
 });
 
-test('all Camera Laboratory modes, examples, resets, and Courier reactions remain wired', async ({ page }) => {
+test('focused technical applications preserve their deterministic interactions', async ({ page }) => {
   await page.goto('/');
-  const world = page.locator('.optical-world');
-  await expect(world).toBeAttached();
+  await page.getByRole('button', { name: 'Open Systems Lab' }).click();
   const flowShop = page.getByRole('region', { name: 'Systems in Motion' });
   await flowShop.scrollIntoViewIfNeeded();
   await flowShop.getByRole('button', { name: 'Move job C earlier' }).click();
-  await expect(world).toHaveAttribute('data-reaction', 'point-bottleneck');
+  await expect(flowShop.getByText('Makespan 17')).toBeVisible();
 
   const spatial = page.getByRole('region', { name: 'Spatial Systems' });
   await spatial.scrollIntoViewIfNeeded();
   await spatial.getByRole('slider', { name: 'Marker X coordinate' }).fill('82');
-  await expect(world).toHaveAttribute('data-reaction', 'inspect-marker');
+  await expect(spatial.getByRole('status')).toContainText('East is the nearest eligible plot');
 
+  await page.getByRole('button', { name: 'Open Selected Work' }).click();
   const inspector = page.locator('#selected-on-the-spectrum').getByRole('region', { name: 'OnTheSpectrum architecture' });
   await inspector.scrollIntoViewIfNeeded();
   await inspector.getByRole('button', { name: 'Inspect Three.js playable-world QA' }).click();
-  await expect(world).toHaveAttribute('data-reaction', 'inspect-project');
+  await expect(inspector.getByRole('status')).toContainText('Three.js playable-world QA');
 
+  await page.getByRole('button', { name: 'Open Camera Lab' }).click();
   const lab = page.getByRole('region', { name: 'Camera Laboratory', exact: true });
   await lab.scrollIntoViewIfNeeded();
   await lab.getByRole('spinbutton', { name: 'Focal length (mm)' }).fill('50');
-  await expect(world).toHaveAttribute('data-reaction-alias', /success|puzzled/);
   const modes = [
     ['Intrinsics', 'Intrinsics results', 'Load Intrinsics example', 'Reset Intrinsics'],
     ['Extrinsics', 'Extrinsics results', 'Load Extrinsics example', 'Reset Extrinsics'],
@@ -152,6 +150,8 @@ test('all Camera Laboratory modes, examples, resets, and Courier reactions remai
 
 test('offscreen optical world does not sustain an idle render loop', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('.optical-world canvas')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Open 3D World' }).click();
   await expect(page.locator('.optical-world canvas')).toHaveCount(1);
   await page.waitForTimeout(1_200);
   await page.evaluate(() => {
@@ -164,6 +164,8 @@ test('offscreen optical world does not sustain an idle render loop', async ({ pa
   await page.waitForTimeout(600);
   const frames = await page.evaluate(() => (window as Window & { __qualityWorldFrames?: number }).__qualityWorldFrames ?? 0);
   expect(frames).toBeLessThanOrEqual(1);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.optical-world canvas')).toHaveCount(0);
 });
 
 test('semantic recruiter evidence survives with JavaScript disabled', async ({ browser }) => {

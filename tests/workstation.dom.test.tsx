@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { WorkstationProvider, useWorkstation } from '../contexts/WorkstationContext';
-import { WorkstationAppFrame, WorkstationRail } from '../components/WorkstationShell';
+import { WorkstationAppFrame, WorkstationAppSurface, WorkstationRail } from '../components/WorkstationShell';
 
 const Harness = ({ enabled = true }: { enabled?: boolean }) => (
   <WorkstationProvider enabled={enabled}>
@@ -35,6 +35,19 @@ describe('workstation shell', () => {
     expect(screen.getByTestId('workstation-state').textContent).toContain('"activeAppId":"camera-lab"');
     expect(screen.getByRole('button', { name: 'Open Camera Lab' }).getAttribute('aria-pressed')).toBe('true');
     expect(document.documentElement.dataset.workstationActive).toBe('camera-lab');
+  });
+
+  it('presents Home as the maximized evidence Dossier rather than an unframed page', async () => {
+    render(
+      <WorkstationProvider enabled>
+        <WorkstationAppSurface appId="home"><h1>Recruiter evidence</h1></WorkstationAppSurface>
+      </WorkstationProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Home / Dossier application' })).not.toBeNull());
+    expect(screen.getByText('PORTFOLIO WORKSTATION')).not.toBeNull();
+    expect(screen.getByText('MAXIMIZED')).not.toBeNull();
+    expect(screen.getByRole('heading', { name: 'Recruiter evidence' })).not.toBeNull();
   });
 
   it('minimizes the active tool, restores document ownership, and returns focus to its rail module', async () => {

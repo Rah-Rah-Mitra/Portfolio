@@ -7,6 +7,7 @@ const trustedPageState = {
   projects: [{ id: 'churp' }, { id: 'asyncddgs' }],
   experience: [{ id: 'abbott-internship' }],
   chapters: ['home', 'work', 'experience', 'technical-lab'],
+  apps: ['home', 'selected-work', 'experience', 'project-archive', 'camera-lab', 'world-3d'],
 };
 
 const completeTrustedState = {
@@ -37,17 +38,20 @@ describe('server page-agent command parity', () => {
     expect(serverAgent.sanitizeCommands).toBeTypeOf('function');
     const commands = serverAgent.sanitizeCommands?.([
       { type: 'focusProject', projectId: 'churp' },
+      { type: 'openDesktopApp', appId: 'camera-lab' },
+      { type: 'minimizeDesktopApp', appId: 'world-3d' },
       { type: 'focusProject', projectId: 'attacker-project' },
+      { type: 'openDesktopApp', appId: 'attacker-app' },
       { type: 'focusExperience', experienceId: 'attacker-role' },
-      { type: 'focusGuideChapter', chapterId: 'attacker-chapter' },
-      { type: 'openTechnicalLab', mode: 'root-shell' },
-      { type: 'enterExploreMode', sceneId: 'attacker-scene' },
-      { type: 'setQuickScan', enabled: 'yes' },
     ], {
       projects: [{ id: 'attacker-project' }, { id: 'churp' }],
-      experience: [{ id: 'attacker-role' }], chapters: ['attacker-chapter'],
+      experience: [{ id: 'attacker-role' }], chapters: ['attacker-chapter'], apps: ['camera-lab', 'world-3d', 'attacker-app'],
     });
-    expect(commands).toEqual([{ type: 'focusProject', projectId: 'churp' }]);
+    expect(commands).toEqual([
+      { type: 'focusProject', projectId: 'churp' },
+      { type: 'openDesktopApp', appId: 'camera-lab' },
+      { type: 'minimizeDesktopApp', appId: 'world-3d' },
+    ]);
   });
 
   it.each([

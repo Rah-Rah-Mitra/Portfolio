@@ -13,6 +13,11 @@ colors:
   field-amber: "#95590e"
   field-violet: "#6650a4"
   focus-amber: "#df9f2f"
+  workstation-carbon: "#17201e"
+  workstation-metal: "#dce2df"
+  workstation-metal-dark: "#a8b3af"
+  workstation-recess: "#edf1ef"
+  workstation-signal: "#66d7cc"
 typography:
   display:
     fontFamily: "Archivo, Arial, sans-serif"
@@ -44,6 +49,12 @@ typography:
     fontWeight: 500
     lineHeight: 1.5
     letterSpacing: "0.065em"
+  instrument:
+    fontFamily: "'IBM Plex Mono', monospace"
+    fontSize: "0.55rem"
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: "0.08em"
 rounded:
   square: "0"
 components:
@@ -109,25 +120,32 @@ components:
     rounded: "{rounded.square}"
     padding: "0.75rem"
     border: "1px solid {colors.field-rule}"
+  workstation-module:
+    backgroundColor: "{colors.workstation-metal}"
+    textColor: "{colors.workstation-carbon}"
+    typography: "{typography.instrument}"
+    rounded: "{rounded.square}"
+    border: "1px solid {colors.workstation-metal-dark}"
 ---
 
 # Design System: Rahul Mitra Engineering Portfolio
 
 ## Overview
 
-**Creative North Star: "Continuous Field Test"**
+**Creative North Star: "Retro Optical Workstation"**
 
-The portfolio is a clean white laboratory record of an engineer making intelligent systems operational. It reads as one continuous field test under visual seed `4d83e73b`: Rahul's positioning, experience, selected systems, complete project archive, technical study, capabilities, proof, résumés, and contact path remain stationary, explicit, and easy to inspect. Near-black type and fine rules establish authority; restrained teal marks navigation, methods, state, and verification.
+The portfolio is a clean white laboratory record housed inside a precision-retro optical workstation. Rahul's positioning, experience, selected systems, complete project archive, technical study, capabilities, proof, résumés, and contact path remain stationary, explicit, and easy to inspect. Near-black type and fine rules establish authority; restrained teal marks navigation, methods, state, and verification. The workstation is functional chrome: its rail opens real portfolio applications, its lamps communicate state, and its window controls alter real bounds rather than decorating the page.
 
 The graphite-and-teal Optical Courier is a supporting guide, not the subject. One lazy optical-test-bench world owns its replaceable rig, camera, rail, iris, image plane, rays, and calibration stations; it responds to chapter state without creating a sidebar stage. Until the final production rig lands, a neutral procedural placeholder protects the same asset interface. Constrained devices receive a static optical-register diagram after the first-view facts, so mobile always presents Rahul's claim and actions first. Sparse amber and violet belong to focus, survey stations, reconstruction, and other technical annotations; they do not become decorative themes or unsupported experience claims.
 
-The interface has one evidence model and no Build/Secure lenses. The assistant and Effects Lab are optional shipped depth layers: fixed AI and FX controls are desktop-only, while mobile exposes AI, FX, and Explore World inside the header menu. Explore World is ordinary navigation to the shared optical-test-bench anchor and exposes local Enter/Exit/Reset controls; no separate world modal ships. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.
+The interface has one evidence model and no Build/Secure lenses. Home / Dossier launches maximized and owns normal document scrolling. Ten rendered modules on the mechanical rail open one focused application at a time; minimized modules remain visible. Desktop tools move, resize, snap, and maximize only inside the work area between the menu bar and rail. Mobile tools become full-screen sheets with compact labelled modules and no precision dragging. The assistant is a right-side copilot, while Effects Lab remains a left utility tray. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.
 
 Quick Scan is the canonical light, static-first route. It renders the same recruiter evidence and complete four-mode Camera Laboratory in ordinary semantic HTML, omits the world and video chunks, and keeps Explore World as navigation to the static shared anchor rather than implying a second experience.
 
 **Key Characteristics:**
 
 - White laboratory field with near-black editorial typography and hairline ledger rules.
+- A graphite-and-cool-metal workstation chassis with socketed rendered application icons and explicit active/minimized lamps.
 - Real experience, projects, outcomes, proof, and résumé links dominate every section.
 - A persistent desktop evidence-and-guide split that collapses to an evidence-first mobile column.
 - Archivo for claims and reading; IBM Plex Mono for methods, dates, counts, readouts, and state.
@@ -194,7 +212,9 @@ The palette is almost entirely paper, graphite, and cool rules; teal communicate
 
 ## Layout
 
-The desktop shell is capped at 92rem and divides the compact hero into a 65% evidence column and 35% supporting calibration stage, separated by a responsive 2–5rem gap. The header remains sticky at 4.75rem high. The first evidence view is capped at `min(760px, 88svh)`; its top-aligned compact rhythm keeps the claim below the header and the supporting stage inside the hero boundary. A compact Current proof trail names Abbott, Hybrid Flow Shop, Churp, and OnTheSpectrum before the primary actions so a first-view recruiter scan can recover recent experience and concrete systems without waiting for animation. The continuous document order is position → selected work → experience → all projects → technical lab → shared world → capabilities → proof → résumés → contact.
+The desktop shell is capped at 92rem and divides the compact hero into a 65% evidence column and 35% supporting calibration stage, separated by a responsive 2–5rem gap. The 4.75rem sticky menu bar and 2.7rem Dossier state bar establish the maximized Home application without displacing evidence from the first view. A compact Current proof trail names Abbott, Hybrid Flow Shop, Churp, and OnTheSpectrum before the primary actions so a recruiter can recover recent experience and concrete systems without waiting for animation. The continuous fallback order is position → selected work → experience → all projects → technical lab → shared world → capabilities → proof → résumés → contact.
+
+The application rail is 5.45rem on desktop and 4.35rem on touch layouts. Desktop focused windows default to a broad 1120px work surface, remain bounded below the menu bar and above the rail, and use one internal scroller. On mobile the rail hides its native scrollbar but retains horizontal touch and keyboard access; concise text labels accompany the rendered icons. Home keeps its document scroll position while a tool is focused.
 
 Sections are separated by structural top rules and generous vertical intervals of roughly 5–9rem. Headings use a wide claim/narrow context split. Selected systems use index, evidence, and optional media columns; experience and the complete project archive use conventional ledgers; proof uses a two-column ruled matrix; résumés use a four-column row. The All Projects controls become sticky below the header on wide screens, while the full archive remains visible, searchable, keyboard-steppable, and filterable.
 
@@ -264,7 +284,11 @@ The form language is rectilinear and instrument-like. Buttons, inputs, chips, ta
 
 ### Navigation
 
-The sticky header uses a translucent white strip, a Structural Rule bottom edge, a compact RM mark, centered desktop links, and a square Explore World anchor. Link hover and focus reveal a two-pixel teal underline over 160ms. At 920px the links move into a full-width expanding menu; AI · Ask, FX · Lab, and Explore World remain three explicit routes, with Explore World linking to the shared test-bench controls.
+The sticky header becomes the workstation menu bar in Guided mode: opaque cool metal, functional separator rules, a compact `RM / OPTICAL WORKSTATION` mark, centered evidence links, mode control, and a square Explore World action. At 920px the links move into a full-width expanding menu; AI · Ask, FX · Lab, and Explore World remain three explicit routes.
+
+### Workstation Shell
+
+Home / Dossier is the maximized portfolio application and exposes recruiter evidence before any tool interaction. Its status bar names the application, recruiter-evidence session, Singapore availability state, and maximized state. Ten real rendered module icons live in a socketed rail with idle, minimized, and active lamps. Only one tool window is mounted visibly at a time. Desktop titlebars provide labelled move, snap-left, snap-right, maximize, minimize, and resize operations with keyboard equivalents; mobile retains only the title and minimize action. Focus returns to the invoking rail module when a tool closes.
 
 ### Selected Work and Evidence Ledgers
 
@@ -286,7 +310,7 @@ One lazy Three.js renderer builds the optical rail, iris, image plane, frustum, 
 
 ### Optional Tool Docks and Panels
 
-AI and FX are square 3.25rem fixed controls in the lower-right desktop corner. They are shadowless at rest and reveal a small label on hover or focus. At mobile sizes the fixed pair is hidden and the header menu owns AI, FX, and Explore World access. Explore World is a normal link to `#world`, not a modal control. Assistant and Effects Lab drawers are white, square, left-entering modal panels with a translucent graphite backdrop and directional shadow. No essential evidence or action may exist only inside these tools.
+AI and FX are square 3.25rem fixed controls above the desktop rail. They are shadowless at rest and reveal a small label on hover or focus. At mobile sizes the fixed pair is hidden and the header menu owns AI, FX, and Explore World access. The assistant enters from the right as a copilot panel; Effects Lab enters from the left as a utility tray. Both use a translucent graphite backdrop and directional separation. No essential evidence or action may exist only inside these tools.
 
 FX also owns the optional-output contract: global motion pause, visual density, supporting-media playback, muted sound cues, and quality tier. Fluid remains off by default. Sound uses one original deterministic nonverbal sprite, is muted until an explicit gesture and preference, and is suppressed by Quick Scan, Save-Data, reduced stimulation, and global pause. Supporting video uses poster-first semantic figures with a visible play/pause control and transcript; sources are omitted in constrained modes and paused offscreen. Task 6's two new LTXV environment studies were rejected after visual inspection for channel separation and tiling, so only the previously reviewed hero ambience ships.
 
@@ -310,6 +334,7 @@ Motion is limited to the 160ms navigation underline, bounded story-camera/optica
 - **Do** keep teal restrained and reserve amber and violet for focus or technical annotation.
 - **Do** keep the Optical Courier subordinate to evidence, inside the shared world asset interface, and use the static optical-register fallback on constrained devices.
 - **Do** expose AI, FX, and the Explore World anchor in the mobile header menu while keeping fixed AI and FX controls desktop-only.
+- **Do** keep desktop windows between the menu bar and rail, and keep mobile modules labelled even when the rail is icon-dense.
 - **Do** preserve visible focus, semantic landmarks, keyboard-operable filters and tabs, truthful disclaimers, and the complete project archive.
 - **Do** make reduced motion a static, fully readable version of the same experience.
 
@@ -322,3 +347,4 @@ Motion is limited to the 160ms navigation underline, bounded story-camera/optica
 - **Don't** use generic AI gradients, neon or glitch styling, game HUD chrome, stock robots, or meaningless equations.
 - **Don't** set long reading copy in IBM Plex Mono or use low-contrast microtype for essential information.
 - **Don't** let motion, pointer precision, WebGL, or optional panels gate reading, résumé access, proof, or contact.
+- **Don't** use the workstation as nostalgic decoration: every latch, lamp, window, readout, and handle must communicate or change real state.

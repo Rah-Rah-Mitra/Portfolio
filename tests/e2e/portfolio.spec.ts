@@ -5,10 +5,13 @@ test('recruiter evidence, navigation, projects, and controls remain visible', as
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'Intelligent systems, made operational.' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Download résumé/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Open Experience' }).click();
   await expect(page.locator('#experience article')).toHaveCount(5);
+  await page.getByRole('button', { name: 'Open Project Archive' }).click();
   await expect(page.locator('#all-work [id^="project-"]')).toHaveCount(8);
   await page.getByRole('button', { name: 'Load 4 more projects' }).click();
   await expect(page.locator('#all-work [id^="project-"]')).toHaveCount(12);
+  await page.getByRole('button', { name: 'Open Camera Lab' }).click();
   await expect(page.getByRole('button', { name: /FX, open optional effects lab/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /AI, open Ask this portfolio/ })).toBeVisible();
   await expect(page.getByText('An interactive portfolio-site experiment, not a professional project claim.')).toBeVisible();
@@ -16,7 +19,7 @@ test('recruiter evidence, navigation, projects, and controls remain visible', as
 });
 
 test('project search, filters, anchors, and keyboard stepping work', async ({ page }) => {
-  await page.goto('/#all-work');
+  await page.goto('/?app=project-archive');
   const search = page.getByRole('searchbox', { name: /Search by project/ });
   await search.fill('CP-SAT');
   await expect(page.locator('.project-result-count')).toContainText('Showing 1 of 28 projects');
@@ -80,7 +83,7 @@ test.describe('capability fallbacks', () => {
   });
 
   test('camera laboratory tabs support arrow, Home, End, and a focusable panel', async ({ page }) => {
-    await page.goto('/#technical-lab');
+    await page.goto('/?app=camera-lab');
     const intrinsics = page.getByRole('tab', { name: 'Intrinsics' });
     await intrinsics.focus();
     await intrinsics.press('ArrowRight');
@@ -108,10 +111,11 @@ test.describe('capability fallbacks', () => {
     await expect(page.getByText('Guided, low-motion rendering')).toBeAttached();
     await page.getByRole('button', { name: 'Guided' }).click();
     await expect(page.locator('.site-shell')).toHaveAttribute('data-motion', 'full');
+    await expect(page.locator('.optical-world')).toHaveCount(0);
+    await expect(page.locator('video')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Open 3D World' }).click();
     await expect(page.locator('.optical-world')).toBeAttached();
     await expect(page.locator('.optical-world-canvas canvas')).toHaveCount(1);
-    await expect(page.locator('video')).toHaveCount(1);
-    await expect(page.locator('video')).toHaveAttribute('preload', 'none');
   });
 
   test('WebGL failure retains the static guide and portfolio record', async ({ page }) => {
@@ -153,7 +157,7 @@ test.describe('capability fallbacks', () => {
     const explore = page.locator('.spatial-launch-desktop');
     await expect(explore).toHaveAttribute('href', '#world');
     await explore.click();
-    await expect(page).toHaveURL(/#world$/);
+    await expect(page).toHaveURL(/\?app=world-3d$/);
     await expect(page.locator('.optical-world')).toBeAttached();
     await page.getByRole('button', { name: 'Enter Explore' }).click();
     await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'visitor');
@@ -164,12 +168,14 @@ test.describe('capability fallbacks', () => {
     const heading = await page.getByRole('heading', { name: 'Explore the shared optical test bench' }).boundingBox();
     await page.mouse.move(heading!.x + 5, heading!.y + 5); await page.mouse.down(); await page.mouse.move(heading!.x + 30, heading!.y + 5); await page.mouse.up();
     await expect(page.locator('.optical-world')).toHaveAttribute('data-world-rotation', before ?? '0');
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.keyboard.press('Escape');
     await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'story');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.optical-world')).toHaveCount(0);
   });
 
   test('Quick Scan synchronously releases Explore before the optional world unmounts', async ({ page }) => {
-    await page.goto('/#world');
+    await page.goto('/?app=world-3d');
     await expect(page.locator('.optical-world')).toBeAttached();
     await page.getByRole('button', { name: 'Enter Explore' }).click();
     await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'visitor');
@@ -189,7 +195,7 @@ test.describe('capability fallbacks', () => {
     const explore = dialog.getByRole('link', { name: 'Explore World' });
     await expect(explore).toHaveAttribute('href', '#world');
     await explore.click();
-    await expect(page).toHaveURL(/#world$/);
+    await expect(page).toHaveURL(/\?app=world-3d$/);
     await expect(dialog).toBeHidden();
     await expect(page.locator('.optical-world')).toBeAttached();
   });
@@ -216,5 +222,6 @@ test('AI Explore command transfers the shared world to visitor ownership', async
   const dialog = page.getByRole('dialog', { name: 'Ask this portfolio' });
   await dialog.getByRole('textbox', { name: 'Question or page command' }).fill('Open Explore World');
   await dialog.getByRole('button', { name: 'Send' }).click();
+  await expect(page).toHaveURL(/\?app=world-3d$/);
   await expect(page.locator('.optical-world')).toHaveAttribute('data-control-owner', 'visitor');
 });

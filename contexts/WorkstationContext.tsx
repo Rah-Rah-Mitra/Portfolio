@@ -80,9 +80,14 @@ export const WorkstationProvider: React.FC<{
 
   useEffect(() => {
     const root = document.documentElement;
+    if (enabled && enhanced) root.dataset.workstation = 'enabled';
+    else delete root.dataset.workstation;
     if (enabled && enhanced && state.activeAppId !== 'home') root.dataset.workstationActive = state.activeAppId;
     else delete root.dataset.workstationActive;
-    return () => { delete root.dataset.workstationActive; };
+    return () => {
+      delete root.dataset.workstation;
+      delete root.dataset.workstationActive;
+    };
   }, [enabled, enhanced, state.activeAppId]);
 
   const openApp = useCallback((appId: DesktopAppId, source: 'rail' | 'link' | 'ai' | 'history' = 'link') => {
@@ -104,7 +109,7 @@ export const WorkstationProvider: React.FC<{
 
   const snapApp = useCallback((appId: DesktopAppId, snap: Exclude<WindowSnapState, 'floating'>) => {
     if (!enabled) return;
-    const bounds = resolveSnapBounds(snap, { width: window.innerWidth, height: window.innerHeight, taskbarHeight: 76 });
+    const bounds = resolveSnapBounds(snap, { width: window.innerWidth, height: window.innerHeight, taskbarHeight: 96, topBarHeight: 76 });
     setState((current) => ({
       ...current,
       boundsByApp: { ...current.boundsByApp, [appId]: bounds },
@@ -114,7 +119,7 @@ export const WorkstationProvider: React.FC<{
 
   const moveApp = useCallback((appId: DesktopAppId, bounds: WindowBounds) => {
     if (!enabled) return;
-    const clamped = clampWindowBounds(bounds, { width: window.innerWidth, height: window.innerHeight, taskbarHeight: 76 });
+    const clamped = clampWindowBounds(bounds, { width: window.innerWidth, height: window.innerHeight, taskbarHeight: 96, topBarHeight: 76 });
     setState((current) => ({
       ...current,
       boundsByApp: { ...current.boundsByApp, [appId]: clamped },
@@ -125,7 +130,10 @@ export const WorkstationProvider: React.FC<{
   useEffect(() => {
     if (!enabled || state.activeAppId === 'home') return undefined;
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') minimizeApp(state.activeAppId);
+      if (event.key !== 'Escape') return;
+      const visitorOwnedControl = document.querySelector('.workstation-window [data-control-owner="visitor"]');
+      if (visitorOwnedControl) return;
+      minimizeApp(state.activeAppId);
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);

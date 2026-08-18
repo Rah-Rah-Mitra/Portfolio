@@ -14,6 +14,7 @@ const canonicalProjectIds = new Set([
 ]);
 const canonicalExperienceIds = new Set(['abbott-internship', 'nus-education', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
 const canonicalChapterIds = new Set(['home', 'work', 'experience', 'all-work', 'technical-lab', 'domains', 'proof', 'resumes', 'contact']);
+const canonicalDesktopAppIds = new Set(['home', 'selected-work', 'experience', 'project-archive', 'systems-lab', 'camera-lab', 'world-3d', 'capabilities', 'proof-vault', 'resumes-contact']);
 
 const getGeminiModel = () => process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 const getGeminiApiKey = () => process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -31,6 +32,7 @@ export const sanitizeCommands = (commands, pageState = {}) => {
   const projectIds = new Set(Array.isArray(pageState.projects) ? pageState.projects.map((project) => project?.id).filter((id) => canonicalProjectIds.has(id)) : []);
   const experienceIds = new Set(Array.isArray(pageState.experience) ? pageState.experience.map((record) => record?.id).filter((id) => canonicalExperienceIds.has(id)) : []);
   const chapterIds = new Set(Array.isArray(pageState.chapters) ? pageState.chapters.filter((id) => typeof id === 'string' && canonicalChapterIds.has(id)) : []);
+  const desktopAppIds = new Set(Array.isArray(pageState.apps) ? pageState.apps.filter((id) => typeof id === 'string' && canonicalDesktopAppIds.has(id)) : []);
   const sanitized = [];
   for (const command of commands.slice(0, 6)) {
     if (!command || typeof command !== 'object' || typeof command.type !== 'string') continue;
@@ -39,6 +41,8 @@ export const sanitizeCommands = (commands, pageState = {}) => {
     if (command.type === 'openTechnicalLab' && (command.mode === undefined || labModes.has(command.mode))) sanitized.push(command.mode ? { type: command.type, mode: command.mode } : { type: command.type });
     if (command.type === 'focusGuideChapter' && chapterIds.has(command.chapterId)) sanitized.push({ type: command.type, chapterId: command.chapterId });
     if (command.type === 'enterExploreMode' && sceneIds.has(command.sceneId)) sanitized.push({ type: command.type, sceneId: command.sceneId });
+    if (command.type === 'openDesktopApp' && desktopAppIds.has(command.appId)) sanitized.push({ type: command.type, appId: command.appId });
+    if (command.type === 'minimizeDesktopApp' && desktopAppIds.has(command.appId)) sanitized.push({ type: command.type, appId: command.appId });
     if (command.type === 'setQuickScan' && typeof command.enabled === 'boolean') sanitized.push({ type: command.type, enabled: command.enabled });
   }
   return sanitized;
@@ -124,6 +128,8 @@ Allowed commands:
 - {"type":"openTechnicalLab","mode":"optional intrinsics|extrinsics|optics|stereo"}
 - {"type":"focusGuideChapter","chapterId":"a chapter id from page state"}
 - {"type":"enterExploreMode","sceneId":"camera-laboratory"}
+- {"type":"openDesktopApp","appId":"a workstation app id from page state"}
+- {"type":"minimizeDesktopApp","appId":"a workstation app id from page state"}
 - {"type":"setQuickScan","enabled":true|false}
 Never return JavaScript, CSS, selectors, unlisted URLs, or arbitrary commands.
 

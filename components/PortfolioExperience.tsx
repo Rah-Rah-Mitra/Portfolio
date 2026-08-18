@@ -127,7 +127,8 @@ const PortfolioHero: React.FC = () => {
     update(); query.addEventListener('change', update);
     return () => query.removeEventListener('change', update);
   }, []);
-  const mediaPolicy = resolveMediaPolicy({ experience: policy, mediaEnabled: enhancements.mediaEnabled, motionPaused: enhancements.motionPaused, visible: true, saveData: capabilities?.saveData });
+  const ownsMediaFocus = !workstation?.enabled || workstation.state.focusedAppId === 'home';
+  const mediaPolicy = resolveMediaPolicy({ experience: policy, mediaEnabled: enhancements.mediaEnabled, motionPaused: enhancements.motionPaused, visible: ownsMediaFocus, saveData: capabilities?.saveData });
   return (
     <section id="home" className="portfolio-hero" aria-labelledby="portfolio-title">
       <div className="hero-positioning">
@@ -435,7 +436,10 @@ const SystemsLabApplication: React.FC<{ enhanced: boolean }> = ({ enhanced }) =>
 
 const PortfolioExperience: React.FC = () => {
   const { policy } = useExperienceMode();
+  const workstation = useOptionalWorkstation();
   const heavyWorld = policy.allowHeavyAssets && policy.mode === 'guided' && !policy.lowMotion;
+  const heavyAppIsFocused = (appId: 'systems-lab' | 'camera-lab' | 'world-3d') => heavyWorld
+    && (!workstation?.enabled || (workstation.enhanced && workstation.state.focusedAppId === appId));
   return <div className="portfolio-field-test">
     <a className="skip-link" href="#main-content">Skip to portfolio evidence</a>
     <PortfolioHeader />
@@ -446,13 +450,13 @@ const PortfolioExperience: React.FC = () => {
       <WorkstationAppSurface appId="experience"><ExperienceSection /></WorkstationAppSurface>
       <WorkstationAppSurface appId="project-archive"><AllProjectsSection /></WorkstationAppSurface>
       <WorkstationAppSurface appId="systems-lab">
-        <SystemsLabApplication enhanced={heavyWorld} />
+        <SystemsLabApplication enhanced={heavyAppIsFocused('systems-lab')} />
       </WorkstationAppSurface>
-      <WorkstationAppSurface appId="camera-lab"><MechanicalExhibitViewport assetId="optical-rail" enhanced={heavyWorld} /><TechnicalLabSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="camera-lab"><MechanicalExhibitViewport assetId="optical-rail" enhanced={heavyAppIsFocused('camera-lab')} /><TechnicalLabSection /></WorkstationAppSurface>
       <WorkstationAppSurface appId="world-3d">
         <section id="world" className="portfolio-world-mount" aria-labelledby="world-title">
           <header><h2 id="world-title">Explore the shared optical test bench</h2><p>The same world supports the guided story and local inspection. Scroll stays native; Explore temporarily hands this scene’s camera to you.</p></header>
-          {heavyWorld ? <Suspense fallback={<p role="status">Preparing the optional optical bench…</p>}><OpticalBenchWorld /></Suspense> : <MechanicalExhibitViewport assetId="optical-rail" enhanced={false} />}
+          {heavyAppIsFocused('world-3d') ? <Suspense fallback={<p role="status">Preparing the optional optical bench…</p>}><OpticalBenchWorld /></Suspense> : <MechanicalExhibitViewport assetId="optical-rail" enhanced={false} />}
         </section>
       </WorkstationAppSurface>
       <WorkstationAppSurface appId="capabilities"><CapabilitiesSection /></WorkstationAppSurface>

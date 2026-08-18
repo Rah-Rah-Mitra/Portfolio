@@ -1,44 +1,51 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { DesktopAppId, WindowBounds, WindowSnapState, WorkstationSessionState } from '../types';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import type { DesktopAppId, DesktopToolAppId, WindowBounds, WindowSnapState, WorkstationSessionState } from '../types';
 import {
-  createWorkstationState,
   clampWindowBounds,
+  createWorkstationState,
   desktopAppFromSearch,
+  focusDesktopApp as reduceFocusDesktopApp,
   minimizeDesktopApp as reduceMinimizeDesktopApp,
   openDesktopApp as reduceOpenDesktopApp,
+  parseWorkstationSession,
+  reconcileWindowBounds,
+  resolveCascadeBounds,
   resolveSnapBounds,
+  showWorkstationDesktop as reduceShowWorkstationDesktop,
   withDesktopApp,
 } from '../lib/workstation';
 
-const SESSION_KEY = 'portfolio-workstation-session-v1';
+const SESSION_KEY = 'portfolio-workstation-session-v2';
+const LEGACY_SESSION_KEY = 'portfolio-workstation-session-v1';
+const COMPACT_QUERY = '(max-width: 920px)';
+
+type NavigationSource = 'rail' | 'link' | 'ai' | 'history';
 
 interface WorkstationContextValue {
   enabled: boolean;
   enhanced: boolean;
+  isCompact: boolean;
   state: WorkstationSessionState;
-  openApp: (appId: DesktopAppId, source?: 'rail' | 'link' | 'ai' | 'history') => void;
+  openApp: (appId: DesktopAppId, source?: NavigationSource) => void;
+  focusApp: (appId: DesktopToolAppId, historyMode?: 'replace' | 'push') => void;
   minimizeApp: (appId: DesktopAppId) => void;
-  snapApp: (appId: DesktopAppId, snap: Exclude<WindowSnapState, 'floating'>) => void;
-  moveApp: (appId: DesktopAppId, bounds: WindowBounds) => void;
+  showDesktop: (source?: NavigationSource) => void;
+  snapApp: (appId: DesktopToolAppId, snap: Exclude<WindowSnapState, 'floating'>) => void;
+  moveApp: (appId: DesktopToolAppId, bounds: WindowBounds) => void;
 }
 
 const WorkstationContext = createContext<WorkstationContextValue | null>(null);
 
+const currentViewport = () => ({
+  width: window.innerWidth,
+  height: window.innerHeight,
+  taskbarHeight: 96,
+  topBarHeight: 76,
+});
+
 const safeStoredState = (): WorkstationSessionState => {
   if (typeof window === 'undefined') return createWorkstationState();
-  try {
-    const parsed = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? 'null') as Partial<WorkstationSessionState> | null;
-    if (!parsed || typeof parsed !== 'object') return createWorkstationState();
-    const baseline = createWorkstationState();
-    return {
-      ...baseline,
-      minimizedAppIds: Array.isArray(parsed.minimizedAppIds) ? parsed.minimizedAppIds : [],
-      boundsByApp: parsed.boundsByApp && typeof parsed.boundsByApp === 'object' ? parsed.boundsByApp : {},
-      snapByApp: parsed.snapByApp && typeof parsed.snapByApp === 'object' ? parsed.snapByApp : {},
-    };
-  } catch {
-    return createWorkstationState();
-  }
+  return parseWorkstationSession(sessionStorage.getItem(SESSION_KEY), sessionStorage.getItem(LEGACY_SESSION_KEY));
 };
 
 export const useWorkstation = () => {
@@ -49,96 +56,167 @@ export const useWorkstation = () => {
 
 export const useOptionalWorkstation = () => useContext(WorkstationContext);
 
-export const WorkstationProvider: React.FC<{
-  enabled: boolean;
-  children: React.ReactNode;
-}> = ({ enabled, children }) => {
+export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.ReactNode }> = ({ enabled, children }) => {
   const [state, setState] = useState<WorkstationSessionState>(createWorkstationState);
+  const stateRef = useRef(state);
   const [enhanced, setEnhanced] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
+
+  const commitState = useCallback((next: WorkstationSessionState) => {
+    stateRef.current = next;
+    setState(next);
+  }, []);
+
+  const writeRoute = useCallback((appId: DesktopAppId, mode: 'push' | 'replace') => {
+    const url = withDesktopApp(window.location.href, appId);
+    const nextHistory = { ...window.history.state, workstationApp: appId };
+    if (mode === 'push') window.history.pushState(nextHistory, '', url);
+    else window.history.replaceState(nextHistory, '', url);
+  }, []);
 
   useEffect(() => {
     setEnhanced(true);
     if (!enabled) {
-      setState(createWorkstationState());
+      commitState(createWorkstationState());
       return undefined;
     }
     const stored = safeStoredState();
-    const routedApp = desktopAppFromSearch(window.location.search);
-    setState(routedApp ? reduceOpenDesktopApp(stored, routedApp) : stored);
+    const routedApp = desktopAppFromSearch(window.location.search) ?? 'home';
+    const hydrated = routedApp === 'home'
+      ? reduceShowWorkstationDesktop(stored)
+      : reduceOpenDesktopApp(stored, routedApp, stored.boundsByApp[routedApp] ?? resolveCascadeBounds(stored.openAppIds.length, currentViewport()));
+    commitState(hydrated);
     const synchronizeHistory = () => {
       const appId = desktopAppFromSearch(window.location.search) ?? 'home';
-      setState((current) => reduceOpenDesktopApp(current, appId));
+      const current = stateRef.current;
+      commitState(appId === 'home'
+        ? reduceShowWorkstationDesktop(current)
+        : reduceOpenDesktopApp(current, appId, current.boundsByApp[appId] ?? resolveCascadeBounds(current.openAppIds.length, currentViewport())));
     };
     window.addEventListener('popstate', synchronizeHistory);
     return () => window.removeEventListener('popstate', synchronizeHistory);
-  }, [enabled]);
+  }, [commitState, enabled]);
 
   useEffect(() => {
-    if (!enabled || !enhanced) return;
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+    if (typeof window === 'undefined') return undefined;
+    if (typeof window.matchMedia !== 'function') return undefined;
+    const query = window.matchMedia(COMPACT_QUERY);
+    const update = () => setIsCompact(query.matches);
+    update();
+    query.addEventListener?.('change', update);
+    return () => query.removeEventListener?.('change', update);
+  }, []);
+
+  useEffect(() => {
+    if (enabled && enhanced) sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
   }, [enabled, enhanced, state]);
 
   useEffect(() => {
     const root = document.documentElement;
     if (enabled && enhanced) root.dataset.workstation = 'enabled';
     else delete root.dataset.workstation;
-    if (enabled && enhanced && state.activeAppId !== 'home') root.dataset.workstationActive = state.activeAppId;
+    if (enabled && enhanced && state.focusedAppId !== 'home') root.dataset.workstationActive = state.focusedAppId;
     else delete root.dataset.workstationActive;
     return () => {
       delete root.dataset.workstation;
       delete root.dataset.workstationActive;
     };
-  }, [enabled, enhanced, state.activeAppId]);
+  }, [enabled, enhanced, state.focusedAppId]);
 
-  const openApp = useCallback((appId: DesktopAppId, source: 'rail' | 'link' | 'ai' | 'history' = 'link') => {
+  const showDesktop = useCallback((source: NavigationSource = 'link') => {
     if (!enabled) return;
-    setState((current) => reduceOpenDesktopApp(current, appId));
-    if (source !== 'history') {
-      window.history.pushState({ ...window.history.state, workstationApp: appId }, '', withDesktopApp(window.location.href, appId));
+    const current = stateRef.current;
+    commitState(reduceShowWorkstationDesktop(current));
+    if (source !== 'history' && current.focusedAppId !== 'home') writeRoute('home', 'push');
+    window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'DESKTOP_SHOWN' } }));
+  }, [commitState, enabled, writeRoute]);
+
+  const openApp = useCallback((appId: DesktopAppId, source: NavigationSource = 'link') => {
+    if (!enabled) return;
+    if (appId === 'home') {
+      showDesktop(source);
+      return;
     }
+    const current = stateRef.current;
+    const initialBounds = current.boundsByApp[appId] ?? resolveCascadeBounds(current.openAppIds.length, currentViewport());
+    const next = reduceOpenDesktopApp(current, appId, initialBounds);
+    commitState(next);
+    if (source !== 'history' && current.focusedAppId !== appId) writeRoute(appId, 'push');
     window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'APP_OPENED', appId, source } }));
-  }, [enabled]);
+  }, [commitState, enabled, showDesktop, writeRoute]);
+
+  const focusApp = useCallback((appId: DesktopToolAppId, historyMode: 'replace' | 'push' = 'replace') => {
+    if (!enabled) return;
+    const current = stateRef.current;
+    const next = reduceFocusDesktopApp(current, appId);
+    if (next === current) return;
+    commitState(next);
+    writeRoute(appId, historyMode);
+    window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'APP_FOCUSED', appId } }));
+  }, [commitState, enabled, writeRoute]);
 
   const minimizeApp = useCallback((appId: DesktopAppId) => {
-    if (!enabled) return;
-    setState((current) => reduceMinimizeDesktopApp(current, appId));
-    window.history.pushState({ ...window.history.state, workstationApp: 'home' }, '', withDesktopApp(window.location.href, 'home'));
+    if (!enabled || appId === 'home') return;
+    const current = stateRef.current;
+    const next = reduceMinimizeDesktopApp(current, appId);
+    if (next === current) return;
+    commitState(next);
+    if (current.focusedAppId === appId) writeRoute(next.focusedAppId, 'push');
     window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'APP_MINIMIZED', appId } }));
     window.setTimeout(() => window.dispatchEvent(new CustomEvent('portfolio:workstation-focus', { detail: { appId } })), 0);
-  }, [enabled]);
+  }, [commitState, enabled, writeRoute]);
 
-  const snapApp = useCallback((appId: DesktopAppId, snap: Exclude<WindowSnapState, 'floating'>) => {
+  const snapApp = useCallback((appId: DesktopToolAppId, snap: Exclude<WindowSnapState, 'floating'>) => {
     if (!enabled) return;
-    const bounds = resolveSnapBounds(snap, { width: window.innerWidth, height: window.innerHeight, taskbarHeight: 96, topBarHeight: 76 });
-    setState((current) => ({
-      ...current,
-      boundsByApp: { ...current.boundsByApp, [appId]: bounds },
-      snapByApp: { ...current.snapByApp, [appId]: snap },
-    }));
-  }, [enabled]);
+    const focused = reduceFocusDesktopApp(stateRef.current, appId);
+    commitState({
+      ...focused,
+      boundsByApp: { ...focused.boundsByApp, [appId]: resolveSnapBounds(snap, currentViewport()) },
+      snapByApp: { ...focused.snapByApp, [appId]: snap },
+    });
+    writeRoute(appId, 'replace');
+  }, [commitState, enabled, writeRoute]);
 
-  const moveApp = useCallback((appId: DesktopAppId, bounds: WindowBounds) => {
+  const moveApp = useCallback((appId: DesktopToolAppId, bounds: WindowBounds) => {
     if (!enabled) return;
-    const clamped = clampWindowBounds(bounds, { width: window.innerWidth, height: window.innerHeight, taskbarHeight: 96, topBarHeight: 76 });
-    setState((current) => ({
-      ...current,
-      boundsByApp: { ...current.boundsByApp, [appId]: clamped },
-      snapByApp: { ...current.snapByApp, [appId]: 'floating' },
-    }));
-  }, [enabled]);
+    const focused = reduceFocusDesktopApp(stateRef.current, appId);
+    commitState({
+      ...focused,
+      boundsByApp: { ...focused.boundsByApp, [appId]: clampWindowBounds(bounds, currentViewport()) },
+      snapByApp: { ...focused.snapByApp, [appId]: 'floating' },
+    });
+    writeRoute(appId, 'replace');
+  }, [commitState, enabled, writeRoute]);
 
   useEffect(() => {
-    if (!enabled || state.activeAppId === 'home') return undefined;
+    if (!enabled) return undefined;
+    const reconcile = () => {
+      if (window.innerWidth < 921) return;
+      commitState(reconcileWindowBounds(stateRef.current, currentViewport()));
+    };
+    window.addEventListener('resize', reconcile);
+    window.addEventListener('orientationchange', reconcile);
+    return () => {
+      window.removeEventListener('resize', reconcile);
+      window.removeEventListener('orientationchange', reconcile);
+    };
+  }, [commitState, enabled]);
+
+  useEffect(() => {
+    if (!enabled || state.focusedAppId === 'home') return undefined;
+    const focusedAppId = state.focusedAppId;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      const visitorOwnedControl = document.querySelector('.workstation-window [data-control-owner="visitor"]');
-      if (visitorOwnedControl) return;
-      minimizeApp(state.activeAppId);
+      if (document.querySelector(`[data-app-id="${focusedAppId}"] [data-control-owner="visitor"]`)) return;
+      minimizeApp(focusedAppId);
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [enabled, minimizeApp, state.activeAppId]);
+  }, [enabled, minimizeApp, state.focusedAppId]);
 
-  const value = useMemo<WorkstationContextValue>(() => ({ enabled, enhanced, state, openApp, minimizeApp, snapApp, moveApp }), [enabled, enhanced, state, openApp, minimizeApp, snapApp, moveApp]);
+  const value = useMemo<WorkstationContextValue>(() => ({
+    enabled, enhanced, isCompact, state, openApp, focusApp, minimizeApp, showDesktop, snapApp, moveApp,
+  }), [enabled, enhanced, focusApp, isCompact, minimizeApp, moveApp, openApp, showDesktop, snapApp, state]);
+
   return <WorkstationContext.Provider value={value}>{children}</WorkstationContext.Provider>;
 };

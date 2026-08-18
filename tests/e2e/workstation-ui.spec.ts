@@ -27,26 +27,41 @@ test('the maximized Dossier keeps recruiter evidence and resume inside the mobil
   await expect(rail).toBeVisible();
 });
 
-test('focused desktop apps stay inside the workstation work area', async ({ page }) => {
+test('desktop tools open as a bounded smart cascade and background focus only replaces the route', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Open Camera Lab' }).click();
+  await page.getByRole('button', { name: 'Open Systems Lab' }).click();
+  await page.getByRole('button', { name: 'Open Experience' }).click();
 
   const geometry = await page.evaluate(() => {
     const header = document.querySelector('.portfolio-header')?.getBoundingClientRect();
     const rail = document.querySelector('.workstation-rail')?.getBoundingClientRect();
-    const windowRect = document.querySelector('.workstation-window')?.getBoundingClientRect();
+    const windows = [...document.querySelectorAll<HTMLElement>('.workstation-window:not([hidden])')].map((element) => {
+      const rect = element.getBoundingClientRect();
+      return { appId: element.dataset.appId, top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, width: rect.width };
+    });
     return {
       headerBottom: header?.bottom ?? 0,
       railTop: rail?.top ?? window.innerHeight,
-      window: windowRect ? { top: windowRect.top, bottom: windowRect.bottom, width: windowRect.width } : null,
+      windows,
     };
   });
 
-  expect(geometry.window).not.toBeNull();
-  expect(geometry.window!.top).toBeGreaterThanOrEqual(geometry.headerBottom);
-  expect(geometry.window!.bottom).toBeLessThanOrEqual(geometry.railTop);
-  expect(geometry.window!.width).toBeGreaterThanOrEqual(1040);
+  expect(geometry.windows).toHaveLength(3);
+  expect(new Set(geometry.windows.map((entry) => `${entry.left}:${entry.top}`)).size).toBe(3);
+  for (const appWindow of geometry.windows) {
+    expect(appWindow.top).toBeGreaterThanOrEqual(geometry.headerBottom);
+    expect(appWindow.bottom).toBeLessThanOrEqual(geometry.railTop);
+    expect(appWindow.left).toBeGreaterThanOrEqual(0);
+    expect(appWindow.right).toBeLessThanOrEqual(1440);
+    expect(appWindow.width).toBeGreaterThanOrEqual(720);
+    expect(appWindow.width).toBeLessThanOrEqual(980);
+  }
+
+  await page.getByRole('dialog', { name: 'Camera Lab' }).click({ position: { x: 12, y: 100 } });
+  await expect(page).toHaveURL(/\?app=camera-lab/);
+  await expect(page.getByRole('dialog', { name: 'Camera Lab' })).toHaveAttribute('data-window-state', 'focused');
 });
 
 test('mobile applications are full-screen sheets without precision window controls', async ({ page }) => {
@@ -64,7 +79,7 @@ test('mobile applications are full-screen sheets without precision window contro
   const geometry = await page.evaluate(() => {
     const header = document.querySelector('.portfolio-header')?.getBoundingClientRect();
     const rail = document.querySelector('.workstation-rail')?.getBoundingClientRect();
-    const app = document.querySelector('.workstation-window')?.getBoundingClientRect();
+    const app = document.querySelector('.workstation-window:not([hidden])')?.getBoundingClientRect();
     return {
       headerBottom: header?.bottom ?? 0,
       railTop: rail?.top ?? window.innerHeight,
@@ -77,6 +92,61 @@ test('mobile applications are full-screen sheets without precision window contro
   expect(geometry.app!.bottom).toBeCloseTo(geometry.railTop, 0);
   expect(geometry.app!.left).toBeCloseTo(0, 0);
   expect(geometry.app!.right).toBeCloseTo(geometry.clientWidth, 0);
+});
+
+test('mobile preserves the desktop stack while exposing one full-screen sheet', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open Camera Lab' }).click();
+  await page.getByRole('button', { name: 'Open Systems Lab' }).click();
+  await page.getByRole('button', { name: 'Open Experience' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(3);
+  const desktopBounds = await page.locator('.workstation-window:not([hidden])').evaluateAll((elements) => elements.map((element) => {
+    const appWindow = element as HTMLElement;
+    return { appId: appWindow.dataset.appId, left: appWindow.style.left, top: appWindow.style.top, width: appWindow.style.width, height: appWindow.style.height };
+  }));
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await expect(page.getByRole('dialog', { name: 'Experience' })).toBeVisible();
+  await page.getByRole('button', { name: 'Open Camera Lab' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await expect(page.getByRole('dialog', { name: 'Camera Lab' })).toBeVisible();
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(page.getByRole('dialog')).toHaveCount(3);
+  const restoredBounds = await page.locator('.workstation-window:not([hidden])').evaluateAll((elements) => elements.map((element) => {
+    const appWindow = element as HTMLElement;
+    return { appId: appWindow.dataset.appId, left: appWindow.style.left, top: appWindow.style.top, width: appWindow.style.width, height: appWindow.style.height };
+  }));
+  expect(restoredBounds).toEqual(desktopBounds);
+});
+
+test('Show Desktop preserves Home scroll and the open stack', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo(0, 520));
+  const before = await page.evaluate(() => window.scrollY);
+  await page.getByRole('button', { name: 'Open Camera Lab' }).click();
+  await page.getByRole('button', { name: 'Open Systems Lab' }).click();
+  await page.getByRole('button', { name: 'Open Home / Dossier' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Home / Dossier application' })).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+  await expect(page.locator('.workstation-module[data-app-id="camera-lab"]')).toHaveAttribute('data-state', 'minimized');
+  await expect(page.locator('.workstation-module[data-app-id="systems-lab"]')).toHaveAttribute('data-state', 'minimized');
+});
+
+test('only the focused heavy application owns a live WebGL surface', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open Systems Lab' }).click();
+  await expect(page.getByRole('dialog', { name: 'Systems Lab' }).locator('canvas')).toHaveCount(1, { timeout: 15000 });
+  await page.getByRole('button', { name: 'Open Camera Lab' }).click();
+  await expect(page.getByRole('dialog', { name: 'Camera Lab' }).locator('canvas')).toHaveCount(1, { timeout: 15000 });
+  await expect(page.getByRole('dialog', { name: 'Systems Lab' }).locator('canvas')).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Systems Lab' })).toContainText('SUSPENDED / POSTER');
+  await expect(page.getByRole('dialog').locator('canvas')).toHaveCount(1);
 });
 
 test('AI opens as the right copilot while FX remains the left utility tray', async ({ page }) => {

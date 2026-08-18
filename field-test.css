@@ -2123,12 +2123,18 @@ html[data-workstation="enabled"] .portfolio-header::after { right: .5rem; }
 
 .workstation-module:hover { border-color: var(--workstation-carbon); transform: translateY(-.22rem); }
 .workstation-module[data-state="minimized"] { background: linear-gradient(145deg, #f2f5f3, #bfc8c4); color: #46524e; }
-.workstation-module[data-state="active"] {
+.workstation-module[data-state="focused"] {
   z-index: 2;
   border-color: var(--workstation-carbon);
   background: white;
   box-shadow: inset 0 0 0 2px #a8d8d2, 0 -.34rem 0 var(--workstation-carbon);
   transform: translateY(-.35rem);
+}
+
+.workstation-module[data-state="open-background"] {
+  border-color: #65716d;
+  background: linear-gradient(145deg, #f7faf8, #d8dfdc);
+  box-shadow: inset 0 0 0 1px #b9cbc6, 0 -.16rem 0 #697570;
 }
 
 .workstation-module-socket {
@@ -2148,7 +2154,8 @@ html[data-workstation="enabled"] .portfolio-header::after { right: .5rem; }
 .workstation-module-compact { display: none; font: 650 .55rem/1 "IBM Plex Mono", monospace; letter-spacing: .02em; }
 .workstation-status-lamp { width: .38rem; height: .38rem; align-self: end; border: 1px solid #66716d; border-radius: 50%; background: #818b87; }
 .workstation-module[data-state="minimized"] .workstation-status-lamp { background: #d18a32; }
-.workstation-module[data-state="active"] .workstation-status-lamp { background: #1bc1b1; box-shadow: 0 0 .35rem rgb(27 193 177 / 55%); }
+.workstation-module[data-state="open-background"] .workstation-status-lamp { background: #64a49d; }
+.workstation-module[data-state="focused"] .workstation-status-lamp { background: #1bc1b1; box-shadow: 0 0 .35rem rgb(27 193 177 / 55%); }
 
 .workstation-rail-readout {
   display: grid;
@@ -2175,6 +2182,22 @@ html[data-workstation="enabled"] .portfolio-header::after { right: .5rem; }
   background: var(--field-paper);
   box-shadow: .7rem 1.1rem 3.5rem rgb(17 24 22 / 24%);
   animation: workstation-latch 260ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.workstation-window[hidden] { display: none; }
+
+.workstation-window[data-window-state="open-background"] {
+  border-color: #67736f;
+  box-shadow: .35rem .65rem 1.8rem rgb(17 24 22 / 16%);
+}
+
+.workstation-window[data-window-state="open-background"] .workstation-titlebar {
+  background: linear-gradient(180deg, #f4f7f5 0 22%, #cbd3cf 22% 100%);
+  color: #46514e;
+}
+
+.workstation-window[data-window-state="focused"] {
+  box-shadow: inset 0 0 0 2px rgb(102 215 204 / 32%), .8rem 1.2rem 3.6rem rgb(17 24 22 / 28%);
 }
 
 @keyframes workstation-latch {

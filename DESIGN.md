@@ -145,7 +145,7 @@ Quick Scan is the canonical light, static-first route. It renders the same recru
 **Key Characteristics:**
 
 - White laboratory field with near-black editorial typography and hairline ledger rules.
-- A graphite-and-cool-metal workstation chassis with socketed rendered application icons and explicit active/minimized lamps.
+- A graphite-and-cool-metal workstation chassis with socketed rendered application icons and explicit focused/open-background/minimized/idle states.
 - Real experience, projects, outcomes, proof, and résumé links dominate every section.
 - A persistent desktop evidence-and-guide split that collapses to an evidence-first mobile column.
 - Archivo for claims and reading; IBM Plex Mono for methods, dates, counts, readouts, and state.
@@ -214,7 +214,7 @@ The palette is almost entirely paper, graphite, and cool rules; teal communicate
 
 The desktop shell is capped at 92rem and divides the compact hero into a 65% evidence column and 35% supporting calibration stage, separated by a responsive 2–5rem gap. The 4.75rem sticky menu bar and 2.7rem Dossier state bar establish the maximized Home application without displacing evidence from the first view. A compact Current proof trail names Abbott, Hybrid Flow Shop, Churp, and OnTheSpectrum before the primary actions so a recruiter can recover recent experience and concrete systems without waiting for animation. The continuous fallback order is position → selected work → experience → all projects → technical lab → shared world → capabilities → proof → résumés → contact.
 
-The application rail is 5.45rem on desktop and 4.35rem on touch layouts. Desktop focused windows default to a broad 1120px work surface, remain bounded below the menu bar and above the rail, and use one internal scroller. On mobile the rail hides its native scrollbar but retains horizontal touch and keyboard access; concise text labels accompany the rendered icons. Home keeps its document scroll position while a tool is focused.
+The application rail is 5.45rem on desktop and 4.35rem on touch layouts. Desktop tools launch into a deterministic smart cascade: 72vw, clamped to 720–980px wide, with 36px horizontal and 28px vertical progression inside the work area. Up to nine single-instance tool windows may remain open; z-order is explicit and only the focused window receives the strongest titlebar, border, lamp, and shadow. Each window stays bounded below the menu bar and above the rail and owns one internal scroller. Home remains mounted beneath the stack and retains its document scroll position. On mobile the rail retains horizontal touch and keyboard access while only the focused full-screen sheet is visible; the complete desktop stack and each app's bounds, scroll, and internal React state survive the breakpoint change.
 
 Sections are separated by structural top rules and generous vertical intervals of roughly 5–9rem. Headings use a wide claim/narrow context split. Selected systems use index, evidence, and optional media columns; experience and the complete project archive use conventional ledgers; proof uses a two-column ruled matrix; résumés use a four-column row. The All Projects controls become sticky below the header on wide screens, while the full archive remains visible, searchable, keyboard-steppable, and filterable.
 
@@ -288,7 +288,9 @@ The sticky header becomes the workstation menu bar in Guided mode: opaque cool m
 
 ### Workstation Shell
 
-Home / Dossier is the maximized portfolio application and exposes recruiter evidence before any tool interaction. Its status bar names the application, recruiter-evidence session, Singapore availability state, and maximized state. Ten real rendered module icons live in a socketed rail with idle, minimized, and active lamps. Only one tool window is mounted visibly at a time. Desktop titlebars provide labelled move, snap-left, snap-right, maximize, minimize, and resize operations with keyboard equivalents; mobile retains only the title and minimize action. Focus returns to the invoking rail module when a tool closes.
+Home / Dossier is the maximized portfolio application and exposes recruiter evidence before any tool interaction. Its status bar names the application, recruiter-evidence session, Singapore availability state, and maximized state. Ten real rendered module icons live in a socketed rail with idle, minimized, open-background, and focused states. On desktop, visible background windows remain labelled non-modal dialogs; pointer-down raises one without swallowing its intended control. The Home module performs Show Desktop by minimizing every tool without closing it or losing stack order. Desktop titlebars provide labelled move, snap-left, snap-right, maximize, minimize, and resize operations with keyboard equivalents; mobile retains only the title and minimize action. Minimizing focuses the next topmost visible tool or Home, and focus returns to the invoking rail module.
+
+The URL serializes only the focused application through `?app=`. Explicit rail, AI, restore, minimize, and Show Desktop navigation creates history entries; incidental window raising replaces the current route. Back and Forward focus the routed app or show the desktop without destroying the session-local open stack. Session record v2 validates all tool IDs, stack uniqueness, finite bounds, and snap values; v1 migration preserves only valid geometry and starts with no open tools.
 
 ### Selected Work and Evidence Ledgers
 
@@ -306,7 +308,7 @@ The laboratory is a bounded console with a four-column tab strip, compact instru
 
 ### Shared Optical World
 
-One lazy Three.js renderer builds the optical rail, iris, image plane, frustum, rays, calibration points, and replaceable Courier asset. Camera shots and DOM anchors live in typed manifests. ScrollTrigger supplies one clamped trigger per chapter and resolves fast travel to a direction-specific arrival state; local Explore hands the scene camera to the visitor and returns it to the authored shot within 450ms. Rendering is input/transition driven rather than an idle loop. Quick Scan, Save-Data, reduced motion without explicit opt-in, low capability, and WebGL failure omit the world chunk and retain the static optical register plus the complete semantic laboratory.
+One lazy Three.js renderer builds the optical rail, iris, image plane, frustum, rays, calibration points, and replaceable Courier asset. Camera shots and DOM anchors live in typed manifests. ScrollTrigger supplies one clamped trigger per chapter and resolves fast travel to a direction-specific arrival state; local Explore hands the scene camera to the visitor and returns it to the authored shot within 450ms. Only the focused Systems Lab, Camera Lab, or 3D World may own live WebGL. Background heavy apps preserve their semantic controls but swap their viewport to the corresponding deterministic rendered poster and an explicit suspended state; blurring 3D World unmounts its renderer and releases Explore. Home video sources detach whenever Home is not focused. Rendering is input/transition driven rather than an idle loop. Quick Scan, Save-Data, reduced motion without explicit opt-in, low capability, and WebGL failure omit the world chunk and retain the static optical register plus the complete semantic laboratory.
 
 ### Optional Tool Docks and Panels
 

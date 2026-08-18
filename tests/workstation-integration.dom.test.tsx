@@ -40,7 +40,7 @@ describe('portfolio workstation integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Selected Work' }));
     expect(screen.getByRole('dialog', { name: 'Selected Work' })).not.toBeNull();
     expect(screen.getByRole('heading', { level: 2, name: 'Selected systems and engineering work' })).not.toBeNull();
-    expect(screen.queryByRole('heading', { level: 1, name: 'Intelligent systems, made operational.' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Intelligent systems, made operational.' })).not.toBeNull();
   });
 
   it('uses the rendered optical bench instead of SVG demonstration artwork', async () => {

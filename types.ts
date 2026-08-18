@@ -176,6 +176,8 @@ export type DesktopAppId =
   | 'proof-vault'
   | 'resumes-contact';
 
+export type DesktopToolAppId = Exclude<DesktopAppId, 'home'>;
+
 export type DesktopAppKind = 'dossier' | 'evidence' | 'lab' | 'world' | 'proof';
 
 export interface DesktopAppDefinition {
@@ -201,16 +203,20 @@ export type WindowSnapState = 'floating' | 'left' | 'right' | 'maximized';
 export type WindowControlOwner = 'document' | 'app' | 'transition';
 
 export interface WorkstationSessionState {
-  activeAppId: DesktopAppId;
-  minimizedAppIds: DesktopAppId[];
-  boundsByApp: Partial<Record<DesktopAppId, WindowBounds>>;
-  snapByApp: Partial<Record<DesktopAppId, WindowSnapState>>;
+  focusedAppId: DesktopAppId;
+  openAppIds: DesktopToolAppId[];
+  minimizedAppIds: DesktopToolAppId[];
+  windowStack: DesktopToolAppId[];
+  boundsByApp: Partial<Record<DesktopToolAppId, WindowBounds>>;
+  snapByApp: Partial<Record<DesktopToolAppId, WindowSnapState>>;
   controlOwner: WindowControlOwner;
 }
 
 export type WorkstationEvent =
   | { type: 'APP_OPENED'; appId: DesktopAppId; source: 'rail' | 'link' | 'ai' | 'history' }
+  | { type: 'APP_FOCUSED'; appId: DesktopToolAppId }
   | { type: 'APP_MINIMIZED'; appId: DesktopAppId }
+  | { type: 'DESKTOP_SHOWN' }
   | { type: 'APP_SNAPPED'; appId: DesktopAppId; snap: WindowSnapState }
   | { type: 'APP_MOVED'; appId: DesktopAppId; bounds: WindowBounds }
   | { type: 'UTILITY_OPENED'; utility: 'ai' | 'fx' };

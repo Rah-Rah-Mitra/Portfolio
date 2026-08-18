@@ -6,7 +6,10 @@ import { WorkstationAppFrame, WorkstationAppSurface, WorkstationRail } from '../
 const Harness = ({ enabled = true }: { enabled?: boolean }) => (
   <WorkstationProvider enabled={enabled}>
     <WorkstationRail />
+    <WorkstationAppSurface appId="home"><h1>Recruiter evidence</h1></WorkstationAppSurface>
     <WorkstationAppFrame appId="camera-lab"><p>Camera controls</p></WorkstationAppFrame>
+    <WorkstationAppFrame appId="systems-lab"><p>Systems controls</p></WorkstationAppFrame>
+    <WorkstationAppFrame appId="experience"><p>Experience timeline</p></WorkstationAppFrame>
     <StateProbe />
   </WorkstationProvider>
 );
@@ -23,7 +26,7 @@ afterEach(() => {
 });
 
 describe('workstation shell', () => {
-  it('opens one focused application from the ten-module rail and writes shareable history', async () => {
+  it('opens multiple application windows, focuses one, and writes only the focused route', async () => {
     render(<Harness />);
     await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
     expect(screen.getAllByRole('button', { name: /Open / })).toHaveLength(10);
@@ -32,7 +35,13 @@ describe('workstation shell', () => {
     expect(window.location.search).toBe('?app=camera-lab');
     expect(screen.getByRole('dialog', { name: 'Camera Lab' })).not.toBeNull();
     expect(screen.getByText('Camera controls')).not.toBeNull();
-    expect(screen.getByTestId('workstation-state').textContent).toContain('"activeAppId":"camera-lab"');
+    fireEvent.click(screen.getByRole('button', { name: 'Open Systems Lab' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Experience' }));
+    expect(screen.getAllByRole('dialog')).toHaveLength(3);
+    expect(screen.getByTestId('workstation-state').textContent).toContain('"focusedAppId":"experience"');
+    fireEvent.pointerDown(screen.getByRole('dialog', { name: 'Camera Lab' }));
+    expect(screen.getByTestId('workstation-state').textContent).toContain('"focusedAppId":"camera-lab"');
+    expect(window.location.search).toBe('?app=camera-lab');
     expect(screen.getByRole('button', { name: 'Open Camera Lab' }).getAttribute('aria-pressed')).toBe('true');
     expect(document.documentElement.dataset.workstationActive).toBe('camera-lab');
   });
@@ -50,17 +59,33 @@ describe('workstation shell', () => {
     expect(screen.getByRole('heading', { name: 'Recruiter evidence' })).not.toBeNull();
   });
 
-  it('minimizes the active tool, restores document ownership, and returns focus to its rail module', async () => {
+  it('minimizes only the focused tool, falls back to the next window, and returns focus to its rail module', async () => {
     render(<Harness />);
     await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
     const cameraModule = screen.getByRole('button', { name: 'Open Camera Lab' });
     fireEvent.click(cameraModule);
+    fireEvent.click(screen.getByRole('button', { name: 'Open Systems Lab' }));
     fireEvent.click(screen.getByRole('button', { name: 'Minimize Camera Lab' }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Camera Lab' })).toBeNull());
-    expect(window.location.search).toBe('');
-    expect(screen.getByTestId('workstation-state').textContent).toContain('"controlOwner":"document"');
-    expect(document.documentElement.dataset.workstationActive).toBeUndefined();
+    expect(screen.getByRole('dialog', { name: 'Systems Lab' })).not.toBeNull();
+    expect(window.location.search).toBe('?app=systems-lab');
+    expect(screen.getByTestId('workstation-state').textContent).toContain('"controlOwner":"app"');
+    expect(document.documentElement.dataset.workstationActive).toBe('systems-lab');
     await waitFor(() => expect(document.activeElement).toBe(cameraModule));
+  });
+
+  it('uses Home as Show Desktop while keeping the Dossier mounted', async () => {
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Open Camera Lab' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Systems Lab' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Home / Dossier' }));
+    expect(screen.queryAllByRole('dialog')).toHaveLength(0);
+    expect(screen.getByRole('region', { name: 'Home / Dossier application' })).not.toBeNull();
+    const state = JSON.parse(screen.getByTestId('workstation-state').textContent ?? '{}');
+    expect(state.openAppIds).toEqual(['camera-lab', 'systems-lab']);
+    expect(state.minimizedAppIds).toEqual(['camera-lab', 'systems-lab']);
+    expect(state.windowStack).toEqual(['camera-lab', 'systems-lab']);
   });
 
   it('restores a deep-linked application and synchronizes browser history', async () => {
@@ -78,7 +103,7 @@ describe('workstation shell', () => {
     render(<Harness enabled={false} />);
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Workstation applications' })).toBeNull());
     expect(screen.queryByRole('dialog', { name: 'Camera Lab' })).toBeNull();
-    expect(screen.getByTestId('workstation-state').textContent).toContain('"activeAppId":"home"');
+    expect(screen.getByTestId('workstation-state').textContent).toContain('"focusedAppId":"home"');
   });
 
   it('offers direct and keyboard-equivalent move, resize, and snap controls', async () => {

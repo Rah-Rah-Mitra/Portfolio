@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import type { DesktopAppId } from '../types';
-import { workstationApps } from '../lib/workstation';
-import { clampWindowBounds, resizeWindowBounds } from '../lib/workstation';
+import type { DesktopAppId, DesktopToolAppId } from '../types';
+import { resizeWindowBounds, resolveCascadeBounds, workstationApps } from '../lib/workstation';
 import { useWorkstation } from '../contexts/WorkstationContext';
 
 export const WorkstationRail: React.FC = () => {
-  const { enabled, enhanced, state, openApp } = useWorkstation();
+  const { enabled, enhanced, state, openApp, showDesktop } = useWorkstation();
   const moduleRefs = useRef(new Map<DesktopAppId, HTMLButtonElement>());
 
   useEffect(() => {
@@ -23,8 +22,11 @@ export const WorkstationRail: React.FC = () => {
       <div className="workstation-rail-track" aria-hidden="true"><span /><i /><span /></div>
       <div className="workstation-modules">
         {workstationApps.map((app) => {
-          const active = state.activeAppId === app.id;
-          const minimized = state.minimizedAppIds.includes(app.id);
+          const focused = state.focusedAppId === app.id;
+          const minimized = app.id !== 'home' && state.minimizedAppIds.includes(app.id);
+          const open = app.id !== 'home' && state.openAppIds.includes(app.id);
+          const status = focused ? 'focused' : minimized ? 'minimized' : open ? 'open-background' : 'idle';
+          const statusLabel = focused ? 'Focused' : minimized ? 'Minimized' : open ? 'Open in background' : 'Closed';
           return (
             <button
               key={app.id}
@@ -32,47 +34,47 @@ export const WorkstationRail: React.FC = () => {
               type="button"
               className="workstation-module"
               aria-label={`Open ${app.label}`}
-              aria-pressed={active}
+              aria-pressed={focused}
               data-app-id={app.id}
-              data-state={active ? 'active' : minimized ? 'minimized' : 'idle'}
-              onClick={() => openApp(app.id, 'rail')}
+              data-state={status}
+              onClick={() => app.id === 'home' ? showDesktop('rail') : openApp(app.id, 'rail')}
             >
               <span className="workstation-module-socket" aria-hidden="true"><img src={app.iconAsset} alt="" width="48" height="48" /></span>
               <span className="workstation-module-label">{app.shortLabel}</span>
               <small className="workstation-module-compact" aria-hidden="true">{app.compactLabel}</small>
+              <span className="sr-only">Status: {statusLabel}</span>
               <i className="workstation-status-lamp" aria-hidden="true" />
             </button>
           );
         })}
       </div>
       <div className="workstation-rail-readout" aria-live="polite">
-        <span>ACTIVE BAY</span><strong>{workstationApps.find((app) => app.id === state.activeAppId)?.shortLabel}</strong>
+        <span>FOCUSED BAY</span><strong>{workstationApps.find((app) => app.id === state.focusedAppId)?.shortLabel}</strong>
       </div>
     </nav>
   );
 };
 
-export const WorkstationAppFrame: React.FC<{
-  appId: Exclude<DesktopAppId, 'home'>;
-  children: React.ReactNode;
-}> = ({ appId, children }) => {
-  const { enabled, enhanced, state, minimizeApp, snapApp, moveApp } = useWorkstation();
+export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: React.ReactNode }> = ({ appId, children }) => {
+  const { enabled, enhanced, isCompact, state, focusApp, minimizeApp, snapApp, moveApp } = useWorkstation();
   const app = useMemo(() => workstationApps.find((candidate) => candidate.id === appId)!, [appId]);
   const viewportWidth = typeof window === 'undefined' ? 1280 : window.innerWidth;
   const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
   const viewport = { width: viewportWidth, height: viewportHeight, taskbarHeight: 96, topBarHeight: 76 };
-  const workAreaHeight = viewportHeight - viewport.taskbarHeight - viewport.topBarHeight;
-  const bounds = state.boundsByApp[appId] ?? clampWindowBounds({
-    x: Math.max(24, (viewportWidth - 1120) / 2),
-    y: viewport.topBarHeight + 16,
-    width: Math.min(1120, viewportWidth - 48),
-    height: Math.min(780, workAreaHeight - 32),
-  }, viewport);
-  const style = viewportWidth >= 921 ? { left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height } : undefined;
+  const open = state.openAppIds.includes(appId);
+  const minimized = state.minimizedAppIds.includes(appId);
+  const focused = state.focusedAppId === appId;
+  const heavy = appId === 'systems-lab' || appId === 'camera-lab' || appId === 'world-3d';
+  const hidden = !open || minimized || (isCompact && !focused);
+  const bounds = state.boundsByApp[appId] ?? resolveCascadeBounds(state.openAppIds.indexOf(appId), viewport);
+  const stackIndex = Math.max(0, state.windowStack.indexOf(appId));
+  const style = viewportWidth >= 921
+    ? { left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height, zIndex: 60 + stackIndex }
+    : undefined;
   const pointerAction = useRef<null | { kind: 'move' | 'resize'; pointerId: number; x: number; y: number; bounds: typeof bounds }>(null);
 
   useEffect(() => {
-    if (!enabled || !enhanced || state.activeAppId !== appId || typeof window === 'undefined') return undefined;
+    if (!enabled || !enhanced || hidden || typeof window === 'undefined') return undefined;
     const update = (event: PointerEvent) => {
       const action = pointerAction.current;
       if (!action || event.pointerId !== action.pointerId) return;
@@ -89,13 +91,15 @@ export const WorkstationAppFrame: React.FC<{
     window.addEventListener('pointerup', finish);
     window.addEventListener('pointercancel', finish);
     return () => {
+      pointerAction.current = null;
       window.removeEventListener('pointermove', update);
       window.removeEventListener('pointerup', finish);
       window.removeEventListener('pointercancel', finish);
     };
-  }, [appId, enabled, enhanced, moveApp, state.activeAppId, viewport.height, viewport.taskbarHeight, viewport.width]);
+  }, [appId, enabled, enhanced, hidden, moveApp, viewport.height, viewport.taskbarHeight, viewport.width]);
 
   const startPointerAction = (kind: 'move' | 'resize', event: React.PointerEvent<HTMLButtonElement>) => {
+    focusApp(appId);
     event.currentTarget.setPointerCapture?.(event.pointerId);
     pointerAction.current = { kind, pointerId: event.pointerId, x: event.clientX, y: event.clientY, bounds };
   };
@@ -117,10 +121,20 @@ export const WorkstationAppFrame: React.FC<{
     event.preventDefault();
     moveApp(appId, resizeWindowBounds(bounds, offset[0], offset[1], viewport));
   };
-  if (!enabled || !enhanced || state.activeAppId !== appId) return null;
+
   const titleId = `workstation-window-${appId}-title`;
   return (
-    <section className="workstation-window" role="dialog" aria-modal="false" aria-labelledby={titleId} data-app-id={appId} style={style}>
+    <section
+      className="workstation-window"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby={titleId}
+      data-app-id={appId}
+      data-window-state={focused ? 'focused' : open ? 'open-background' : 'closed'}
+      hidden={hidden}
+      style={style}
+      onPointerDownCapture={() => { if (!focused) focusApp(appId); }}
+    >
       <header className="workstation-titlebar">
         <button type="button" className="workstation-titlebar-grip" aria-label={`Move ${app.label} window`} onPointerDown={(event) => startPointerAction('move', event)} onKeyDown={moveFromKeyboard}><i /><i /><i /><i /><i /></button>
         <div><span>{app.kind.toUpperCase()} MODULE</span><h2 id={titleId}>{app.label}</h2></div>
@@ -133,20 +147,14 @@ export const WorkstationAppFrame: React.FC<{
       </header>
       <div className="workstation-window-body">{children}</div>
       <button type="button" className="workstation-resize-handle" aria-label={`Resize ${app.label} window`} onPointerDown={(event) => startPointerAction('resize', event)} onKeyDown={resizeFromKeyboard}><span aria-hidden="true" /></button>
-      <footer className="workstation-window-status"><span>LOCAL / DETERMINISTIC</span><span>ESC TO MINIMIZE</span></footer>
+      <footer className="workstation-window-status"><span>{focused ? 'FOCUSED / LOCAL' : heavy ? 'SUSPENDED / POSTER' : 'OPEN / BACKGROUND'}</span><span>ESC TO MINIMIZE</span></footer>
     </section>
   );
 };
 
-export const WorkstationAppSurface: React.FC<{
-  appId: DesktopAppId;
-  children: React.ReactNode;
-}> = ({ appId, children }) => {
-  const { enabled, enhanced, state } = useWorkstation();
-  if (!enabled || !enhanced) {
-    return <div className="workstation-static-surface" data-app-id={appId}>{children}</div>;
-  }
-  if (state.activeAppId !== appId) return null;
+export const WorkstationAppSurface: React.FC<{ appId: DesktopAppId; children: React.ReactNode }> = ({ appId, children }) => {
+  const { enabled, enhanced } = useWorkstation();
+  if (!enabled || !enhanced) return <div className="workstation-static-surface" data-app-id={appId}>{children}</div>;
   if (appId === 'home') return (
     <section className="workstation-home-surface" data-app-id="home" data-window-state="maximized" aria-label="Home / Dossier application">
       <div className="workstation-dossier-bar">

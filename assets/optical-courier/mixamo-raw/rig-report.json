@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "status": "rigged-skin-source",
+  "source": "optical-courier-rigged-with-skin.fbx",
+  "bytes": 910160,
+  "sha256": "bf58894f60470def38dc8d14b3d7d6a0b4938de95fdcbe363049e198241a7927",
+  "armature": {
+    "name": "Armature",
+    "count": 1,
+    "boneCount": 33,
+    "requiredBones": {
+      "hips": "mixamorig:Hips",
+      "spine": "mixamorig:Spine",
+      "head": "mixamorig:Head",
+      "left_arm": "mixamorig:LeftArm",
+      "right_arm": "mixamorig:RightArm",
+      "left_leg": "mixamorig:LeftLeg",
+      "right_leg": "mixamorig:RightLeg"
+    },
+    "rootBones": [
+      "mixamorig:Hips"
+    ]
+  },
+  "meshes": [
+    {
+      "name": "OpticalCourier_ReviewBody",
+      "vertices": 12002,
+      "triangles": 24000,
+      "weightedVertices": 12002,
+      "armatureModifiers": [
+        "Armature"
+      ],
+      "materials": [
+        "Shell_OffWhite",
+        "Graphite_Visor",
+        "Warm_Skin",
+        "Charcoal_Trousers",
+        "Black_GlovesBoots",
+        "Sole_Amber",
+        "Signal_Teal",
+        "Courier_ContinuousRegionShader"
+      ]
+    },
+    {
+      "name": "OpticalCourier_Signal",
+      "vertices": 266,
+      "triangles": 528,
+      "weightedVertices": 266,
+      "armatureModifiers": [
+        "Armature"
+      ],
+      "materials": [
+        "Signal_Teal.001"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "Armature|mixamo.com|Layer0",
+      "frameRange": [
+        1.0,
+        2.0
+      ],
+      "frameRate": 30
+    }
+  ],
+  "productionApproved": false,
+  "notes": "Authoritative Mixamo T-pose skin source. Production approval requires reviewed clip inventory, deformation checks, normalized package, optimized GLB, and browser load verification."
+}

@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "status": "blocked-chrome-control",
+  "schemaVersion": 2,
+  "status": "rigged-unpackaged",
   "model": "Optical Courier",
   "uploadAsset": "assets/optical-courier/review-v2/optical-courier-mixamo-review.fbx",
   "uploadAssetSha256": "079f89a38e13df3d2c6aa0203daaa497446541dcd4342c8e624c173447a2de6a",
@@ -20,36 +20,36 @@
     "visualStatus": "rejected-for-upload",
     "mustNotUpload": true
   },
-  "authoritativeSkinDownload": null,
+  "authoritativeSkinDownload": {
+    "path": "assets/optical-courier/mixamo-raw/optical-courier-rigged-with-skin.fbx",
+    "sha256": "bf58894f60470def38dc8d14b3d7d6a0b4938de95fdcbe363049e198241a7927",
+    "bytes": 910160,
+    "format": "FBX Binary",
+    "skin": "With Skin",
+    "frameRate": 30,
+    "inspectionReport": "assets/optical-courier/mixamo-raw/rig-report.json"
+  },
   "frameRate": 30,
-  "browserConstraint": "Use only the user's signed-in Google Chrome profile through the Browser skill. The required Chrome extension/native host is unavailable, so no Adobe session, marker placement, rig, or clip download has occurred.",
-  "requiredFamilies": [
-    "idle",
-    "walk",
-    "run",
-    "jump",
-    "land",
-    "vault",
-    "climb",
-    "hang",
-    "roll",
-    "inspect",
-    "point",
-    "success",
-    "puzzled"
+  "browserExecution": "Used the user's signed-in Google Chrome Mixamo session. Uploaded only the exact approved FBX, visually verified marker placement and the post-rig preview, accepted the rig, then downloaded one authoritative skin file and all later clips without duplicate skin. No credentials, cookies, tokens, or browser state were inspected or stored.",
+  "requiredFamilies": ["idle", "walk", "run", "jump", "land", "vault", "climb", "hang", "roll", "inspect", "point", "success", "puzzled"],
+  "clips": [
+    {"family":"idle","searchTerm":"Unarmed Idle","mixamoName":"Unarmed Idle 01","description":"Standing idle, unarmed","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/idle--Unarmed Idle 01.fbx","bytes":665376,"sha256":"aaeaf4f0d2c1c89027c5275341068c284a66be027347062aaec5f5b6c4ff427a"},
+    {"family":"walk","searchTerm":"Walking Forward","mixamoName":"Unarmed Walk Forward","description":"Unarmed walk forward","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":true,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/walk--Unarmed Walk Forward.fbx","bytes":230272,"sha256":"9ff14a63d1937b34d5f0c869e98b980662dc96c1241cee086d17172310751822"},
+    {"family":"run","searchTerm":"Running","mixamoName":"Running","description":"Running With Intention","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":true,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/run--Running.fbx","bytes":187712,"sha256":"ad21ea44cf2f27b23523134af918d99405ebbc3278dc67a65bad3152ffb931ae"},
+    {"family":"jump","searchTerm":"Jump","mixamoName":"Jumping","description":"Jumping From Action Idle","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/jump--Jumping.fbx","bytes":258992,"sha256":"21acca97a345cda33f4531b81f3273d8ddf396083aa8fa50eccfcb31d3b966d0"},
+    {"family":"land","searchTerm":"Landing","mixamoName":"Landing","description":"Landing From Jump","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/land--Landing.fbx","bytes":275408,"sha256":"517c7141e174628d4939a35ccea5398eca90534c2d53911408f82b028e491ddb"},
+    {"family":"vault","searchTerm":"Vault","mixamoName":"Vault Over Box","description":"Vault Over Box And Hide; hide tail will be trimmed in Blender","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/vault--Vault Over Box.fbx","bytes":356016,"sha256":"fcb5064bae80fe39f50b0216609ad8feb313d933aa02edf7248801e09624f2fa"},
+    {"family":"climb","searchTerm":"Climb","mixamoName":"Freehang Climb","description":"Freehang Climb To Standing","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/climb--Freehang Climb.fbx","bytes":375824,"sha256":"2e1c5e8b69aa3ab85206c4621f171a85d35109220fd87555f997c7c982cd038e"},
+    {"family":"hang","searchTerm":"Hanging Idle","mixamoName":"Hanging Idle","description":"Hanging From A Ledge Idle","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/hang--Hanging Idle.fbx","bytes":376304,"sha256":"bd1e1d192059562fdf5c9f95241f2202c9e4ee0d35e9c4be85f5d2ef5a1f7525"},
+    {"family":"roll","searchTerm":"Roll","mixamoName":"Stand To Roll","description":"Dive Roll From Standing","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/roll--Stand To Roll.fbx","bytes":286720,"sha256":"bb7afb3efb4e6e72df80804bbb4f3bcb63c92727b4e088339a3d3ce898a9846c"},
+    {"family":"inspect","searchTerm":"Looking Around","mixamoName":"Looking Around","description":"Looking Around The Body","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/inspect--Looking Around.fbx","bytes":426736,"sha256":"66ef68fd6636a49416317054aaed0b66e19ac1d8b8b880009acd2db9c62417fe"},
+    {"family":"point","searchTerm":"Pointing","mixamoName":"Pointing Forward","description":"Looking Down Then Pointing Forward","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/point--Pointing Forward.fbx","bytes":376304,"sha256":"a757afc7853a27b8b174415922b080c0a2ced4b5ef601f52249ff63259caf156"},
+    {"family":"success","searchTerm":"Victory","mixamoName":"Victory","description":"Victory From A Boxing Win","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/success--Victory.fbx","bytes":339632,"sha256":"2f8d7a6d7a121147082d7092873f0dc7f99bda5443898030c28528bb78788eca"},
+    {"family":"puzzled","searchTerm":"Thinking","mixamoName":"Thinking","description":"Thinking While Standing","frameRate":30,"skin":"Without Skin","keyframeReduction":"none","inPlace":false,"untouchedSource":"assets/optical-courier/mixamo-raw/clips/puzzled--Thinking.fbx","bytes":350928,"sha256":"4bd18ff545e67416e04eda52e598fe313fcd0af61ae1ba7d38a5b90e4c92c33e"}
   ],
-  "clips": [],
   "reviewContract": {
     "playbackScales": [0.65, 1.0, 1.25],
-    "checks": [
-      "foot contact and sliding",
-      "shoulder, wrist, hip, and knee deformation",
-      "knee inversion",
-      "jacket and trouser penetration",
-      "loop and transition boundaries",
-      "anticipation, takeoff, landing, and recovery",
-      "root and scale consistency"
-    ]
+    "checks": ["foot contact and sliding", "shoulder, wrist, hip, and knee deformation", "knee inversion", "jacket and trouser penetration", "loop and transition boundaries", "anticipation, takeoff, landing, and recovery", "root and scale consistency"]
   },
-  "notes": "Resume only after Chrome control is available. Upload only uploadAsset for one constrained rig test. Joint-section counts are occupancy bins, not verified deformation edge loops. Record exact search terms, selected Mixamo names, parameters, format, skin choice, untouched download, and production derivative; never infer or fabricate a clip selection. This approval does not authorize a production GLB."
+  "notes": "The signed-in browser execution is complete. These are untouched authoritative inputs only. Blender normalization, trimming, deformation review, optimized GLB export, and browser loading remain required before productionApproved may become true."
 }

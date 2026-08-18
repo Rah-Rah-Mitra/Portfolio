@@ -136,9 +136,12 @@
     "notes": "Seeded QuadriFlow was attempted and returned CANCELLED on the closed voxel-union source. The truthful fallback uses deterministic manifold voxel union plus controlled collapse to 24,000 triangles, continuous position-masked materials, a surface-mounted teal signal, and bakeable zipper/pocket masks. Round-two review corrected the helmet-like head: warm skin now covers the scalp, crown, sides, and back, while graphite is confined to the front visor band. Independent pre-rig review approved exactly mixamoUploadAsset for one constrained Mixamo upload/rig test. Joint-section counts are occupancy bins, not verified deformation edge loops. productionApproved remains false, and no Mixamo rigging or production GLB is claimed."
   },
   "mixamo": {
-    "status": "blocked-chrome-control",
-    "rigged": false,
-    "reason": "The required Google Chrome control extension/native host is unavailable. No alternative browser or UI automation was used.",
-    "nextAction": "When required Google Chrome control is restored, verify the Adobe session and upload only the explicitly approved visualFidelityCandidate.mixamoUploadAsset for one constrained rig test. Never upload the rejected historical FBX."
+    "status": "rigged-unpackaged",
+    "rigged": true,
+    "authoritativeSkinDownload": "assets/optical-courier/mixamo-raw/optical-courier-rigged-with-skin.fbx",
+    "authoritativeSkinSha256": "bf58894f60470def38dc8d14b3d7d6a0b4938de95fdcbe363049e198241a7927",
+    "clipInventory": "workflows/mixamo/clip-log.json",
+    "reason": "The exact approved FBX was uploaded through the user's signed-in Chrome session, markers and post-rig deformation were visually verified, one authoritative skinned rig was downloaded, and all thirteen required motion families were preserved without duplicate skin at 30fps.",
+    "nextAction": "Normalize axes, scale, root behavior, actions, and materials in Blender; complete deformation and clip-boundary review; then export and browser-test the optimized GLB before setting productionApproved true."
   }
 }

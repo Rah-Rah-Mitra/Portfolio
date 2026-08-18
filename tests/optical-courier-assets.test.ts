@@ -32,8 +32,8 @@ describe('Optical Courier pre-rig production checkpoint', () => {
     expect(selected?.review.forbiddenPropsObserved).toEqual([]);
     expect(selected?.review.viewConsistency).toMatch(/front.*left.*back/i);
     expect(manifest.negativePrompt).toContain('hard hat');
-    expect(manifest.mixamo.status).toBe('blocked-chrome-control');
-    expect(manifest.mixamo.rigged).toBe(false);
+    expect(manifest.mixamo.status).toBe('rigged-unpackaged');
+    expect(manifest.mixamo.rigged).toBe(true);
   });
 
   it('retains the rejected connected FBX as history while keeping the runtime fallback', () => {
@@ -144,16 +144,46 @@ describe('Optical Courier pre-rig production checkpoint', () => {
       productionGlb: null,
     });
     expect(mixamoLog).toMatchObject({
-      status: 'blocked-chrome-control',
+      status: 'rigged-unpackaged',
       uploadAsset: candidate.mixamoReviewFbx,
       uploadAssetSha256: candidate.mixamoReviewFbxSha256,
       productionApproved: false,
-      authoritativeSkinDownload: null,
+      authoritativeSkinDownload: {
+        path: 'assets/optical-courier/mixamo-raw/optical-courier-rigged-with-skin.fbx',
+        sha256: 'bf58894f60470def38dc8d14b3d7d6a0b4938de95fdcbe363049e198241a7927',
+      },
       reviewCandidateAsset: {
         uploadApproved: true,
         productionApproved: false,
       },
     });
+  });
+
+  it('preserves one authoritative skinned rig and every required animation family', () => {
+    expect(mixamoLog.authoritativeSkinDownload).toMatchObject({
+      path: 'assets/optical-courier/mixamo-raw/optical-courier-rigged-with-skin.fbx',
+      sha256: 'bf58894f60470def38dc8d14b3d7d6a0b4938de95fdcbe363049e198241a7927',
+      bytes: 910160,
+      skin: 'With Skin',
+      frameRate: 30,
+    });
+    expect(existsSync(repoPath(mixamoLog.authoritativeSkinDownload.path))).toBe(true);
+    expect(sha256(mixamoLog.authoritativeSkinDownload.path)).toBe(mixamoLog.authoritativeSkinDownload.sha256);
+    expect(existsSync(repoPath(mixamoLog.authoritativeSkinDownload.inspectionReport))).toBe(true);
+
+    const requiredFamilies = new Set(mixamoLog.requiredFamilies);
+    expect(new Set(mixamoLog.clips.map((clip) => clip.family))).toEqual(requiredFamilies);
+    expect(mixamoLog.clips).toHaveLength(13);
+    for (const clip of mixamoLog.clips) {
+      expect(clip.frameRate).toBe(30);
+      expect(clip.skin).toBe('Without Skin');
+      expect(clip.keyframeReduction).toBe('none');
+      expect(existsSync(repoPath(clip.untouchedSource))).toBe(true);
+      expect(sha256(clip.untouchedSource)).toBe(clip.sha256);
+    }
+    expect(mixamoLog.productionApproved).toBe(false);
+    expect(COURIER_ASSET_CONTRACT.productionApproved).toBe(false);
+    expect(COURIER_ASSET_CONTRACT.productionGlb).toBeNull();
   });
 
   it('rejects malformed visual-candidate provenance', () => {

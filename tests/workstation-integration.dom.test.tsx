@@ -43,6 +43,13 @@ describe('portfolio workstation integration', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Intelligent systems, made operational.' })).toBeNull();
   });
 
+  it('uses the rendered optical bench instead of SVG demonstration artwork', async () => {
+    const { container } = renderPortfolio(true);
+    const render = await screen.findByRole('img', { name: 'Rendered optical rail with camera, aperture, and calibration plane' });
+    expect(render.getAttribute('src')).toBe('/workstation/posters/optical-bench.webp');
+    expect(container.querySelector('.hero-calibration-static svg')).toBeNull();
+  });
+
   it('flattens every evidence application when workstation enhancement is disabled', async () => {
     renderPortfolio(false);
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Workstation applications' })).toBeNull());

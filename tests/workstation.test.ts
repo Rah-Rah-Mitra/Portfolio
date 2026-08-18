@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   createWorkstationState,
+  clampWindowBounds,
   desktopAppFromSearch,
   minimizeDesktopApp,
   openDesktopApp,
   resolveSnapBounds,
+  resizeWindowBounds,
   workstationApps,
   withDesktopApp,
 } from '../lib/workstation';
@@ -61,5 +63,12 @@ describe('retro optical workstation contract', () => {
     expect(resolveSnapBounds('left', viewport)).toEqual({ x: 0, y: 0, width: 720, height: 924 });
     expect(resolveSnapBounds('right', viewport)).toEqual({ x: 720, y: 0, width: 720, height: 924 });
     expect(resolveSnapBounds('maximized', viewport)).toEqual({ x: 0, y: 0, width: 1440, height: 924 });
+  });
+
+  it('clamps floating moves and resizes to a usable, readable desktop window', () => {
+    const viewport = { width: 1440, height: 1000, taskbarHeight: 76 };
+    expect(clampWindowBounds({ x: 1400, y: 900, width: 800, height: 600 }, viewport)).toEqual({ x: 640, y: 324, width: 800, height: 600 });
+    expect(resizeWindowBounds({ x: 80, y: 60, width: 760, height: 520 }, -500, -400, viewport)).toEqual({ x: 80, y: 60, width: 620, height: 420 });
+    expect(resizeWindowBounds({ x: 80, y: 60, width: 760, height: 520 }, 2000, 2000, viewport)).toEqual({ x: 80, y: 60, width: 1360, height: 864 });
   });
 });

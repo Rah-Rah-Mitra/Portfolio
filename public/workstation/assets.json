@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "generator": "Blender 5.x / scripted geometry",
+  "icons": [
+    {
+      "appId": "home",
+      "src": "/workstation/icons/home.webp",
+      "sha256": "6f7c70d6e497a4f3cefbdf2f4d353a6821c10f354d10651323edd15d922ccac9"
+    },
+    {
+      "appId": "selected-work",
+      "src": "/workstation/icons/selected-work.webp",
+      "sha256": "5db1edcce847769aeb1a2b46c98cbc843b25d108c26b9158fc7ea9a1c75e5c7c"
+    },
+    {
+      "appId": "experience",
+      "src": "/workstation/icons/experience.webp",
+      "sha256": "c3e157f6e41c36ed646769ed6931cff7740eca48db497a0f9fbc96f7beaaf2f3"
+    },
+    {
+      "appId": "project-archive",
+      "src": "/workstation/icons/project-archive.webp",
+      "sha256": "32f95ffe4b21d1a6172711cfdc39d740978cd7af4e22e77652057fc3a86335da"
+    },
+    {
+      "appId": "systems-lab",
+      "src": "/workstation/icons/systems-lab.webp",
+      "sha256": "412d14b4ebca2bc3d252e1b31b3875d683088c7aeda72727e0cf691a32b620ad"
+    },
+    {
+      "appId": "camera-lab",
+      "src": "/workstation/icons/camera-lab.webp",
+      "sha256": "b342342eb7356aa98c9fd0edb86e27ba11fe9ce1a404249340adf1a25fe33aea"
+    },
+    {
+      "appId": "world-3d",
+      "src": "/workstation/icons/world-3d.webp",
+      "sha256": "aabe6a1c7ef5f1a567ebd6d3ced9519f4b35ea10b1028642fc24e04803f5f69d"
+    },
+    {
+      "appId": "capabilities",
+      "src": "/workstation/icons/capabilities.webp",
+      "sha256": "e015c2d2a39d7b05f9cd2710e1398bbf5450d3f44808cca3b9acec6a508c4537"
+    },
+    {
+      "appId": "proof-vault",
+      "src": "/workstation/icons/proof-vault.webp",
+      "sha256": "6fa248605e4bb87d7c03f348d4d2c8cdcf60b7fd06aa75cd75a5416ad233db65"
+    },
+    {
+      "appId": "resumes-contact",
+      "src": "/workstation/icons/resumes-contact.webp",
+      "sha256": "ce743411969a9ac2ab1c74e5ff00f40f7fb19dab166df19fb86475bf48f2cba0"
+    }
+  ],
+  "mechanisms": [
+    {
+      "id": "optical-rail",
+      "src": "/workstation/models/optical-rail.glb",
+      "sha256": "b3f20e95017d20ead68312ee55a06f103942fdff7a38a3c118e24811a4fef9e3"
+    },
+    {
+      "id": "flow-shop-machine",
+      "src": "/workstation/models/flow-shop-machine.glb",
+      "sha256": "49f680892ae3b0e87d7f886215cc714763dec61e46d0c69791e364d7310ea21e"
+    },
+    {
+      "id": "spatial-allocation-table",
+      "src": "/workstation/models/spatial-allocation-table.glb",
+      "sha256": "eff60c318c6f065e4124d2a7517ec77bcafd534f4f38c54692d5c4ab8d009dd0"
+    }
+  ],
+  "posters": [
+    {
+      "id": "optical-bench",
+      "src": "/workstation/posters/optical-bench.webp",
+      "sha256": "3baee1b5aac33d5cb8bc16464b2c0a61ad5754b98eafedeeee80327db6899803"
+    },
+    {
+      "id": "flow-shop-machine",
+      "src": "/workstation/posters/flow-shop-machine.webp",
+      "sha256": "d32abcdad736f61caf1c796ccbbacc80ab42bdbe0ec7c24b17439701beb2ed6a"
+    },
+    {
+      "id": "spatial-allocation-table",
+      "src": "/workstation/posters/spatial-allocation-table.webp",
+      "sha256": "dd91d610a157bf4c5d4510e015db5453830ef757ea33d9800563c78a280863a8"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import type { DesktopAppId, WindowBounds, WindowSnapState, WorkstationSessionState } from '../types';
 import {
   createWorkstationState,
+  clampWindowBounds,
   desktopAppFromSearch,
   minimizeDesktopApp as reduceMinimizeDesktopApp,
   openDesktopApp as reduceOpenDesktopApp,
@@ -77,6 +78,13 @@ export const WorkstationProvider: React.FC<{
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
   }, [enabled, enhanced, state]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (enabled && enhanced && state.activeAppId !== 'home') root.dataset.workstationActive = state.activeAppId;
+    else delete root.dataset.workstationActive;
+    return () => { delete root.dataset.workstationActive; };
+  }, [enabled, enhanced, state.activeAppId]);
+
   const openApp = useCallback((appId: DesktopAppId, source: 'rail' | 'link' | 'ai' | 'history' = 'link') => {
     if (!enabled) return;
     setState((current) => reduceOpenDesktopApp(current, appId));
@@ -106,9 +114,10 @@ export const WorkstationProvider: React.FC<{
 
   const moveApp = useCallback((appId: DesktopAppId, bounds: WindowBounds) => {
     if (!enabled) return;
+    const clamped = clampWindowBounds(bounds, { width: window.innerWidth, height: window.innerHeight, taskbarHeight: 76 });
     setState((current) => ({
       ...current,
-      boundsByApp: { ...current.boundsByApp, [appId]: bounds },
+      boundsByApp: { ...current.boundsByApp, [appId]: clamped },
       snapByApp: { ...current.snapByApp, [appId]: 'floating' },
     }));
   }, [enabled]);

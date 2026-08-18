@@ -13,6 +13,7 @@ import { SupportingMedia } from './SupportingMedia';
 import { WorkstationAppSurface, WorkstationRail } from './WorkstationShell';
 import { useOptionalWorkstation } from '../contexts/WorkstationContext';
 import type { DesktopAppId } from '../types';
+import MechanicalExhibitViewport, { type MechanismAssetId } from './MechanicalExhibitViewport';
 
 const OpticalBenchWorld = React.lazy(() => import('./OpticalBenchWorld'));
 
@@ -98,17 +99,14 @@ export const PortfolioHeader: React.FC = () => {
 
 const StaticCalibrationMarker: React.FC = () => (
   <figure className="hero-calibration-static">
-    <svg viewBox="0 0 520 420" role="img" aria-label="Optical rail, camera frustum, aperture, and calibration target">
-      <line className="calibration-rail" x1="36" y1="320" x2="484" y2="320" />
-      <circle className="calibration-aperture" cx="128" cy="210" r="58" />
-      <circle className="calibration-aperture-signal" cx="128" cy="210" r="21" />
-      <path className="calibration-frustum" d="M150 210 L390 98 M150 210 L390 322" />
-      <rect className="calibration-plane" x="388" y="86" width="10" height="248" />
-      {[0, 1, 2, 3, 4].map((index) => <circle key={index} className="calibration-station" cx={68 + index * 94} cy="320" r="7" />)}
-      <text x="36" y="40">OPTICAL TEST BENCH / STATIC REGISTER</text>
-      <text x="36" y="64">Evidence remains independent of rendering capability.</text>
-    </svg>
-    <figcaption>Static calibration register · no animation required</figcaption>
+    <img
+      src="/workstation/posters/optical-bench.webp"
+      width="768"
+      height="512"
+      alt="Rendered optical rail with camera, aperture, and calibration plane"
+      decoding="async"
+    />
+    <figcaption>Real optical-bench geometry · deterministic Blender render</figcaption>
   </figure>
 );
 
@@ -419,8 +417,25 @@ export const ContactFooter: React.FC = () => (
   </footer>
 );
 
+const SystemsLabApplication: React.FC<{ enhanced: boolean }> = ({ enhanced }) => {
+  const [mechanism, setMechanism] = useState<MechanismAssetId>('flow-shop-machine');
+  return (
+    <section id="systems-lab" className="evidence-section systems-lab-application" aria-labelledby="systems-lab-title">
+      <header className="evidence-heading"><h2 id="systems-lab-title">Systems Laboratory</h2><p>Deterministic scheduling and spatial allocation models. Visitor input changes the computed system, not a decorative animation.</p></header>
+      <div className="mechanism-selector" role="tablist" aria-label="Systems mechanism">
+        <button type="button" role="tab" aria-selected={mechanism === 'flow-shop-machine'} onClick={() => setMechanism('flow-shop-machine')}>Flow shop machine</button>
+        <button type="button" role="tab" aria-selected={mechanism === 'spatial-allocation-table'} onClick={() => setMechanism('spatial-allocation-table')}>Spatial allocation table</button>
+      </div>
+      <MechanicalExhibitViewport assetId={mechanism} enhanced={enhanced} />
+      <FlowShopExhibit />
+      <SpatialSystemsExhibit />
+    </section>
+  );
+};
+
 const PortfolioExperience: React.FC = () => {
   const { policy } = useExperienceMode();
+  const heavyWorld = policy.allowHeavyAssets && policy.mode === 'guided' && !policy.lowMotion;
   return <div className="portfolio-field-test">
     <a className="skip-link" href="#main-content">Skip to portfolio evidence</a>
     <PortfolioHeader />
@@ -431,16 +446,13 @@ const PortfolioExperience: React.FC = () => {
       <WorkstationAppSurface appId="experience"><ExperienceSection /></WorkstationAppSurface>
       <WorkstationAppSurface appId="project-archive"><AllProjectsSection /></WorkstationAppSurface>
       <WorkstationAppSurface appId="systems-lab">
-        <section id="systems-lab" className="evidence-section systems-lab-application" aria-labelledby="systems-lab-title">
-          <header className="evidence-heading"><h2 id="systems-lab-title">Systems Laboratory</h2><p>Deterministic scheduling and spatial allocation models. Visitor input changes the computed system, not a decorative animation.</p></header>
-          <FlowShopExhibit /><SpatialSystemsExhibit />
-        </section>
+        <SystemsLabApplication enhanced={heavyWorld} />
       </WorkstationAppSurface>
-      <WorkstationAppSurface appId="camera-lab"><TechnicalLabSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="camera-lab"><MechanicalExhibitViewport assetId="optical-rail" enhanced={heavyWorld} /><TechnicalLabSection /></WorkstationAppSurface>
       <WorkstationAppSurface appId="world-3d">
         <section id="world" className="portfolio-world-mount" aria-labelledby="world-title">
           <header><h2 id="world-title">Explore the shared optical test bench</h2><p>The same world supports the guided story and local inspection. Scroll stays native; Explore temporarily hands this scene’s camera to you.</p></header>
-          {policy.allowHeavyAssets && policy.mode === 'guided' && !policy.lowMotion ? <Suspense fallback={<p role="status">Preparing the optional optical bench…</p>}><OpticalBenchWorld /></Suspense> : <p className="world-static-fallback">Static mode is active. Every Camera Laboratory control, equation, result, and portfolio record above remains available.</p>}
+          {heavyWorld ? <Suspense fallback={<p role="status">Preparing the optional optical bench…</p>}><OpticalBenchWorld /></Suspense> : <MechanicalExhibitViewport assetId="optical-rail" enhanced={false} />}
         </section>
       </WorkstationAppSurface>
       <WorkstationAppSurface appId="capabilities"><CapabilitiesSection /></WorkstationAppSurface>

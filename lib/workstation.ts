@@ -77,6 +77,37 @@ export interface WorkstationViewport {
   taskbarHeight: number;
 }
 
+const MIN_WINDOW_WIDTH = 620;
+const MIN_WINDOW_HEIGHT = 420;
+
+const finiteOr = (value: number, fallback: number) => Number.isFinite(value) ? value : fallback;
+const clamp = (value: number, minimum: number, maximum: number) => Math.min(Math.max(value, minimum), maximum);
+
+export const clampWindowBounds = (bounds: WindowBounds, viewport: WorkstationViewport): WindowBounds => {
+  const usableWidth = Math.max(MIN_WINDOW_WIDTH, finiteOr(viewport.width, MIN_WINDOW_WIDTH));
+  const usableHeight = Math.max(MIN_WINDOW_HEIGHT, finiteOr(viewport.height - viewport.taskbarHeight, MIN_WINDOW_HEIGHT));
+  const width = clamp(finiteOr(bounds.width, MIN_WINDOW_WIDTH), MIN_WINDOW_WIDTH, usableWidth);
+  const height = clamp(finiteOr(bounds.height, MIN_WINDOW_HEIGHT), MIN_WINDOW_HEIGHT, usableHeight);
+  const x = clamp(finiteOr(bounds.x, 0), 0, usableWidth - width);
+  const y = clamp(finiteOr(bounds.y, 0), 0, usableHeight - height);
+  return { x, y, width, height };
+};
+
+export const resizeWindowBounds = (
+  bounds: WindowBounds,
+  deltaWidth: number,
+  deltaHeight: number,
+  viewport: WorkstationViewport,
+): WindowBounds => {
+  const current = clampWindowBounds(bounds, viewport);
+  const usableHeight = Math.max(MIN_WINDOW_HEIGHT, viewport.height - viewport.taskbarHeight);
+  return {
+    ...current,
+    width: clamp(current.width + finiteOr(deltaWidth, 0), MIN_WINDOW_WIDTH, viewport.width - current.x),
+    height: clamp(current.height + finiteOr(deltaHeight, 0), MIN_WINDOW_HEIGHT, usableHeight - current.y),
+  };
+};
+
 export const resolveSnapBounds = (
   snap: Exclude<WindowSnapState, 'floating'>,
   viewport: WorkstationViewport,

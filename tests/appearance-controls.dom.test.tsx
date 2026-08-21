@@ -71,3 +71,23 @@ describe('desktop appearance controls', () => {
     expect(screen.queryByRole('menu', { name: 'Desktop menu' })).toBeNull();
   });
 });
+
+describe('n-body seed input hardening', () => {
+  it('clamps oversized and fractional seeds to the worker protocol range', async () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences trigger' }));
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Desktop Preferences' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('tab', { name: 'Desktop' }));
+    const seed = screen.getByLabelText('Deterministic seed') as HTMLInputElement;
+
+    fireEvent.change(seed, { target: { value: '99999999999' } });
+    expect(Number(seed.value)).toBe(2147483647);
+
+    fireEvent.change(seed, { target: { value: '41.9' } });
+    expect(Number(seed.value)).toBe(41);
+
+    fireEvent.change(seed, { target: { value: '' } });
+    expect(Number(seed.value)).toBe(0);
+  });
+});
+

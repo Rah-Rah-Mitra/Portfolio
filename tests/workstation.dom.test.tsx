@@ -136,6 +136,27 @@ describe('workstation shell', () => {
     expect(state.snapByApp['camera-lab']).toBe('left');
   });
 
+  it('restores a rehydrated maximized window to floating cascade bounds', async () => {
+    const view = render(<Harness />);
+    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Open Camera Lab' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Maximize Camera Lab' }));
+    let state = JSON.parse(screen.getByTestId('workstation-state').textContent ?? '{}');
+    expect(state.snapByApp['camera-lab']).toBe('maximized');
+
+    view.unmount();
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Camera Lab' })).not.toBeNull());
+    state = JSON.parse(screen.getByTestId('workstation-state').textContent ?? '{}');
+    expect(state.snapByApp['camera-lab']).toBe('maximized');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore Camera Lab' }));
+    state = JSON.parse(screen.getByTestId('workstation-state').textContent ?? '{}');
+    expect(state.snapByApp['camera-lab']).toBe('floating');
+    expect(state.boundsByApp['camera-lab'].width).toBeLessThan(window.innerWidth);
+    expect(state.boundsByApp['camera-lab'].x).toBeGreaterThan(0);
+  });
+
   it('provides Mac-style close, minimize, and maximize controls with titlebar restore', async () => {
     render(<Harness />);
     await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());

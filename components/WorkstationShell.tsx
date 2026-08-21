@@ -114,7 +114,10 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
     ? { left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height, zIndex: 60 + stackIndex }
     : undefined;
   const pointerAction = useRef<null | { kind: 'move' | 'resize'; pointerId: number; x: number; y: number; bounds: typeof bounds }>(null);
-  const restoreBounds = useRef(bounds);
+  // Only holds geometry captured by a maximize in this mount; a window that
+  // rehydrates already maximized restores to fresh cascade bounds instead of
+  // reapplying the full-workspace rectangle.
+  const restoreBounds = useRef<typeof bounds | null>(null);
 
   useEffect(() => {
     if (!enabled || !enhanced || hidden || typeof window === 'undefined') return undefined;
@@ -167,8 +170,10 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
 
   const titleId = `workstation-window-${appId}-title`;
   const toggleMaximize = () => {
-    if (state.snapByApp[appId] === 'maximized') moveApp(appId, restoreBounds.current);
-    else {
+    if (state.snapByApp[appId] === 'maximized') {
+      moveApp(appId, restoreBounds.current ?? resolveCascadeBounds(Math.max(0, state.openAppIds.indexOf(appId)), viewport));
+      restoreBounds.current = null;
+    } else {
       restoreBounds.current = bounds;
       snapApp(appId, 'maximized');
     }

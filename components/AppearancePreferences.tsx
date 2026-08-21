@@ -97,7 +97,7 @@ const AppearancePreferences: React.FC = () => {
               <div className="preference-select-grid">
                 <label><span>Expansion order</span><select value={preferences.nbody.expansionOrder} onChange={(event) => appearance.patchNBody({ expansionOrder: Number(event.target.value) as NBodyExpansionOrder })}>{[4, 6, 8, 10].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
                 <label><span>Leaf capacity</span><select value={preferences.nbody.leafCapacity} onChange={(event) => appearance.patchNBody({ leafCapacity: Number(event.target.value) as NBodyLeafCapacity })}>{[24, 48, 72, 96].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-                <label><span>Deterministic seed</span><input type="number" min="0" max="2147483647" value={preferences.nbody.seed} onChange={(event) => appearance.patchNBody({ seed: Math.max(0, Number(event.target.value)) })} /></label>
+                <label><span>Deterministic seed</span><input type="number" min="0" max="2147483647" step="1" value={preferences.nbody.seed} onChange={(event) => appearance.patchNBody({ seed: Math.min(2_147_483_647, Math.max(0, Math.floor(Number(event.target.value) || 0))) })} /></label>
               </div>
               <label className="preference-check"><input type="checkbox" checked={preferences.nbody.pointerAttraction} onChange={(event) => appearance.patchNBody({ pointerAttraction: event.target.checked })} /><span>Pointer attraction</span></label>
               <label className="preference-check"><input type="checkbox" checked={preferences.nbody.showTree} onChange={(event) => appearance.patchNBody({ showTree: event.target.checked })} /><span>Quadtree overlay</span></label>

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
-import Matter from 'matter-js';
+import type Matter from 'matter-js';
+import { loadMatter, peekMatter } from '../lib/physicsRuntime';
 import { useSmashInteraction } from '../hooks/useSmashInteraction';
 import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
 import { track } from '../lib/analytics';
@@ -7,13 +8,14 @@ import type { QualityTier } from '../types';
 import { readSoundPreference, SOUND_PREFERENCE_KEY } from '../lib/audioPolicy';
 
 type BodyRef = {
-  body: Matter.Body;
+  body: Matter.Body | null;
   element: HTMLElement;
   initial: {
     x: number;
     y: number;
     angle: number;
   };
+  size: { width: number; height: number };
 };
 
 export type TextEffectMode = 'decode' | 'scan' | 'pulse';
@@ -119,8 +121,6 @@ export const useEffects = () => {
 // Backwards-compatible name for older components.
 export const usePhysics = useEffects;
 
-const { Engine, Runner, Bodies, Composite, World, Body } = Matter;
-
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -128,11 +128,12 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [enhancements, setEnhancements] = useState<EnhancementSettings>({
     motionPaused: false, visualDensity: 'balanced', mediaEnabled: true, soundEnabled: false, soundUnlocked: false, quality: 'balanced',
   });
-  const engineRef = useRef(Engine.create());
-  const runnerRef = useRef(Runner.create());
+  const engineRef = useRef<Matter.Engine | null>(null);
+  const runnerRef = useRef<Matter.Runner | null>(null);
   const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
   const boundariesRef = useRef<Matter.Body[]>([]);
   const restoreTimers = useRef(new Set<number>());
+  const [physicsReady, setPhysicsReady] = useState(false);
 
   const restoreAll = useCallback(() => {
     setSettings((prev) => ({
@@ -141,15 +142,16 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
       gravity: { ...prev.gravity, enabled: false },
     }));
 
-    engineRef.current.gravity.y = 0.4;
+    if (engineRef.current) engineRef.current.gravity.y = 0.4;
 
     restoreTimers.current.forEach((timerId) => clearTimeout(timerId));
     restoreTimers.current.clear();
 
+    const matter = peekMatter();
     bodiesRef.current.forEach((ref) => {
       const { element, body, initial } = ref;
 
-      if (body.isStatic) {
+      if (!matter || !body || body.isStatic) {
         return;
       }
 
@@ -165,11 +167,11 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
         element.classList.remove('word-restoring', 'physics-active');
         element.style.transform = '';
 
-        Body.setStatic(body, true);
-        Body.setPosition(body, { x: initial.x, y: initial.y });
-        Body.setAngle(body, 0);
-        Body.setVelocity(body, { x: 0, y: 0 });
-        Body.setAngularVelocity(body, 0);
+        matter.Body.setStatic(body, true);
+        matter.Body.setPosition(body, { x: initial.x, y: initial.y });
+        matter.Body.setAngle(body, 0);
+        matter.Body.setVelocity(body, { x: 0, y: 0 });
+        matter.Body.setAngularVelocity(body, 0);
       };
 
       element.addEventListener('transitionend', snapToFinalPosition, { once: true });
@@ -178,28 +180,57 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       element.classList.add('word-restoring');
       element.style.transform = 'translate(0px, 0px) rotate(0rad)';
-      Body.setStatic(body, true);
+      matter.Body.setStatic(body, true);
     });
   }, []);
 
+  const physicsActive = settings.smash.enabled || settings.gravity.enabled;
+
+  // Load the physics engine on first activation and give queued word
+  // registrations their bodies once it arrives.
   useEffect(() => {
+    if (!physicsActive || physicsReady) return undefined;
+    let cancelled = false;
+    loadMatter().then((matter) => {
+      if (cancelled) return;
+      if (!engineRef.current) engineRef.current = matter.Engine.create();
+      if (!runnerRef.current) runnerRef.current = matter.Runner.create();
+      const engine = engineRef.current;
+      bodiesRef.current.forEach((ref) => {
+        if (ref.body) return;
+        ref.body = matter.Bodies.rectangle(ref.initial.x, ref.initial.y, ref.size.width, ref.size.height, {
+          isStatic: true,
+          restitution: 0.3,
+          friction: 0.2,
+        });
+        matter.Composite.add(engine.world, ref.body);
+      });
+      setPhysicsReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [physicsActive, physicsReady]);
+
+  useEffect(() => {
+    if (!physicsReady) return undefined;
+    const matter = peekMatter();
     const engine = engineRef.current;
+    if (!matter || !engine) return undefined;
     engine.gravity.y = 0.4;
 
     const setupBoundaries = () => {
       if (boundariesRef.current.length > 0) {
-        Composite.remove(engine.world, boundariesRef.current);
+        matter.Composite.remove(engine.world, boundariesRef.current);
       }
 
       const { scrollWidth, scrollHeight } = document.documentElement;
 
       boundariesRef.current = [
-        Bodies.rectangle(scrollWidth / 2, -30, scrollWidth, 60, { isStatic: true }),
-        Bodies.rectangle(scrollWidth / 2, scrollHeight + 30, scrollWidth, 60, { isStatic: true }),
-        Bodies.rectangle(-30, scrollHeight / 2, 60, scrollHeight, { isStatic: true }),
-        Bodies.rectangle(scrollWidth + 30, scrollHeight / 2, 60, scrollHeight, { isStatic: true }),
+        matter.Bodies.rectangle(scrollWidth / 2, -30, scrollWidth, 60, { isStatic: true }),
+        matter.Bodies.rectangle(scrollWidth / 2, scrollHeight + 30, scrollWidth, 60, { isStatic: true }),
+        matter.Bodies.rectangle(-30, scrollHeight / 2, 60, scrollHeight, { isStatic: true }),
+        matter.Bodies.rectangle(scrollWidth + 30, scrollHeight / 2, 60, scrollHeight, { isStatic: true }),
       ];
-      Composite.add(engine.world, boundariesRef.current);
+      matter.Composite.add(engine.world, boundariesRef.current);
     };
 
     setupBoundaries();
@@ -212,26 +243,26 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
     window.addEventListener('resize', handleResize);
 
     return () => {
-      Runner.stop(runnerRef.current);
-      World.clear(engine.world, false);
-      Engine.clear(engine);
+      if (runnerRef.current) matter.Runner.stop(runnerRef.current);
+      matter.World.clear(engine.world, false);
+      matter.Engine.clear(engine);
       window.removeEventListener('resize', handleResize);
       restoreTimers.current.forEach((timerId) => clearTimeout(timerId));
     };
-  }, [restoreAll]);
-
-  const physicsActive = settings.smash.enabled || settings.gravity.enabled;
+  }, [physicsReady, restoreAll]);
 
   useEffect(() => {
-    if (!physicsActive) return undefined;
+    if (!physicsActive || !physicsReady) return undefined;
+    const matter = peekMatter();
     const runner = runnerRef.current;
     const engine = engineRef.current;
+    if (!matter || !runner || !engine) return undefined;
     let animationId = 0;
     let running = false;
 
     const renderLoop = () => {
       bodiesRef.current.forEach((ref) => {
-        if (!ref.element) return;
+        if (!ref.element || !ref.body) return;
         const restoring = ref.element.classList.contains('word-restoring');
         ref.element.classList.toggle('physics-active', !ref.body.isStatic && !restoring);
         if (restoring || ref.body.isStatic) return;
@@ -244,13 +275,13 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
     const start = () => {
       if (running || document.hidden) return;
       running = true;
-      Runner.run(runner, engine);
+      matter.Runner.run(runner, engine);
       renderLoop();
     };
     const stop = () => {
       if (!running) return;
       running = false;
-      Runner.stop(runner);
+      matter.Runner.stop(runner);
       cancelAnimationFrame(animationId);
     };
     const handleVisibility = () => { if (document.hidden) stop(); else start(); };
@@ -261,11 +292,11 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
       stop();
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [physicsActive]);
+  }, [physicsActive, physicsReady]);
 
   useEffect(() => {
-    engineRef.current.gravity.y = settings.gravity.enabled ? 0 : 0.4;
-  }, [settings.gravity.enabled]);
+    if (engineRef.current) engineRef.current.gravity.y = settings.gravity.enabled ? 0 : 0.4;
+  }, [physicsReady, settings.gravity.enabled]);
 
   useEffect(() => {
     const isPhysicsActive = settings.smash.enabled || settings.gravity.enabled;
@@ -275,11 +306,11 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
   }, [settings.smash.enabled, settings.gravity.enabled]);
 
-  useSmashInteraction(engineRef, bodiesRef, settings.smash.enabled, {
+  useSmashInteraction(engineRef, bodiesRef, settings.smash.enabled && physicsReady, {
     intensity: settings.smash.intensity,
     radius: settings.smash.radius,
   });
-  useGravityWellInteraction(engineRef, bodiesRef, settings.gravity.enabled, {
+  useGravityWellInteraction(engineRef, bodiesRef, settings.gravity.enabled && physicsReady, {
     strength: settings.gravity.strength,
     radius: settings.gravity.radius,
   });
@@ -361,6 +392,7 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const registerWords = useCallback((elements: HTMLElement[]) => {
     const wordIds: string[] = [];
+    const matter = peekMatter();
     elements.forEach((element, i) => {
       const id = `${Date.now()}-${Math.random()}-${i}`;
       element.dataset.physicsId = id;
@@ -370,25 +402,32 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
       const initialX = rect.left + window.scrollX + rect.width / 2;
       const initialY = rect.top + window.scrollY + rect.height / 2;
 
-      const body = Bodies.rectangle(initialX, initialY, rect.width, rect.height, {
-        isStatic: true,
-        restitution: 0.3,
-        friction: 0.2,
-      });
+      // Bodies materialize immediately when the engine is loaded; otherwise
+      // the registration is queued and picked up by the activation effect.
+      let body: Matter.Body | null = null;
+      if (matter && engineRef.current) {
+        body = matter.Bodies.rectangle(initialX, initialY, rect.width, rect.height, {
+          isStatic: true,
+          restitution: 0.3,
+          friction: 0.2,
+        });
+        matter.Composite.add(engineRef.current.world, body);
+      }
 
       bodiesRef.current.set(id, {
         body,
         element,
         initial: { x: initialX, y: initialY, angle: 0 },
+        size: { width: rect.width, height: rect.height },
       });
-      Composite.add(engineRef.current.world, body);
     });
 
     return () => {
+      const matterNow = peekMatter();
       wordIds.forEach((id) => {
         const ref = bodiesRef.current.get(id);
         if (ref) {
-          Composite.remove(engineRef.current.world, ref.body);
+          if (matterNow && engineRef.current && ref.body) matterNow.Composite.remove(engineRef.current.world, ref.body);
           bodiesRef.current.delete(id);
         }
       });

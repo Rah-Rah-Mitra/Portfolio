@@ -23,6 +23,13 @@ const application = (
   </React.StrictMode>
 );
 
-if (rootElement.hasChildNodes()) hydrateRoot(rootElement, application);
-else createRoot(rootElement).render(application);
+if (rootElement.hasChildNodes()) {
+  hydrateRoot(rootElement, application, {
+    onRecoverableError: (error, errorInfo) => {
+      console.warn('[hydration]', error, errorInfo?.componentStack ?? '');
+    },
+  });
+} else {
+  createRoot(rootElement).render(application);
+}
     

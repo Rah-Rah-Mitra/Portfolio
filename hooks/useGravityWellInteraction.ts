@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import Matter from 'matter-js';
-
-const { Body, Vector, Events } = Matter;
+import type Matter from 'matter-js';
+import { peekMatter } from '../lib/physicsRuntime';
 
 type BodyRef = {
-  body: Matter.Body;
+  body: Matter.Body | null;
   element: HTMLElement;
   initial: {
     x: number;
@@ -14,7 +13,7 @@ type BodyRef = {
 };
 
 export const useGravityWellInteraction = (
-  engineRef: React.RefObject<Matter.Engine>,
+  engineRef: React.RefObject<Matter.Engine | null>,
   bodiesRef: React.RefObject<Map<string, BodyRef>>,
   isActive: boolean,
   options: { strength: number; radius: number }
@@ -24,16 +23,19 @@ export const useGravityWellInteraction = (
   // Effect to handle mouse input and world gravity toggle
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine || !isActive) {
+    const matter = peekMatter();
+    if (!engine || !isActive || !matter) {
       setGravityWellPosition(null);
       return;
     }
+    const { Body, Vector } = matter;
 
     const handleMouseDown = (e: MouseEvent) => {
       const mousePosition = Vector.create(e.pageX, e.pageY);
       const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * (options.radius / 100);
 
       bodiesRef.current?.forEach(({ body }) => {
+        if (!body) return;
         if (Vector.magnitude(Vector.sub(mousePosition, body.position)) < gravityRadius) {
           Body.setStatic(body, false);
         }
@@ -67,16 +69,18 @@ export const useGravityWellInteraction = (
   // Effect to apply continuous gravity well force based on position
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine || !isActive || !gravityWellPosition) {
+    const matter = peekMatter();
+    if (!engine || !isActive || !gravityWellPosition || !matter) {
       return;
     }
+    const { Body, Vector, Events } = matter;
 
     const applyGravityForce = () => {
       const gravityRadius = Math.min(window.innerWidth, window.innerHeight) * (options.radius / 100);
       const acceleration = 0.004 + (options.strength / 100) * 0.04;
 
       bodiesRef.current?.forEach(({ body }) => {
-        if (body.isStatic) return;
+        if (!body || body.isStatic) return;
 
         const distanceVector = Vector.sub(gravityWellPosition, body.position);
         const distance = Vector.magnitude(distanceVector);

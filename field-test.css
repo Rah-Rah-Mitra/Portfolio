@@ -2859,18 +2859,14 @@ html[data-color-scheme="light"] .nbody-reset { background: rgb(255 255 255 / 82%
 }
 
 
-/* Glow chrome: accent halo on windows and a spectral frame around the desktop */
-@keyframes desktop-frame-glow-drift {
-  from { filter: blur(1px) saturate(130%) hue-rotate(0deg); }
-  to { filter: blur(1px) saturate(130%) hue-rotate(360deg); }
-}
-
+/* Glow chrome: accent halo on windows and a spectral frame around the desktop.
+   The frame is intentionally static — a continuously animated full-viewport
+   filter costs GPU time on every composited frame. */
 html[data-window-glow="true"][data-workstation="enabled"] .site-shell::after {
   position: fixed;
   z-index: 96;
   inset: 0;
   padding: 3px;
-  animation: desktop-frame-glow-drift 46s linear infinite;
   background: conic-gradient(from 210deg at 50% 42%, #4f8dff, #8a63f4 22%, #e05fa9 44%, #ff8a5c 62%, #ffb46b 78%, #55c1ff 92%, #4f8dff);
   content: "";
   filter: blur(1px) saturate(130%);
@@ -2914,10 +2910,6 @@ html[data-window-glow="true"] .workstation-window[data-window-state="focused"] {
 
 html[data-window-glow="true"] .workstation-rail {
   box-shadow: 0 .9rem 2.6rem rgb(0 0 0 / 34%), 0 0 1.8rem rgb(var(--accent-rgb) / 14%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-window-glow="true"][data-workstation="enabled"] .site-shell::after { animation: none; }
 }
 
 @media (max-width: 920px) {
@@ -3054,4 +3046,13 @@ html[data-window-glow="true"] .workstation-rail {
     linear-gradient(160deg, rgb(var(--accent-rgb) / 65%), rgb(138 99 244 / 45%) 55%, rgb(255 138 92 / 40%)),
     var(--workstation-carbon);
   box-shadow: 0 .34rem 0 -.22rem var(--workstation-metal-dark);
+}
+
+.project-showcase-loading { display: grid; min-height: 8rem; place-items: center; color: var(--field-muted); font: 560 .62rem/1 "IBM Plex Mono", monospace; letter-spacing: .08em; }
+
+/* Long evidence lists skip offscreen layout work inside scrolling windows */
+.project-index-list article,
+.experience-ledger article {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 18rem;
 }

@@ -52,7 +52,7 @@ describe('project showcase carousel', () => {
   it('renders a card per project with domain badges and the active detail strip', async () => {
     const { container } = render(<ProjectShowcase projects={projects} domainLabels={domainLabels} />);
     await waitFor(() => expect(screen.getByRole('region', { name: 'Project showcase carousel' })).not.toBeNull());
-    expect(container.querySelectorAll('[data-carousel-card]')).toHaveLength(3);
+    await waitFor(() => expect(container.querySelectorAll('[data-carousel-card]')).toHaveLength(3));
     expect(screen.getAllByText('Software & systems').length).toBeGreaterThan(0);
 
     const detail = container.querySelector('.project-showcase-detail');

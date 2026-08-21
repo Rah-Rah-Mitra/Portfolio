@@ -1,8 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import type { ProjectHighlight } from '../types';
-import CarouselStacked, { type StackedSlide } from './ui/carousel-stacked';
+import type { StackedSlide } from './ui/carousel-stacked';
 import { ProjectLinks } from './ProjectLinks';
 import { track } from '../lib/analytics';
+import { useOptionalWorkstation } from '../contexts/WorkstationContext';
+
+// The card deck (and its motion dependency) stays out of the main bundle until
+// the archive application is actually opened.
+const CarouselStacked = React.lazy(() => import('./ui/carousel-stacked'));
 
 const accentPlateClass: Record<ProjectHighlight['accent'], string> = {
   cyan: 'project-plate-cyan',
@@ -30,8 +35,17 @@ interface ProjectShowcaseProps {
 const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ projects, domainLabels }) => {
   const [enhanced, setEnhanced] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const workstation = useOptionalWorkstation();
+  const [activated, setActivated] = useState(false);
 
   useEffect(() => setEnhanced(true), []);
+
+  const archiveReached = !workstation?.enabled
+    || workstation.state.openAppIds.includes('project-archive')
+    || workstation.state.focusedAppId === 'project-archive';
+  useEffect(() => {
+    if (archiveReached) setActivated(true);
+  }, [archiveReached]);
 
   const slides = useMemo<StackedSlide[]>(() => projects.map((project) => ({
     id: project.id,
@@ -43,7 +57,7 @@ const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ projects, domainLabel
     accentClass: accentPlateClass[project.accent],
   })), [domainLabels, projects]);
 
-  if (!enhanced || projects.length === 0) return null;
+  if (!enhanced || !activated || projects.length === 0) return null;
 
   const activeProject = projects[Math.min(activeIndex, projects.length - 1)]!;
 
@@ -64,14 +78,16 @@ const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ projects, domainLabel
         <h3>Showcase</h3>
         <p>Drag the deck or step through it; the centered card is expanded below. Select a card to open its archive entry.</p>
       </div>
-      <CarouselStacked
-        slides={slides}
-        onActiveChange={setActiveIndex}
-        onSlideActivate={(index) => {
-          const project = projects[index];
-          if (project) jumpToArchiveEntry(project);
-        }}
-      />
+      <Suspense fallback={<div className="project-showcase-loading" aria-hidden="true">Preparing the showcase deck…</div>}>
+        <CarouselStacked
+          slides={slides}
+          onActiveChange={setActiveIndex}
+          onSlideActivate={(index) => {
+            const project = projects[index];
+            if (project) jumpToArchiveEntry(project);
+          }}
+        />
+      </Suspense>
       <div className="project-showcase-detail" data-project-id={activeProject.id}>
         <div className="project-showcase-detail-meta">
           <span>{domainLabels[activeProject.accent]}</span>

@@ -285,8 +285,16 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
 
     const floatRenderable = gl.getExtension('EXT_color_buffer_float');
     const linearFiltering = gl.getExtension('OES_texture_float_linear');
-    const internalFormat = floatRenderable ? gl.RGBA16F : gl.RGBA8;
-    const textureType = floatRenderable ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE;
+    // The simulation stores signed velocity; a normalized RGBA8 fallback would
+    // clamp negative components to zero and corrupt advection, so devices
+    // without float-renderable targets keep the static desktop field instead.
+    if (!floatRenderable) {
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      return undefined;
+    }
+    const internalFormat = gl.RGBA16F;
+    const textureType = gl.HALF_FLOAT;
     const filtering = linearFiltering ? gl.LINEAR : gl.NEAREST;
 
     const programs = {

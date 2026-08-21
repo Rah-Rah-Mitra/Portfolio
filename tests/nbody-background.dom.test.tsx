@@ -1,7 +1,13 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppearanceProvider } from '../contexts/AppearanceContext';
+import React from 'react';
+import { AppearanceProvider, useAppearance } from '../contexts/AppearanceContext';
 import NBodyBackground from '../components/NBodyBackground';
+
+const PatchProbe: React.FC = () => {
+  const { patchNBody } = useAppearance();
+  return <button type="button" onClick={() => patchNBody({ particleCount: 1024 })}>Patch bodies</button>;
+};
 
 class WorkerStub {
   static instances: WorkerStub[] = [];
@@ -43,6 +49,30 @@ describe('NBodyBackground', () => {
     await waitFor(() => expect(WorkerStub.instances).toHaveLength(1));
     view.rerender(<AppearanceProvider><NBodyBackground active={false} /></AppearanceProvider>);
     expect(WorkerStub.instances[0]!.messages.at(-1)?.message).toEqual({ type: 'pause', paused: true });
+  });
+
+  it('keeps stepping through a replacement worker after a configuration change', async () => {
+    const frameCallbacks: FrameRequestCallback[] = [];
+    (requestAnimationFrame as unknown as ReturnType<typeof vi.fn>).mockImplementation((callback: FrameRequestCallback) => {
+      frameCallbacks.push(callback);
+      return frameCallbacks.length;
+    });
+    render(<AppearanceProvider><NBodyBackground active /><PatchProbe /></AppearanceProvider>);
+    await waitFor(() => expect(WorkerStub.instances).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Patch bodies' }));
+    await waitFor(() => expect(WorkerStub.instances).toHaveLength(2));
+    const [first, second] = WorkerStub.instances;
+    expect(first!.terminate).toHaveBeenCalled();
+    expect(second!.messages[0]!.message).toMatchObject({ type: 'initialize', config: { particleCount: 1024 } });
+
+    second!.listeners.get('message')?.({ data: { type: 'ready', effectiveParticleCount: 1024 } } as unknown as Event);
+    const tick = frameCallbacks.at(-1);
+    expect(tick).toBeDefined();
+    tick!(1000);
+    const stepped = second!.messages.find((entry) => (entry.message as { type?: string }).type === 'step');
+    expect(stepped).toBeDefined();
+    expect(first!.messages.some((entry) => (entry.message as { type?: string }).type === 'step')).toBe(false);
   });
 
   it('normalizes pointer attraction and supports an explicit Reset control', async () => {

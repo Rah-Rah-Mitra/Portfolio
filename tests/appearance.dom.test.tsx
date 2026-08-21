@@ -76,3 +76,23 @@ describe('AppearanceProvider', () => {
     expect(screen.getByTestId('appearance').textContent).toContain('"resolvedScheme":"light"');
   });
 });
+
+describe('appearance persistence resilience', () => {
+  it('renders with defaults when storage reads and writes are rejected', () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('storage disabled'); });
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('storage disabled'); });
+    try {
+      render(<AppearanceProvider><ProbeConsumer /></AppearanceProvider>);
+      expect(screen.getByTestId('appearance-probe').textContent).toContain('nbody');
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
+  });
+});
+
+const ProbeConsumer = () => {
+  const { preferences } = useAppearance();
+  return <output data-testid="appearance-probe">{preferences.background}</output>;
+};
+

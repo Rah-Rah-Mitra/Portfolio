@@ -155,7 +155,10 @@ const NBodyBackground: React.FC<NBodyBackgroundProps> = ({ active }) => {
     };
     frameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [active, preferences.nbody.trailPersistence, resolvedScheme]);
+    // configKey re-binds this loop to the replacement worker created above;
+    // without it the new worker would receive initialize but never step.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, configKey, preferences.nbody.trailPersistence, resolvedScheme]);
 
   const pointer = (event: React.PointerEvent<HTMLCanvasElement>, activePointer: boolean) => {
     const bounds = event.currentTarget.getBoundingClientRect();

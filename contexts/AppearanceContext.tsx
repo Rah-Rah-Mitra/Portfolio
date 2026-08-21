@@ -44,9 +44,17 @@ type AppearanceContextValue = {
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
 
+const readStoredPreferences = (): string | null => {
+  try {
+    return window.localStorage.getItem(APPEARANCE_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+};
+
 const initialPreferences = () => {
   if (typeof window === 'undefined') return defaultAppearancePreferences;
-  return parseAppearancePreferences(window.localStorage.getItem(APPEARANCE_STORAGE_KEY));
+  return parseAppearancePreferences(readStoredPreferences());
 };
 
 export const useAppearance = () => {
@@ -77,7 +85,12 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(preferences));
+    try {
+      window.localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(preferences));
+    } catch {
+      // Persistence is best-effort: restricted-storage browsers still get the
+      // in-memory preferences for this visit.
+    }
     applyAppearanceToDocument(
       document.documentElement,
       document.querySelector<HTMLMetaElement>('meta[name="theme-color"]'),

@@ -136,6 +136,23 @@ describe('workstation shell', () => {
     expect(state.snapByApp['camera-lab']).toBe('left');
   });
 
+  it('leaves the focused window alone when Escape targets an open overlay', async () => {
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Open Camera Lab' }));
+    expect(screen.getByRole('dialog', { name: 'Camera Lab' })).not.toBeNull();
+
+    const overlay = document.createElement('section');
+    overlay.className = 'appearance-preferences';
+    document.body.appendChild(overlay);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Camera Lab' })).not.toBeNull();
+
+    overlay.remove();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Camera Lab' })).toBeNull());
+  });
+
   it('restores a rehydrated maximized window to floating cascade bounds', async () => {
     const view = render(<Harness />);
     await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());

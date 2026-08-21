@@ -77,10 +77,15 @@ const AsciiBackground: React.FC<AsciiBackgroundProps> = ({ active }) => {
       );
     };
 
-    rebuild();
-    drawOnce();
-    window.addEventListener('resize', rebuild);
-    return () => window.removeEventListener('resize', rebuild);
+    const handleResize = () => {
+      // Resizing the canvas clears its bitmap; static modes (paused,
+      // animation off, reduced motion) have no frame loop to repaint it.
+      rebuild();
+      drawOnce();
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ascii.cellSize, sourceRevision, sourceState]);
 

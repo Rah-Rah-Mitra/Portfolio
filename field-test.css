@@ -3056,3 +3056,13 @@ html[data-window-glow="true"] .workstation-rail {
   content-visibility: auto;
   contain-intrinsic-size: auto 18rem;
 }
+
+
+/* In guided mode the evidence layer only intercepts pointer input where real
+   controls live, so the background field keeps pointer attraction and its
+   reset control clickable on empty desktop space. */
+html[data-workstation="enabled"] .portfolio-field-test { pointer-events: none; }
+html[data-workstation="enabled"] .portfolio-field-test .skip-link,
+html[data-workstation="enabled"] .portfolio-field-test .portfolio-header,
+html[data-workstation="enabled"] .portfolio-field-test .workstation-rail,
+html[data-workstation="enabled"] .portfolio-field-test .workstation-window { pointer-events: auto; }

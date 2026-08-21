@@ -217,6 +217,9 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (document.querySelector(`[data-app-id="${focusedAppId}"] [data-control-owner="visitor"]`)) return;
+      // Overlays own their Escape: one keystroke must not also minimize the
+      // application beneath Preferences or the desktop menu.
+      if (document.querySelector('.appearance-preferences, .desktop-context-menu')) return;
       minimizeApp(focusedAppId);
     };
     window.addEventListener('keydown', handleEscape);

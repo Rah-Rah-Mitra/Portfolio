@@ -3,6 +3,7 @@ import type {
   AccentId,
   AppearancePreferenceAction,
   AppearancePreferences,
+  AsciiPreferences,
   BackgroundThemeId,
   ColorSchemePreference,
   FluidPreferences,
@@ -30,6 +31,8 @@ type AppearanceContextValue = {
   setBackgroundPaused: (paused: boolean) => void;
   patchNBody: (patch: Partial<NBodyPreferences>) => void;
   patchFluid: (patch: Partial<FluidPreferences>) => void;
+  patchAscii: (patch: Partial<AsciiPreferences>) => void;
+  setWindowGlow: (glow: boolean) => void;
   resetBackground: () => void;
   resetAllPreferences: () => void;
   preferencesOpen: boolean;
@@ -89,6 +92,8 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const setBackgroundPaused = useCallback((paused: boolean) => dispatch({ type: 'SET_BACKGROUND_PAUSED', paused }), []);
   const patchNBody = useCallback((patch: Partial<NBodyPreferences>) => dispatch({ type: 'PATCH_NBODY', patch }), []);
   const patchFluid = useCallback((patch: Partial<FluidPreferences>) => dispatch({ type: 'PATCH_FLUID', patch }), []);
+  const patchAscii = useCallback((patch: Partial<AsciiPreferences>) => dispatch({ type: 'PATCH_ASCII', patch }), []);
+  const setWindowGlow = useCallback((glow: boolean) => dispatch({ type: 'SET_WINDOW_GLOW', glow }), []);
   const resetBackground = useCallback(() => dispatch({ type: 'RESET_BACKGROUND' }), []);
   const resetAllPreferences = useCallback(() => dispatch({ type: 'RESET_ALL' }), []);
   const openPreferences = useCallback((_source: PreferenceOpenSource, tab: AppearancePanelTab = 'appearance') => {
@@ -130,6 +135,8 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setBackgroundPaused,
     patchNBody,
     patchFluid,
+    patchAscii,
+    setWindowGlow,
     resetBackground,
     resetAllPreferences,
     preferencesOpen,
@@ -137,7 +144,7 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     openPreferences,
     closePreferences,
     setPreferencesTab,
-  }), [preferences, resolvedScheme, setScheme, setAccent, setBackgroundTheme, setBackgroundPaused, patchNBody, patchFluid, resetBackground, resetAllPreferences, preferencesOpen, preferencesTab, openPreferences, closePreferences]);
+  }), [preferences, resolvedScheme, setScheme, setAccent, setBackgroundTheme, setBackgroundPaused, patchNBody, patchFluid, patchAscii, setWindowGlow, resetBackground, resetAllPreferences, preferencesOpen, preferencesTab, openPreferences, closePreferences]);
 
   return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;
 };

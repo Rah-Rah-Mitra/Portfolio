@@ -22,10 +22,24 @@ export const WorkstationRail: React.FC = () => {
     <nav className="workstation-rail" aria-label="Workstation applications">
       <div className="workstation-rail-track" aria-hidden="true"><span /><i /><span /></div>
       <div className="workstation-modules">
+        <button
+          type="button"
+          className="workstation-module workstation-desktop-module"
+          aria-label="Show desktop"
+          aria-pressed={state.focusedAppId === 'desktop'}
+          data-app-id="desktop"
+          data-state={state.focusedAppId === 'desktop' ? 'focused' : 'idle'}
+          onClick={() => showDesktop('rail')}
+        >
+          <span className="workstation-module-socket workstation-desktop-socket" aria-hidden="true"><i /></span>
+          <span className="workstation-module-label">Desktop</span>
+          <small className="workstation-module-compact" aria-hidden="true">Desk</small>
+          <i className="workstation-status-lamp" aria-hidden="true" />
+        </button>
         {workstationApps.map((app) => {
           const focused = state.focusedAppId === app.id;
-          const minimized = app.id !== 'home' && state.minimizedAppIds.includes(app.id);
-          const open = app.id !== 'home' && state.openAppIds.includes(app.id);
+          const minimized = state.minimizedAppIds.includes(app.id);
+          const open = state.openAppIds.includes(app.id);
           const status = focused ? 'focused' : minimized ? 'minimized' : open ? 'open-background' : 'idle';
           const statusLabel = focused ? 'Focused' : minimized ? 'Minimized' : open ? 'Open in background' : 'Closed';
           return (
@@ -38,7 +52,7 @@ export const WorkstationRail: React.FC = () => {
               aria-pressed={focused}
               data-app-id={app.id}
               data-state={status}
-              onClick={() => app.id === 'home' ? showDesktop('rail') : openApp(app.id, 'rail')}
+              onClick={() => openApp(app.id, 'rail')}
             >
               <span className="workstation-module-socket" aria-hidden="true"><img src={app.iconAsset} alt="" width="48" height="48" /></span>
               <span className="workstation-module-label">{app.shortLabel}</span>
@@ -50,9 +64,36 @@ export const WorkstationRail: React.FC = () => {
         })}
       </div>
       <div className="workstation-rail-readout" aria-live="polite">
-        <span>FOCUSED BAY</span><strong>{workstationApps.find((app) => app.id === state.focusedAppId)?.shortLabel}</strong>
+        <span>FOCUSED BAY</span><strong>{workstationApps.find((app) => app.id === state.focusedAppId)?.shortLabel ?? 'Desktop'}</strong>
       </div>
     </nav>
+  );
+};
+
+export const DesktopIconLayer: React.FC = () => {
+  const { enabled, enhanced, state, openApp } = useWorkstation();
+  if (!enabled || !enhanced) return null;
+  return (
+    <section className="workstation-desktop-surface" data-desktop-field aria-label="Desktop">
+      <ul className="workstation-desktop-icons">
+        {workstationApps.map((app) => (
+          <li key={app.id}>
+            <button
+              type="button"
+              className="workstation-desktop-icon"
+              data-app-id={app.id}
+              data-open={state.openAppIds.includes(app.id) ? 'true' : 'false'}
+              onClick={() => openApp(app.id, 'desktop')}
+              aria-label={`Launch ${app.label}`}
+            >
+              <span className="workstation-desktop-icon-plate" aria-hidden="true"><img src={app.iconAsset} alt="" width="48" height="48" loading="lazy" /></span>
+              <span className="workstation-desktop-icon-label">{app.shortLabel}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="workstation-desktop-hint" aria-hidden="true">Select an application · Right-click the desktop for background options</p>
+    </section>
   );
 };
 
@@ -168,18 +209,5 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
 export const WorkstationAppSurface: React.FC<{ appId: DesktopAppId; children: React.ReactNode }> = ({ appId, children }) => {
   const { enabled, enhanced } = useWorkstation();
   if (!enabled || !enhanced) return <div className="workstation-static-surface" data-app-id={appId}>{children}</div>;
-  if (appId === 'home') return (
-    <section className="workstation-home-surface" data-app-id="home" data-desktop-field data-window-state="maximized" aria-label="Home / Dossier application">
-      <div className="workstation-dossier-bar">
-        <div><span>PORTFOLIO WORKSTATION</span><strong>HOME / DOSSIER</strong></div>
-        <dl>
-          <div><dt>SESSION</dt><dd>RECRUITER EVIDENCE</dd></div>
-          <div><dt>STATE</dt><dd>AVAILABLE · SINGAPORE</dd></div>
-        </dl>
-        <span>MAXIMIZED</span>
-      </div>
-      {children}
-    </section>
-  );
   return <WorkstationAppFrame appId={appId}>{children}</WorkstationAppFrame>;
 };

@@ -45,6 +45,7 @@ export type AnalyticsEvent =
   | { event: 'featured_projects_toggled'; props: { expanded: boolean; visible_count: number } }
   | { event: 'project_archive_toggled'; props: { expanded: boolean; visible_count: number } }
   | { event: 'project_filter_changed'; props: { filter: string; result_count: number } }
+  | { event: 'project_showcase_opened'; props: { title: string } }
   | { event: 'archive_search_changed'; props: { query_length: number; result_count: number } }
   | { event: 'resume_download_clicked'; props: { role: string; format: 'docx' | 'pdf' } }
   | { event: 'qr_target_selected'; props: UrlTargetSummary }

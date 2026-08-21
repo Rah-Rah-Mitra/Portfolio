@@ -179,7 +179,48 @@ export type DesktopAppId =
 export type ColorSchemePreference = 'dark' | 'light' | 'system';
 export type ResolvedColorScheme = 'dark' | 'light';
 export type AccentId = 'teal' | 'sky' | 'amber' | 'violet' | 'rose';
-export type BackgroundThemeId = 'nbody' | 'fluid';
+export type BackgroundThemeId = 'nbody' | 'fluid' | 'ascii';
+
+export type AsciiRenderMode =
+  | 'characters' | 'dither' | 'mosaic' | 'pixel' | 'dots' | 'cross' | 'diamond' | 'voxel' | 'lego'
+  | 'mixed' | 'lines' | 'diagonal' | 'braille' | 'disco' | 'hexdump' | 'matrix' | 'rings' | 'hearts'
+  | 'stars' | 'hexagons' | 'triangles' | 'bubbles' | 'hatch' | 'contour' | 'halfblocks';
+export type AsciiCharSet = 'standard' | 'blocks' | 'minimal' | 'digits' | 'custom';
+export type AsciiBgMode = 'none' | 'solid' | 'blur' | 'photo';
+export type AsciiAnimStyle = 'wave' | 'pulse' | 'shimmer' | 'ripple' | 'flicker';
+export type AsciiPostEffectId =
+  | 'scanLines' | 'vignette' | 'bloom' | 'chromatic' | 'filmGrain'
+  | 'glitch' | 'halftone' | 'pixelate' | 'filmDust';
+
+export interface AsciiPostEffect {
+  enabled: boolean;
+  intensity: number;
+}
+
+export interface AsciiPreferences {
+  renderMode: AsciiRenderMode;
+  bgMode: AsciiBgMode;
+  bgBlur: number;
+  bgOpacity: number;
+  cellSize: number;
+  coverage: number;
+  density: number;
+  invert: boolean;
+  charSet: AsciiCharSet;
+  customChars: string;
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  grayscale: number;
+  edgeEmphasis: number;
+  tint: string;
+  tintOpacity: number;
+  animated: boolean;
+  animStyle: AsciiAnimStyle;
+  animSpeed: number;
+  animIntensity: number;
+  pfx: Record<AsciiPostEffectId, AsciiPostEffect>;
+}
 export type WindowTint = 'neutral' | 'graphite' | 'accent';
 export type DockSize = 'small' | 'medium' | 'large';
 export type AppearancePanelTab = 'appearance' | 'desktop' | 'window' | 'accessibility';
@@ -217,12 +258,14 @@ export interface AppearancePreferences {
   accent: AccentId;
   background: BackgroundThemeId;
   backgroundPaused: boolean;
+  windowGlow: boolean;
   windowTint: WindowTint;
   titlebarOpacity: number;
   reduceTransparency: boolean;
   dockSize: DockSize;
   nbody: NBodyPreferences;
   fluid: FluidPreferences;
+  ascii: AsciiPreferences;
 }
 
 export type AppearancePreferenceAction =
@@ -230,16 +273,20 @@ export type AppearancePreferenceAction =
   | { type: 'SET_ACCENT'; accent: AccentId }
   | { type: 'SET_BACKGROUND'; background: BackgroundThemeId }
   | { type: 'SET_BACKGROUND_PAUSED'; paused: boolean }
+  | { type: 'SET_WINDOW_GLOW'; glow: boolean }
   | { type: 'SET_WINDOW_TINT'; tint: WindowTint }
   | { type: 'SET_TITLEBAR_OPACITY'; opacity: number }
   | { type: 'SET_REDUCE_TRANSPARENCY'; reduce: boolean }
   | { type: 'SET_DOCK_SIZE'; size: DockSize }
   | { type: 'PATCH_NBODY'; patch: Partial<NBodyPreferences> }
   | { type: 'PATCH_FLUID'; patch: Partial<FluidPreferences> }
+  | { type: 'PATCH_ASCII'; patch: Partial<AsciiPreferences> }
   | { type: 'RESET_BACKGROUND' }
   | { type: 'RESET_ALL' };
 
-export type DesktopToolAppId = Exclude<DesktopAppId, 'home'>;
+export type DesktopToolAppId = DesktopAppId;
+
+export type DesktopFocusId = DesktopAppId | 'desktop';
 
 export type DesktopAppKind = 'dossier' | 'evidence' | 'lab' | 'world' | 'proof';
 
@@ -266,7 +313,7 @@ export type WindowSnapState = 'floating' | 'left' | 'right' | 'maximized';
 export type WindowControlOwner = 'document' | 'app' | 'transition';
 
 export interface WorkstationSessionState {
-  focusedAppId: DesktopAppId;
+  focusedAppId: DesktopFocusId;
   openAppIds: DesktopToolAppId[];
   minimizedAppIds: DesktopToolAppId[];
   windowStack: DesktopToolAppId[];
@@ -276,7 +323,7 @@ export interface WorkstationSessionState {
 }
 
 export type WorkstationEvent =
-  | { type: 'APP_OPENED'; appId: DesktopAppId; source: 'rail' | 'link' | 'ai' | 'history' }
+  | { type: 'APP_OPENED'; appId: DesktopAppId; source: 'rail' | 'link' | 'ai' | 'history' | 'desktop' }
   | { type: 'APP_FOCUSED'; appId: DesktopToolAppId }
   | { type: 'APP_MINIMIZED'; appId: DesktopAppId }
   | { type: 'APP_CLOSED'; appId: DesktopToolAppId }

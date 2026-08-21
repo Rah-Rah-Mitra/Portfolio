@@ -1,11 +1,12 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { WorkstationProvider, useWorkstation } from '../contexts/WorkstationContext';
-import { WorkstationAppFrame, WorkstationAppSurface, WorkstationRail } from '../components/WorkstationShell';
+import { DesktopIconLayer, WorkstationAppFrame, WorkstationAppSurface, WorkstationRail } from '../components/WorkstationShell';
 
 const Harness = ({ enabled = true }: { enabled?: boolean }) => (
   <WorkstationProvider enabled={enabled}>
     <WorkstationRail />
+    <DesktopIconLayer />
     <WorkstationAppSurface appId="home"><h1>Recruiter evidence</h1></WorkstationAppSurface>
     <WorkstationAppFrame appId="camera-lab"><p>Camera controls</p></WorkstationAppFrame>
     <WorkstationAppFrame appId="systems-lab"><p>Systems controls</p></WorkstationAppFrame>
@@ -46,17 +47,25 @@ describe('workstation shell', () => {
     expect(document.documentElement.dataset.workstationActive).toBe('camera-lab');
   });
 
-  it('presents Home as the maximized evidence Dossier rather than an unframed page', async () => {
-    render(
-      <WorkstationProvider enabled>
-        <WorkstationAppSurface appId="home"><h1>Recruiter evidence</h1></WorkstationAppSurface>
-      </WorkstationProvider>,
-    );
+  it('keeps the desktop as the default view and opens Home as a framed window', async () => {
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
+    expect(screen.getByTestId('workstation-state').textContent).toContain('"focusedAppId":"desktop"');
+    expect(screen.queryAllByRole('dialog')).toHaveLength(0);
+    expect(screen.getByRole('region', { name: 'Desktop' })).not.toBeNull();
 
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Home / Dossier application' })).not.toBeNull());
-    expect(screen.getByText('PORTFOLIO WORKSTATION')).not.toBeNull();
-    expect(screen.getByText('MAXIMIZED')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Home / Dossier' }));
+    expect(screen.getByRole('dialog', { name: 'Home / Dossier' })).not.toBeNull();
     expect(screen.getByRole('heading', { name: 'Recruiter evidence' })).not.toBeNull();
+    expect(window.location.search).toBe('?app=home');
+  });
+
+  it('launches applications from the desktop icon grid', async () => {
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Desktop' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Launch Camera Lab' }));
+    expect(screen.getByRole('dialog', { name: 'Camera Lab' })).not.toBeNull();
+    expect(screen.getByTestId('workstation-state').textContent).toContain('"focusedAppId":"camera-lab"');
   });
 
   it('minimizes only the focused tool, falls back to the next window, and returns focus to its rail module', async () => {
@@ -74,15 +83,15 @@ describe('workstation shell', () => {
     await waitFor(() => expect(document.activeElement).toBe(cameraModule));
   });
 
-  it('uses Home as Show Desktop while keeping the Dossier mounted', async () => {
+  it('shows the desktop on demand while keeping open windows in the session', async () => {
     render(<Harness />);
     await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Open Camera Lab' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open Systems Lab' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Open Home / Dossier' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show desktop' }));
     expect(screen.queryAllByRole('dialog')).toHaveLength(0);
-    expect(screen.getByRole('region', { name: 'Home / Dossier application' })).not.toBeNull();
     const state = JSON.parse(screen.getByTestId('workstation-state').textContent ?? '{}');
+    expect(state.focusedAppId).toBe('desktop');
     expect(state.openAppIds).toEqual(['camera-lab', 'systems-lab']);
     expect(state.minimizedAppIds).toEqual(['camera-lab', 'systems-lab']);
     expect(state.windowStack).toEqual(['camera-lab', 'systems-lab']);
@@ -103,7 +112,7 @@ describe('workstation shell', () => {
     render(<Harness enabled={false} />);
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Workstation applications' })).toBeNull());
     expect(screen.queryByRole('dialog', { name: 'Camera Lab' })).toBeNull();
-    expect(screen.getByTestId('workstation-state').textContent).toContain('"focusedAppId":"home"');
+    expect(screen.getByTestId('workstation-state').textContent).toContain('"focusedAppId":"desktop"');
   });
 
   it('offers direct and keyboard-equivalent move, resize, and snap controls', async () => {

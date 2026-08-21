@@ -41,9 +41,9 @@ describe('retro optical workstation contract', () => {
     ]);
   });
 
-  it('creates a home-focused session with no tool windows', () => {
+  it('creates a desktop-focused session with no tool windows', () => {
     expect(createWorkstationState()).toEqual({
-      focusedAppId: 'home',
+      focusedAppId: 'desktop',
       openAppIds: [],
       minimizedAppIds: [],
       windowStack: [],
@@ -80,7 +80,7 @@ describe('retro optical workstation contract', () => {
     expect(reopened).toEqual(raised);
   });
 
-  it('minimizes a tool and focuses the next visible top window, then home', () => {
+  it('minimizes a tool and focuses the next visible top window, then the desktop', () => {
     const camera = openDesktopApp(createWorkstationState(), 'camera-lab', { x: 90, y: 120, width: 760, height: 540 });
     const systems = openDesktopApp(camera, 'systems-lab', { x: 120, y: 140, width: 780, height: 560 });
     const minimizedSystems = minimizeDesktopApp(systems, 'systems-lab');
@@ -90,7 +90,7 @@ describe('retro optical workstation contract', () => {
     expect(minimizedSystems.windowStack).toEqual(['camera-lab', 'systems-lab']);
 
     const minimizedCamera = minimizeDesktopApp(minimizedSystems, 'camera-lab');
-    expect(minimizedCamera.focusedAppId).toBe('home');
+    expect(minimizedCamera.focusedAppId).toBe('desktop');
     expect(minimizedCamera.minimizedAppIds).toEqual(['systems-lab', 'camera-lab']);
     expect(minimizedCamera.windowStack).toEqual(['camera-lab', 'systems-lab']);
     expect(minimizedCamera.controlOwner).toBe('document');
@@ -106,26 +106,31 @@ describe('retro optical workstation contract', () => {
     expect(closed.minimizedAppIds).toEqual([]);
     expect(closed.boundsByApp['systems-lab']).toEqual(systems.boundsByApp['systems-lab']);
 
-    const home = closeDesktopApp(closed, 'camera-lab');
-    expect(home.focusedAppId).toBe('home');
-    expect(home.openAppIds).toEqual([]);
-    expect(home.controlOwner).toBe('document');
+    const desktop = closeDesktopApp(closed, 'camera-lab');
+    expect(desktop.focusedAppId).toBe('desktop');
+    expect(desktop.openAppIds).toEqual([]);
+    expect(desktop.controlOwner).toBe('document');
   });
 
-  it('restores a minimized tool through open and delegates home to the desktop view', () => {
+  it('restores a minimized tool through open and opens Home as a real window', () => {
     const camera = openDesktopApp(createWorkstationState(), 'camera-lab', { x: 90, y: 120, width: 760, height: 540 });
-    const home = showWorkstationDesktop(camera);
-    expect(home.focusedAppId).toBe('home');
-    expect(home.openAppIds).toEqual(['camera-lab']);
-    expect(home.minimizedAppIds).toEqual(['camera-lab']);
-    expect(home.windowStack).toEqual(['camera-lab']);
+    const desktop = showWorkstationDesktop(camera);
+    expect(desktop.focusedAppId).toBe('desktop');
+    expect(desktop.openAppIds).toEqual(['camera-lab']);
+    expect(desktop.minimizedAppIds).toEqual(['camera-lab']);
+    expect(desktop.windowStack).toEqual(['camera-lab']);
 
-    const restored = openDesktopApp(home, 'camera-lab');
+    const restored = openDesktopApp(desktop, 'camera-lab');
     expect(restored.focusedAppId).toBe('camera-lab');
     expect(restored.minimizedAppIds).toEqual([]);
     expect(restored.windowStack).toEqual(['camera-lab']);
     expect(restored.boundsByApp['camera-lab']).toEqual(camera.boundsByApp['camera-lab']);
-    expect(openDesktopApp(restored, 'home')).toEqual(showWorkstationDesktop(restored));
+
+    const homeWindow = openDesktopApp(restored, 'home', { x: 60, y: 110, width: 740, height: 560 });
+    expect(homeWindow.focusedAppId).toBe('home');
+    expect(homeWindow.openAppIds).toEqual(['camera-lab', 'home']);
+    expect(homeWindow.windowStack).toEqual(['camera-lab', 'home']);
+    expect(homeWindow.controlOwner).toBe('app');
   });
 
   it('serializes valid app routes while preserving unrelated state and hashes', () => {
@@ -135,9 +140,13 @@ describe('retro optical workstation contract', () => {
     expect(withDesktopApp('https://rahul-mitra.com/?ref=nus#project-churp', 'camera-lab')).toBe(
       'https://rahul-mitra.com/?ref=nus&app=camera-lab#project-churp',
     );
-    expect(withDesktopApp('https://rahul-mitra.com/?ref=nus&app=camera-lab#project-churp', 'home')).toBe(
+    expect(withDesktopApp('https://rahul-mitra.com/?ref=nus&app=camera-lab#project-churp', 'desktop')).toBe(
       'https://rahul-mitra.com/?ref=nus#project-churp',
     );
+    expect(withDesktopApp('https://rahul-mitra.com/?ref=nus#project-churp', 'home')).toBe(
+      'https://rahul-mitra.com/?ref=nus&app=home#project-churp',
+    );
+    expect(desktopAppFromSearch('?app=home')).toBe('home');
   });
 
   it('resolves a literal cascade from the work area and cycles after six slots', () => {
@@ -184,7 +193,8 @@ describe('retro optical workstation contract', () => {
     const valid = openDesktopApp(createWorkstationState(), 'camera-lab', { x: 40, y: 100, width: 760, height: 560 });
     expect(parseWorkstationSession(JSON.stringify(valid), null)).toEqual(valid);
     expect(parseWorkstationSession(JSON.stringify({ ...valid, windowStack: ['camera-lab', 'camera-lab'] }), null)).toEqual(createWorkstationState());
-    expect(parseWorkstationSession(JSON.stringify({ ...valid, openAppIds: ['home'] }), null)).toEqual(createWorkstationState());
+    expect(parseWorkstationSession(JSON.stringify({ ...valid, openAppIds: ['unknown-app'] }), null)).toEqual(createWorkstationState());
+    expect(parseWorkstationSession(JSON.stringify({ ...valid, focusedAppId: 'home' }), null)).toEqual(createWorkstationState());
     expect(parseWorkstationSession(JSON.stringify({ ...valid, boundsByApp: { 'camera-lab': { x: Infinity, y: 2, width: 3, height: 4 } } }), null)).toEqual(createWorkstationState());
   });
 
@@ -197,7 +207,7 @@ describe('retro optical workstation contract', () => {
     }));
     expect(migrated).toEqual({
       ...createWorkstationState(),
-      boundsByApp: { 'camera-lab': { x: 48, y: 92, width: 820, height: 600 } },
+      boundsByApp: { 'camera-lab': { x: 48, y: 92, width: 820, height: 600 }, home: { x: 0, y: 0, width: 1, height: 1 } },
       snapByApp: { 'camera-lab': 'right' },
     });
   });

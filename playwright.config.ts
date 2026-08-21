@@ -10,6 +10,11 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // Containers with a system-provisioned Chromium (no playwright install) can
+    // point PLAYWRIGHT_CHROMIUM_PATH at it instead of downloading a browser.
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+      : {},
   },
   webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
     // Acceptance exercises the pre-rendered semantic document, so the local

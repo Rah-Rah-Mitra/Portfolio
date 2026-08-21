@@ -7,6 +7,7 @@ import { resolveDesktopBackgroundActivity } from '../lib/desktopBackgroundPolicy
 
 const NBodyBackground = React.lazy(() => import('./NBodyBackground'));
 const FluidBackground = React.lazy(() => import('./FluidBackground'));
+const AsciiBackground = React.lazy(() => import('./AsciiBackground'));
 const heavyApps = new Set(['systems-lab', 'camera-lab', 'world-3d']);
 
 const DesktopBackgroundController: React.FC = () => {
@@ -33,14 +34,14 @@ const DesktopBackgroundController: React.FC = () => {
   });
 
   return (
-    <div className="desktop-background-controller" data-theme={activity.theme} data-activity={activity.reason}>
+    <aside className="desktop-background-controller" aria-label="Desktop background field" data-theme={activity.theme} data-activity={activity.reason} data-desktop-field>
       <Suspense fallback={<div className="desktop-background-static" />}>
-        {activity.theme === 'nbody'
-          ? <NBodyBackground active={activity.active} />
-          : <FluidBackground active={activity.active} />}
+        {activity.theme === 'nbody' && <NBodyBackground active={activity.active} />}
+        {activity.theme === 'fluid' && <FluidBackground active={activity.active} />}
+        {activity.theme === 'ascii' && <AsciiBackground active={activity.active} />}
       </Suspense>
       {!activity.active && <div className="desktop-background-static" data-frozen-theme={activity.theme} />}
-    </div>
+    </aside>
   );
 };
 

@@ -1,6 +1,7 @@
 import type {
   DesktopAppDefinition,
   DesktopAppId,
+  DesktopFocusId,
   DesktopToolAppId,
   WindowBounds,
   WindowSnapState,
@@ -21,14 +22,13 @@ export const workstationApps: readonly DesktopAppDefinition[] = [
 ] as const;
 
 const appIds = new Set<DesktopAppId>(workstationApps.map((app) => app.id));
-const toolAppIds = new Set<DesktopToolAppId>(workstationApps.filter((app) => app.id !== 'home').map((app) => app.id as DesktopToolAppId));
 const snapStates = new Set<WindowSnapState>(['floating', 'left', 'right', 'maximized']);
 
 export const isDesktopAppId = (value: string | null): value is DesktopAppId => Boolean(value && appIds.has(value as DesktopAppId));
-export const isDesktopToolAppId = (value: unknown): value is DesktopToolAppId => typeof value === 'string' && toolAppIds.has(value as DesktopToolAppId);
+export const isDesktopToolAppId = (value: unknown): value is DesktopToolAppId => typeof value === 'string' && appIds.has(value as DesktopAppId);
 
 export const createWorkstationState = (): WorkstationSessionState => ({
-  focusedAppId: 'home',
+  focusedAppId: 'desktop',
   openAppIds: [],
   minimizedAppIds: [],
   windowStack: [],
@@ -100,22 +100,22 @@ export const parseWorkstationSession = (v2Raw: string | null, v1Raw: string | nu
     const boundsByApp = validBoundsRecord(v2.boundsByApp, true);
     const snapByApp = validSnapRecord(v2.snapByApp, true);
     const focusedAppId = v2.focusedAppId;
-    const validFocused = focusedAppId === 'home' || isDesktopToolAppId(focusedAppId);
+    const validFocused = focusedAppId === 'desktop' || isDesktopToolAppId(focusedAppId);
     const validCollections = openAppIds && minimizedAppIds && windowStack
       && minimizedAppIds.every((id) => openAppIds.includes(id))
       && windowStack.length === openAppIds.length
       && windowStack.every((id) => openAppIds.includes(id));
-    const validFocusedState = focusedAppId === 'home'
+    const validFocusedState = focusedAppId === 'desktop'
       || (isDesktopToolAppId(focusedAppId) && Boolean(openAppIds?.includes(focusedAppId)) && !minimizedAppIds?.includes(focusedAppId));
     if (validFocused && validCollections && validFocusedState && boundsByApp && snapByApp) {
       return {
-        focusedAppId,
+        focusedAppId: focusedAppId as DesktopFocusId,
         openAppIds,
         minimizedAppIds,
         windowStack,
         boundsByApp,
         snapByApp,
-        controlOwner: focusedAppId === 'home' ? 'document' : 'app',
+        controlOwner: focusedAppId === 'desktop' ? 'document' : 'app',
       };
     }
     return baseline;
@@ -146,7 +146,6 @@ export const openDesktopApp = (
   appId: DesktopAppId,
   initialBounds?: WindowBounds,
 ): WorkstationSessionState => {
-  if (appId === 'home') return showWorkstationDesktop(state);
   const isOpen = state.openAppIds.includes(appId);
   const boundsByApp = !isOpen && initialBounds
     ? { ...state.boundsByApp, [appId]: initialBounds }
@@ -175,12 +174,12 @@ export const focusDesktopApp = (state: WorkstationSessionState, appId: DesktopTo
 export const minimizeDesktopApp = (state: WorkstationSessionState, appId: DesktopToolAppId): WorkstationSessionState => {
   if (!state.openAppIds.includes(appId) || state.minimizedAppIds.includes(appId)) return state;
   const minimizedAppIds = appendUnique(state.minimizedAppIds, appId);
-  const focusedAppId = nextVisibleTool(state, minimizedAppIds) ?? 'home';
+  const focusedAppId = nextVisibleTool(state, minimizedAppIds) ?? 'desktop';
   return {
     ...state,
     focusedAppId,
     minimizedAppIds,
-    controlOwner: focusedAppId === 'home' ? 'document' : 'app',
+    controlOwner: focusedAppId === 'desktop' ? 'document' : 'app',
   };
 };
 
@@ -189,20 +188,20 @@ export const closeDesktopApp = (state: WorkstationSessionState, appId: DesktopTo
   const openAppIds = state.openAppIds.filter((id) => id !== appId);
   const minimizedAppIds = state.minimizedAppIds.filter((id) => id !== appId);
   const windowStack = state.windowStack.filter((id) => id !== appId);
-  const focusedAppId = [...windowStack].reverse().find((id) => !minimizedAppIds.includes(id)) ?? 'home';
+  const focusedAppId = [...windowStack].reverse().find((id) => !minimizedAppIds.includes(id)) ?? 'desktop';
   return {
     ...state,
     focusedAppId,
     openAppIds,
     minimizedAppIds,
     windowStack,
-    controlOwner: focusedAppId === 'home' ? 'document' : 'app',
+    controlOwner: focusedAppId === 'desktop' ? 'document' : 'app',
   };
 };
 
 export const showWorkstationDesktop = (state: WorkstationSessionState): WorkstationSessionState => ({
   ...state,
-  focusedAppId: 'home',
+  focusedAppId: 'desktop',
   minimizedAppIds: [...state.openAppIds],
   controlOwner: 'document',
 });
@@ -214,9 +213,9 @@ export const desktopAppFromSearch = (search: string): DesktopAppId | null => {
   return isDesktopAppId(app) ? app : null;
 };
 
-export const withDesktopApp = (rawUrl: string, appId: DesktopAppId): string => {
+export const withDesktopApp = (rawUrl: string, appId: DesktopFocusId): string => {
   const url = new URL(rawUrl);
-  if (appId === 'home') url.searchParams.delete('app');
+  if (appId === 'desktop') url.searchParams.delete('app');
   else url.searchParams.set('app', appId);
   return url.toString();
 };

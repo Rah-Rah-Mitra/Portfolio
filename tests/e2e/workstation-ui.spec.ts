@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-test('the maximized Dossier keeps recruiter evidence and resume inside the mobile first view', async ({ page }) => {
+test('the Home sheet keeps recruiter evidence and resume inside the mobile first view', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/?app=home');
 
   const rail = page.getByRole('navigation', { name: 'Workstation applications' });
   const resume = page.getByRole('link', { name: /Download résumé/ });
@@ -122,19 +122,22 @@ test('mobile preserves the desktop stack while exposing one full-screen sheet', 
   expect(restoredBounds).toEqual(desktopBounds);
 });
 
-test('Show Desktop preserves Home scroll and the open stack', async ({ page }) => {
+test('Show desktop minimizes the stack, keeps it restorable, and Home opens as a window', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await page.evaluate(() => window.scrollTo(0, 520));
-  const before = await page.evaluate(() => window.scrollY);
   await page.getByRole('button', { name: 'Open Camera Lab' }).click();
   await page.getByRole('button', { name: 'Open Systems Lab' }).click();
-  await page.getByRole('button', { name: 'Open Home / Dossier' }).click();
+  await page.getByRole('button', { name: 'Show desktop' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Home / Dossier application' })).toBeVisible();
-  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+  await expect(page.getByRole('region', { name: 'Desktop' })).toBeVisible();
   await expect(page.locator('.workstation-module[data-app-id="camera-lab"]')).toHaveAttribute('data-state', 'minimized');
   await expect(page.locator('.workstation-module[data-app-id="systems-lab"]')).toHaveAttribute('data-state', 'minimized');
+  await page.getByRole('button', { name: 'Open Camera Lab' }).click();
+  await expect(page.getByRole('dialog', { name: 'Camera Lab' })).toBeVisible();
+  await page.getByRole('button', { name: 'Open Home / Dossier' }).click();
+  await expect(page.getByRole('dialog', { name: 'Home / Dossier' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Intelligent systems, made operational.' })).toBeVisible();
+  await expect(page).toHaveURL(/\?app=home/);
 });
 
 test('only the focused heavy application owns a live WebGL surface', async ({ page }) => {

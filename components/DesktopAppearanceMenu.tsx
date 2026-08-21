@@ -15,7 +15,8 @@ const DesktopAppearanceMenu: React.FC = () => {
       if (window.matchMedia?.('(max-width: 920px)').matches) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
       const field = target?.closest<HTMLElement>('[data-desktop-field]');
-      if (!target || !field || target.closest(nativeContextTargets)) return;
+      const isBackgroundCanvas = Boolean(target?.closest('.desktop-background-controller'));
+      if (!target || !field || (target.closest(nativeContextTargets) && !isBackgroundCanvas)) return;
       event.preventDefault();
       setMenu({ x: Math.min(event.clientX, window.innerWidth - 240), y: Math.min(event.clientY, window.innerHeight - 380), target: field });
     };
@@ -63,6 +64,7 @@ const DesktopAppearanceMenu: React.FC = () => {
       <hr />
       <button type="button" role="menuitemradio" aria-checked={appearance.preferences.background === 'nbody'} onClick={() => choose(() => appearance.setBackgroundTheme('nbody'))}>N-body Field</button>
       <button type="button" role="menuitemradio" aria-checked={appearance.preferences.background === 'fluid'} onClick={() => choose(() => appearance.setBackgroundTheme('fluid'))}>Fluid Field</button>
+      <button type="button" role="menuitemradio" aria-checked={appearance.preferences.background === 'ascii'} onClick={() => choose(() => appearance.setBackgroundTheme('ascii'))}>ASCII Gaze</button>
       <button type="button" role="menuitem" onClick={() => choose(() => appearance.setBackgroundPaused(!appearance.preferences.backgroundPaused))}>{appearance.preferences.backgroundPaused ? 'Resume Background' : 'Pause Background'}</button>
       <button type="button" role="menuitem" onClick={() => choose(appearance.resetBackground)}>Reset Background</button>
       <hr />

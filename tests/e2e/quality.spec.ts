@@ -11,7 +11,7 @@ const viewports = [
 for (const viewport of viewports) {
   test(`Guided and Quick Scan preserve the reading column at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    for (const path of ['/', '/?mode=scan']) {
+    for (const path of ['/?app=home', '/?mode=scan']) {
       await page.goto(path);
       const dimensions = await page.evaluate(() => ({
         clientWidth: document.documentElement.clientWidth,
@@ -27,7 +27,7 @@ for (const viewport of viewports) {
 test('desktop hero copy starts below the sticky header', async ({ page }) => {
   for (const viewport of [{ width: 1440, height: 1000 }, { width: 1024, height: 768 }]) {
     await page.setViewportSize(viewport);
-    await page.goto('/');
+    await page.goto('/?app=home');
     const geometry = await page.evaluate(() => ({
       headerBottom: document.querySelector('.portfolio-header')?.getBoundingClientRect().bottom ?? 0,
       headingTop: document.querySelector('#portfolio-title')?.getBoundingClientRect().top ?? 0,
@@ -39,37 +39,46 @@ test('desktop hero copy starts below the sticky header', async ({ page }) => {
   }
 });
 
-test('the first recruiter view names recent experience and two leading projects', async ({ page }) => {
+test('the first guided view is the desktop with every application reachable', async ({ page }) => {
   for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
-    for (const path of ['/', '/?mode=scan']) {
-      await page.goto(path);
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-      const firstView = await page.evaluate(() => {
-        const header = document.querySelector('.portfolio-header')?.getBoundingClientRect();
-        const heading = document.querySelector('#portfolio-title')?.getBoundingClientRect();
-        return {
-          scrollY: window.scrollY,
-          header: header ? { top: header.top, bottom: header.bottom } : null,
-          heading: heading ? { top: heading.top, bottom: heading.bottom } : null,
-        };
-      });
-      expect(firstView.scrollY).toBe(0);
-      expect(firstView.header).not.toBeNull();
-      expect(firstView.header!.top).toBeGreaterThanOrEqual(0);
-      expect(firstView.header!.bottom).toBeLessThanOrEqual(viewport.height);
-      expect(firstView.heading).not.toBeNull();
-      expect(firstView.heading!.top).toBeGreaterThanOrEqual(firstView.header!.bottom);
-      expect(firstView.heading!.bottom).toBeLessThanOrEqual(viewport.height);
-      const proof = page.getByLabel('Current proof');
-      await expect(proof).toContainText('Abbott');
-      await expect(proof).toContainText('Hybrid Flow Shop');
-      await expect(proof).toContainText('Churp');
-      await expect(proof).toContainText('OnTheSpectrum');
-      const bottom = await proof.evaluate((element) => element.getBoundingClientRect().bottom);
-      expect(bottom).toBeLessThanOrEqual(viewport.height);
-    }
+    await page.goto('/');
+    await expect(page.getByRole('region', { name: 'Desktop' })).toBeVisible();
+    await expect(page.locator('.workstation-desktop-icon')).toHaveCount(10);
+    await expect(page.getByRole('button', { name: 'Launch Home / Dossier' })).toBeVisible();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  }
+});
+
+test('the scan view still names recent experience and the leading projects first', async ({ page }) => {
+  for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/?mode=scan');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    const firstView = await page.evaluate(() => {
+      const header = document.querySelector('.portfolio-header')?.getBoundingClientRect();
+      const heading = document.querySelector('#portfolio-title')?.getBoundingClientRect();
+      return {
+        scrollY: window.scrollY,
+        header: header ? { top: header.top, bottom: header.bottom } : null,
+        heading: heading ? { top: heading.top, bottom: heading.bottom } : null,
+      };
+    });
+    expect(firstView.scrollY).toBe(0);
+    expect(firstView.header).not.toBeNull();
+    expect(firstView.header!.top).toBeGreaterThanOrEqual(0);
+    expect(firstView.header!.bottom).toBeLessThanOrEqual(viewport.height);
+    expect(firstView.heading).not.toBeNull();
+    expect(firstView.heading!.top).toBeGreaterThanOrEqual(firstView.header!.bottom);
+    expect(firstView.heading!.bottom).toBeLessThanOrEqual(viewport.height);
+    const proof = page.getByLabel('Current proof');
+    await expect(proof).toContainText('Abbott');
+    await expect(proof).toContainText('Hybrid Flow Shop');
+    await expect(proof).toContainText('Churp');
+    await expect(proof).toContainText('OnTheSpectrum');
+    const bottom = await proof.evaluate((element) => element.getBoundingClientRect().bottom);
+    expect(bottom).toBeLessThanOrEqual(viewport.height);
   }
 });
 

@@ -1,6 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { AccentId, AppearancePanelTab, ColorSchemePreference, DockSize, NBodyExpansionOrder, NBodyLeafCapacity, WindowTint } from '../types';
+import type { AccentId, AppearancePanelTab, AsciiAnimStyle, AsciiBgMode, AsciiCharSet, AsciiRenderMode, ColorSchemePreference, DockSize, NBodyExpansionOrder, NBodyLeafCapacity, WindowTint } from '../types';
 import { useAppearance } from '../contexts/AppearanceContext';
+import { asciiPostEffectIds, asciiRenderModes } from '../lib/appearance';
+
+const asciiPostEffectLabels: Record<(typeof asciiPostEffectIds)[number], string> = {
+  scanLines: 'Scan lines',
+  vignette: 'Vignette',
+  bloom: 'Bloom',
+  chromatic: 'Chromatic',
+  filmGrain: 'Film grain',
+  glitch: 'Glitch',
+  halftone: 'Halftone',
+  pixelate: 'Pixelate',
+  filmDust: 'Film dust',
+};
 
 const tabs: ReadonlyArray<{ id: AppearancePanelTab; label: string }> = [
   { id: 'appearance', label: 'Appearance' },
@@ -73,7 +86,7 @@ const AppearancePreferences: React.FC = () => {
           </>}
           {preferencesTab === 'desktop' && <>
             <div className="preferences-heading"><span>02</span><div><h3>Desktop field</h3><p>Only the selected field loads. The document remains readable above it.</p></div></div>
-            <RadioGroup legend="Desktop background" value={preferences.background} onChange={appearance.setBackgroundTheme} values={[{ id: 'nbody', label: 'N-body Field' }, { id: 'fluid', label: 'Fluid Field' }]} />
+            <RadioGroup legend="Desktop background" value={preferences.background} onChange={appearance.setBackgroundTheme} values={[{ id: 'nbody', label: 'N-body Field' }, { id: 'fluid', label: 'Fluid Field' }, { id: 'ascii', label: 'ASCII Gaze' }]} />
             {preferences.background === 'nbody' && <div className="nbody-preference-controls">
               <RadioGroup legend="Initial condition" value={preferences.nbody.preset} onChange={(preset) => appearance.patchNBody({ preset })} values={[{ id: 'galaxy', label: 'Galaxy' }, { id: 'binary', label: 'Binary' }, { id: 'field', label: 'Field' }]} />
               <label className="preference-slider"><span>Bodies <output>{preferences.nbody.particleCount}</output></span><input type="range" min="256" max="4096" step="256" value={preferences.nbody.particleCount} onChange={(event) => appearance.patchNBody({ particleCount: Number(event.target.value) })} /></label>
@@ -107,6 +120,43 @@ const AppearancePreferences: React.FC = () => {
               <div className="preference-select-grid"><label><span>Quality</span><select value={preferences.fluid.quality} onChange={(event) => appearance.patchFluid({ quality: event.target.value as 'balanced' | 'high' })}><option value="balanced">Balanced</option><option value="high">High</option></select></label></div>
               <label className="preference-check"><input type="checkbox" checked={preferences.fluid.pointerInteraction} onChange={(event) => appearance.patchFluid({ pointerInteraction: event.target.checked })} /><span>Pointer interaction</span></label>
             </div>}
+            {preferences.background === 'ascii' && <div className="nbody-preference-controls ascii-preference-controls">
+              <div className="preferences-heading"><span>A</span><div><h3>ASCII Electric Gaze</h3><p>A Canvas2D grid re-rendering of the reference photograph. Every parameter below reshapes the live field.</p></div></div>
+              <div className="preference-select-grid">
+                <label><span>Render mode</span><select value={preferences.ascii.renderMode} onChange={(event) => appearance.patchAscii({ renderMode: event.target.value as AsciiRenderMode })}>{asciiRenderModes.map((mode) => <option key={mode} value={mode}>{mode}</option>)}</select></label>
+                <label><span>Character set</span><select value={preferences.ascii.charSet} onChange={(event) => appearance.patchAscii({ charSet: event.target.value as AsciiCharSet })}><option value="standard">Standard</option><option value="blocks">Blocks</option><option value="minimal">Minimal</option><option value="digits">Digits</option><option value="custom">Custom</option></select></label>
+                <label><span>Backdrop</span><select value={preferences.ascii.bgMode} onChange={(event) => appearance.patchAscii({ bgMode: event.target.value as AsciiBgMode })}><option value="none">None</option><option value="solid">Solid</option><option value="blur">Blurred photo</option><option value="photo">Photo</option></select></label>
+              </div>
+              {preferences.ascii.charSet === 'custom' && <label className="preference-text"><span>Custom characters</span><input type="text" maxLength={64} value={preferences.ascii.customChars} onChange={(event) => appearance.patchAscii({ customChars: event.target.value })} placeholder=".:-=+*#%@" /></label>}
+              <label className="preference-slider"><span>Cell size <output>{preferences.ascii.cellSize}px</output></span><input type="range" min="4" max="32" value={preferences.ascii.cellSize} onChange={(event) => appearance.patchAscii({ cellSize: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Coverage <output>{preferences.ascii.coverage}%</output></span><input type="range" min="0" max="100" value={preferences.ascii.coverage} onChange={(event) => appearance.patchAscii({ coverage: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Density <output>{preferences.ascii.density}%</output></span><input type="range" min="0" max="100" value={preferences.ascii.density} onChange={(event) => appearance.patchAscii({ density: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Brightness <output>{preferences.ascii.brightness}</output></span><input type="range" min="-100" max="100" value={preferences.ascii.brightness} onChange={(event) => appearance.patchAscii({ brightness: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Contrast <output>{preferences.ascii.contrast}</output></span><input type="range" min="0" max="300" value={preferences.ascii.contrast} onChange={(event) => appearance.patchAscii({ contrast: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Saturation <output>{preferences.ascii.saturation}%</output></span><input type="range" min="0" max="200" value={preferences.ascii.saturation} onChange={(event) => appearance.patchAscii({ saturation: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Grayscale <output>{preferences.ascii.grayscale}%</output></span><input type="range" min="0" max="100" value={preferences.ascii.grayscale} onChange={(event) => appearance.patchAscii({ grayscale: Number(event.target.value) })} /></label>
+              <label className="preference-slider"><span>Edge emphasis <output>{preferences.ascii.edgeEmphasis}%</output></span><input type="range" min="0" max="100" value={preferences.ascii.edgeEmphasis} onChange={(event) => appearance.patchAscii({ edgeEmphasis: Number(event.target.value) })} /></label>
+              <div className="preference-select-grid">
+                <label><span>Tint color</span><input type="color" value={preferences.ascii.tint} onChange={(event) => appearance.patchAscii({ tint: event.target.value })} aria-label="ASCII tint color" /></label>
+                <label><span>Tint opacity</span><input type="number" min="0" max="100" value={preferences.ascii.tintOpacity} onChange={(event) => appearance.patchAscii({ tintOpacity: Math.min(100, Math.max(0, Number(event.target.value))) })} /></label>
+              </div>
+              <label className="preference-check"><input type="checkbox" checked={preferences.ascii.invert} onChange={(event) => appearance.patchAscii({ invert: event.target.checked })} /><span>Invert luminance</span></label>
+              <label className="preference-check"><input type="checkbox" checked={preferences.ascii.animated} onChange={(event) => appearance.patchAscii({ animated: event.target.checked })} /><span>Animated</span></label>
+              {preferences.ascii.animated && <>
+                <RadioGroup<AsciiAnimStyle> legend="Animation style" value={preferences.ascii.animStyle} onChange={(animStyle) => appearance.patchAscii({ animStyle })} values={[{ id: 'wave', label: 'Wave' }, { id: 'pulse', label: 'Pulse' }, { id: 'shimmer', label: 'Shimmer' }, { id: 'ripple', label: 'Ripple' }, { id: 'flicker', label: 'Flicker' }]} />
+                <label className="preference-slider"><span>Animation speed <output>{preferences.ascii.animSpeed}%</output></span><input type="range" min="0" max="100" value={preferences.ascii.animSpeed} onChange={(event) => appearance.patchAscii({ animSpeed: Number(event.target.value) })} /></label>
+                <label className="preference-slider"><span>Animation intensity <output>{preferences.ascii.animIntensity}%</output></span><input type="range" min="0" max="100" value={preferences.ascii.animIntensity} onChange={(event) => appearance.patchAscii({ animIntensity: Number(event.target.value) })} /></label>
+              </>}
+              <fieldset className="preference-choice-group ascii-post-effects">
+                <legend>Post effects</legend>
+                {asciiPostEffectIds.map((effectId) => (
+                  <div key={effectId} className="ascii-post-effect-row">
+                    <label className="preference-check"><input type="checkbox" checked={preferences.ascii.pfx[effectId].enabled} onChange={(event) => appearance.patchAscii({ pfx: { [effectId]: { ...preferences.ascii.pfx[effectId], enabled: event.target.checked } } as never })} /><span>{asciiPostEffectLabels[effectId]}</span></label>
+                    {preferences.ascii.pfx[effectId].enabled && <label className="preference-slider"><span className="sr-only">{asciiPostEffectLabels[effectId]} intensity</span><input type="range" min="0" max="100" value={preferences.ascii.pfx[effectId].intensity} onChange={(event) => appearance.patchAscii({ pfx: { [effectId]: { ...preferences.ascii.pfx[effectId], intensity: Number(event.target.value) } } as never })} /><output>{preferences.ascii.pfx[effectId].intensity}</output></label>}
+                  </div>
+                ))}
+              </fieldset>
+            </div>}
             <div className="preference-action-row">
               <button type="button" onClick={() => appearance.setBackgroundPaused(!preferences.backgroundPaused)}>{preferences.backgroundPaused ? 'Resume background' : 'Pause background'}</button>
               <button type="button" onClick={appearance.resetBackground}>Reset background</button>
@@ -115,6 +165,7 @@ const AppearancePreferences: React.FC = () => {
           {preferencesTab === 'window' && <>
             <div className="preferences-heading"><span>03</span><div><h3>Windows and dock</h3><p>Opaque reading surfaces with controlled titlebar material.</p></div></div>
             <RadioGroup<WindowTint> legend="Window material" value={preferences.windowTint} onChange={(tint) => appearance.dispatch({ type: 'SET_WINDOW_TINT', tint })} values={[{ id: 'neutral', label: 'Neutral' }, { id: 'graphite', label: 'Graphite' }, { id: 'accent', label: 'Accent tinted' }]} />
+            <label className="preference-check"><input type="checkbox" checked={preferences.windowGlow} onChange={(event) => appearance.setWindowGlow(event.target.checked)} /><span>Glow outline on windows and desktop frame</span></label>
             <label className="preference-slider"><span>Titlebar opacity <output>{preferences.titlebarOpacity}%</output></span><input type="range" min="85" max="100" value={preferences.titlebarOpacity} onChange={(event) => appearance.dispatch({ type: 'SET_TITLEBAR_OPACITY', opacity: Number(event.target.value) })} /></label>
             <RadioGroup<DockSize> legend="Dock size" value={preferences.dockSize} onChange={(size) => appearance.dispatch({ type: 'SET_DOCK_SIZE', size })} values={[{ id: 'small', label: 'Small dock' }, { id: 'medium', label: 'Medium dock' }, { id: 'large', label: 'Large dock' }]} />
           </>}

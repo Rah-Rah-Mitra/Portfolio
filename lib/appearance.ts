@@ -2,6 +2,13 @@ import type {
   AccentId,
   AppearancePreferenceAction,
   AppearancePreferences,
+  AsciiAnimStyle,
+  AsciiBgMode,
+  AsciiCharSet,
+  AsciiPostEffect,
+  AsciiPostEffectId,
+  AsciiPreferences,
+  AsciiRenderMode,
   BackgroundThemeId,
   ColorSchemePreference,
   DockSize,
@@ -39,22 +46,73 @@ export const defaultFluidPreferences: FluidPreferences = {
   pointerInteraction: true,
 };
 
+export const asciiRenderModes: readonly AsciiRenderMode[] = [
+  'characters', 'dither', 'mosaic', 'pixel', 'dots', 'cross', 'diamond', 'voxel', 'lego',
+  'mixed', 'lines', 'diagonal', 'braille', 'disco', 'hexdump', 'matrix', 'rings', 'hearts',
+  'stars', 'hexagons', 'triangles', 'bubbles', 'hatch', 'contour', 'halfblocks',
+];
+
+export const asciiPostEffectIds: readonly AsciiPostEffectId[] = [
+  'scanLines', 'vignette', 'bloom', 'chromatic', 'filmGrain', 'glitch', 'halftone', 'pixelate', 'filmDust',
+];
+
+export const defaultAsciiPreferences: AsciiPreferences = {
+  renderMode: 'dither',
+  bgMode: 'none',
+  bgBlur: 12,
+  bgOpacity: 90,
+  cellSize: 9,
+  coverage: 100,
+  density: 20,
+  invert: false,
+  charSet: 'standard',
+  customChars: '',
+  brightness: 0,
+  contrast: 158,
+  saturation: 100,
+  grayscale: 0,
+  edgeEmphasis: 0,
+  tint: '#3ca6ff',
+  tintOpacity: 0,
+  animated: true,
+  animStyle: 'shimmer',
+  animSpeed: 100,
+  animIntensity: 60,
+  pfx: {
+    vignette: { enabled: false, intensity: 38 },
+    scanLines: { enabled: false, intensity: 40 },
+    chromatic: { enabled: false, intensity: 15 },
+    bloom: { enabled: false, intensity: 25 },
+    filmGrain: { enabled: false, intensity: 30 },
+    glitch: { enabled: false, intensity: 20 },
+    pixelate: { enabled: false, intensity: 15 },
+    halftone: { enabled: false, intensity: 20 },
+    filmDust: { enabled: false, intensity: 20 },
+  },
+};
+
 export const defaultAppearancePreferences: AppearancePreferences = {
   scheme: 'dark',
   accent: 'teal',
   background: 'nbody',
   backgroundPaused: false,
+  windowGlow: true,
   windowTint: 'graphite',
   titlebarOpacity: 92,
   reduceTransparency: false,
   dockSize: 'medium',
   nbody: defaultNBodyPreferences,
   fluid: defaultFluidPreferences,
+  ascii: defaultAsciiPreferences,
 };
 
 const schemes = new Set<ColorSchemePreference>(['dark', 'light', 'system']);
 const accents = new Set<AccentId>(['teal', 'sky', 'amber', 'violet', 'rose']);
-const backgrounds = new Set<BackgroundThemeId>(['nbody', 'fluid']);
+const backgrounds = new Set<BackgroundThemeId>(['nbody', 'fluid', 'ascii']);
+const asciiModes = new Set<AsciiRenderMode>(asciiRenderModes);
+const asciiCharSets = new Set<AsciiCharSet>(['standard', 'blocks', 'minimal', 'digits', 'custom']);
+const asciiBgModes = new Set<AsciiBgMode>(['none', 'solid', 'blur', 'photo']);
+const asciiAnimStyles = new Set<AsciiAnimStyle>(['wave', 'pulse', 'shimmer', 'ripple', 'flicker']);
 const windowTints = new Set<WindowTint>(['neutral', 'graphite', 'accent']);
 const dockSizes = new Set<DockSize>(['small', 'medium', 'large']);
 const nbodyPresets = new Set<NBodyPreferences['preset']>(['galaxy', 'binary', 'field']);
@@ -91,10 +149,58 @@ const isFluidPreferences = (value: unknown): value is FluidPreferences => {
     && typeof value.pointerInteraction === 'boolean';
 };
 
+const isHexColor = (value: unknown): value is string => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
+
+const isAsciiPostEffect = (value: unknown): value is AsciiPostEffect => (
+  isRecord(value) && typeof value.enabled === 'boolean' && isFiniteIn(value.intensity, 0, 100)
+);
+
+const isAsciiPreferences = (value: unknown): value is AsciiPreferences => {
+  if (!isRecord(value)) return false;
+  return asciiModes.has(value.renderMode as AsciiRenderMode)
+    && asciiBgModes.has(value.bgMode as AsciiBgMode)
+    && isFiniteIn(value.bgBlur, 0, 40)
+    && isFiniteIn(value.bgOpacity, 0, 100)
+    && isIntegerIn(value.cellSize, 4, 40)
+    && isFiniteIn(value.coverage, 0, 100)
+    && isFiniteIn(value.density, 0, 100)
+    && typeof value.invert === 'boolean'
+    && asciiCharSets.has(value.charSet as AsciiCharSet)
+    && typeof value.customChars === 'string' && value.customChars.length <= 64
+    && isFiniteIn(value.brightness, -100, 100)
+    && isFiniteIn(value.contrast, 0, 300)
+    && isFiniteIn(value.saturation, 0, 200)
+    && isFiniteIn(value.grayscale, 0, 100)
+    && isFiniteIn(value.edgeEmphasis, 0, 100)
+    && isHexColor(value.tint)
+    && isFiniteIn(value.tintOpacity, 0, 100)
+    && typeof value.animated === 'boolean'
+    && asciiAnimStyles.has(value.animStyle as AsciiAnimStyle)
+    && isFiniteIn(value.animSpeed, 0, 100)
+    && isFiniteIn(value.animIntensity, 0, 100)
+    && isRecord(value.pfx)
+    && asciiPostEffectIds.every((id) => isAsciiPostEffect((value.pfx as Record<string, unknown>)[id]));
+};
+
+const cloneAsciiDefaults = (): AsciiPreferences => ({
+  ...defaultAsciiPreferences,
+  pfx: Object.fromEntries(
+    asciiPostEffectIds.map((id) => [id, { ...defaultAsciiPreferences.pfx[id] }]),
+  ) as AsciiPreferences['pfx'],
+});
+
+const cloneAscii = (value: AsciiPreferences): AsciiPreferences => ({
+  ...value,
+  pfx: Object.fromEntries(
+    asciiPostEffectIds.map((id) => [id, { ...value.pfx[id] }]),
+  ) as AsciiPreferences['pfx'],
+});
+
 const cloneDefaults = (): AppearancePreferences => ({
   ...defaultAppearancePreferences,
   nbody: { ...defaultNBodyPreferences },
   fluid: { ...defaultFluidPreferences },
+  ascii: cloneAsciiDefaults(),
 });
 
 export const parseAppearancePreferences = (raw: string | null): AppearancePreferences => {
@@ -109,20 +215,24 @@ export const parseAppearancePreferences = (raw: string | null): AppearancePrefer
       || !windowTints.has(value.windowTint as WindowTint)
       || !isFiniteIn(value.titlebarOpacity, 85, 100)
       || typeof value.reduceTransparency !== 'boolean'
+      || typeof value.windowGlow !== 'boolean'
       || !dockSizes.has(value.dockSize as DockSize)
       || !isNBodyPreferences(value.nbody)
-      || !isFluidPreferences(value.fluid)) return cloneDefaults();
+      || !isFluidPreferences(value.fluid)
+      || !isAsciiPreferences(value.ascii)) return cloneDefaults();
     return {
       scheme: value.scheme as ColorSchemePreference,
       accent: value.accent as AccentId,
       background: value.background as BackgroundThemeId,
       backgroundPaused: value.backgroundPaused,
+      windowGlow: value.windowGlow,
       windowTint: value.windowTint as WindowTint,
       titlebarOpacity: value.titlebarOpacity as number,
       reduceTransparency: value.reduceTransparency,
       dockSize: value.dockSize as DockSize,
       nbody: { ...value.nbody },
       fluid: { ...value.fluid },
+      ascii: cloneAscii(value.ascii),
     };
   } catch {
     return cloneDefaults();
@@ -139,17 +249,31 @@ export const appearanceReducer = (state: AppearancePreferences, action: Appearan
     case 'SET_ACCENT': return { ...state, accent: action.accent };
     case 'SET_BACKGROUND': return { ...state, background: action.background };
     case 'SET_BACKGROUND_PAUSED': return { ...state, backgroundPaused: action.paused };
+    case 'SET_WINDOW_GLOW': return { ...state, windowGlow: action.glow };
     case 'SET_WINDOW_TINT': return { ...state, windowTint: action.tint };
     case 'SET_TITLEBAR_OPACITY': return { ...state, titlebarOpacity: Math.min(100, Math.max(85, action.opacity)) };
     case 'SET_REDUCE_TRANSPARENCY': return { ...state, reduceTransparency: action.reduce };
     case 'SET_DOCK_SIZE': return { ...state, dockSize: action.size };
     case 'PATCH_NBODY': return { ...state, nbody: { ...state.nbody, ...action.patch } };
     case 'PATCH_FLUID': return { ...state, fluid: { ...state.fluid, ...action.patch } };
+    case 'PATCH_ASCII': return {
+      ...state,
+      ascii: {
+        ...state.ascii,
+        ...action.patch,
+        pfx: action.patch.pfx
+          ? Object.fromEntries(
+            asciiPostEffectIds.map((id) => [id, { ...state.ascii.pfx[id], ...action.patch.pfx?.[id] }]),
+          ) as AsciiPreferences['pfx']
+          : state.ascii.pfx,
+      },
+    };
     case 'RESET_BACKGROUND': return {
       ...state,
       backgroundPaused: false,
       nbody: { ...defaultNBodyPreferences },
       fluid: { ...defaultFluidPreferences },
+      ascii: cloneAsciiDefaults(),
     };
     case 'RESET_ALL': return cloneDefaults();
   }
@@ -164,6 +288,7 @@ export const applyAppearanceToDocument = (
   root.dataset.colorScheme = resolvedScheme;
   root.dataset.accent = preferences.accent;
   root.dataset.desktopBackground = preferences.background;
+  root.dataset.windowGlow = String(preferences.windowGlow);
   root.dataset.windowTint = preferences.windowTint;
   root.dataset.dockSize = preferences.dockSize;
   root.dataset.reduceTransparency = String(preferences.reduceTransparency);

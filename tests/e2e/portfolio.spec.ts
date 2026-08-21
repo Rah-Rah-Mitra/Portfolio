@@ -3,6 +3,8 @@ import AxeBuilder from '@axe-core/playwright';
 
 test('recruiter evidence, navigation, projects, and controls remain visible', async ({ page }) => {
   await page.goto('/');
+  await expect(page.getByRole('region', { name: 'Desktop' })).toBeVisible();
+  await page.getByRole('button', { name: 'Open Home / Dossier' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Intelligent systems, made operational.' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Download résumé/ })).toBeVisible();
   await page.getByRole('button', { name: 'Open Experience' }).click();
@@ -41,7 +43,7 @@ test('passes an automated accessibility scan on the evidence surface', async ({ 
 });
 
 test('supporting media and optional output controls stay accessible and user-controlled', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?app=home');
   const video = page.getByLabel('Abstract calibration laboratory with restrained optical movement.');
   await expect(video).toHaveCount(1);
   await expect(video).toHaveAttribute('preload', 'none');
@@ -70,7 +72,7 @@ test('supporting media and optional output controls stay accessible and user-con
 test.describe('capability fallbacks', () => {
   test('mobile keeps evidence before the static guide marker', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await page.goto('/?app=home');
     await expect(page.locator('.hero-world-stage')).toBeVisible();
     await expect(page.locator('.hero-calibration-static')).toBeVisible();
     await expect(page.getByRole('button', { name: /FX, open optional effects lab/ })).toBeHidden();
@@ -111,7 +113,7 @@ test.describe('capability fallbacks', () => {
 
   test('an explicit Guided choice overrides the reduced-motion static default', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
+    await page.goto('/?app=home');
     await expect(page.getByText('Guided, low-motion rendering')).toBeAttached();
     await page.getByRole('button', { name: 'Guided' }).click();
     await expect(page.locator('.site-shell')).toHaveAttribute('data-motion', 'full');

@@ -1,8 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { defaultAppearancePreferences } from '../../lib/appearance';
 
 test('starts dark, preserves recruiter evidence, and persists Light before reload paint', async ({ page }) => {
-  await page.goto('/?mode=guided');
+  await page.goto('/?mode=guided&app=home');
   await expect(page.locator('html')).toHaveAttribute('data-color-scheme', 'dark');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByRole('link', { name: /résumé/i }).first()).toBeVisible();
@@ -29,7 +30,7 @@ test('scopes the custom desktop menu and exposes keyboard-accessible commands', 
     return { fieldPrevented, linkPrevented: linkEvent.defaultPrevented };
   });
   expect(prevented).toEqual({ fieldPrevented: true, linkPrevented: false });
-  await page.locator('[data-desktop-field]').click({ button: 'right', position: { x: 8, y: 8 } });
+  await page.mouse.click(720, 420, { button: 'right' });
   await expect(page.getByRole('menu', { name: 'Desktop menu' })).toBeVisible();
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Escape');
@@ -70,14 +71,9 @@ test('Quick Scan imports no desktop renderer and keeps all evidence available', 
 
 for (const scheme of ['dark', 'light'] as const) {
   test(`${scheme} workstation passes an axe scan`, async ({ page }) => {
-    await page.addInitScript((nextScheme) => {
-      localStorage.setItem('portfolio-appearance-v1', JSON.stringify({
-        scheme: nextScheme, accent: 'teal', background: 'nbody', backgroundPaused: true,
-        windowTint: 'graphite', titlebarOpacity: 92, reduceTransparency: false, dockSize: 'medium',
-        nbody: { preset: 'galaxy', particleCount: 2048, timeScale: 1, gravity: 1, softening: 0.012, trailPersistence: 38, expansionOrder: 8, leafCapacity: 48, pointerAttraction: true, seed: 41, showTree: false },
-        fluid: { speed: 0.7, intensity: 38, opacity: 28, splatRadius: 28, curl: 18, quality: 'balanced', pointerInteraction: true },
-      }));
-    }, scheme);
+    await page.addInitScript(({ nextScheme, record }) => {
+      localStorage.setItem('portfolio-appearance-v1', JSON.stringify({ ...record, scheme: nextScheme, backgroundPaused: true }));
+    }, { nextScheme: scheme, record: defaultAppearancePreferences });
     await page.goto('/?mode=guided');
     const results = await new AxeBuilder({ page }).exclude('.nbody-background').analyze();
     expect(results.violations).toEqual([]);

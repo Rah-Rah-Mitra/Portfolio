@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppearance } from '../contexts/AppearanceContext';
 
 type Fbo = {
@@ -244,12 +244,34 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { preferences } = useAppearance();
   const fluid = preferences.fluid;
+  // Live simulation parameters read per frame so slider changes never rebuild
+  // the GL pipeline, and activity flips never lose the context (a suspended
+  // field keeps its context idle; WEBGL_lose_context is unrecoverable on a
+  // reused canvas).
+  const paramsRef = useRef(fluid);
+  paramsRef.current = fluid;
+  const activeRef = useRef(active);
+  const resumeRef = useRef<(() => void) | null>(null);
+  const suspendRef = useRef<(() => void) | null>(null);
+  // The GPU lease contract: no WebGL context may exist before the field is
+  // first active. After that the context stays for the component's lifetime.
+  const [engaged, setEngaged] = useState(active);
+
+  useEffect(() => {
+    activeRef.current = active;
+    if (active) {
+      setEngaged(true);
+      resumeRef.current?.();
+    } else {
+      suspendRef.current?.();
+    }
+  }, [active]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const constrainedMobile = window.innerWidth < 700 && (navigator.hardwareConcurrency ?? 4) <= 4;
-    if (!canvas || !active || reducedMotion.matches || constrainedMobile) return undefined;
+    if (!canvas || !engaged || reducedMotion.matches || constrainedMobile) return undefined;
 
     const gl = canvas.getContext('webgl2', {
       alpha: true,
@@ -417,14 +439,14 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
       if (!previous && !strong) return;
 
       const color = hslToRgb((hue + performance.now() * 0.00003) % 1, 0.78, 0.48);
-      const radius = Math.max(0.0006, (fluid.splatRadius / 100) * 0.026);
+      const radius = Math.max(0.0006, (paramsRef.current.splatRadius / 100) * 0.026);
       const force = strong ? 900 : 8;
       splats.push({
         x,
         y,
         dx: dx * force,
         dy: dy * force,
-        color: color.map((value) => value * (fluid.intensity / 65)) as [number, number, number],
+        color: color.map((value) => value * (paramsRef.current.intensity / 65)) as [number, number, number],
         radius,
       });
     };
@@ -436,9 +458,10 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
     let lastTime = performance.now();
     let idleTime = 0;
     let animationId = 0;
+    let running = false;
 
     const draw = (time: number) => {
-      const dt = Math.min(0.033, (time - lastTime) / 1000) * fluid.speed;
+      const dt = Math.min(0.033, (time - lastTime) / 1000) * paramsRef.current.speed;
       lastTime = time;
       resizeCanvas();
 
@@ -455,8 +478,8 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
           y: 0.52 + Math.cos(t * 1.7) * 0.24,
           dx: Math.cos(t * 3.0) * 80,
           dy: Math.sin(t * 2.4) * 80,
-          color: color.map((value) => value * 0.18 * (fluid.intensity / 60)) as [number, number, number],
-          radius: Math.max(0.0005, (fluid.splatRadius / 100) * 0.018),
+          color: color.map((value) => value * 0.18 * (paramsRef.current.intensity / 60)) as [number, number, number],
+          radius: Math.max(0.0005, (paramsRef.current.splatRadius / 100) * 0.018),
         });
       }
 
@@ -476,7 +499,7 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
       gl.uniform2f(uniforms.vorticity.texelSize, velocity.read.texelSizeX, velocity.read.texelSizeY);
       gl.uniform1i(uniforms.vorticity.uVelocity, bindTexture(velocity.read.texture, 0));
       gl.uniform1i(uniforms.vorticity.uCurl, bindTexture(curl.texture, 1));
-      gl.uniform1f(uniforms.vorticity.curl, fluid.curl);
+      gl.uniform1f(uniforms.vorticity.curl, paramsRef.current.curl);
       gl.uniform1f(uniforms.vorticity.dt, dt);
       blit(velocity.write);
       velocity.swap();
@@ -529,19 +552,27 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
 
       gl.useProgram(programs.display);
       gl.uniform1i(uniforms.display.uTexture, bindTexture(dye.read.texture, 0));
-      gl.uniform1f(uniforms.display.opacity, fluid.opacity / 100);
-      gl.uniform1f(uniforms.display.boost, 0.9 + fluid.intensity / 80);
+      gl.uniform1f(uniforms.display.opacity, paramsRef.current.opacity / 100);
+      gl.uniform1f(uniforms.display.boost, 0.9 + paramsRef.current.intensity / 80);
       blit(null);
 
-      if (!document.hidden) animationId = requestAnimationFrame(draw);
+      if (running && !document.hidden) animationId = requestAnimationFrame(draw);
+    };
+
+    const start = () => {
+      if (running || document.hidden) return;
+      running = true;
+      lastTime = performance.now();
+      animationId = requestAnimationFrame(draw);
+    };
+    const stop = () => {
+      running = false;
+      cancelAnimationFrame(animationId);
     };
 
     const handleVisibility = () => {
-      cancelAnimationFrame(animationId);
-      if (!document.hidden) {
-        lastTime = performance.now();
-        animationId = requestAnimationFrame(draw);
-      }
+      if (document.hidden) stop();
+      else if (activeRef.current) start();
     };
 
     try {
@@ -554,14 +585,18 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
         window.addEventListener('pointercancel', handlePointerLeave, { passive: true });
       }
       document.addEventListener('visibilitychange', handleVisibility);
-      animationId = requestAnimationFrame(draw);
+      resumeRef.current = start;
+      suspendRef.current = stop;
+      if (activeRef.current) start();
     } catch {
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
     return () => {
-      cancelAnimationFrame(animationId);
+      stop();
+      resumeRef.current = null;
+      suspendRef.current = null;
       window.removeEventListener('resize', initFramebuffers);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerdown', handlePointerDown);
@@ -572,20 +607,13 @@ const FluidBackground: React.FC<{ active?: boolean }> = ({ active = true }) => {
       Object.values(programs).forEach((program) => gl.deleteProgram(program));
       gl.deleteBuffer(quad);
       gl.deleteVertexArray(vao);
+      // Safe only because the keyed canvas below is discarded with this
+      // effect: a canvas whose context was lost cannot host a fresh one.
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, [
-    active,
-    fluid.speed,
-    fluid.intensity,
-    fluid.opacity,
-    fluid.splatRadius,
-    fluid.curl,
-    fluid.quality,
-    fluid.pointerInteraction,
-  ]);
+  }, [engaged, fluid.quality, fluid.pointerInteraction]);
 
-  return <canvas ref={canvasRef} className="fluid-background" aria-hidden="true" />;
+  return <canvas key={`fluid-${fluid.quality}-${fluid.pointerInteraction}`} ref={canvasRef} className="fluid-background" aria-hidden="true" />;
 };
 
 export default FluidBackground;

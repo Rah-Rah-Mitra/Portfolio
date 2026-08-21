@@ -48,9 +48,19 @@ const NBodyBackground: React.FC<NBodyBackgroundProps> = ({ active }) => {
   const [retryRevision, setRetryRevision] = useState(0);
   const [effectiveCount, setEffectiveCount] = useState(preferences.nbody.particleCount);
 
+  // A canvas can hand control to a worker only once, so each configuration
+  // change remounts a fresh canvas (keyed below) before transferring again.
+  const configKey = [
+    preferences.nbody.preset, preferences.nbody.particleCount, preferences.nbody.timeScale,
+    preferences.nbody.gravity, preferences.nbody.softening, preferences.nbody.expansionOrder,
+    preferences.nbody.leafCapacity, preferences.nbody.pointerAttraction, preferences.nbody.seed,
+    preferences.nbody.showTree, retryRevision,
+  ].join('|');
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
+    offscreenRef.current = false;
     const worker = new Worker(new URL('../workers/nbody.worker.ts', import.meta.url), { type: 'module', name: 'optical-nbody-fmm' });
     workerRef.current = worker;
     const canTransfer = 'transferControlToOffscreen' in canvas && typeof canvas.transferControlToOffscreen === 'function';
@@ -102,7 +112,8 @@ const NBodyBackground: React.FC<NBodyBackgroundProps> = ({ active }) => {
       readyRef.current = false;
       inFlightRef.current = false;
     };
-  }, [preferences.nbody.expansionOrder, preferences.nbody.gravity, preferences.nbody.leafCapacity, preferences.nbody.particleCount, preferences.nbody.pointerAttraction, preferences.nbody.preset, preferences.nbody.seed, preferences.nbody.showTree, preferences.nbody.softening, preferences.nbody.timeScale, retryRevision]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configKey]);
 
   useEffect(() => {
     const retry = () => {
@@ -155,7 +166,7 @@ const NBodyBackground: React.FC<NBodyBackgroundProps> = ({ active }) => {
 
   return (
     <div className="nbody-background" data-active={active} data-effective-count={effectiveCount}>
-      <canvas ref={canvasRef} aria-label="Animated two-dimensional gravitational N-body field" onPointerMove={(event) => pointer(event, true)} onPointerLeave={(event) => pointer(event, false)} />
+      <canvas key={configKey} ref={canvasRef} aria-label="Animated two-dimensional gravitational N-body field" onPointerMove={(event) => pointer(event, true)} onPointerLeave={(event) => pointer(event, false)} />
       <button type="button" className="nbody-reset" onClick={() => workerRef.current?.postMessage({ type: 'reset', seed: preferences.nbody.seed })}>Reset N-body field</button>
       <span className="nbody-field-caption" aria-hidden="true">2D LOG-FMM · {effectiveCount} BODIES</span>
     </div>

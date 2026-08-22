@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import Matter from 'matter-js';
-
-const { Body, Vector } = Matter;
+import type Matter from 'matter-js';
+import { peekMatter } from '../lib/physicsRuntime';
 
 type BodyRef = {
-  body: Matter.Body;
+  body: Matter.Body | null;
   element: HTMLElement;
   initial: {
     x: number;
@@ -14,16 +13,18 @@ type BodyRef = {
 };
 
 export const useSmashInteraction = (
-  engineRef: React.RefObject<Matter.Engine>,
+  engineRef: React.RefObject<Matter.Engine | null>,
   bodiesRef: React.RefObject<Map<string, BodyRef>>,
   isActive: boolean,
   options: { intensity: number; radius: number }
 ) => {
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine || !isActive) {
+    const matter = peekMatter();
+    if (!engine || !isActive || !matter) {
       return;
     }
+    const { Body, Vector } = matter;
 
     const handleMouseDown = (e: MouseEvent) => {
       const mousePosition = Vector.create(e.pageX, e.pageY);
@@ -31,6 +32,7 @@ export const useSmashInteraction = (
       const forceMagnitudeBase = 0.015 + (options.intensity / 100) * 0.075;
 
       bodiesRef.current?.forEach(({ body }) => {
+        if (!body) return;
         const distance = Vector.magnitude(Vector.sub(body.position, mousePosition));
         const isInside = distance < radius;
 

@@ -10,10 +10,13 @@ import { useEffects } from '../contexts/PhysicsContext';
 import { resolveMediaPolicy } from '../lib/mediaPolicy';
 import { supportingMedia } from '../mediaManifest';
 import { SupportingMedia } from './SupportingMedia';
-import { WorkstationAppSurface, WorkstationRail } from './WorkstationShell';
+import { DesktopIconLayer, WorkstationAppSurface, WorkstationRail } from './WorkstationShell';
 import { useOptionalWorkstation } from '../contexts/WorkstationContext';
 import type { DesktopAppId } from '../types';
 import MechanicalExhibitViewport, { type MechanismAssetId } from './MechanicalExhibitViewport';
+import AppearanceViewMenu from './AppearanceViewMenu';
+import { ExternalLabel, ProjectLinks } from './ProjectLinks';
+import ProjectShowcase from './ProjectShowcase';
 
 const OpticalBenchWorld = React.lazy(() => import('./OpticalBenchWorld'));
 
@@ -35,8 +38,6 @@ const navItems: ReadonlyArray<[string, string, DesktopAppId]> = [
   ['resumes', 'Résumés', 'resumes-contact'],
 ] as const;
 
-const ExternalLabel: React.FC = () => <span className="sr-only"> (opens in a new tab)</span>;
-
 export const ExperienceModeControl: React.FC = () => {
   const { policy, chooseMode } = useExperienceMode();
   return (
@@ -44,24 +45,6 @@ export const ExperienceModeControl: React.FC = () => {
       <button type="button" aria-pressed={policy.mode === 'guided'} disabled={policy.hardFailure} onClick={() => chooseMode('guided')}>Guided</button>
       <button type="button" aria-pressed={policy.mode === 'scan'} onClick={() => chooseMode('scan')}>Quick Scan</button>
       <span role="status">{policy.mode === 'scan' ? 'Static, evidence-first rendering' : policy.lowMotion ? 'Guided, low-motion rendering' : 'Guided rendering'}</span>
-    </div>
-  );
-};
-
-const ProjectLinks: React.FC<{ project: ProjectHighlight }> = ({ project }) => {
-  const links = [
-    ...(project.repoUrl ? [{ label: 'Repository', url: project.repoUrl }] : []),
-    ...(project.liveUrl ? [{ label: 'Live project', url: project.liveUrl }] : []),
-    ...(project.links ?? []),
-  ];
-  if (links.length === 0) return <span className="project-link-muted">Evidence described in portfolio</span>;
-  return (
-    <div className="project-links">
-      {links.map((link) => (
-        <a key={`${project.id}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" onClick={() => track('project_link_clicked', { title: project.title, destination: link.url })}>
-          {link.label}<ExternalLabel />
-        </a>
-      ))}
     </div>
   );
 };
@@ -79,8 +62,9 @@ export const PortfolioHeader: React.FC = () => {
 
   return (
     <header className="portfolio-header">
-      <a className="portfolio-mark" href="#home" aria-label="Rahul Mitra, home">RM<span>/ optical workstation</span></a>
+      <a className="portfolio-mark" href="#home" aria-label="Rahul Mitra, home" onClick={(event) => openFromLink(event, 'home')}>RM<span>/ optical workstation</span></a>
       <ExperienceModeControl />
+      <AppearanceViewMenu />
       <button className="portfolio-menu" type="button" aria-expanded={open} aria-controls="portfolio-navigation" onClick={() => setOpen((current) => !current)}>
         {open ? 'Close' : 'Menu'}
       </button>
@@ -89,6 +73,7 @@ export const PortfolioHeader: React.FC = () => {
         <div className="portfolio-mobile-tools" aria-label="Optional portfolio tools">
           <button type="button" data-open-assistant onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openAssistant', { detail: { source: 'mobile_menu' } }))}>AI · Ask</button>
           <button type="button" data-open-effects onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openEffects', { detail: { source: 'mobile_menu' } }))}>FX · Lab</button>
+          <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('portfolio:openPreferences', { detail: { source: 'mobile' } }))}>Preferences</button>
           <a href="#world" data-open-world onClick={(event) => openFromLink(event, 'world-3d')}>Explore World</a>
         </div>
       </nav>
@@ -255,7 +240,7 @@ export const ExperienceSection: React.FC = () => (
 const INITIAL_PROJECT_COUNT = 8;
 const PROJECT_BATCH_SIZE = 4;
 
-export const AllProjectsSection: React.FC = () => {
+export const AllProjectsSection: React.FC<{ showAllByDefault?: boolean }> = ({ showAllByDefault = false }) => {
   const [query, setQuery] = useState('');
   const [domain, setDomain] = useState<'all' | ProjectHighlight['accent']>('all');
   const [activeProjectIndex, setActiveProjectIndex] = useState(0);
@@ -274,6 +259,10 @@ export const AllProjectsSection: React.FC = () => {
 
   useEffect(() => {
     const revealHashBatch = () => {
+      if (showAllByDefault) {
+        setVisibleCount(allProjects.length);
+        return;
+      }
       const projectId = decodeURIComponent(window.location.hash).replace('#project-', '');
       const projectIndex = allProjects.findIndex((project) => project.id === projectId);
       setVisibleCount(projectIndex >= 0
@@ -284,7 +273,7 @@ export const AllProjectsSection: React.FC = () => {
     revealHashBatch();
     window.addEventListener('hashchange', revealHashBatch);
     return () => window.removeEventListener('hashchange', revealHashBatch);
-  }, []);
+  }, [showAllByDefault]);
 
   useEffect(() => {
     setActiveProjectIndex((current) => Math.min(current, Math.max(0, renderedProjects.length - 1)));
@@ -325,6 +314,7 @@ export const AllProjectsSection: React.FC = () => {
         <h2 id="all-projects-title">All projects</h2>
         <p>Every project remains visible and searchable. The default view omits nothing.</p>
       </header>
+      {!showAllByDefault && <ProjectShowcase projects={allProjects} domainLabels={domainLabels} />}
       <div className="project-controls">
         <label><span>Search by project, method, or domain</span><input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveProjectIndex(0); }} placeholder="Try CP-SAT, RAG, security, geometry…" /></label>
         <div className="domain-filters" aria-label="Filter projects by domain">
@@ -345,7 +335,7 @@ export const AllProjectsSection: React.FC = () => {
           </article>
         ))}
       </div>
-      {hydrated && !isFiltering && visibleCount < visible.length && (
+      {hydrated && !showAllByDefault && !isFiltering && visibleCount < visible.length && (
         <button className="project-load-more" type="button" onClick={() => { setVisibleCount((current) => Math.min(visible.length, current + PROJECT_BATCH_SIZE)); window.dispatchEvent(new CustomEvent('portfolio:projects-expanded')); }}>
           Load {Math.min(PROJECT_BATCH_SIZE, visible.length - visibleCount)} more projects
         </button>
@@ -440,15 +430,16 @@ const PortfolioExperience: React.FC = () => {
   const heavyWorld = policy.allowHeavyAssets && policy.mode === 'guided' && !policy.lowMotion;
   const heavyAppIsFocused = (appId: 'systems-lab' | 'camera-lab' | 'world-3d') => heavyWorld
     && (!workstation?.enabled || (workstation.enhanced && workstation.state.focusedAppId === appId));
-  return <div className="portfolio-field-test">
+  return <div className="portfolio-field-test" data-desktop-field>
     <a className="skip-link" href="#main-content">Skip to portfolio evidence</a>
     <PortfolioHeader />
     <WorkstationRail />
+    <DesktopIconLayer />
     <main id="main-content" className="portfolio-evidence workstation-evidence">
       <WorkstationAppSurface appId="home"><PortfolioHero /></WorkstationAppSurface>
       <WorkstationAppSurface appId="selected-work"><SelectedWork /></WorkstationAppSurface>
       <WorkstationAppSurface appId="experience"><ExperienceSection /></WorkstationAppSurface>
-      <WorkstationAppSurface appId="project-archive"><AllProjectsSection /></WorkstationAppSurface>
+      <WorkstationAppSurface appId="project-archive"><AllProjectsSection showAllByDefault={policy.mode === 'scan'} /></WorkstationAppSurface>
       <WorkstationAppSurface appId="systems-lab">
         <SystemsLabApplication enhanced={heavyAppIsFocused('systems-lab')} />
       </WorkstationAppSurface>

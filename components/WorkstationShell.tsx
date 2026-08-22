@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import type { DesktopAppId, DesktopToolAppId } from '../types';
 import { resizeWindowBounds, resolveCascadeBounds, workstationApps } from '../lib/workstation';
 import { useWorkstation } from '../contexts/WorkstationContext';
+import AppearanceViewMenu from './AppearanceViewMenu';
 
 export const WorkstationRail: React.FC = () => {
   const { enabled, enhanced, state, openApp, showDesktop } = useWorkstation();
@@ -21,10 +22,24 @@ export const WorkstationRail: React.FC = () => {
     <nav className="workstation-rail" aria-label="Workstation applications">
       <div className="workstation-rail-track" aria-hidden="true"><span /><i /><span /></div>
       <div className="workstation-modules">
+        <button
+          type="button"
+          className="workstation-module workstation-desktop-module"
+          aria-label="Show desktop"
+          aria-pressed={state.focusedAppId === 'desktop'}
+          data-app-id="desktop"
+          data-state={state.focusedAppId === 'desktop' ? 'focused' : 'idle'}
+          onClick={() => showDesktop('rail')}
+        >
+          <span className="workstation-module-socket workstation-desktop-socket" aria-hidden="true"><i /></span>
+          <span className="workstation-module-label">Desktop</span>
+          <small className="workstation-module-compact" aria-hidden="true">Desk</small>
+          <i className="workstation-status-lamp" aria-hidden="true" />
+        </button>
         {workstationApps.map((app) => {
           const focused = state.focusedAppId === app.id;
-          const minimized = app.id !== 'home' && state.minimizedAppIds.includes(app.id);
-          const open = app.id !== 'home' && state.openAppIds.includes(app.id);
+          const minimized = state.minimizedAppIds.includes(app.id);
+          const open = state.openAppIds.includes(app.id);
           const status = focused ? 'focused' : minimized ? 'minimized' : open ? 'open-background' : 'idle';
           const statusLabel = focused ? 'Focused' : minimized ? 'Minimized' : open ? 'Open in background' : 'Closed';
           return (
@@ -37,7 +52,7 @@ export const WorkstationRail: React.FC = () => {
               aria-pressed={focused}
               data-app-id={app.id}
               data-state={status}
-              onClick={() => app.id === 'home' ? showDesktop('rail') : openApp(app.id, 'rail')}
+              onClick={() => openApp(app.id, 'rail')}
             >
               <span className="workstation-module-socket" aria-hidden="true"><img src={app.iconAsset} alt="" width="48" height="48" /></span>
               <span className="workstation-module-label">{app.shortLabel}</span>
@@ -49,14 +64,41 @@ export const WorkstationRail: React.FC = () => {
         })}
       </div>
       <div className="workstation-rail-readout" aria-live="polite">
-        <span>FOCUSED BAY</span><strong>{workstationApps.find((app) => app.id === state.focusedAppId)?.shortLabel}</strong>
+        <span>FOCUSED BAY</span><strong>{workstationApps.find((app) => app.id === state.focusedAppId)?.shortLabel ?? 'Desktop'}</strong>
       </div>
     </nav>
   );
 };
 
+export const DesktopIconLayer: React.FC = () => {
+  const { enabled, enhanced, state, openApp } = useWorkstation();
+  if (!enabled || !enhanced) return null;
+  return (
+    <section className="workstation-desktop-surface" data-desktop-field aria-label="Desktop">
+      <ul className="workstation-desktop-icons">
+        {workstationApps.map((app) => (
+          <li key={app.id}>
+            <button
+              type="button"
+              className="workstation-desktop-icon"
+              data-app-id={app.id}
+              data-open={state.openAppIds.includes(app.id) ? 'true' : 'false'}
+              onClick={() => openApp(app.id, 'desktop')}
+              aria-label={`Launch ${app.label}`}
+            >
+              <span className="workstation-desktop-icon-plate" aria-hidden="true"><img src={app.iconAsset} alt="" width="48" height="48" loading="lazy" /></span>
+              <span className="workstation-desktop-icon-label">{app.shortLabel}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="workstation-desktop-hint" aria-hidden="true">Select an application · Right-click the desktop for background options</p>
+    </section>
+  );
+};
+
 export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: React.ReactNode }> = ({ appId, children }) => {
-  const { enabled, enhanced, isCompact, state, focusApp, minimizeApp, snapApp, moveApp } = useWorkstation();
+  const { enabled, enhanced, isCompact, state, focusApp, minimizeApp, closeApp, snapApp, moveApp } = useWorkstation();
   const app = useMemo(() => workstationApps.find((candidate) => candidate.id === appId)!, [appId]);
   const viewportWidth = typeof window === 'undefined' ? 1280 : window.innerWidth;
   const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
@@ -72,6 +114,10 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
     ? { left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height, zIndex: 60 + stackIndex }
     : undefined;
   const pointerAction = useRef<null | { kind: 'move' | 'resize'; pointerId: number; x: number; y: number; bounds: typeof bounds }>(null);
+  // Only holds geometry captured by a maximize in this mount; a window that
+  // rehydrates already maximized restores to fresh cascade bounds instead of
+  // reapplying the full-workspace rectangle.
+  const restoreBounds = useRef<typeof bounds | null>(null);
 
   useEffect(() => {
     if (!enabled || !enhanced || hidden || typeof window === 'undefined') return undefined;
@@ -123,6 +169,15 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
   };
 
   const titleId = `workstation-window-${appId}-title`;
+  const toggleMaximize = () => {
+    if (state.snapByApp[appId] === 'maximized') {
+      moveApp(appId, restoreBounds.current ?? resolveCascadeBounds(Math.max(0, state.openAppIds.indexOf(appId)), viewport));
+      restoreBounds.current = null;
+    } else {
+      restoreBounds.current = bounds;
+      snapApp(appId, 'maximized');
+    }
+  };
   return (
     <section
       className="workstation-window"
@@ -135,14 +190,18 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
       style={style}
       onPointerDownCapture={() => { if (!focused) focusApp(appId); }}
     >
-      <header className="workstation-titlebar">
+      <header className="workstation-titlebar" data-testid={`workstation-titlebar-${appId}`} onDoubleClick={(event) => { if (!(event.target as HTMLElement).closest('button')) toggleMaximize(); }}>
+        <div className="workstation-traffic-controls">
+          <button type="button" className="traffic-close" onClick={() => closeApp(appId)} aria-label={`Close ${app.label}`}><span aria-hidden="true">×</span></button>
+          <button type="button" className="traffic-minimize" onClick={() => minimizeApp(appId)} aria-label={`Minimize ${app.label}`}><span aria-hidden="true">−</span></button>
+          <button type="button" className="traffic-maximize" onClick={toggleMaximize} aria-label={`${state.snapByApp[appId] === 'maximized' ? 'Restore' : 'Maximize'} ${app.label}`}><span aria-hidden="true">+</span></button>
+        </div>
         <button type="button" className="workstation-titlebar-grip" aria-label={`Move ${app.label} window`} onPointerDown={(event) => startPointerAction('move', event)} onKeyDown={moveFromKeyboard}><i /><i /><i /><i /><i /></button>
         <div><span>{app.kind.toUpperCase()} MODULE</span><h2 id={titleId}>{app.label}</h2></div>
         <div className="workstation-window-controls">
           <button type="button" onClick={() => snapApp(appId, 'left')} aria-label={`Snap ${app.label} left`}>L</button>
           <button type="button" onClick={() => snapApp(appId, 'right')} aria-label={`Snap ${app.label} right`}>R</button>
-          <button type="button" onClick={() => snapApp(appId, 'maximized')} aria-label={`Maximize ${app.label}`}>M</button>
-          <button type="button" onClick={() => minimizeApp(appId)} aria-label={`Minimize ${app.label}`}>—</button>
+          <AppearanceViewMenu compact />
         </div>
       </header>
       <div className="workstation-window-body">{children}</div>
@@ -155,18 +214,5 @@ export const WorkstationAppFrame: React.FC<{ appId: DesktopToolAppId; children: 
 export const WorkstationAppSurface: React.FC<{ appId: DesktopAppId; children: React.ReactNode }> = ({ appId, children }) => {
   const { enabled, enhanced } = useWorkstation();
   if (!enabled || !enhanced) return <div className="workstation-static-surface" data-app-id={appId}>{children}</div>;
-  if (appId === 'home') return (
-    <section className="workstation-home-surface" data-app-id="home" data-window-state="maximized" aria-label="Home / Dossier application">
-      <div className="workstation-dossier-bar">
-        <div><span>PORTFOLIO WORKSTATION</span><strong>HOME / DOSSIER</strong></div>
-        <dl>
-          <div><dt>SESSION</dt><dd>RECRUITER EVIDENCE</dd></div>
-          <div><dt>STATE</dt><dd>AVAILABLE · SINGAPORE</dd></div>
-        </dl>
-        <span>MAXIMIZED</span>
-      </div>
-      {children}
-    </section>
-  );
   return <WorkstationAppFrame appId={appId}>{children}</WorkstationAppFrame>;
 };

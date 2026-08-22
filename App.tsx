@@ -1,7 +1,6 @@
 import React from 'react';
 import { EffectsProvider } from './contexts/PhysicsContext';
 import EffectsLabPanel from './components/EffectsLabPanel';
-import FluidBackground from './components/FluidBackground';
 import AskThePage from './components/AskThePage';
 import { useScrollDepth } from './hooks/useScrollDepth';
 import { track } from './lib/analytics';
@@ -9,6 +8,11 @@ import PortfolioExperience from './components/PortfolioExperience';
 import { ExperienceModeProvider, useExperienceMode } from './contexts/ExperienceModeContext';
 import AudioSpriteController from './components/AudioSpriteController';
 import { WorkstationProvider } from './contexts/WorkstationContext';
+import { AppearanceProvider } from './contexts/AppearanceContext';
+import AppearancePreferences from './components/AppearancePreferences';
+import DesktopAppearanceMenu from './components/DesktopAppearanceMenu';
+
+const DesktopBackgroundController = React.lazy(() => import('./components/DesktopBackgroundController'));
 
 export const OptionalExperienceLayers: React.FC = () => {
   return (
@@ -16,6 +20,8 @@ export const OptionalExperienceLayers: React.FC = () => {
       <EffectsLabPanel />
       <AskThePage />
       <AudioSpriteController />
+      <DesktopAppearanceMenu />
+      <AppearancePreferences />
     </>
   );
 };
@@ -62,7 +68,7 @@ const AppContent: React.FC = () => {
     <EffectsProvider>
       <WorkstationProvider enabled={policy.mode === 'guided'}>
         <div className="site-shell min-h-screen" data-experience-mode={policy.mode} data-motion={policy.lowMotion ? 'low' : 'full'}>
-          {policy.allowHeavyAssets && <FluidBackground />}
+          {policy.allowHeavyAssets && <React.Suspense fallback={null}><DesktopBackgroundController /></React.Suspense>}
           <PortfolioExperience />
           <OptionalExperienceLayers />
         </div>
@@ -73,7 +79,7 @@ const AppContent: React.FC = () => {
 
 
 const App: React.FC = () => {
-  return <ExperienceModeProvider><AppContent /></ExperienceModeProvider>;
+  return <AppearanceProvider><ExperienceModeProvider><AppContent /></ExperienceModeProvider></AppearanceProvider>;
 };
 
 export default App;

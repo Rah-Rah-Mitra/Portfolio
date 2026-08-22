@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { DesktopAppId, DesktopToolAppId, WindowBounds, WindowSnapState, WorkstationSessionState } from '../types';
+import type { DesktopAppId, DesktopFocusId, DesktopToolAppId, WindowBounds, WindowSnapState, WorkstationSessionState } from '../types';
 import {
   clampWindowBounds,
+  closeDesktopApp as reduceCloseDesktopApp,
   createWorkstationState,
   desktopAppFromSearch,
   focusDesktopApp as reduceFocusDesktopApp,
@@ -19,7 +20,7 @@ const SESSION_KEY = 'portfolio-workstation-session-v2';
 const LEGACY_SESSION_KEY = 'portfolio-workstation-session-v1';
 const COMPACT_QUERY = '(max-width: 920px)';
 
-type NavigationSource = 'rail' | 'link' | 'ai' | 'history';
+type NavigationSource = 'rail' | 'link' | 'ai' | 'history' | 'desktop';
 
 interface WorkstationContextValue {
   enabled: boolean;
@@ -29,6 +30,7 @@ interface WorkstationContextValue {
   openApp: (appId: DesktopAppId, source?: NavigationSource) => void;
   focusApp: (appId: DesktopToolAppId, historyMode?: 'replace' | 'push') => void;
   minimizeApp: (appId: DesktopAppId) => void;
+  closeApp: (appId: DesktopAppId) => void;
   showDesktop: (source?: NavigationSource) => void;
   snapApp: (appId: DesktopToolAppId, snap: Exclude<WindowSnapState, 'floating'>) => void;
   moveApp: (appId: DesktopToolAppId, bounds: WindowBounds) => void;
@@ -67,7 +69,7 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
     setState(next);
   }, []);
 
-  const writeRoute = useCallback((appId: DesktopAppId, mode: 'push' | 'replace') => {
+  const writeRoute = useCallback((appId: DesktopFocusId, mode: 'push' | 'replace') => {
     const url = withDesktopApp(window.location.href, appId);
     const nextHistory = { ...window.history.state, workstationApp: appId };
     if (mode === 'push') window.history.pushState(nextHistory, '', url);
@@ -81,15 +83,15 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
       return undefined;
     }
     const stored = safeStoredState();
-    const routedApp = desktopAppFromSearch(window.location.search) ?? 'home';
-    const hydrated = routedApp === 'home'
-      ? reduceShowWorkstationDesktop(stored)
+    const routedApp = desktopAppFromSearch(window.location.search);
+    const hydrated = routedApp === null
+      ? stored
       : reduceOpenDesktopApp(stored, routedApp, stored.boundsByApp[routedApp] ?? resolveCascadeBounds(stored.openAppIds.length, currentViewport()));
     commitState(hydrated);
     const synchronizeHistory = () => {
-      const appId = desktopAppFromSearch(window.location.search) ?? 'home';
+      const appId = desktopAppFromSearch(window.location.search);
       const current = stateRef.current;
-      commitState(appId === 'home'
+      commitState(appId === null
         ? reduceShowWorkstationDesktop(current)
         : reduceOpenDesktopApp(current, appId, current.boundsByApp[appId] ?? resolveCascadeBounds(current.openAppIds.length, currentViewport())));
     };
@@ -115,7 +117,7 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
     const root = document.documentElement;
     if (enabled && enhanced) root.dataset.workstation = 'enabled';
     else delete root.dataset.workstation;
-    if (enabled && enhanced && state.focusedAppId !== 'home') root.dataset.workstationActive = state.focusedAppId;
+    if (enabled && enhanced && state.focusedAppId !== 'desktop') root.dataset.workstationActive = state.focusedAppId;
     else delete root.dataset.workstationActive;
     return () => {
       delete root.dataset.workstation;
@@ -127,23 +129,19 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
     if (!enabled) return;
     const current = stateRef.current;
     commitState(reduceShowWorkstationDesktop(current));
-    if (source !== 'history' && current.focusedAppId !== 'home') writeRoute('home', 'push');
+    if (source !== 'history' && current.focusedAppId !== 'desktop') writeRoute('desktop', 'push');
     window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'DESKTOP_SHOWN' } }));
   }, [commitState, enabled, writeRoute]);
 
   const openApp = useCallback((appId: DesktopAppId, source: NavigationSource = 'link') => {
     if (!enabled) return;
-    if (appId === 'home') {
-      showDesktop(source);
-      return;
-    }
     const current = stateRef.current;
     const initialBounds = current.boundsByApp[appId] ?? resolveCascadeBounds(current.openAppIds.length, currentViewport());
     const next = reduceOpenDesktopApp(current, appId, initialBounds);
     commitState(next);
     if (source !== 'history' && current.focusedAppId !== appId) writeRoute(appId, 'push');
     window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'APP_OPENED', appId, source } }));
-  }, [commitState, enabled, showDesktop, writeRoute]);
+  }, [commitState, enabled, writeRoute]);
 
   const focusApp = useCallback((appId: DesktopToolAppId, historyMode: 'replace' | 'push' = 'replace') => {
     if (!enabled) return;
@@ -156,13 +154,24 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
   }, [commitState, enabled, writeRoute]);
 
   const minimizeApp = useCallback((appId: DesktopAppId) => {
-    if (!enabled || appId === 'home') return;
+    if (!enabled) return;
     const current = stateRef.current;
     const next = reduceMinimizeDesktopApp(current, appId);
     if (next === current) return;
     commitState(next);
     if (current.focusedAppId === appId) writeRoute(next.focusedAppId, 'push');
     window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'APP_MINIMIZED', appId } }));
+    window.setTimeout(() => window.dispatchEvent(new CustomEvent('portfolio:workstation-focus', { detail: { appId } })), 0);
+  }, [commitState, enabled, writeRoute]);
+
+  const closeApp = useCallback((appId: DesktopAppId) => {
+    if (!enabled) return;
+    const current = stateRef.current;
+    const next = reduceCloseDesktopApp(current, appId);
+    if (next === current) return;
+    commitState(next);
+    if (current.focusedAppId === appId) writeRoute(next.focusedAppId, 'push');
+    window.dispatchEvent(new CustomEvent('portfolio:workstation-event', { detail: { type: 'APP_CLOSED', appId } }));
     window.setTimeout(() => window.dispatchEvent(new CustomEvent('portfolio:workstation-focus', { detail: { appId } })), 0);
   }, [commitState, enabled, writeRoute]);
 
@@ -203,11 +212,14 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
   }, [commitState, enabled]);
 
   useEffect(() => {
-    if (!enabled || state.focusedAppId === 'home') return undefined;
+    if (!enabled || state.focusedAppId === 'desktop') return undefined;
     const focusedAppId = state.focusedAppId;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (document.querySelector(`[data-app-id="${focusedAppId}"] [data-control-owner="visitor"]`)) return;
+      // Overlays own their Escape: one keystroke must not also minimize the
+      // application beneath Preferences or the desktop menu.
+      if (document.querySelector('.appearance-preferences, .desktop-context-menu')) return;
       minimizeApp(focusedAppId);
     };
     window.addEventListener('keydown', handleEscape);
@@ -215,8 +227,8 @@ export const WorkstationProvider: React.FC<{ enabled: boolean; children: React.R
   }, [enabled, minimizeApp, state.focusedAppId]);
 
   const value = useMemo<WorkstationContextValue>(() => ({
-    enabled, enhanced, isCompact, state, openApp, focusApp, minimizeApp, showDesktop, snapApp, moveApp,
-  }), [enabled, enhanced, focusApp, isCompact, minimizeApp, moveApp, openApp, showDesktop, snapApp, state]);
+    enabled, enhanced, isCompact, state, openApp, focusApp, minimizeApp, closeApp, showDesktop, snapApp, moveApp,
+  }), [closeApp, enabled, enhanced, focusApp, isCompact, minimizeApp, moveApp, openApp, showDesktop, snapApp, state]);
 
   return <WorkstationContext.Provider value={value}>{children}</WorkstationContext.Provider>;
 };

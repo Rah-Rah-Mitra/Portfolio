@@ -1,23 +1,19 @@
 ---
 name: "Rahul Mitra Engineering Portfolio"
-description: "A continuous field test where real engineering evidence leads and spatial guidance stays supportive."
+description: "A dark-first optical desktop where recruiter evidence leads and interactive technical tools remain optional."
 colors:
-  field-paper: "#ffffff"
-  field-soft: "#f5f8f7"
-  field-ink: "#111816"
-  field-muted: "#53605d"
-  field-rule: "#d9e0de"
-  field-rule-strong: "#aebbb8"
-  field-teal: "#0b7169"
-  field-teal-dark: "#07544f"
-  field-amber: "#95590e"
-  field-violet: "#6650a4"
-  focus-amber: "#df9f2f"
-  workstation-carbon: "#17201e"
-  workstation-metal: "#dce2df"
-  workstation-metal-dark: "#a8b3af"
-  workstation-recess: "#edf1ef"
-  workstation-signal: "#66d7cc"
+  field-paper: "#0b0e12"
+  field-soft: "#13191f"
+  field-raised: "#191f26"
+  field-ink: "#f3f7f5"
+  field-muted: "#a8b3af"
+  field-rule: "#2c353d"
+  field-rule-strong: "#4a565e"
+  field-teal: "#63d7ca"
+  field-teal-dark: "#8ce5da"
+  field-amber: "#f0ae55"
+  field-violet: "#b8a2f3"
+  focus-amber: "#f6bd60"
 typography:
   display:
     fontFamily: "Archivo, Arial, sans-serif"
@@ -56,75 +52,77 @@ typography:
     lineHeight: 1.2
     letterSpacing: "0.08em"
 rounded:
-  square: "0"
+  control: "0.7rem"
+  window: "1.1rem"
+  dock: "1.35rem"
 components:
   action-primary:
     backgroundColor: "{colors.field-ink}"
     textColor: "{colors.field-paper}"
     typography: "{typography.body}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     padding: "0.8rem 1.05rem"
     height: "3rem"
   action-primary-hover:
     backgroundColor: "{colors.field-teal-dark}"
     textColor: "{colors.field-paper}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
   action-secondary:
     backgroundColor: "{colors.field-paper}"
     textColor: "{colors.field-ink}"
     typography: "{typography.body}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     padding: "0.8rem 1.05rem"
     height: "3rem"
   action-text:
     backgroundColor: "transparent"
     textColor: "{colors.field-ink}"
     typography: "{typography.body}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     padding: "0.8rem 0.25rem"
     height: "2.5rem"
   filter-chip:
     backgroundColor: "{colors.field-paper}"
     textColor: "{colors.field-muted}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     padding: "0.55rem 0.72rem"
     height: "2.5rem"
   filter-chip-active:
     backgroundColor: "{colors.field-teal-dark}"
     textColor: "{colors.field-paper}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     padding: "0.55rem 0.72rem"
     height: "2.5rem"
   search-field:
     backgroundColor: "{colors.field-paper}"
     textColor: "{colors.field-ink}"
     typography: "{typography.body}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     padding: "0.65rem 0.8rem"
     height: "2.8rem"
   lab-tab-active:
     backgroundColor: "{colors.field-teal-dark}"
     textColor: "{colors.field-paper}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     padding: "0.55rem 0.72rem"
     height: "4rem"
   desktop-tool-dock:
     backgroundColor: "{colors.field-paper}"
     textColor: "{colors.field-ink}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     height: "3.25rem"
     width: "3.25rem"
   technical-callout:
     backgroundColor: "{colors.field-soft}"
     textColor: "{colors.field-muted}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     padding: "0.75rem"
     border: "1px solid {colors.field-rule}"
   workstation-module:
     backgroundColor: "{colors.workstation-metal}"
     textColor: "{colors.workstation-carbon}"
     typography: "{typography.instrument}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.control}"
     border: "1px solid {colors.workstation-metal-dark}"
 ---
 
@@ -132,24 +130,24 @@ components:
 
 ## Overview
 
-**Creative North Star: "Retro Optical Workstation"**
+**Creative North Star: "Dark Optical Desktop"**
 
-The portfolio is a clean white laboratory record housed inside a precision-retro optical workstation. Rahul's positioning, experience, selected systems, complete project archive, technical study, capabilities, proof, résumés, and contact path remain stationary, explicit, and easy to inspect. Near-black type and fine rules establish authority; restrained teal marks navigation, methods, state, and verification. The workstation is functional chrome: its rail opens real portfolio applications, its lamps communicate state, and its window controls alter real bounds rather than decorating the page.
+The portfolio is a dark-first technical desktop with optional Light and System schemes. Rahul's positioning, experience, selected systems, complete project archive, technical study, capabilities, proof, résumés, and contact path remain stationary, explicit, and easy to inspect. Light text and fine rules establish authority; a visitor-selected accent marks navigation, methods, state, and verification. The workstation is functional chrome: its floating dock opens real portfolio applications, its dots communicate state, and its traffic-light controls alter real application state rather than decorating the page.
 
 The graphite-and-teal Optical Courier is a supporting guide, not the subject. One lazy optical-test-bench world owns its replaceable rig, camera, rail, iris, image plane, rays, and calibration stations; it responds to chapter state without creating a sidebar stage. Until the final production rig lands, a neutral procedural placeholder protects the same asset interface. Constrained devices receive a static optical-register diagram after the first-view facts, so mobile always presents Rahul's claim and actions first. Sparse amber and violet belong to focus, survey stations, reconstruction, and other technical annotations; they do not become decorative themes or unsupported experience claims.
 
-The interface has one evidence model and no Build/Secure lenses. Home / Dossier launches maximized and owns normal document scrolling. Ten rendered modules on the mechanical rail open one focused application at a time; minimized modules remain visible. Desktop tools move, resize, snap, and maximize only inside the work area between the menu bar and rail. Mobile tools become full-screen sheets with compact labelled modules and no precision dragging. The assistant is a right-side copilot, while Effects Lab remains a left utility tray. Motion or heavy rendering may frame the reading path, but never owns it, gates it, or carries recruiter-critical information.
+The interface has one evidence model and no Build/Secure lenses. The default view is the desktop itself: the live background field, a desktop icon grid, and the dock. Home / Dossier opens as a framed window like every other application; a dedicated dock toggle performs Show Desktop. Ten rendered modules in a rounded floating dock support a multi-window cascade; minimized modules remain visible. Desktop tools move, resize, snap, maximize, restore, and close inside the work area. Mobile tools become full-screen sheets with no precision dragging. Preferences is a persistent non-modal utility with Appearance, Desktop, Window, and Accessibility tabs. Right-click is intercepted only on empty desktop field; evidence and links retain the native browser menu.
 
-Quick Scan is the canonical light, static-first route. It renders the same recruiter evidence and complete four-mode Camera Laboratory in ordinary semantic HTML, omits the world and video chunks, and keeps Explore World as navigation to the static shared anchor rather than implying a second experience.
+Quick Scan is the canonical static-first route and inherits the resolved Dark/Light preference without loading animated desktop themes. It renders the same recruiter evidence and complete four-mode Camera Laboratory in ordinary semantic HTML, omits the world, background, and video chunks, and keeps Explore World as navigation to the static shared anchor rather than implying a second experience.
 
 **Key Characteristics:**
 
-- White laboratory field with near-black editorial typography and hairline ledger rules.
-- A graphite-and-cool-metal workstation chassis with socketed rendered application icons and explicit focused/open-background/minimized/idle states.
+- Dark-first opaque reading surfaces with light editorial typography and hairline ledger rules; Light and System remain first-class.
+- Rounded Mac-inspired windows and floating dock with explicit focused/open-background/minimized/idle states.
 - Real experience, projects, outcomes, proof, and résumé links dominate every section.
 - A persistent desktop evidence-and-guide split that collapses to an evidence-first mobile column.
 - Archivo for claims and reading; IBM Plex Mono for methods, dates, counts, readouts, and state.
-- Square controls and ruled rows instead of floating cards, pills, or dashboard chrome.
+- Rounded controls are reserved for desktop chrome and preference choices; evidence rows remain ruled and compact.
 - Optional AI and FX tools remain clearly labeled, accessible, and subordinate; the optical test bench remains an honest, locally controlled enhancement.
 
 ## Colors
@@ -172,16 +170,16 @@ The palette is almost entirely paper, graphite, and cool rules; teal communicate
 
 ### Neutral
 
-- **Laboratory White** (`field-paper`): The page, controls, reading surfaces, and resting panels.
-- **Calibration Wash** (`field-soft`): Technical-lab consoles and faint measurement fields.
-- **Graphite Ink** (`field-ink`): Headlines, primary actions, structural top rules, and the strongest evidence text.
-- **Muted Graphite** (`field-muted`): Supporting copy, dates, metadata, readouts, and explanatory labels.
+- **Reading Surface** (`field-paper`): Near-black in Dark and white in Light; it owns the page, controls, opaque copy regions, and resting panels.
+- **Calibration Wash** (`field-soft`): Scheme-aware technical-lab consoles and faint measurement fields.
+- **Primary Ink** (`field-ink`): Near-white in Dark and graphite in Light; it carries headlines, primary actions, structural top rules, and the strongest evidence text.
+- **Muted Ink** (`field-muted`): Supporting copy, dates, metadata, readouts, and explanatory labels in both schemes.
 - **Hairline Rule** (`field-rule`): Row boundaries, interior divisions, and low-priority frames.
 - **Structural Rule** (`field-rule-strong`): Sticky boundaries, section openings, inputs, active work frames, and modal edges.
 
 ### Named Rules
 
-**The Evidence Owns the Page Rule.** White and graphite carry the page; color supports navigation, state, technical meaning, and focus.
+**The Evidence Owns the Page Rule.** Opaque scheme-aware reading surfaces and high-contrast ink carry the page; color supports navigation, state, technical meaning, and focus.
 
 **The Sparse Signal Rule.** Teal is restrained and amber or violet is rarer still. Never use any signal color as a large atmospheric wash or decorative gradient.
 
@@ -212,7 +210,7 @@ The palette is almost entirely paper, graphite, and cool rules; teal communicate
 
 ## Layout
 
-The desktop shell is capped at 92rem and divides the compact hero into a 65% evidence column and 35% supporting calibration stage, separated by a responsive 2–5rem gap. The 4.75rem sticky menu bar and 2.7rem Dossier state bar establish the maximized Home application without displacing evidence from the first view. A compact Current proof trail names Abbott, Hybrid Flow Shop, Churp, and OnTheSpectrum before the primary actions so a recruiter can recover recent experience and concrete systems without waiting for animation. The continuous fallback order is position → selected work → experience → all projects → technical lab → shared world → capabilities → proof → résumés → contact.
+The desktop shell is capped at 92rem. The guided first view is the desktop: background field, icon grid, and dock beneath the 4.75rem sticky menu bar, framed by a restrained spectral glow outline. Opening Home / Dossier presents the compact hero as a window that divides into a 65% evidence column and 35% supporting calibration stage, separated by a responsive 2–5rem gap. A compact Current proof trail names Abbott, Hybrid Flow Shop, Churp, and OnTheSpectrum before the primary actions so a recruiter can recover recent experience and concrete systems quickly; Quick Scan keeps the flattened evidence-first document as the canonical static route. The continuous fallback order is position → selected work → experience → all projects → technical lab → shared world → capabilities → proof → résumés → contact.
 
 The application rail is 5.45rem on desktop and 4.35rem on touch layouts. Desktop tools launch into a deterministic smart cascade: 72vw, clamped to 720–980px wide, with 36px horizontal and 28px vertical progression inside the work area. Up to nine single-instance tool windows may remain open; z-order is explicit and only the focused window receives the strongest titlebar, border, lamp, and shadow. Each window stays bounded below the menu bar and above the rail and owns one internal scroller. Home remains mounted beneath the stack and retains its document scroll position. On mobile the rail retains horizontal touch and keyboard access while only the focused full-screen sheet is visible; the complete desktop stack and each app's bounds, scroll, and internal React state survive the breakpoint change.
 
@@ -258,7 +256,7 @@ The form language is rectilinear and instrument-like. Buttons, inputs, chips, ta
 ### Buttons
 
 - **Shape:** Square, one-pixel bordered, and at least 3rem high for hero actions; compact utility controls remain at least 2.4–2.9rem high.
-- **Primary:** Graphite fill with Laboratory White text and `0.8rem 1.05rem` padding. Hover changes the fill to Deep Signal Teal without lifting the reading surface.
+- **Primary:** Primary Ink fill with Reading Surface text and `0.8rem 1.05rem` padding. Hover changes the fill to Deep Signal Teal without lifting the reading surface.
 - **Secondary:** White fill with Graphite Ink and the same structural weight as the primary action.
 - **Text:** Transparent, underlined, and lightly padded for the tertiary reading route.
 - **Hover / Focus:** Links and light actions move to Deep Signal Teal. Every keyboard-focusable control receives the three-pixel Focus Amber outline with a three-pixel offset.
@@ -271,7 +269,7 @@ The form language is rectilinear and instrument-like. Buttons, inputs, chips, ta
 ### Cards / Containers
 
 - **Corner Style:** Square throughout.
-- **Background:** Laboratory White for reading and Calibration Wash only for technical measurement fields.
+- **Background:** the opaque Reading Surface for copy and Calibration Wash only for technical measurement fields.
 - **Shadow Strategy:** Follow the Flat Evidence Rule.
 - **Border:** Shared one-pixel rules create continuous ledgers, matrices, and consoles.
 - **Internal Padding:** Dense archive rows begin around 1.6rem vertically; primary evidence records expand to roughly 2–3.6rem.
@@ -288,7 +286,7 @@ The sticky header becomes the workstation menu bar in Guided mode: opaque cool m
 
 ### Workstation Shell
 
-Home / Dossier is the maximized portfolio application and exposes recruiter evidence before any tool interaction. Its status bar names the application, recruiter-evidence session, Singapore availability state, and maximized state. Ten real rendered module icons live in a socketed rail with idle, minimized, open-background, and focused states. On desktop, visible background windows remain labelled non-modal dialogs; pointer-down raises one without swallowing its intended control. The Home module performs Show Desktop by minimizing every tool without closing it or losing stack order. Desktop titlebars provide labelled move, snap-left, snap-right, maximize, minimize, and resize operations with keyboard equivalents; mobile retains only the title and minimize action. Minimizing focuses the next topmost visible tool or Home, and focus returns to the invoking rail module.
+The desktop is the resting state of the workstation: an icon grid launches any of the ten applications, and Home / Dossier opens as a framed window exposing recruiter evidence on demand. Ten real rendered module icons live in a socketed dock with idle, minimized, open-background, and focused states, joined by a dedicated Show Desktop toggle that minimizes every tool without closing it or losing stack order. On desktop, visible background windows remain labelled non-modal dialogs; pointer-down raises one without swallowing its intended control. Focused windows carry an accent glow outline, and the viewport edge carries a subtle spectral frame that identifies the desktop as one continuous surface. Desktop titlebars provide labelled move, snap-left, snap-right, maximize, minimize, and resize operations with keyboard equivalents; mobile retains only the title and minimize action. Minimizing focuses the next topmost visible tool or the desktop, and focus returns to the invoking rail module.
 
 The URL serializes only the focused application through `?app=`. Explicit rail, AI, restore, minimize, and Show Desktop navigation creates history entries; incidental window raising replaces the current route. Back and Forward focus the routed app or show the desktop without destroying the session-local open stack. Session record v2 validates all tool IDs, stack uniqueness, finite bounds, and snap values; v1 migration preserves only valid geometry and starts with no open tools.
 
@@ -314,7 +312,7 @@ One lazy Three.js renderer builds the optical rail, iris, image plane, frustum, 
 
 AI and FX are square 3.25rem fixed controls above the desktop rail. They are shadowless at rest and reveal a small label on hover or focus. At mobile sizes the fixed pair is hidden and the header menu owns AI, FX, and Explore World access. The assistant enters from the right as a copilot panel; Effects Lab enters from the left as a utility tray. Both use a translucent graphite backdrop and directional separation. No essential evidence or action may exist only inside these tools.
 
-FX also owns the optional-output contract: global motion pause, visual density, supporting-media playback, muted sound cues, and quality tier. Fluid remains off by default. Sound uses one original deterministic nonverbal sprite, is muted until an explicit gesture and preference, and is suppressed by Quick Scan, Save-Data, reduced stimulation, and global pause. Supporting video uses poster-first semantic figures with a visible play/pause control and transcript; sources are omitted in constrained modes and paused offscreen. Task 6's two new LTXV environment studies were rejected after visual inspection for channel separation and tiling, so only the previously reviewed hero ambience ships.
+FX owns the optional-output contract: global motion pause, visual density, supporting-media playback, muted sound cues, and quality tier. Fluid is the second selectable desktop background; its former FX control now opens the Desktop tab in Preferences. The N-body field is the default. Sound uses one original deterministic nonverbal sprite, is muted until an explicit gesture and preference, and is suppressed by Quick Scan, Save-Data, reduced stimulation, and global pause. Supporting video uses poster-first semantic figures with a visible play/pause control and transcript; sources are omitted in constrained modes and paused offscreen. Task 6's two new LTXV environment studies were rejected after visual inspection for channel separation and tiling, so only the previously reviewed hero ambience ships.
 
 ### Motion and Reduced Motion
 

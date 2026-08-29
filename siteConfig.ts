@@ -11,7 +11,7 @@ export const SITE_CONFIG = {
     github: 'https://github.com/Rah-Rah-Mitra',
     instagram: 'https://www.instagram.com/rah.rah.mitra/',
   },
-  resumeEdition: '2026-08',
+  resumeEdition: '2026-09',
 } as const;
 
 export const ASSISTANT_STARTERS = [

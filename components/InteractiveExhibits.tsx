@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { PortfolioWorldEvent } from '../types';
 import { resumeProfiles, unifiedPortfolioData } from '../portfolioData';
+import { resumeAssetUrl } from '../siteConfig';
 import { InteractionArbitrator } from '../lib/InteractionArbitrator';
 import {
   createFlowShopState,
@@ -383,7 +384,7 @@ export const DepartureIris: React.FC<{ onWorldEvent?: WorldEventHandler }> = ({ 
         <a href={`mailto:${unifiedPortfolioData.contactEmail}`}>Email Rahul</a>
         {unifiedPortfolioData.githubUrl && <a href={unifiedPortfolioData.githubUrl} target="_blank" rel="noreferrer">GitHub</a>}
         {unifiedPortfolioData.linkedinUrl && <a href={unifiedPortfolioData.linkedinUrl} target="_blank" rel="noreferrer">LinkedIn</a>}
-        <a href={generalResume?.pdfUrl ?? '/resume/generated/rahul-mitra-general.pdf'} target="_blank" rel="noreferrer">General résumé</a>
+        <a href={generalResume?.pdfUrl ?? resumeAssetUrl('general', 'pdf')} target="_blank" rel="noreferrer">General résumé</a>
       </nav>
     </section>
   );

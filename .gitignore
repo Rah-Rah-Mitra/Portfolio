@@ -34,3 +34,9 @@ assets/optical-courier/**/*.blend1
 .impeccable/review/
 .impeccable/resume-qa/
 test-results/
+
+# Local agent worktrees and unshipped optical-courier production assets
+.claude/worktrees/
+assets/optical-courier/mixamo-raw/
+assets/optical-courier/production/
+public/models/optical-courier-production.glb

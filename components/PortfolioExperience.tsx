@@ -123,7 +123,8 @@ const PortfolioHero: React.FC = () => {
         <p className="hero-role-line"><strong>Target roles</strong> Software engineering · Applied AI · Operations research · Solution architecture <span>Open to engineering roles and collaborations.</span></p>
         <nav className="hero-current-proof" aria-label="Current proof">
           <strong>Current proof</strong>
-          <a href="#experience-abbott-internship" onClick={(event) => openAppLink(event, 'experience')}>Abbott</a>
+          <a href="#experience-career-stmicro-or" onClick={(event) => openAppLink(event, 'experience')}>STMicroelectronics</a>
+          <a href="#experience-career-amazon-vision" onClick={(event) => openAppLink(event, 'experience')}>Amazon</a>
           <a href="#selected-hybrid-flow-shop-digital-twin" onClick={(event) => openAppLink(event, 'selected-work')}>Hybrid Flow Shop</a>
           <a href="#selected-churp" onClick={(event) => openAppLink(event, 'selected-work')}>Churp</a>
           <a href="#selected-on-the-spectrum" onClick={(event) => openAppLink(event, 'selected-work')}>OnTheSpectrum</a>

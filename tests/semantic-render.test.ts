@@ -8,7 +8,7 @@ describe('deterministic semantic prerender', () => {
 
     expect(markup).toContain('Rahul Mitra');
     expect(markup).toContain('Intelligent systems, made operational.');
-    expect(experienceRecords).toHaveLength(5);
+    expect(experienceRecords).toHaveLength(7);
     experienceRecords.forEach((record) => expect(markup).toContain(`experience-${record.id}`));
     expect(allProjects).toHaveLength(28);
     allProjects.forEach((project) => expect(markup).toContain(`project-${project.id}`));

@@ -922,6 +922,28 @@ const eventToFieldNote = (event: EventHighlight): FieldNote => {
 
 const careerAndEducationNotes: FieldNote[] = [
   {
+    id: 'career-stmicro-or',
+    title: 'STMicroelectronics - Operations Research (NUS System Design Project)',
+    kind: 'career',
+    kinds: ['career'],
+    dateLabel: 'Aug 2026-Present',
+    sortDate: '2026-08-01',
+    source: 'LinkedIn',
+    summary: 'Building an AI-driven put-away recommendation system for STMicroelectronics\' Singapore warehouse, using picking history, demand forecasts, and live capacity to replace experience-based slotting decisions.',
+    tags: ['STMicroelectronics', 'Operations Research', 'Warehouse Optimization', 'Demand Forecasting', 'AI'],
+  },
+  {
+    id: 'career-amazon-vision',
+    title: 'Amazon - Robotics Vision Engineer (BlendED AI+X)',
+    kind: 'career',
+    kinds: ['career'],
+    dateLabel: 'Jul 2026-Present',
+    sortDate: '2026-07-01',
+    source: 'LinkedIn',
+    summary: 'Building vision systems for camera ISP enhancement, super-resolution, image restoration under motion and low light, and perception-ready frame quality.',
+    tags: ['Amazon', 'Computer Vision', 'Robotics', 'Image Restoration', 'Super-Resolution'],
+  },
+  {
     id: 'nus-education',
     title: 'National University of Singapore',
     kind: 'education',
@@ -1173,6 +1195,28 @@ export const experienceNotes: FieldNote[] = fieldNotes.filter((note) => (
 ));
 
 const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLabel' | 'sortDate' | 'tags' | 'linkedProjectIds'>> = {
+  'career-stmicro-or': {
+    kind: 'professional',
+    role: 'Operations Research (NUS System Design Project), Contract',
+    organization: 'STMicroelectronics',
+    location: 'Singapore',
+    scope: 'AI-driven put-away recommendation for semiconductor warehouse logistics.',
+    responsibilities: [
+      'Build an AI-driven put-away recommendation system for the Singapore warehouse, combining picking history, demand forecasts, and live capacity.',
+    ],
+    outcomes: ['Targets replacing experience-based slotting decisions with systematic, capacity-aware storage recommendations.'],
+  },
+  'career-amazon-vision': {
+    kind: 'professional',
+    role: 'Robotics Vision Engineer (BlendED AI+X)',
+    organization: 'Amazon',
+    location: 'Singapore',
+    scope: 'Vision systems for robotic perception image quality.',
+    responsibilities: [
+      'Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light.',
+    ],
+    outcomes: ['Delivers perception-ready frame quality for downstream robotics vision.'],
+  },
   'abbott-internship': {
     kind: 'professional',
     role: 'Operational AI Systems & Data Engineer',
@@ -1231,6 +1275,8 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
 };
 
 const experienceStartById: Record<string, string> = {
+  'career-stmicro-or': '2026-08-01',
+  'career-amazon-vision': '2026-07-01',
   'abbott-internship': '2026-01-01',
   'nus-education': '2023-08-01',
   'career-yeswehack-independent-researcher': '2023-01-01',

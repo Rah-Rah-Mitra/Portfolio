@@ -73,7 +73,8 @@ test('the scan view still names recent experience and the leading projects first
     expect(firstView.heading!.top).toBeGreaterThanOrEqual(firstView.header!.bottom);
     expect(firstView.heading!.bottom).toBeLessThanOrEqual(viewport.height);
     const proof = page.getByLabel('Current proof');
-    await expect(proof).toContainText('Abbott');
+    await expect(proof).toContainText('STMicroelectronics');
+    await expect(proof).toContainText('Amazon');
     await expect(proof).toContainText('Hybrid Flow Shop');
     await expect(proof).toContainText('Churp');
     await expect(proof).toContainText('OnTheSpectrum');

@@ -1,0 +1,149 @@
+{
+  "entries": [
+    {
+      "id": "stmicro-or",
+      "organization": "STMicroelectronics",
+      "location": "Singapore",
+      "role": "Operations Research (NUS System Design Project), Contract",
+      "start": "2026-08",
+      "dateLabel": "Aug 2026 – Present",
+      "bullets": [
+        {
+          "id": "putaway",
+          "text": { "default": "Build an AI-driven put-away recommendation system for STMicroelectronics' Singapore warehouse, combining picking history, demand forecasts, and live capacity to replace experience-based slotting decisions." }
+        }
+      ]
+    },
+    {
+      "id": "amazon-vision",
+      "organization": "Amazon",
+      "location": "Singapore",
+      "role": "Robotics Vision Engineer (BlendED AI+X)",
+      "start": "2026-07",
+      "dateLabel": "Jul 2026 – Present",
+      "bullets": [
+        {
+          "id": "isp",
+          "text": { "default": "Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light." }
+        },
+        {
+          "id": "frame-quality",
+          "text": { "default": "Engineer processing and evaluation stages that deliver perception-ready frame quality for downstream robotics vision." }
+        }
+      ]
+    },
+    {
+      "id": "abbott-contract",
+      "organization": "Abbott Laboratories",
+      "location": "Singapore",
+      "role": "Operational AI Systems & Data Engineer (Contract)",
+      "start": "2026-06",
+      "dateLabel": "Jun 2026 – Present",
+      "bullets": [
+        {
+          "id": "ai-systems",
+          "text": { "default": "Build AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation." }
+        },
+        {
+          "id": "supply-chain",
+          "text": { "default": "Strengthen monitoring and process structure across healthcare supply chains with AI, helping ensure reliable product availability for vulnerable patient groups." }
+        }
+      ]
+    },
+    {
+      "id": "abbott-intern",
+      "organization": "Abbott Laboratories",
+      "location": "Singapore",
+      "role": "Data Analytics and Project/Product Management Intern",
+      "start": "2026-01",
+      "dateLabel": "Jan 2026 – Jun 2026",
+      "bullets": [
+        {
+          "id": "digital-twin",
+          "text": {
+            "default": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
+            "operations-research-engineer": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling; compared heuristic, MIP, and genetic-algorithm approaches and researched robust optimization."
+          }
+        },
+        {
+          "id": "pipeline",
+          "text": { "default": "Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of unseen raw data with zero execution failures." }
+        },
+        {
+          "id": "apc",
+          "text": {
+            "default": "Productionized a team-built APC simulator for live manufacturing and engineer training, packaging it in Docker and deploying it to Azure App Service.",
+            "cyber-security": "Productionized a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime and session hardening, and Docker packaging.",
+            "solution-architect": "Owned cloud deployment and production support for a team-built APC simulator used in manufacturing and engineer training, with Docker packaging, Azure App Service hosting, and documented handover."
+          }
+        },
+        {
+          "id": "upskilling",
+          "text": { "default": "Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use." }
+        }
+      ]
+    },
+    {
+      "id": "pa",
+      "organization": "People's Association",
+      "location": "Singapore",
+      "role": "Software Engineer (Citizen Developer)",
+      "start": "2025-09",
+      "dateLabel": "Sep 2025 – Present",
+      "bullets": [
+        {
+          "id": "churp",
+          "text": { "default": "Built an end-to-end digital garden-plot balloting platform spanning admin and public frontends, backend, GIS mapping, and deployment, now production-ready for national rollout across Singapore." }
+        },
+        {
+          "id": "singpass",
+          "text": { "default": "Integrated Singpass Login (OIDC) and Myinfo for passwordless authentication and consent-based retrieval of verified identity and registered address, automating resident eligibility checks." }
+        },
+        {
+          "id": "sparks",
+          "text": { "default": "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations; awarded the S$20,000 Sparks Community Innovation Fund." }
+        }
+      ]
+    },
+    {
+      "id": "ywh",
+      "organization": "YesWeHack",
+      "location": "Remote",
+      "role": "Independent Bug Bounty Researcher",
+      "start": "2024-05",
+      "dateLabel": "May 2024 – Present",
+      "bullets": [
+        {
+          "id": "programs",
+          "text": { "default": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and authorization weaknesses." }
+        },
+        {
+          "id": "automation",
+          "text": { "default": "Automated endpoint discovery, payload delivery, and evidence collection for responsible-disclosure reports using Burp Suite, Wireshark, Python, Bash, and custom fuzzing scripts." }
+        },
+        {
+          "id": "network",
+          "text": { "default": "Applied Burp Suite for MitM HTTP interception and Wireshark for OSI Layer 3–4 deep packet inspection and TLS handshake analysis." }
+        }
+      ]
+    },
+    {
+      "id": "navy",
+      "organization": "Republic of Singapore Navy",
+      "location": "Singapore",
+      "role": "Base Support Assistant",
+      "start": "2022-01",
+      "dateLabel": "Jan 2022 – Jan 2023",
+      "bullets": [
+        {
+          "id": "vba",
+          "text": { "default": "Engineered an Excel VBA automation workflow that compressed a six-month food-waste analysis cycle into a sub-three-minute reporting process inside a security-constrained environment." }
+        },
+        {
+          "id": "data",
+          "text": { "default": "Managed sensitive operational data under SAF confidentiality expectations while improving reliability, traceability, and analyst capacity." }
+        }
+      ]
+    }
+  ]
+}

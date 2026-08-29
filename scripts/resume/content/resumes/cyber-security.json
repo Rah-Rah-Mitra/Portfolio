@@ -1,0 +1,47 @@
+{
+  "slug": "cyber-security",
+  "subject": "Cyber Security Resume",
+  "pages": 1,
+  "sections": [
+    {
+      "type": "education",
+      "title": "EDUCATION",
+      "entries": [
+        { "id": "nus", "bullets": ["majors", "award"] }
+      ]
+    },
+    {
+      "type": "experience",
+      "title": "EXPERIENCE",
+      "entries": [
+        { "id": "stmicro-or", "bullets": ["putaway"] },
+        { "id": "amazon-vision", "bullets": ["isp"] },
+        { "id": "abbott-contract", "bullets": ["ai-systems"] },
+        { "id": "abbott-intern", "bullets": ["pipeline", "apc"] },
+        { "id": "ywh", "bullets": ["programs", "automation"] },
+        { "id": "navy", "bullets": ["vba"] }
+      ]
+    },
+    {
+      "type": "projects",
+      "title": "PROJECTS",
+      "entries": [
+        { "id": "arcane", "bullets": ["main"] },
+        { "id": "brinhack", "bullets": ["main"] },
+        { "id": "asyncddgs", "bullets": ["main"] }
+      ]
+    },
+    {
+      "type": "leadership",
+      "title": "LEADERSHIP AND ACTIVITIES",
+      "entries": [
+        { "id": "ntuc", "bullets": ["main"] }
+      ]
+    },
+    {
+      "type": "skills",
+      "title": "SKILLS AND CERTIFICATIONS",
+      "lines": ["cyber-skills", "certs-cyber"]
+    }
+  ]
+}

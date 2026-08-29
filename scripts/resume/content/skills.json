@@ -1,0 +1,94 @@
+{
+  "lines": [
+    {
+      "id": "se-skills",
+      "label": "Technical",
+      "items": "Python, TypeScript, React, Next.js, Three.js, FastAPI, aiohttp/asyncio, Docker, CI/CD, Azure; 3D CV: projective & epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo"
+    },
+    {
+      "id": "ai-skills",
+      "label": "Technical",
+      "items": "Python, BERT, DNN, RAG, AI agents, GPT-4, Gemini, SEALION, vector search, model evaluation, NLP; vision: camera ISP, super-resolution, image restoration, SfM, epipolar geometry, multi-view stereo; HPC: ASPIRE 2A, CUDA"
+    },
+    {
+      "id": "or-skills",
+      "label": "Technical",
+      "items": "CP-SAT, hybrid flow-shop scheduling, SimPy, digital-twin simulation, robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, Python, Excel VBA"
+    },
+    {
+      "id": "cyber-skills",
+      "label": "Technical",
+      "items": "Burp Suite, Wireshark, SSRF, CSRF, SQL/NoSQL injection, authentication bypass, OAuth2/JWT, OWASP Top 10, fuzzing, reverse engineering, custom exploit scripting, Python, Bash, Rust"
+    },
+    {
+      "id": "sa-skills",
+      "label": "Technical",
+      "items": "Solution architecture, Azure, Docker, Bitbucket CI/CD, API design, Singpass Login & Myinfo (OIDC), RAG architecture, vector search, Supabase, GIS mapping, stakeholder discovery, manufacturing systems"
+    },
+    {
+      "id": "civic-skills",
+      "label": "Technical",
+      "items": "Solution architecture; cloud (Azure, Docker, CI/CD); full-stack (React, TypeScript, FastAPI, Flask); Singpass Login & Myinfo (OIDC); RAG & AI agents; GIS mapping; accessibility; rapid prototyping"
+    },
+    {
+      "id": "gen-languages",
+      "label": "Languages",
+      "items": "Python, TypeScript, JavaScript, Java, Rust, Bash, C++, C#, Excel VBA, SQL"
+    },
+    {
+      "id": "gen-ai",
+      "label": "AI/ML",
+      "items": "BERT, DNN, transformers, RAG, AI agents, GPT-4, Gemini, SEALION, LangChain, vector search, NLP, deep RL (PPO, A2C, DDPG, DQN), model evaluation; vision: camera ISP, super-resolution, image restoration, 3D CV (projective & epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo); HPC: ASPIRE 2A, CUDA, distributed training"
+    },
+    {
+      "id": "gen-or",
+      "label": "Operations Research",
+      "items": "CP-SAT, hybrid flow-shop scheduling, SimPy, digital-twin simulation, robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, mathematical modeling"
+    },
+    {
+      "id": "gen-cloud",
+      "label": "Cloud/DevOps",
+      "items": "Azure, Docker, CI/CD, Bitbucket CI/CD, GitHub Actions, Supabase, API design, Codex"
+    },
+    {
+      "id": "gen-security",
+      "label": "Security",
+      "items": "Burp Suite, Wireshark, SSRF, CSRF, SQL/NoSQL injection, authentication bypass, OAuth2/JWT, OWASP Top 10, secure design, fuzzing, reverse engineering, custom exploit scripting, cloud security (AWS IMDSv2, metadata APIs)"
+    },
+    {
+      "id": "gen-web",
+      "label": "Web/Full-Stack",
+      "items": "React, Next.js, Three.js, Matter.js, FastAPI, Flask, aiohttp, asyncio, GIS mapping, Singpass Login & Myinfo (OIDC), Konva.js"
+    },
+    {
+      "id": "gen-arch",
+      "label": "Architecture/Product",
+      "items": "Solution architecture, manufacturing systems, stakeholder discovery, rapid prototyping, accessibility, product discovery, user testing, dashboards"
+    },
+    {
+      "id": "gen-hardware",
+      "label": "Hardware/Embedded",
+      "items": "Edge AI / Hailo model deployment, autonomous robotics (sensor integration)"
+    },
+    {
+      "id": "certs-core",
+      "label": "Certifications",
+      "items": "NVIDIA Disaster Risk Monitoring with Satellite Imagery; Deep Reinforcement Learning Hands-On (Packt)"
+    },
+    {
+      "id": "certs-or",
+      "label": "Certifications",
+      "items": "Excel 2019 Advanced (Intellezy); NVIDIA Disaster Risk Monitoring with Satellite Imagery; Deep Reinforcement Learning Hands-On (Packt)"
+    },
+    {
+      "id": "certs-cyber",
+      "label": "Certifications",
+      "items": "Reverse Engineering Windows Executables (digital forensics); Docker for the Absolute Beginner (Stone River eLearning)"
+    },
+    {
+      "id": "certs-general",
+      "label": "Certifications",
+      "items": "NVIDIA Disaster Risk Monitoring with Satellite Imagery; Deep Reinforcement Learning Hands-On (Packt); Docker for the Absolute Beginner; Reverse Engineering Windows Executables; Excel 2019 Advanced; Deep Learning CNN and RNN with Python (Packt); Learning C# by Developing Games with Unity (Packt)"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "entries": [
+    {
+      "id": "nus",
+      "organization": "National University of Singapore",
+      "location": "Singapore",
+      "role": "Bachelor of Engineering, Industrial Systems Engineering",
+      "start": "2023-08",
+      "dateLabel": "Aug 2023 – Jul 2027",
+      "bullets": [
+        {
+          "id": "majors",
+          "text": { "default": "Pursuing a Second Major in Computer Science and a Minor in Mathematics." }
+        },
+        {
+          "id": "award",
+          "text": { "default": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277) — top student in a class of 24, NUS School of Computing." }
+        },
+        {
+          "id": "coursework",
+          "text": {
+            "default": "Relevant coursework: Software Engineering, Artificial Intelligence, 3D Computer Vision, Data Structures and Algorithms, Simulation, Statistics, Operations Research.",
+            "ai-engineer": "Relevant coursework: Artificial Intelligence, 3D Computer Vision, Software Engineering, Simulation, Statistics, Operations Research, Linear Algebra, Probability.",
+            "operations-research-engineer": "Relevant coursework: Operations Research, Simulation, Statistics for Engineering Applications, Industrial Systems Engineering, Artificial Intelligence, 3D Computer Vision.",
+            "cyber-security": "Relevant coursework: Software Engineering, Artificial Intelligence, 3D Computer Vision, Computer Systems, Statistics, Mathematics, Engineering Systems.",
+            "general": "Second Major in Computer Science; Minor in Mathematics. Coursework: Software Engineering, Artificial Intelligence, 3D Computer Vision, Simulation, Statistics, Operations Research, Probability, Computer Systems."
+          }
+        }
+      ]
+    },
+    {
+      "id": "asrjc",
+      "organization": "Anderson Serangoon Junior College",
+      "location": "Singapore",
+      "role": "Singapore-Cambridge GCE A-Level",
+      "start": "2019-02",
+      "dateLabel": "Feb 2019 – Dec 2020",
+      "bullets": []
+    }
+  ]
+}

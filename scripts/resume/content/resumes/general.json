@@ -1,0 +1,69 @@
+{
+  "slug": "general",
+  "subject": "General Master CV",
+  "pages": 2,
+  "bodyPt": 10,
+  "sections": [
+    {
+      "type": "education",
+      "title": "EDUCATION",
+      "entries": [
+        { "id": "nus", "bullets": ["award", "coursework"] },
+        { "id": "asrjc", "bullets": [] }
+      ]
+    },
+    {
+      "type": "experience",
+      "title": "EXPERIENCE",
+      "entries": [
+        { "id": "stmicro-or", "bullets": ["putaway"] },
+        { "id": "amazon-vision", "bullets": ["isp", "frame-quality"] },
+        { "id": "abbott-contract", "bullets": ["ai-systems", "supply-chain"] },
+        { "id": "abbott-intern", "bullets": ["digital-twin", "pipeline", "apc"] },
+        { "id": "pa", "bullets": ["churp", "singpass", "sparks"] },
+        { "id": "ywh", "bullets": ["programs", "automation"] },
+        { "id": "navy", "bullets": ["vba", "data"] }
+      ]
+    },
+    {
+      "type": "projects",
+      "title": "PROJECTS AND COMPETITIONS",
+      "entries": [
+        { "id": "asyncddgs", "bullets": ["main"] },
+        { "id": "onthespectrum", "bullets": ["main"] },
+        { "id": "arcane", "bullets": ["main"] },
+        { "id": "voltpulse", "bullets": ["main"] },
+        { "id": "maritime", "bullets": ["main"] },
+        { "id": "agewelllah", "bullets": ["main"] },
+        { "id": "smartexam", "bullets": ["main"] },
+        { "id": "ethoslens", "bullets": ["main"] },
+        { "id": "brinhack", "bullets": ["main"] },
+        { "id": "ie2110", "bullets": ["main"] },
+        { "id": "additional", "bullets": ["utopia-short", "portfolio-short", "nvidia", "llm-cyber"] }
+      ]
+    },
+    {
+      "type": "leadership",
+      "title": "LEADERSHIP AND ACTIVITIES",
+      "entries": [
+        { "id": "ntuc", "bullets": ["main"] },
+        { "id": "steminc", "bullets": ["combined"] }
+      ]
+    },
+    {
+      "type": "skills",
+      "title": "SKILLS AND CERTIFICATIONS",
+      "lines": [
+        "gen-languages",
+        "gen-ai",
+        "gen-or",
+        "gen-cloud",
+        "gen-security",
+        "gen-web",
+        "gen-arch",
+        "gen-hardware",
+        "certs-general"
+      ]
+    }
+  ]
+}

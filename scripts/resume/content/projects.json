@@ -1,0 +1,184 @@
+{
+  "entries": [
+    {
+      "id": "asyncddgs",
+      "organization": "AsyncDDGS — Open-Source Async Search Client (PyPI)",
+      "sort": "9999-12",
+      "dateLabel": "2024 – Present",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Authored and maintain an asyncio-first, aiohttp-based DuckDuckGo client on PyPI with pytest CI/CD, adopted across AI tooling, Discord bots, and search projects." }
+        }
+      ]
+    },
+    {
+      "id": "portfolio",
+      "organization": "Interactive Portfolio Infrastructure",
+      "sort": "2026-06",
+      "dateLabel": "2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built an AI-assisted portfolio in React, TypeScript, Three.js, and Matter.js with profile switching, searchable field notes, analytics, and a 3D project world." }
+        }
+      ]
+    },
+    {
+      "id": "flowshop",
+      "organization": "Hybrid Flow-Shop Digital Twin Optimizer",
+      "sort": "2026-06",
+      "dateLabel": "2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Modeled hybrid flow-shop scheduling as a SimPy digital twin with explicit objectives and constraints, using CP-SAT, simulation, and deployment-oriented Python tooling." }
+        }
+      ]
+    },
+    {
+      "id": "onthespectrum",
+      "organization": "OnTheSpectrum — Codex & Blender MCP 3D Pipeline",
+      "sort": "2026-05",
+      "dateLabel": "May 2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built a local-first Blender-to-Three.js asset pipeline using Codex and Blender MCP, generating GLB assets, metadata, previews, playable-world QA, and Remotion video workflows." }
+        }
+      ]
+    },
+    {
+      "id": "arcane",
+      "organization": "Arcane Security Tooling Family",
+      "sort": "2026-03",
+      "dateLabel": "Mar 2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built Rust-forward security and red-team tooling (Arcane, Arcane-PP, Arcane-GLM, Arcane-OCR) for automation, OCR, and adversarial workflows." }
+        }
+      ]
+    },
+    {
+      "id": "utopia",
+      "organization": "Project Utopia — Global Situational Awareness",
+      "sort": "2026-03",
+      "dateLabel": "Mar 2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built a real-time global intelligence dashboard for AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking with geospatial visualization." }
+        }
+      ]
+    },
+    {
+      "id": "voltpulse",
+      "organization": "Volt Pulse SG — SMU Hack For Cities 2026 (Top 8 of 50+ teams)",
+      "sort": "2026-01",
+      "dateLabel": "Jan 2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning." }
+        }
+      ]
+    },
+    {
+      "id": "maritime",
+      "organization": "Maritime Deficiency Severity Forecasting — Maritime Hackathon 2025 (Team Lead)",
+      "sort": "2025-06",
+      "dateLabel": "2025",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Led model training for a maritime-inspection NLP system, fine-tuning a 109M-parameter BERT with DNN layers, gradient clipping, and hyperparameter optimization on the ASPIRE 2A supercomputer." }
+        }
+      ]
+    },
+    {
+      "id": "agewelllah",
+      "organization": "AgeWellLah.AI — NUS HealthHack 2025",
+      "sort": "2025-05",
+      "dateLabel": "2025",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built an elderly-care triage chatbot using OpenAI GPT-4, InterSystems IRIS Vector Search, and Flask, with OAuth2-secured patient profiles and PDPA-aware design." }
+        }
+      ]
+    },
+    {
+      "id": "smartexam",
+      "organization": "SmartExam — GovTech x NTUPC Product Hackathon",
+      "sort": "2025-04",
+      "dateLabel": "2025",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built a multi-agent autonomous exam-generation system with a RAG pipeline and Next.js frontend, automating source ingestion, question generation, and education workflows." }
+        }
+      ]
+    },
+    {
+      "id": "ethoslens",
+      "organization": "EthosLens — LifeHack 2025",
+      "sort": "2025-03",
+      "dateLabel": "2025",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built an AI research engine scoring brand ethics and sustainability using FastAPI, Python, and LangChain with automated evidence retrieval." }
+        }
+      ]
+    },
+    {
+      "id": "brinhack",
+      "organization": "DSTA BRINHACK 2025 CTF (top quartile of 400+ teams)",
+      "sort": "2025-02",
+      "dateLabel": "2025",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure in a first CTF, finishing in the top quartile among 400+ teams." }
+        }
+      ]
+    },
+    {
+      "id": "ie2110",
+      "organization": "IE2110 Operations Research Graph Optimization",
+      "sort": "2024-06",
+      "dateLabel": "2024",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Built LP, network-flow, and nonlinear programming models, including a Jupyter SSSP/APSP (Dijkstra) graph optimization for engineering decision support." }
+        }
+      ]
+    },
+    {
+      "id": "additional",
+      "organization": "Additional Projects",
+      "sort": "0000-00",
+      "dateLabel": "2023 – 2026",
+      "bullets": [
+        {
+          "id": "nvidia",
+          "text": { "default": "NVIDIA Disaster Risk Monitoring with Satellite Imagery — geospatial AI with U-Net semantic segmentation on GPU/ASPIRE 2A workflows (2023)." }
+        },
+        {
+          "id": "llm-cyber",
+          "text": { "default": "Fine-tuning LLMs for Cybersecurity — coursework exploring Mistral/LLaMA fine-tuning with AutoTrain and AutoGen (2024)." }
+        },
+        {
+          "id": "utopia-short",
+          "text": { "default": "Project Utopia — real-time situational-awareness dashboard with AI news aggregation and geospatial visualization (2026)." }
+        },
+        {
+          "id": "portfolio-short",
+          "text": { "default": "Interactive Portfolio Infrastructure — AI-assisted React, TypeScript, and Three.js portfolio with analytics (2026)." }
+        }
+      ]
+    }
+  ]
+}

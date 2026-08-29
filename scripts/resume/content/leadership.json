@@ -1,0 +1,32 @@
+{
+  "entries": [
+    {
+      "id": "ntuc",
+      "organization": "NTUC Health Active Ageing Centre",
+      "location": "Singapore",
+      "role": "Elderly Care Volunteer",
+      "start": "2025-09",
+      "dateLabel": "Sep 2025 – Present",
+      "bullets": [
+        {
+          "id": "main",
+          "text": { "default": "Support weekly senior-engagement activities, deepening empathy for healthcare, accessibility, and human-centered community product design." }
+        }
+      ]
+    },
+    {
+      "id": "steminc",
+      "organization": "STEM Inc. (ASRJC)",
+      "location": "Singapore",
+      "role": "Astronomy Head & Robotics Member",
+      "start": "2019-03",
+      "dateLabel": "Mar 2019 – Aug 2020",
+      "bullets": [
+        {
+          "id": "combined",
+          "text": { "default": "Led astronomy outreach, competed in the 7th Singapore Astronomical Olympiad, engineered an autonomous robot for the National Robotics Challenge, and received the ASRJC Outstanding Contribution Award." }
+        }
+      ]
+    }
+  ]
+}

@@ -10,3 +10,8 @@ Unpacked from "Portfolio website redesign mockups.zip" (Claude Design export,
   (mobile registry), `portfolio-ui-mockups.dc.html` (overview), plus their shared
   scripts (`pga-rig.js` → ported to `lib/rig.ts`, `portfolio-data.js`,
   `support.js`), the export's sync notes (`github.md`), and screenshots.
+- `mockups/linkedin-thumbnail.dc.html` + `linkedin-thumb.jsx` (runtime:
+  `animations-v3.jsx`, `tweaks-panel.jsx`) — the 1200×627, 3 s seamless-loop
+  featured-card animation. `public/og-image.png` (frame T=0) and
+  `public/og-video.mp4` are rendered from it (vanilla port + Playwright frame
+  capture + ffmpeg); re-render those if this composition changes.

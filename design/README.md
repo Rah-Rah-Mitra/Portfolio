@@ -12,6 +12,8 @@ Unpacked from "Portfolio website redesign mockups.zip" (Claude Design export,
   `support.js`), the export's sync notes (`github.md`), and screenshots.
 - `mockups/linkedin-thumbnail.dc.html` + `linkedin-thumb.jsx` (runtime:
   `animations-v3.jsx`, `tweaks-panel.jsx`) — the 1200×627, 3 s seamless-loop
-  featured-card animation. `public/og-image.png` (frame T=0) and
+  featured-card animation. `public/og-card-2026.png` (frame T=0; filename is
+  version-stamped because LinkedIn caches og images by URL — bump the name
+  when the card changes) and
   `public/og-video.mp4` are rendered from it (vanilla port + Playwright frame
   capture + ffmpeg); re-render those if this composition changes.

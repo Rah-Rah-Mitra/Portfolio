@@ -10,6 +10,7 @@ import type { DesktopAppId, SceneId } from '../types';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';
 import { dispatchExploreControl } from '../lib/worldEvents';
 import { workstationApps } from '../lib/workstation';
+import { appForAnchor, dispatchWorkbenchOpen } from '../lib/workbench';
 import { useOptionalWorkstation } from '../contexts/WorkstationContext';
 
 type Reference = { label: string; href: string };
@@ -31,7 +32,6 @@ const chapterIds: Set<string> = new Set(JOURNEY_STAGES.map((stage) => stage.id))
 const labModes = new Set(['intrinsics', 'extrinsics', 'optics', 'stereo']);
 const sceneIds = new Set<SceneId>(['calibration', 'systems-in-motion', 'spatial-systems', 'selected-work', 'camera-laboratory', 'departure']);
 const desktopAppIds = new Set<DesktopAppId>(workstationApps.map((app) => app.id));
-const appByAnchor = new Map(workstationApps.map((app) => [app.fallbackAnchor.slice(1), app.id] as const));
 
 export const validatePageCommand = (value: unknown): PageCommand | null => {
   if (!value || typeof value !== 'object') return null;
@@ -190,42 +190,47 @@ const AskThePage: React.FC = () => {
     return () => window.removeEventListener('keydown', escape);
   }, [open]);
 
-  const runInApp = (appId: DesktopAppId, action: () => void) => {
+  const runInApp = (appId: DesktopAppId, action: () => void, targetId?: string) => {
     if (workstation?.enabled && workstation.enhanced) {
       workstation.openApp(appId, 'ai');
       window.setTimeout(action, 0);
-    } else action();
-  };
-
-  const appForAnchor = (anchor: string): DesktopAppId | undefined => {
-    const id = anchor.replace(/^#/, '');
-    if (id.startsWith('project-')) return 'project-archive';
-    if (id.startsWith('experience-')) return 'experience';
-    return appByAnchor.get(id);
+    } else {
+      // Field Workbench / Field Index listen for this and open the window /
+      // reveal the registry entry before the scroll action runs. targetId lets
+      // Field Index expand the matching registry row (its DOM has no anchor ids).
+      dispatchWorkbenchOpen({ appId, targetId });
+      window.setTimeout(action, 80);
+    }
   };
 
   const applyCommand = (command: PageCommand) => {
     const valid = validatePageCommand(command);
     if (!valid) return;
-    if (valid.type === 'focusExperience') runInApp('experience', () => document.getElementById(valid.experienceId ? `experience-${valid.experienceId}` : 'experience')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-    else if (valid.type === 'focusProject') runInApp('project-archive', () => document.getElementById(`project-${valid.projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    if (valid.type === 'focusExperience') runInApp('experience', () => document.getElementById(valid.experienceId ? `experience-${valid.experienceId}` : 'experience')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), valid.experienceId ? `experience-${valid.experienceId}` : 'experience');
+    else if (valid.type === 'focusProject') runInApp('project-archive', () => document.getElementById(`project-${valid.projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), `project-${valid.projectId}`);
     else if (valid.type === 'openTechnicalLab') {
       runInApp('camera-lab', () => {
         document.getElementById('technical-lab')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         if (valid.mode) window.dispatchEvent(new CustomEvent('portfolio:camera-lab-mode', { detail: { mode: valid.mode } }));
-      });
+      }, 'technical-lab');
     } else if (valid.type === 'focusGuideChapter') {
       const appId = appForAnchor(`#${valid.chapterId}`);
-      if (appId) runInApp(appId, () => document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      if (appId) runInApp(appId, () => document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), valid.chapterId);
       else document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     else if (valid.type === 'enterExploreMode') {
       runInApp('world-3d', () => {
         document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         dispatchExploreControl({ action: 'enter', sceneId: valid.sceneId });
-      });
-    } else if (valid.type === 'openDesktopApp') workstation?.openApp(valid.appId, 'ai');
-    else if (valid.type === 'minimizeDesktopApp') workstation?.minimizeApp(valid.appId);
+      }, 'world');
+    } else if (valid.type === 'openDesktopApp') {
+      if (workstation?.enabled && workstation.enhanced) workstation.openApp(valid.appId, 'ai');
+      else dispatchWorkbenchOpen({ appId: valid.appId });
+    }
+    else if (valid.type === 'minimizeDesktopApp') {
+      if (workstation?.enabled && workstation.enhanced) workstation.minimizeApp(valid.appId);
+      else dispatchWorkbenchOpen({ appId: valid.appId, action: 'minimize' });
+    }
     else if (valid.type === 'setQuickScan') chooseMode(valid.enabled ? 'scan' : 'guided');
   };
 
@@ -289,9 +294,12 @@ const AskThePage: React.FC = () => {
                 return <a key={`${reference.href}-${reference.label}`} href={reference.href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} onClick={(event) => {
                   if (!reference.href.startsWith('#')) return;
                   const appId = appForAnchor(reference.href);
-                  if (appId && workstation?.enabled && workstation.enhanced) {
+                  if (appId) {
+                    // Anchors live inside closed windows; hashchange alone won't
+                    // fire when the hash already matches — always dispatch.
                     event.preventDefault();
-                    workstation.openApp(appId, 'ai');
+                    if (workstation?.enabled && workstation.enhanced) workstation.openApp(appId, 'ai');
+                    else dispatchWorkbenchOpen({ appId, targetId: reference.href.slice(1) });
                   }
                   close('reference');
                 }}>{reference.label}{external && <span className="sr-only"> (opens in a new tab)</span>}</a>;

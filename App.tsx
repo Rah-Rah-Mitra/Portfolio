@@ -2,17 +2,11 @@ import React from 'react';
 import { EffectsProvider } from './contexts/PhysicsContext';
 import EffectsLabPanel from './components/EffectsLabPanel';
 import AskThePage from './components/AskThePage';
-import { useScrollDepth } from './hooks/useScrollDepth';
-import { track } from './lib/analytics';
-import PortfolioExperience from './components/PortfolioExperience';
-import { ExperienceModeProvider, useExperienceMode } from './contexts/ExperienceModeContext';
 import AudioSpriteController from './components/AudioSpriteController';
-import { WorkstationProvider } from './contexts/WorkstationContext';
-import { AppearanceProvider } from './contexts/AppearanceContext';
-import AppearancePreferences from './components/AppearancePreferences';
-import DesktopAppearanceMenu from './components/DesktopAppearanceMenu';
-
-const DesktopBackgroundController = React.lazy(() => import('./components/DesktopBackgroundController'));
+import { ExperienceModeProvider } from './contexts/ExperienceModeContext';
+import FieldWorkbench from './components/workbench/FieldWorkbench';
+import FieldIndex from './components/workbench/FieldIndex';
+import { track } from './lib/analytics';
 
 export const OptionalExperienceLayers: React.FC = () => {
   return (
@@ -20,66 +14,42 @@ export const OptionalExperienceLayers: React.FC = () => {
       <EffectsLabPanel />
       <AskThePage />
       <AudioSpriteController />
-      <DesktopAppearanceMenu />
-      <AppearancePreferences />
     </>
   );
 };
 
-const AppContent: React.FC = () => {
-  const { policy } = useExperienceMode();
-  useScrollDepth();
+// SSR renders both surfaces (CSS media queries hide the inactive one); after
+// hydration we collapse to the active surface so only one tree stays live.
+const useActiveSurface = () => {
+  const [surface, setSurface] = React.useState<'both' | 'desktop' | 'mobile'>('both');
   React.useEffect(() => {
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (!motionQuery.matches && !policy.lowMotion) document.documentElement.classList.add('motion-ready');
-    return () => document.documentElement.classList.remove('motion-ready');
-  }, [policy.lowMotion]);
-  React.useEffect(() => {
-    track('portfolio_viewed', { surface: 'continuous_field_test' });
+    const query = window.matchMedia('(max-width: 880px)');
+    const apply = () => setSurface(query.matches ? 'mobile' : 'desktop');
+    apply();
+    query.addEventListener('change', apply);
+    return () => query.removeEventListener('change', apply);
   }, []);
+  return surface;
+};
+
+const AppContent: React.FC = () => {
+  const surface = useActiveSurface();
   React.useEffect(() => {
-    const timers = new Set<number>();
-    const alignToHash = () => {
-      const id = decodeURIComponent(window.location.hash.slice(1));
-      if (!id) return;
-      document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'auto' });
-    };
-    const scheduleAlignment = () => {
-      if (!window.location.hash) return;
-      document.documentElement.classList.add('hash-target-visible');
-      timers.forEach((timer) => window.clearTimeout(timer));
-      timers.clear();
-      [0, 80, 180, 320, 500, 720, 960].forEach((delay) => {
-        const timer = window.setTimeout(() => {
-          alignToHash();
-          timers.delete(timer);
-        }, delay);
-        timers.add(timer);
-      });
-    };
-    scheduleAlignment();
-    window.addEventListener('hashchange', scheduleAlignment);
-    return () => {
-      timers.forEach((timer) => window.clearTimeout(timer));
-      window.removeEventListener('hashchange', scheduleAlignment);
-    };
+    track('portfolio_viewed', { surface: 'field_workbench' });
   }, []);
   return (
     <EffectsProvider>
-      <WorkstationProvider enabled={policy.mode === 'guided'}>
-        <div className="site-shell min-h-screen" data-experience-mode={policy.mode} data-motion={policy.lowMotion ? 'low' : 'full'}>
-          {policy.allowHeavyAssets && <React.Suspense fallback={null}><DesktopBackgroundController /></React.Suspense>}
-          <PortfolioExperience />
-          <OptionalExperienceLayers />
-        </div>
-      </WorkstationProvider>
+      <div className="site-shell">
+        {surface !== 'mobile' && <FieldWorkbench />}
+        {surface !== 'desktop' && <FieldIndex />}
+        <OptionalExperienceLayers />
+      </div>
     </EffectsProvider>
   );
-}
-
+};
 
 const App: React.FC = () => {
-  return <AppearanceProvider><ExperienceModeProvider><AppContent /></ExperienceModeProvider></AppearanceProvider>;
+  return <ExperienceModeProvider><AppContent /></ExperienceModeProvider>;
 };
 
 export default App;

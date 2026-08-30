@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-5c40abba-869b-4cce-8540-83067e53772c/styles.css">
+<script src="_ds/industry-5c40abba-869b-4cce-8540-83067e53772c/_ds_bundle.js"></script>
+<style>
+html,body{height:100%;margin:0;overflow:hidden}
+::-webkit-scrollbar{width:0;height:0}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent)}
+@keyframes bench-spin{from{transform:rotateX(-22deg) rotateY(0deg)}to{transform:rotateX(-22deg) rotateY(360deg)}}
+</style>
+</helmet>
+<div data-dc="workbench" style="height:100%;min-height:620px;min-width:1280px;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--color-text);background:var(--color-bg)">
+  <header style="height:46px;flex:none;display:flex;align-items:center;gap:20px;padding:0 18px;border-bottom:1px solid var(--color-divider);background:color-mix(in srgb, var(--color-bg) 60%, white)">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;letter-spacing:0.02em">RM · FIELD WORKBENCH</span>
+      <span style="font-size:10px;letter-spacing:0.1em;color:var(--color-neutral-600)">DRAWING SET — PORTFOLIO OF RAHUL MITRA</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:16px;font-size:10.5px;letter-spacing:0.09em;color:var(--color-neutral-700)">
+      <span>REV 2026-09</span>
+      <span style="width:1px;height:14px;background:var(--color-divider)"></span>
+      <span>SINGAPORE · 1.29°N 103.85°E</span>
+      <span style="width:1px;height:14px;background:var(--color-divider)"></span>
+      <span data-clock style="font-feature-settings:'tnum' 1">00:00:00</span>
+      <span style="width:7px;height:7px;background:var(--color-accent);display:inline-block"></span>
+    </div>
+  </header>
+  <div style="flex:1;min-height:0;display:flex">
+    <nav aria-label="Tool rail" style="width:96px;flex:none;display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:10px 8px;border-right:1px solid var(--color-divider);background:color-mix(in srgb, var(--color-bg) 75%, white);overflow-y:auto">
+      <div style="font-size:9px;letter-spacing:0.14em;color:var(--color-neutral-600);text-align:center;margin-bottom:6px">TOOL RAIL</div>
+      <sc-for list="{{ apps }}" as="a" hint-placeholder-count="10">
+        <button data-app="{{ a.id }}" onClick="{{ openApp }}" aria-label="Open {{ a.label }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 7px;background:{{ a.railBg }};border:1px solid transparent;cursor:pointer;font-family:var(--font-body)" style-hover="border-color:var(--color-divider);background:color-mix(in srgb, var(--color-accent) 8%, transparent)">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-accent-800)"><path d="{{ a.icon }}"></path></svg>
+          <span style="font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-800)">{{ a.short }}</span>
+          <span style="width:6px;height:6px;background:{{ a.lamp }};border:1px solid var(--color-divider)"></span>
+        </button>
+      </sc-for>
+      <button onClick="{{ showDesk }}" style="margin-top:auto;padding:9px 2px;background:transparent;border:1px solid var(--color-divider);cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:10px;letter-spacing:0.12em;color:var(--color-neutral-800)" style-hover="background:color-mix(in srgb, var(--color-accent) 10%, transparent)">DESK</button>
+    </nav>
+    <main data-desk style="flex:1;position:relative;overflow:hidden;background-color:var(--color-bg);background-image:repeating-linear-gradient(0deg, rgba(29,31,32,0.045) 0 1px, transparent 1px 24px),repeating-linear-gradient(90deg, rgba(29,31,32,0.045) 0 1px, transparent 1px 24px),repeating-linear-gradient(0deg, rgba(89,128,166,0.09) 0 1px, transparent 1px 120px),repeating-linear-gradient(90deg, rgba(89,128,166,0.09) 0 1px, transparent 1px 120px)">
+      <ul aria-label="Desktop shortcuts" style="position:absolute;left:22px;top:18px;margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2, 96px);gap:8px">
+        <sc-for list="{{ apps }}" as="a" hint-placeholder-count="10">
+          <li><button data-app="{{ a.id }}" onClick="{{ openApp }}" style="width:96px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 4px 8px;background:transparent;border:1px solid color-mix(in srgb, var(--color-text) 10%, transparent);cursor:pointer;font-family:var(--font-body)" style-hover="background:color-mix(in srgb, white 55%, transparent);border-color:var(--color-divider)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-accent-700)"><path d="{{ a.icon }}"></path></svg>
+            <span style="font-size:9.5px;letter-spacing:0.07em;text-transform:uppercase;color:var(--color-neutral-800);text-align:center;line-height:1.25">{{ a.short }}</span>
+          </button></li>
+        </sc-for>
+      </ul>
+      <p style="position:absolute;left:24px;bottom:14px;margin:0;font-size:10px;letter-spacing:0.1em;color:var(--color-neutral-600)">SELECT A MODULE · WINDOWS DRAG BY THEIR TITLE BAR · SCROLL A SHEET TO WORK ITS RIG · ESC MINIMIZES</p>
+      <div class="blueprint" aria-hidden="true" style="position:absolute;right:26px;bottom:22px;width:308px;background:color-mix(in srgb, var(--color-bg) 55%, white);pointer-events:none">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:grid;grid-template-columns:86px 1fr;font-size:10px;letter-spacing:0.06em">
+          <div style="padding:6px 9px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600)">TITLE</div><div style="padding:6px 9px;border-bottom:1px solid var(--color-divider);font-family:var(--font-heading);font-weight:600;font-size:12px;letter-spacing:0.05em">PORTFOLIO FIELD WORKBENCH</div>
+          <div style="padding:6px 9px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600)">DRAWN BY</div><div style="padding:6px 9px;border-bottom:1px solid var(--color-divider)">RAHUL MITRA — RM</div>
+          <div style="padding:6px 9px;border-right:1px solid var(--color-divider);color:var(--color-neutral-600)">SHEET</div><div style="padding:6px 9px">01 OF 01 · SCALE 1:1 · REV 2026-09</div>
+        </div>
+      </div>
+
+      <section data-win="home" data-screen-label="Home / Dossier" class="blueprint" style="position:absolute;display:{{ winDisplay.home }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="home" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="home" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="home" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="home" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">DOSSIER · WIN-01</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Home / Dossier</h2>
+          </div>
+          <span data-ro="home" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="home" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="home" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:22px 26px 30px">
+            <div style="display:flex;gap:30px;align-items:flex-start">
+              <div style="flex:1.35;min-width:0">
+                <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">W / ORIGIN — POSITIONING</span>
+                <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 14px">
+                <h1 style="margin:0 0 6px;font-size:52px;line-height:0.98;letter-spacing:0.01em;text-transform:uppercase">Rahul Mitra</h1>
+                <p style="margin:0 0 12px;font-size:15px;color:var(--color-accent-700);font-family:var(--font-heading);font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Systems Architect &amp; AI Engineer — ISE × CS × Mathematics</p>
+                <p style="margin:0 0 18px;font-size:14px;line-height:1.6;max-width:54ch;color:var(--color-neutral-800)">NUS Industrial Systems Engineering (Second Major CS, Minor Math). I build intelligent systems at the intersection of agentic AI, high-performance computing, operations research, and open-source engineering — from a fine-tuned 109M-parameter transformer to async Python libraries with global PyPI adoption.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+                  <button class="btn btn-primary" data-app="work" onClick="{{ openApp }}">OPEN SELECTED WORK</button>
+                  <button class="btn btn-secondary" data-app="resumes" onClick="{{ openApp }}">RESUMES &amp; CONTACT</button>
+                </div>
+                <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;letter-spacing:0.05em;color:var(--color-neutral-700)"><span>SINGAPORE</span><span>·</span><span>mitrarahul2002@gmail.com</span><span>·</span><span>github.com/Rah-Rah-Mitra</span></div>
+              </div>
+              <div style="width:264px;flex:none;display:flex;flex-direction:column;gap:22px">
+                <div data-hoist style="transform-origin:50% -16px">
+                  <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+                  <figure class="blueprint" style="margin:0;background:repeating-linear-gradient(45deg, rgba(89,128,166,0.10) 0 1px, transparent 1px 7px)">
+                    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                    <div style="height:196px;display:grid;place-items:center;font-size:10px;letter-spacing:0.12em;color:var(--color-neutral-600);border-bottom:1px solid var(--color-divider)">PORTRAIT — DROP IMAGE</div>
+                    <figcaption style="padding:5px 9px;font-size:10px;letter-spacing:0.08em;color:var(--color-neutral-600)">FIG. 01 — FIELD ENGINEER, DUOTONE</figcaption>
+                  </figure>
+                </div>
+                <div data-hoist style="transform-origin:50% -16px">
+                  <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+                  <div class="blueprint" style="background:color-mix(in srgb, var(--color-bg) 55%, white)">
+                    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                    <div style="display:grid;grid-template-columns:74px 1fr;align-items:baseline;font-size:11px">
+                      <div style="padding:8px 10px;border-bottom:1px solid var(--color-divider);font-family:var(--font-heading);font-weight:600;font-size:22px">06</div><div style="padding:8px 10px;border-bottom:1px solid var(--color-divider);letter-spacing:0.07em;color:var(--color-neutral-700)">ENGINEERING DOMAINS</div>
+                      <div style="padding:8px 10px;border-bottom:1px solid var(--color-divider);font-family:var(--font-heading);font-weight:600;font-size:22px">22</div><div style="padding:8px 10px;border-bottom:1px solid var(--color-divider);letter-spacing:0.07em;color:var(--color-neutral-700)">PUBLIC PROJECTS INDEXED</div>
+                      <div style="padding:8px 10px;border-bottom:1px solid var(--color-divider);font-family:var(--font-heading);font-weight:600;font-size:22px">S$20K</div><div style="padding:8px 10px;border-bottom:1px solid var(--color-divider);letter-spacing:0.07em;color:var(--color-neutral-700)">SPARKS INNOVATION FUND</div>
+                      <div style="padding:8px 10px;font-family:var(--font-heading);font-weight:600;font-size:22px">1/24</div><div style="padding:8px 10px;letter-spacing:0.07em;color:var(--color-neutral-700)">TOP STUDENT — 3D CV, NUS</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="home" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-01 · RM FIELD WORKBENCH</span><span>COUNTERWEIGHT = SCROLL DEPTH</span></footer>
+      </section>
+
+      <section data-win="work" data-screen-label="Selected Work" class="blueprint" style="position:absolute;display:{{ winDisplay.work }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="work" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="work" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="work" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="work" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">EVIDENCE · WIN-02</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Selected Work</h2>
+          </div>
+          <span data-ro="work" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="work" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="work" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 26px 30px">
+            <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">C1 / CAPTURE — SIX EVIDENCE-RICH SYSTEMS</span>
+            <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 18px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px 18px">
+              <sc-for list="{{ featured }}" as="p" hint-placeholder-count="6">
+                <div data-hoist style="transform-origin:50% -16px">
+                  <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+                  <article class="blueprint" style="display:flex;flex-direction:column;gap:7px;padding:14px 15px;background:color-mix(in srgb, var(--color-bg) 55%, white);height:100%">
+                    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                    <div style="display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:0.11em;color:var(--color-accent-700)"><span>{{ p.no }} · {{ p.cat }}</span></div>
+                    <h3 style="margin:0;font-size:20px;line-height:1.05;letter-spacing:0.02em;text-transform:uppercase">{{ p.title }}</h3>
+                    <p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800);flex:1">{{ p.desc }}</p>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <sc-for list="{{ p.tags }}" as="t" hint-placeholder-count="3"><span class="tag tag-accent">{{ t }}</span></sc-for>
+                    </div>
+                    <p style="margin:2px 0 0;font-size:11px;letter-spacing:0.04em;color:var(--color-accent-800)"><strong style="letter-spacing:0.1em">OUTCOME —</strong> {{ p.outcome }}</p>
+                  </article>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="work" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-02 · CARDS RIDE THE HOIST</span><span>SCROLL TO RAISE</span></footer>
+      </section>
+
+      <section data-win="experience" data-screen-label="Experience" class="blueprint" style="position:absolute;display:{{ winDisplay.experience }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="experience" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="experience" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="experience" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="experience" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">EVIDENCE · WIN-03</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Experience</h2>
+          </div>
+          <span data-ro="experience" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="experience" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="experience" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 26px 30px">
+            <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">C2 / DELIVERY — CHRONOLOGICAL RECORD</span>
+            <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 4px">
+            <sc-for list="{{ experience }}" as="x" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:158px 1fr;gap:16px;padding:15px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 9%, transparent)">
+                <div style="font-size:10.5px;letter-spacing:0.09em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1;padding-top:3px">{{ x.d }}</div>
+                <div>
+                  <h3 style="margin:0 0 3px;font-size:17px;letter-spacing:0.03em;text-transform:uppercase">{{ x.org }} <span style="color:var(--color-accent-700)">— {{ x.role }}</span></h3>
+                  <p style="margin:0 0 7px;font-size:12.5px;line-height:1.55;color:var(--color-neutral-800);max-width:72ch">{{ x.sum }}</p>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ x.tags }}" as="t" hint-placeholder-count="2"><span class="tag tag-neutral">{{ t }}</span></sc-for></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="experience" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-03</span><span>FULL RECORD — NO GAPS</span></footer>
+      </section>
+
+      <section data-win="archive" data-screen-label="Project Archive" class="blueprint" style="position:absolute;display:{{ winDisplay.archive }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="archive" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="archive" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="archive" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="archive" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">EVIDENCE · WIN-04</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Project Archive</h2>
+          </div>
+          <span data-ro="archive" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="archive" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="archive" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:18px 26px 30px">
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+              <input class="input" type="search" value="{{ archiveQuery }}" onInput="{{ setQuery }}" placeholder="SEARCH THE REGISTRY…" aria-label="Search projects" style="width:250px">
+              <div style="display:inline-flex;border:1px solid var(--color-divider)">
+                <sc-for list="{{ domainBtns }}" as="d" hint-placeholder-count="7">
+                  <button data-dom="{{ d.label }}" onClick="{{ setDomain }}" style="padding:7px 11px;font-size:11px;letter-spacing:0.05em;border:0;border-left:1px solid var(--color-divider);cursor:pointer;background:{{ d.bg }};color:{{ d.fg }};font-family:var(--font-body)">{{ d.label }}</button>
+                </sc-for>
+              </div>
+              <span style="margin-left:auto;font-size:10px;letter-spacing:0.11em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">{{ archiveCount }} / 22 SHOWN</span>
+            </div>
+            <div style="display:grid;grid-template-columns:64px 1.25fr 1fr 1.1fr 92px;gap:10px;padding:6px 8px;border-bottom:1px solid var(--color-divider);font-size:9.5px;letter-spacing:0.11em;color:var(--color-neutral-600)"><span>DATE</span><span>PROJECT</span><span>CATEGORY</span><span>STACK</span><span>DOMAIN</span></div>
+            <sc-for list="{{ archiveRows }}" as="r" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:64px 1.25fr 1fr 1.1fr 92px;gap:10px;padding:9px 8px;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent);font-size:12px;align-items:baseline" style-hover="background:color-mix(in srgb, var(--color-accent) 7%, transparent)">
+                <span style="font-size:10px;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">{{ r.d }}</span>
+                <span style="font-family:var(--font-heading);font-weight:600;font-size:14.5px;letter-spacing:0.03em;text-transform:uppercase">{{ r.title }}</span>
+                <span style="color:var(--color-neutral-700);font-size:11.5px">{{ r.cat }}</span>
+                <span style="color:var(--color-neutral-600);font-size:11px">{{ r.tags }}</span>
+                <span class="tag tag-outline" style="justify-self:start">{{ r.dom }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="archive" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-04 · REGISTRY</span><span>TYPE TO FILTER</span></footer>
+      </section>
+
+      <section data-win="systems" data-screen-label="Systems Lab" class="blueprint" style="position:absolute;display:{{ winDisplay.systems }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="systems" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="systems" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="systems" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="systems" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">LAB · WIN-05</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Systems Lab</h2>
+          </div>
+          <span data-ro="systems" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="systems" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="systems" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 26px 30px">
+            <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">C4 / CALIBRATE — DETERMINISTIC EXHIBITS</span>
+            <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 18px">
+            <div data-hoist style="transform-origin:50% -16px;margin-bottom:22px">
+              <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+              <figure class="blueprint" style="margin:0;padding:14px 16px;background:color-mix(in srgb, var(--color-bg) 55%, white)">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><h3 style="margin:0;font-size:17px;letter-spacing:0.03em;text-transform:uppercase">Hybrid Flow Shop — CP-SAT Schedule</h3><span style="font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600)">ILLUSTRATIVE SEQUENCE</span></div>
+                <svg viewBox="0 0 640 132" style="width:100%;display:block">
+                  <g font-family="Barlow, sans-serif" font-size="9" fill="#7a7a7d" letter-spacing="1"><text x="0" y="26">M1</text><text x="0" y="66">M2</text><text x="0" y="106">M3</text></g>
+                  <g stroke="#d4d4d7" stroke-width="1"><line x1="26" y1="0" x2="26" y2="132"></line><line x1="180" y1="0" x2="180" y2="132" stroke-dasharray="2 4"></line><line x1="334" y1="0" x2="334" y2="132" stroke-dasharray="2 4"></line><line x1="488" y1="0" x2="488" y2="132" stroke-dasharray="2 4"></line></g>
+                  <g stroke="#416180" fill="none" stroke-width="1">
+                    <rect x="26" y="12" width="128" height="20" fill="#b5d9fd"></rect><rect x="168" y="12" width="96" height="20" fill="#eef6ff"></rect><rect x="278" y="12" width="150" height="20" fill="#94bce3"></rect><rect x="442" y="12" width="88" height="20" fill="#eef6ff"></rect>
+                    <rect x="60" y="52" width="110" height="20" fill="#eef6ff"></rect><rect x="184" y="52" width="140" height="20" fill="#b5d9fd"></rect><rect x="338" y="52" width="92" height="20" fill="#eef6ff"></rect><rect x="444" y="52" width="120" height="20" fill="#94bce3"></rect>
+                    <rect x="98" y="92" width="86" height="20" fill="#94bce3"></rect><rect x="198" y="92" width="118" height="20" fill="#eef6ff"></rect><rect x="330" y="92" width="104" height="20" fill="#b5d9fd"></rect><rect x="448" y="92" width="140" height="20" fill="#eef6ff"></rect>
+                  </g>
+                </svg>
+                <figcaption style="margin-top:8px;font-size:10.5px;color:var(--color-neutral-600)">FIG. 05a — SimPy discrete-event model + OR-Tools CP-SAT interval variables; robust-optimization research for uncertainty. Built at Abbott; operating details abstracted.</figcaption>
+              </figure>
+            </div>
+            <div data-hoist style="transform-origin:50% -16px">
+              <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+              <figure class="blueprint" style="margin:0;padding:14px 16px;background:color-mix(in srgb, var(--color-bg) 55%, white)">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><h3 style="margin:0;font-size:17px;letter-spacing:0.03em;text-transform:uppercase">15-Stage Changeover Pipeline</h3><span style="font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600)">NON-DESTRUCTIVE</span></div>
+                <div style="display:flex;gap:3px">
+                  <sc-for list="{{ stages }}" as="s" hint-placeholder-count="15">
+                    <div style="flex:1;border:1px solid var(--color-divider);padding:6px 0 5px;text-align:center;font-size:9.5px;font-feature-settings:'tnum' 1;color:var(--color-neutral-800);background:{{ s.bg }}">{{ s.n }}</div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:9px;letter-spacing:0.09em;color:var(--color-neutral-600)"><span>STAGING</span><span>NORMALIZE</span><span>REPAIR</span><span>FROM-TO EDGES</span><span>AUDIT</span></div>
+                <figcaption style="margin-top:9px;font-size:10.5px;color:var(--color-neutral-600)">FIG. 05b — Five years of previously unseen, unclean changeover data processed without errors; every repair state exposed, never silently mutated.</figcaption>
+              </figure>
+            </div>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="systems" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-05 · DETERMINISTIC</span><span>SEED-STABLE EXHIBITS</span></footer>
+      </section>
+
+      <section data-win="camera" data-screen-label="Camera Lab" class="blueprint" style="position:absolute;display:{{ winDisplay.camera }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="camera" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="camera" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="camera" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="camera" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">LAB · WIN-06</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Camera Lab</h2>
+          </div>
+          <span data-ro="camera" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="camera" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="camera" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 26px 30px">
+            <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">C4 / CALIBRATE — THIN-LENS OPTICS, DETERMINISTIC</span>
+            <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 14px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+              <label for="fov" style="font-size:11px;letter-spacing:0.09em;color:var(--color-neutral-700)">HORIZONTAL FOV</label>
+              <input id="fov" type="range" min="30" max="110" step="1" value="{{ fov }}" onInput="{{ setFov }}" style="width:220px;accent-color:var(--color-accent)">
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:18px;font-feature-settings:'tnum' 1">{{ fovLabel }}</span>
+            </div>
+            <div data-hoist style="transform-origin:50% -16px">
+              <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+              <figure class="blueprint" style="margin:0;padding:14px 16px;background:color-mix(in srgb, var(--color-bg) 55%, white)">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <svg viewBox="0 0 640 208" style="width:100%;display:block">
+                  <g stroke="#d4d4d7" stroke-width="1"><line x1="0" y1="104" x2="640" y2="104" stroke-dasharray="3 5"></line></g>
+                  <path d="{{ frustumPath }}" stroke="#5980a6" stroke-width="1.5" fill="none"></path>
+                  <rect x="22" y="94" width="20" height="20" fill="none" stroke="#1d1f20" stroke-width="1.5"></rect>
+                  <circle cx="42" cy="104" r="3" fill="#5980a6"></circle>
+                  <g font-family="Barlow, sans-serif" font-size="10" fill="#7a7a7d" letter-spacing="1"><text x="20" y="86">PINHOLE C</text><text x="196" y="30">IMAGE PLANE</text><text x="520" y="98">OPTICAL AXIS Z</text></g>
+                </svg>
+                <figcaption style="margin-top:6px;font-size:10.5px;color:var(--color-neutral-600)">FIG. 06 — Top view; plane at f. Intrinsics recompute live below.</figcaption>
+              </figure>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:0;border:1px solid var(--color-divider);margin-top:16px">
+              <div style="padding:9px 12px;border-right:1px solid var(--color-divider)"><div style="font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)">fx = fy (PX)</div><div style="font-family:var(--font-heading);font-weight:600;font-size:22px;font-feature-settings:'tnum' 1">{{ fx }}</div></div>
+              <div style="padding:9px 12px;border-right:1px solid var(--color-divider)"><div style="font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)">cx (PX)</div><div style="font-family:var(--font-heading);font-weight:600;font-size:22px;font-feature-settings:'tnum' 1">960</div></div>
+              <div style="padding:9px 12px;border-right:1px solid var(--color-divider)"><div style="font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)">cy (PX)</div><div style="font-family:var(--font-heading);font-weight:600;font-size:22px;font-feature-settings:'tnum' 1">540</div></div>
+              <div style="padding:9px 12px"><div style="font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)">SENSOR</div><div style="font-family:var(--font-heading);font-weight:600;font-size:22px;font-feature-settings:'tnum' 1">1920×1080</div></div>
+            </div>
+            <p style="margin:12px 0 0;font-size:11px;color:var(--color-neutral-600);max-width:70ch">Backed by the top-student CS4277 record: projective geometry, epipolar geometry, absolute pose, SfM with bundle adjustment, multi-view stereo. The lab is a synthetic portfolio experiment — stated plainly, like the production site does.</p>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="camera" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-06 · K = [fx 0 cx / 0 fy cy / 0 0 1]</span><span>DRAG THE SLIDER</span></footer>
+      </section>
+
+      <section data-win="world" data-screen-label="3D World" class="blueprint" style="position:absolute;display:{{ winDisplay.world }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="world" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="world" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="world" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="world" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">WORLD · WIN-07</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">3D World</h2>
+          </div>
+          <span data-ro="world" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="world" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="world" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 26px 30px">
+            <div style="display:flex;gap:28px;align-items:flex-start">
+              <div style="flex:1;min-width:0">
+                <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">SHARED #WORLD ANCHOR — OPTICAL TEST BENCH</span>
+                <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 12px">
+                <h3 style="margin:0 0 8px;font-size:26px;letter-spacing:0.02em;text-transform:uppercase;line-height:1.02">Optical Test Bench</h3>
+                <p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:var(--color-neutral-800);max-width:48ch">One shared 3D surface used by Guided mode and local Explore control. Assets flow in through the OnTheSpectrum pipeline — Blender-authored GLBs with metadata, previews, and playable-world QA. Redesigned here as a lighter accent: the bench renders on demand, never as a page-wide background.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button class="btn btn-primary">EXPLORE WORLD</button>
+                  <button class="btn btn-secondary">GUIDED TOUR</button>
+                </div>
+                <div style="margin-top:16px;display:flex;gap:6px;flex-wrap:wrap"><span class="tag tag-accent">Three.js</span><span class="tag tag-accent">Blender MCP</span><span class="tag tag-accent">GLB</span><span class="tag tag-neutral">Optical Courier</span></div>
+              </div>
+              <div data-hoist style="transform-origin:50% -16px;width:250px;flex:none">
+                <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+                <figure class="blueprint" style="margin:0;background:color-mix(in srgb, var(--color-bg) 55%, white)">
+                  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                  <div style="height:210px;display:grid;place-items:center;perspective:620px;border-bottom:1px solid var(--color-divider);overflow:hidden">
+                    <div style="width:104px;height:104px;position:relative;transform-style:preserve-3d;animation:bench-spin 16s linear infinite">
+                      <div style="position:absolute;inset:0;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 7%, transparent);transform:translateZ(52px)"></div>
+                      <div style="position:absolute;inset:0;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 7%, transparent);transform:rotateY(180deg) translateZ(52px)"></div>
+                      <div style="position:absolute;inset:0;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 7%, transparent);transform:rotateY(90deg) translateZ(52px)"></div>
+                      <div style="position:absolute;inset:0;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 7%, transparent);transform:rotateY(-90deg) translateZ(52px)"></div>
+                      <div style="position:absolute;inset:0;border:1px solid var(--color-accent);transform:rotateX(90deg) translateZ(52px)"></div>
+                      <div style="position:absolute;inset:0;border:1px solid var(--color-accent);transform:rotateX(-90deg) translateZ(52px)"></div>
+                    </div>
+                  </div>
+                  <figcaption style="padding:5px 9px;font-size:10px;letter-spacing:0.08em;color:var(--color-neutral-600)">FIG. 07 — BENCH VOLUME (LIVE ACCENT)</figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="world" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-07 · #WORLD</span><span>RENDERS ON DEMAND ONLY</span></footer>
+      </section>
+
+      <section data-win="capabilities" data-screen-label="Capabilities" class="blueprint" style="position:absolute;display:{{ winDisplay.capabilities }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="capabilities" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="capabilities" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="capabilities" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="capabilities" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">EVIDENCE · WIN-08</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Capabilities</h2>
+          </div>
+          <span data-ro="capabilities" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="capabilities" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="capabilities" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 26px 30px">
+            <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">C5 / CONNECT — METHODS WIRED TO PROOF</span>
+            <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 18px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px 18px">
+              <sc-for list="{{ capabilities }}" as="c" hint-placeholder-count="6">
+                <div data-hoist style="transform-origin:50% -16px">
+                  <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+                  <article class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:13px 15px;background:color-mix(in srgb, var(--color-bg) 55%, white);height:100%">
+                    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                    <h3 style="margin:0;font-size:18px;letter-spacing:0.02em;text-transform:uppercase"><span style="color:var(--color-accent-700)">{{ c.no }}</span> · {{ c.title }}</h3>
+                    <p style="margin:0;font-size:12px;line-height:1.5;color:var(--color-neutral-800);flex:1">{{ c.sum }}</p>
+                    <div style="font-size:10.5px;letter-spacing:0.05em;color:var(--color-neutral-700)"><strong style="letter-spacing:0.1em;font-size:9px;color:var(--color-neutral-600)">TOOLS · </strong>{{ c.tools }}</div>
+                    <div style="font-size:10.5px;letter-spacing:0.05em;color:var(--color-accent-800)"><strong style="letter-spacing:0.1em;font-size:9px;color:var(--color-neutral-600)">PROOF · </strong>{{ c.proof }}</div>
+                  </article>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="capabilities" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-08</span><span>EVERY METHOD CITES EVIDENCE</span></footer>
+      </section>
+
+      <section data-win="proof" data-screen-label="Proof Vault" class="blueprint" style="position:absolute;display:{{ winDisplay.proof }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="proof" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="proof" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="proof" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="proof" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">PROOF · WIN-09</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Proof Vault</h2>
+          </div>
+          <span data-ro="proof" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="proof" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="proof" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 26px 30px">
+            <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">C6 / VERIFY — DISTINCTIONS &amp; CREDENTIALS</span>
+            <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 4px">
+            <sc-for list="{{ proof }}" as="v" hint-placeholder-count="9">
+              <div style="display:grid;grid-template-columns:92px 1fr auto;gap:14px;align-items:baseline;padding:12px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+                <span style="font-size:10px;letter-spacing:0.08em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">{{ v.d }}</span>
+                <div>
+                  <h3 style="margin:0 0 2px;font-size:15.5px;letter-spacing:0.03em;text-transform:uppercase">{{ v.title }}</h3>
+                  <p style="margin:0;font-size:11.5px;color:var(--color-neutral-700)">{{ v.note }}</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px"><span class="tag tag-neutral">{{ v.cat }}</span><a href="#" style="font-size:11px;letter-spacing:0.05em">{{ v.link }} ↗</a></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="proof" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-09 · EVERY CLAIM LINKS OUT</span><span>EVIDENCE-FIRST</span></footer>
+      </section>
+
+      <section data-win="resumes" data-screen-label="Resumes and Contact" class="blueprint" style="position:absolute;display:{{ winDisplay.resumes }};flex-direction:column;background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header data-drag="resumes" onPointerDown="{{ dragStart }}" style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--color-divider);cursor:grab;user-select:none;touch-action:none">
+          <div style="display:flex;gap:5px">
+            <button data-app="resumes" onClick="{{ closeApp }}" aria-label="Close" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">×</button>
+            <button data-app="resumes" onClick="{{ minApp }}" aria-label="Minimize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">–</button>
+            <button data-app="resumes" onClick="{{ maxApp }}" aria-label="Maximize" style="width:15px;height:15px;padding:0;border:1px solid var(--color-divider);background:transparent;font-size:10px;line-height:1;cursor:pointer;color:var(--color-neutral-700)" style-hover="background:var(--color-accent-200)">+</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:9px;letter-spacing:0.13em;color:var(--color-accent-700)">PROOF · WIN-10</span>
+            <h2 style="margin:0;font-size:16px;letter-spacing:0.04em;text-transform:uppercase">Resumes &amp; Contact</h2>
+          </div>
+          <span data-ro="resumes" style="margin-left:auto;font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">HOIST 000%</span>
+        </header>
+        <div style="position:relative;height:30px;flex:none;border-bottom:1px solid var(--color-divider)"><svg data-rig="resumes" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        <div style="flex:1;min-height:0;display:flex">
+          <div data-scroll="resumes" onScroll="{{ onScroll }}" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 26px 30px">
+            <span style="font-size:10px;letter-spacing:0.13em;color:var(--color-accent-700)">C7 / TARGET — SEVEN ROLE-TARGETED EDITIONS · REV 2026-09</span>
+            <hr style="height:1px;border:0;background:var(--color-divider);margin:7px 0 4px">
+            <sc-for list="{{ resumes }}" as="r" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:172px 1fr auto;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+                <h3 style="margin:0;font-size:15.5px;letter-spacing:0.03em;text-transform:uppercase">{{ r.role }}</h3>
+                <div><p style="margin:0;font-size:12px;color:var(--color-neutral-800)">{{ r.head }}</p><p style="margin:1px 0 0;font-size:10.5px;color:var(--color-neutral-600)">{{ r.kw }}</p></div>
+                <div style="display:flex;gap:6px"><button class="btn btn-secondary" style="font-size:11px;padding:4px 10px">DOCX</button><button class="btn btn-secondary" style="font-size:11px;padding:4px 10px">PDF</button></div>
+              </div>
+            </sc-for>
+            <div data-hoist style="transform-origin:50% -16px;margin-top:22px">
+              <svg aria-hidden="true" width="44" height="18" viewBox="0 0 44 18" style="display:block;margin:0 auto;color:var(--color-neutral-500)"><path d="M4 18 22 5m18 13L22 5" stroke="currentColor" stroke-width="1.2" fill="none"></path><circle cx="22" cy="3.4" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"></circle></svg>
+              <div class="blueprint" style="display:flex;align-items:center;gap:18px;padding:16px 18px;background:color-mix(in srgb, var(--color-bg) 55%, white);flex-wrap:wrap">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="flex:1;min-width:220px">
+                  <h3 style="margin:0 0 3px;font-size:20px;letter-spacing:0.02em;text-transform:uppercase">Direct Handoff — C8</h3>
+                  <p style="margin:0;font-size:12px;color:var(--color-neutral-700)">mitrarahul2002@gmail.com · Singapore · linkedin.com/in/rahulmitra-dev · github.com/Rah-Rah-Mitra</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary">EMAIL RAHUL</button><button class="btn btn-secondary">LINKEDIN</button><button class="btn btn-secondary">GITHUB</button></div>
+              </div>
+            </div>
+          </div>
+          <div style="width:24px;flex:none;position:relative;border-left:1px solid var(--color-divider)"><svg data-rail="resumes" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg></div>
+        </div>
+        <footer style="flex:none;display:flex;justify-content:space-between;padding:5px 12px;border-top:1px solid var(--color-divider);font-size:9px;letter-spacing:0.12em;color:var(--color-neutral-600)"><span>SHEET WIN-10 · HANDOFF</span><span>DOCX + PDF PER EDITION</span></footer>
+      </section>
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;motion&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Rig physics&quot;}, &quot;cableSag&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 10, &quot;min&quot;: 0, &quot;max&quot;: 24, &quot;step&quot;: 1, &quot;unit&quot;: &quot;px&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Rig physics&quot;}}">
+class Component extends DCLogic {
+  state = {
+    winDisplay: { home: 'flex', work: 'flex', experience: 'none', archive: 'none', systems: 'none', camera: 'none', world: 'none', capabilities: 'none', proof: 'none', resumes: 'none' },
+    focused: 'home', archiveQuery: '', domain: 'All', fov: 70, loaded: false,
+  };
+  BOUNDS = { home: [150, 48, 900, 620], work: [420, 96, 900, 620], experience: [230, 80, 880, 600], archive: [280, 60, 940, 640], systems: [300, 88, 860, 610], camera: [330, 100, 840, 590], world: [360, 110, 820, 540], capabilities: [250, 70, 900, 620], proof: [290, 90, 880, 600], resumes: [320, 80, 880, 600] };
+
+  async componentDidMount() {
+    const [D, R] = await Promise.all([import('./portfolio-data.js'), import('./pga-rig.js')]);
+    this.D = D; this.R = R;
+    this.scroll = {}; this.wt = {}; this.rot = {}; this.z = 60; this.hoists = [];
+    this.rigDone = {}; this.maxed = {};
+    this.setState({ loaded: true });
+    requestAnimationFrame(() => {
+      ['home', 'work'].forEach((id) => { this.applyBounds(id); this.layoutRig(id); });
+      this.focusWin('home');
+    });
+    this.onKey = (e) => { if (e.key === 'Escape' && this.state.focused) this.doMin(this.state.focused); };
+    window.addEventListener('keydown', this.onKey);
+    this.onMove = (e) => {
+      const d = this.dragCtx; if (!d || e.pointerId !== d.pid) return;
+      this.dragVel = e.clientX - (d.lx ?? e.clientX); d.lx = e.clientX;
+      const nx = Math.max(0, d.x + e.clientX - d.sx), ny = Math.max(0, d.y + e.clientY - d.sy);
+      d.el.style.left = nx + 'px'; d.el.style.top = ny + 'px';
+      this.BOUNDS[d.id][0] = nx; this.BOUNDS[d.id][1] = ny;
+    };
+    this.onUp = (e) => { if (this.dragCtx && e.pointerId === this.dragCtx.pid) this.dragCtx = null; };
+    this.onDown = (e) => {
+      const h = e.target.closest?.('[data-hoist]'); if (!h) return;
+      const o = this.hoists?.find((x) => x.el === h); if (!o) return;
+      const r = h.getBoundingClientRect();
+      o.av += (e.clientX - r.left - r.width / 2 > 0 ? -1 : 1) * 24;
+    };
+    this.root()?.addEventListener('pointerdown', this.onDown);
+    window.addEventListener('pointermove', this.onMove);
+    window.addEventListener('pointerup', this.onUp);
+    this.clockT = setInterval(() => { const el = this.root()?.querySelector('[data-clock]'); if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false }); }, 1000);
+    this.raf = requestAnimationFrame(this.tick);
+  }
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf); clearInterval(this.clockT);
+    window.removeEventListener('keydown', this.onKey);
+    window.removeEventListener('pointermove', this.onMove);
+    window.removeEventListener('pointerup', this.onUp);
+    this.root()?.removeEventListener('pointerdown', this.onDown);
+  }
+  root() { this._root = this._root || document.querySelector('[data-dc="workbench"]'); return this._root; }
+  el(id) { return this.root()?.querySelector(`[data-win="${id}"]`); }
+  applyBounds(id) {
+    const el = this.el(id); if (!el) return;
+    const desk = this.root()?.querySelector('[data-desk]');
+    const [x, y, w, h] = this.BOUNDS[id];
+    const mw = desk ? desk.clientWidth - 24 : 1200, mh = desk ? desk.clientHeight - 24 : 700;
+    const W = Math.min(w, mw), H = Math.min(h, mh);
+    el.style.left = Math.max(0, Math.min(x, mw - W)) + 'px';
+    el.style.top = Math.max(0, Math.min(y, mh - H)) + 'px';
+    el.style.width = W + 'px'; el.style.height = H + 'px';
+  }
+  layoutRig(id) {
+    const el = this.el(id); if (!el || el.style.display === 'none') return;
+    const beam = el.querySelector(`[data-rig="${id}"]`); const rail = el.querySelector(`[data-rail="${id}"]`);
+    if (!beam || !rail) return;
+    const W = beam.clientWidth || beam.parentElement.clientWidth; const H = rail.clientHeight || 300;
+    const ink = 'color-mix(in srgb, #1d1f20 42%, transparent)';
+    beam.innerHTML = `
+      <path d="M10 6 v18 M4 12 h12" stroke="${ink}" stroke-width="1" fill="none"></path>
+      <path data-cable d="" stroke="#5980a6" stroke-width="1.3" fill="none"></path>
+      <g data-sheave2><circle r="5.5" fill="none" stroke="#416180" stroke-width="1.1"></circle><g data-spokes2><path d="M-5.5 0H5.5M0 -5.5V5.5" stroke="#416180" stroke-width="0.9"></path></g><circle r="1.3" fill="#416180"></circle></g>
+      <g data-sheave><circle r="8.5" fill="none" stroke="#416180" stroke-width="1.3"></circle><g data-spokes><path d="M-8.5 0H8.5M0 -8.5V8.5" stroke="#416180" stroke-width="1"></path></g><circle r="1.8" fill="#416180"></circle></g>
+      <path data-drop d="" stroke="#5980a6" stroke-width="1.3" fill="none"></path>`;
+    let ticks = '';
+    for (let i = 0; i <= 10; i++) { const y = 8 + (H - 46) * i / 10; ticks += `M6 ${y.toFixed(1)} h${i % 5 === 0 ? 9 : 5} `; }
+    rail.innerHTML = `
+      <path d="M6 6 V${H - 8}" stroke="${ink}" stroke-width="1" fill="none"></path>
+      <path d="${ticks}" stroke="${ink}" stroke-width="1" fill="none"></path>
+      <g data-weight><path d="M0 -13 V-6" stroke="#416180" stroke-width="1.2"></path><rect x="-6.5" y="-6" width="13" height="24" fill="#5980a6" stroke="#2c455d" stroke-width="1"></rect><path d="M-6.5 0 L6.5 6 M-6.5 8 L6.5 14" stroke="#2c455d" stroke-width="0.8"></path></g>`;
+    const sx = W - 16, mx = Math.max(60, W * 0.52);
+    const sheave = beam.querySelector('[data-sheave]');
+    sheave.setAttribute('transform', `translate(${sx},15)`);
+    const sheave2 = beam.querySelector('[data-sheave2]');
+    if (sheave2) sheave2.setAttribute('transform', `translate(${mx.toFixed(1)},22)`);
+    this.rigGeo = this.rigGeo || {};
+    this.rigGeo[id] = { W, H, sx, mx };
+    this.rigDone[id] = true;
+    this.cacheHoists(id);
+  }
+  cacheHoists(id) {
+    const el = this.el(id); if (!el) return;
+    this.hoists = [...el.querySelectorAll('[data-hoist]')].map((h) => ({ el: h, y: 30, v: 0, a: 0, av: 0 }));
+  }
+  focusWin(id) {
+    const prev = this.state.focused;
+    if (prev && prev !== id) { const pe = this.el(prev); if (pe) pe.style.boxShadow = 'var(--shadow-sm)'; }
+    const el = this.el(id); if (el) { el.style.zIndex = ++this.z; el.style.boxShadow = 'var(--shadow-lg)'; }
+    if (this.state.focused !== id) this.setState({ focused: id });
+    if (!this.rigDone[id]) requestAnimationFrame(() => this.layoutRig(id));
+    else this.cacheHoists(id);
+  }
+  doOpen(id) {
+    if (this.state.winDisplay[id] === 'flex') { this.focusWin(id); return; }
+    this.setState({ winDisplay: { ...this.state.winDisplay, [id]: 'flex' } });
+    requestAnimationFrame(() => { this.applyBounds(id); this.layoutRig(id); this.focusWin(id); });
+  }
+  doClose(id) {
+    const wd = { ...this.state.winDisplay, [id]: 'none' }; this.rigDone[id] = false;
+    const next = Object.keys(wd).find((k) => wd[k] === 'flex') || null;
+    this.setState({ winDisplay: wd, focused: next });
+    if (next) requestAnimationFrame(() => this.focusWin(next));
+  }
+  doMin(id) { this.doClose(id); }
+  renderVals() {
+    const D = this.D;
+    const S = this.state;
+    const lampFor = (id) => S.focused === id ? 'var(--color-accent)' : S.winDisplay[id] === 'flex' ? 'var(--color-accent-300)' : 'transparent';
+    const apps = D ? D.APPS.map((a) => ({ ...a, lamp: lampFor(a.id), railBg: S.focused === a.id ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)' : 'transparent' })) : undefined;
+    const q = S.archiveQuery.trim().toLowerCase();
+    const rows = D ? D.ARCHIVE.filter((r) => (S.domain === 'All' || r.dom === S.domain) && (!q || (r.title + ' ' + r.cat + ' ' + r.tags + ' ' + r.dom).toLowerCase().includes(q))) : undefined;
+    const domainBtns = D ? D.DOMAINS.map((label) => ({ label, bg: label === S.domain ? 'var(--color-accent)' : 'transparent', fg: label === S.domain ? 'var(--color-bg)' : 'var(--color-neutral-800)' })) : undefined;
+    const rad = (S.fov / 2) * Math.PI / 180;
+    const dy = Math.min(96, 110 * Math.tan(rad));
+    const ph = Math.min(92, 98 * Math.tan(rad));
+    const frustumPath = `M42 104 L${(42 + 110 * 4).toFixed(0)} ${(104 - dy * 4).toFixed(0)} M42 104 L${(42 + 110 * 4).toFixed(0)} ${(104 + dy * 4).toFixed(0)} M140 ${(104 - ph).toFixed(0)} V${(104 + ph).toFixed(0)}`;
+    return {
+      apps, winDisplay: S.winDisplay,
+      featured: D?.FEATURED, experience: D?.EXPERIENCE, capabilities: D?.CAPABILITIES, proof: D?.PROOF, resumes: D?.RESUMES,
+      archiveRows: rows, archiveCount: rows ? String(rows.length).padStart(2, '0') : '00', domainBtns, archiveQuery: S.archiveQuery,
+      stages: Array.from({ length: 15 }, (_, i) => ({ n: String(i + 1).padStart(2, '0'), bg: [0, 3, 7, 11, 14].includes(i) ? 'var(--color-accent-200)' : 'transparent' })),
+      fov: S.fov, fovLabel: S.fov + '°', fx: String(Math.round(1920 / (2 * Math.tan(rad)))),
+      frustumPath,
+      openApp: (e) => this.doOpen(e.currentTarget.dataset.app),
+      closeApp: (e) => { e.stopPropagation(); this.doClose(e.currentTarget.dataset.app); },
+      minApp: (e) => { e.stopPropagation(); this.doMin(e.currentTarget.dataset.app); },
+      maxApp: (e) => {
+        e.stopPropagation();
+        const id = e.currentTarget.dataset.app; const desk = this.root()?.querySelector('[data-desk]');
+        if (!this.maxed[id]) { this.maxed[id] = [...this.BOUNDS[id]]; this.BOUNDS[id] = [8, 8, desk.clientWidth - 16, desk.clientHeight - 16]; }
+        else { this.BOUNDS[id] = this.maxed[id]; this.maxed[id] = null; }
+        this.applyBounds(id); this.rigDone[id] = false; requestAnimationFrame(() => this.layoutRig(id)); this.focusWin(id);
+      },
+      dragStart: (e) => {
+        if (e.target.closest('button')) return;
+        const id = e.currentTarget.dataset.drag; const el = this.el(id);
+        this.focusWin(id);
+        this.dragCtx = { id, el, pid: e.pointerId, sx: e.clientX, sy: e.clientY, x: parseFloat(el.style.left) || 0, y: parseFloat(el.style.top) || 0 };
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+      },
+      onScroll: (e) => {
+        const id = e.currentTarget.dataset.scroll;
+        const el = e.currentTarget;
+        this.scroll[id] = this.scroll[id] || { prev: el.scrollTop, vel: 0 };
+        this.scroll[id].el = el; this.scroll[id].st = el.scrollTop;
+        this.scroll[id].max = el.scrollHeight - el.clientHeight;
+      },
+      setQuery: (e) => this.setState({ archiveQuery: e.target.value }),
+      setDomain: (e) => this.setState({ domain: e.currentTarget.dataset.dom }),
+      setFov: (e) => this.setState({ fov: +e.target.value }),
+      showDesk: () => {
+        const wd = { ...this.state.winDisplay }; Object.keys(wd).forEach((k) => wd[k] = 'none');
+        Object.keys(this.rigDone).forEach((k) => this.rigDone[k] = false);
+        this.setState({ winDisplay: wd, focused: null });
+      },
+    };
+  }
+  tick = () => {
+    this.raf = requestAnimationFrame(this.tick);
+    this.dragVel = (this.dragVel || 0) * (this.dragCtx ? 0.6 : 0.84);
+    const id = this.state.focused; if (!id || !this.R) return;
+    const el = this.el(id); if (!el || el.style.display === 'none') return;
+    const geo = this.rigGeo?.[id]; if (!geo) return;
+    const motion = this.props.motion ?? true;
+    const sagBase = this.props.cableSag ?? 10;
+    const S = this.scroll[id] || { st: 0, prev: 0, vel: 0, max: 1 };
+    const dv = (S.st ?? 0) - (S.prev ?? 0); S.prev = S.st ?? 0;
+    S.vel = (S.vel || 0) * 0.86 + dv * 0.14;
+    const p = S.max > 0 ? Math.min(1, Math.max(0, (S.st || 0) / S.max)) : 0;
+    const beam = el.querySelector(`[data-rig="${id}"]`); const rail = el.querySelector(`[data-rail="${id}"]`);
+    if (!beam || !rail) return;
+    this.rot[id] = (this.rot[id] || 0) + dv * 0.7;
+    const spokes = beam.querySelector('[data-spokes]');
+    if (spokes) spokes.setAttribute('transform', `rotate(${(this.rot[id] % 360).toFixed(1)})`);
+    const cable = beam.querySelector('[data-cable]');
+    const sag = Math.max(1.5, sagBase - Math.min(sagBase - 1.5, Math.abs(S.vel) * 0.4));
+    if (cable) cable.setAttribute('d', this.R.routePath([[16, 12], [geo.mx ?? geo.sx * 0.6, 22], [geo.sx, 6.5]], motion ? sag * 0.6 : 1.5));
+    const spokes2 = beam.querySelector('[data-spokes2]');
+    if (spokes2) spokes2.setAttribute('transform', `rotate(${((-this.rot[id] * 0.8) % 360).toFixed(1)})`);
+    const wt = this.wt[id] = this.wt[id] || { y: 8, v: 0 };
+    const railLen = geo.H - 46; const target = 8 + p * railLen;
+    if (motion) { const [ny, nv] = this.R.spring(wt.y, wt.v, target, 68, 7.2, 1 / 60); wt.y = ny; wt.v = nv; }
+    else { wt.y = target; wt.v = 0; }
+    const wg = rail.querySelector('[data-weight]');
+    if (wg) wg.setAttribute('transform', `translate(12,${(wt.y + 14).toFixed(1)})`);
+    const drop = beam.querySelector('[data-drop]');
+    if (drop) drop.setAttribute('d', `M${geo.sx + 8.5} 15 H${geo.W + 12}`);
+    const ro = el.querySelector(`[data-ro="${id}"]`);
+    if (ro) ro.textContent = `HOIST ${String(Math.round(p * 100)).padStart(3, '0')}%`;
+    const sc = S.el;
+    if (sc && this.hoists) {
+      const vb = sc.getBoundingClientRect().bottom;
+      for (const h of this.hoists) {
+        const r = h.el.getBoundingClientRect();
+        const t = Math.min(1, Math.max(0, (vb - (r.top - h.y)) / 130));
+        const ty = (1 - t) * 30;
+        if (motion) {
+          const [ny, nv] = this.R.spring(h.y, h.v, ty, 110, 11, 1 / 60); h.y = ny; h.v = nv;
+          const tgt = Math.max(-6.5, Math.min(6.5, -(S.vel * 0.14 + (this.dragVel || 0) * 0.45)));
+          const [na, nav] = this.R.spring(h.a, h.av, tgt, 52, 4.6, 1 / 60);
+          h.a = Math.max(-9, Math.min(9, na)); h.av = nav;
+        } else { h.y = ty; h.a = 0; }
+        h.el.style.transform = `translateY(${h.y.toFixed(2)}px) rotate(${h.a.toFixed(2)}deg)`;
+      }
+    }
+  };
+}
+
+</script>
+</body>
+</html>

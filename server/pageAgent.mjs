@@ -12,7 +12,7 @@ const canonicalProjectIds = new Set([
   'portfolio-repo', 'github-profile-repo', 'kalidokit-fork', 'tp-java', 'ip-java', 'crawl4ai-deepseek-example',
   'ie2110-grp-13', 'fine-tuning-llms-cybersecurity', 'references', 'eg1311-project',
 ]);
-const canonicalExperienceIds = new Set(['abbott-internship', 'nus-education', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
+const canonicalExperienceIds = new Set(['career-stmicro-or', 'career-amazon-vision', 'abbott-internship', 'nus-education', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
 const canonicalChapterIds = new Set(['home', 'work', 'experience', 'all-work', 'technical-lab', 'domains', 'proof', 'resumes', 'contact']);
 const canonicalDesktopAppIds = new Set(['home', 'selected-work', 'experience', 'project-archive', 'systems-lab', 'camera-lab', 'world-3d', 'capabilities', 'proof-vault', 'resumes-contact']);
 

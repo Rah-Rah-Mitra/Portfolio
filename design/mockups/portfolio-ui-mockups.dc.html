@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/industry-5c40abba-869b-4cce-8540-83067e53772c/styles.css">
+<script src="_ds/industry-5c40abba-869b-4cce-8540-83067e53772c/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--color-bg)}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent)}
+.dv-turn{padding:44px 48px 40px;scroll-margin-top:16px}
+.dv-opts{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px "Barlow", monospace;letter-spacing:0.08em;padding:3px 8px;background:var(--color-accent-900);color:var(--color-bg);text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:9px;font:400 11.5px "Barlow",sans-serif;color:var(--color-neutral-700);letter-spacing:0.04em}
+.dv-card{background:color-mix(in srgb, var(--color-bg) 45%, white);border:1px solid var(--color-divider);box-shadow:var(--shadow-md);overflow:hidden}
+.dv-opt:target .dv-oid{background:var(--color-accent)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+  <div style="max-width:1120px;margin-bottom:34px">
+    <span style="font-size:10.5px;letter-spacing:0.14em;color:var(--color-accent-700)">RM PORTFOLIO — NEW UI DIRECTION · REV 2026-09</span>
+    <hr style="height:1px;border:0;background:var(--color-divider);margin:8px 0 16px">
+    <h1 style="margin:0 0 10px;font-size:56px;line-height:1;letter-spacing:0.01em;text-transform:uppercase">The Field Workbench</h1>
+    <p style="margin:0;font-size:15px;line-height:1.6;max-width:74ch;color:var(--color-neutral-800)">One strong direction, per your brief: the OS-with-windows metaphor stays, but re-drawn as an engineer's drawing set. Every window is a numbered sheet with registration marks; the scrollbar becomes a working counterweight; scrolling drives a cable-and-sheave rig (planar constraint dynamics — the same verlet core the ganja.js PGA demos integrate, swappable for true PGA motors in production). Both live frames below are interactive — scroll inside them.</p>
+  </div>
+  <div style="display:flex;gap:22px;flex-wrap:wrap;margin-bottom:36px;max-width:1120px">
+    <div class="blueprint" style="flex:1;min-width:330px;padding:16px 18px;background:color-mix(in srgb, var(--color-bg) 55%, white)">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h3 style="margin:0 0 8px;font-size:16px;letter-spacing:0.05em;text-transform:uppercase">Assumptions</h3>
+      <ul style="margin:0;padding-left:16px;font-size:12.5px;line-height:1.7;color:var(--color-neutral-800)">
+        <li>All content lifted from the repo (portfolioData, siteConfig, workstation app list) — nothing invented.</li>
+        <li>Current UI deliberately not followed (your instruction); the 10-app taxonomy is kept because it maps cleanly.</li>
+        <li>3D reduced to on-demand accents (your pick) — no page-wide WebGL backgrounds.</li>
+        <li>Résumé/proof links are stubs in the mockup; wiring is production work.</li>
+      </ul>
+    </div>
+    <div class="blueprint" style="flex:1.3;min-width:400px;padding:16px 18px;background:color-mix(in srgb, var(--color-bg) 55%, white)">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h3 style="margin:0 0 8px;font-size:16px;letter-spacing:0.05em;text-transform:uppercase">The system — OS part → workbench object</h3>
+      <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;line-height:1.5">
+        <div style="padding:5px 8px 5px 0;border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600)">Window</div><div style="padding:5px 0;border-bottom:1px solid var(--color-divider)">Numbered drawing sheet (WIN-01…10) with registration marks</div>
+        <div style="padding:5px 8px 5px 0;border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600)">Scrollbar</div><div style="padding:5px 0;border-bottom:1px solid var(--color-divider)">Counterweight riding a ticked rail — depth = mass position</div>
+        <div style="padding:5px 8px 5px 0;border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600)">Scroll motion</div><div style="padding:5px 0;border-bottom:1px solid var(--color-divider)">Sheave spins, cable tensions/sags — live constraint physics</div>
+        <div style="padding:5px 8px 5px 0;border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600)">Cards</div><div style="padding:5px 0;border-bottom:1px solid var(--color-divider)">Plates on hoist hooks — raised into place, slight swing</div>
+        <div style="padding:5px 8px 5px 0;border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600)">Taskbar</div><div style="padding:5px 0;border-bottom:1px solid var(--color-divider)">Tool rail with status lamps</div>
+        <div style="padding:5px 8px 5px 0;color:var(--color-neutral-600)">Wallpaper</div><div style="padding:5px 0">Graph paper + engineering title block, sheet 01</div>
+      </div>
+    </div>
+  </div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>DESKTOP — FIELD WORKBENCH · live: drag sheets, open modules from the rail, scroll to work the rig · <a href="Workbench Desktop.dc.html">open full screen</a></div>
+      <div class="dv-card" style="width:1360px;height:820px"><dc-import name="Workbench Desktop" hint-size="1360px,820px" style="width:1360px;height:820px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>MOBILE / LONG VIEW — FIELD INDEX · live: search, filter, expand rows · <a href="Mobile Field Index.dc.html">open full screen</a></div>
+      <div class="dv-card" style="width:402px;height:820px"><dc-import name="Mobile Field Index" hint-size="402px,820px" style="width:402px;height:820px"></dc-import></div>
+      <div style="width:380px;font-size:11.5px;line-height:1.6;color:var(--color-neutral-700)">Replaces the long scroll: one searchable registry (49 entries — projects, roles, methods, proof, résumés), rows expand in place, crane counterweight shows depth. The same component, uncapped in width, serves as the desktop "semantic long view".</div>
+    </div>
+  </div>
+  <p style="margin:30px 0 0;font-size:12px;letter-spacing:0.03em;color:var(--color-neutral-700)">Try next: "swing the cards harder" · "make the archive window open by default" · "explore a darker steel variant of the same system" · "wire the Systems Lab exhibit to the rig too"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

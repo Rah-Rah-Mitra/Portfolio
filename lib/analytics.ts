@@ -26,7 +26,7 @@ type ReplayReason =
   | 'resume_download';
 
 export type AnalyticsEvent =
-  | { event: 'portfolio_viewed'; props: { surface: 'continuous_field_test' } }
+  | { event: 'portfolio_viewed'; props: { surface: 'continuous_field_test' | 'field_workbench' } }
   | { event: 'section_viewed'; props: { section: string } }
   | { event: 'scroll_depth_reached'; props: { depth: 25 | 50 | 75 | 90; surface: 'continuous_field_test' } }
   | { event: 'nav_link_clicked'; props: { destination: string } }

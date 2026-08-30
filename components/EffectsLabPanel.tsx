@@ -123,14 +123,6 @@ const EffectsLabPanel: React.FC = () => {
             <RangeField label="Strength" value={settings.gravity.strength} min={0} max={100} onChange={(value) => setEffectParam('gravity', 'strength', value)} />
             <RangeField label="Radius" value={settings.gravity.radius} min={20} max={75} onChange={(value) => setEffectParam('gravity', 'radius', value)} />
           </section>
-          <section className="desktop-background-handoff">
-            <h3>Fluid desktop</h3>
-            <p>Fluid is now one of the two desktop backgrounds, with its settings and GPU ownership managed in Desktop Preferences.</p>
-            <button type="button" aria-label="Open Fluid desktop settings" onClick={() => {
-              window.dispatchEvent(new CustomEvent('portfolio:openPreferences', { detail: { source: 'fx', tab: 'desktop' } }));
-              close('fluid_desktop_settings');
-            }}>Open Fluid desktop settings</button>
-          </section>
           <section>
             <EffectToggle enabled={settings.pretext.enabled} title="Text signal" description="Decode, scan, or pulse on marked text" onClick={() => toggle('pretext')} />
             <PresetRow id="pretext" />

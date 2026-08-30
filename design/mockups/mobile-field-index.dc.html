@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-5c40abba-869b-4cce-8540-83067e53772c/styles.css">
+<script src="_ds/industry-5c40abba-869b-4cce-8540-83067e53772c/_ds_bundle.js"></script>
+<style>
+html,body{height:100%;margin:0}
+::-webkit-scrollbar{width:0;height:0}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent)}
+</style>
+</helmet>
+<div data-dc="fieldindex" style="height:100dvh;max-height:100dvh;max-width:430px;margin:0 auto;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--color-text);background:var(--color-bg);border-inline:1px solid var(--color-divider);position:relative;overflow:hidden">
+  <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:7px 16px 5px;font-size:10.5px;letter-spacing:0.06em;color:var(--color-neutral-700);font-feature-settings:'tnum' 1">
+    <span style="flex:none">09:41</span>
+    <span style="flex:none;white-space:nowrap;font-family:var(--font-heading);font-weight:600;letter-spacing:0.14em">RM · FIELD INDEX</span>
+    <span aria-hidden="true" style="display:inline-flex;gap:2px;align-items:flex-end"><i style="width:2.5px;height:4px;background:var(--color-neutral-500)"></i><i style="width:2.5px;height:6px;background:var(--color-neutral-500)"></i><i style="width:2.5px;height:8px;background:var(--color-neutral-800)"></i><i style="width:14px;height:7px;border:1px solid var(--color-neutral-500);margin-left:4px"></i></span>
+  </div>
+  <div style="flex:none;padding:8px 14px 10px;border-bottom:1px solid var(--color-divider);background:color-mix(in srgb, var(--color-bg) 55%, white)">
+    <div style="position:relative;margin-bottom:8px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-neutral-600)"><path d="M11 17a6 6 0 1 0 0-12 6 6 0 0 0 0 12ZM15.5 15.5 21 21"></path></svg>
+      <input class="input" type="search" value="{{ q }}" onInput="{{ setQ }}" placeholder="Search everything — try “CP-SAT”, “Singpass”, “BERT”…" aria-label="Search the field index" style="padding-left:32px;font-size:14px">
+      <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:9.5px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">{{ hitCount }}</span>
+    </div>
+    <div style="display:flex;gap:5px;overflow-x:auto;scrollbar-width:none">
+      <sc-for list="{{ chips }}" as="c" hint-placeholder-count="6">
+        <button data-kind="{{ c.label }}" onClick="{{ setKind }}" style="flex:none;padding:5px 11px;font-size:10.5px;letter-spacing:0.08em;border:1px solid var(--color-divider);cursor:pointer;background:{{ c.bg }};color:{{ c.fg }};font-family:var(--font-body)">{{ c.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div data-scroll onScroll="{{ onScroll }}" style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:16px 30px 90px 16px">
+    <sc-if value="{{ showHero }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-bottom:18px">
+        <span style="font-size:9.5px;letter-spacing:0.13em;color:var(--color-accent-700)">W / ORIGIN — DOSSIER</span>
+        <hr style="height:1px;border:0;background:var(--color-divider);margin:6px 0 10px">
+        <h1 style="margin:0 0 4px;font-size:38px;line-height:0.98;letter-spacing:0.01em;text-transform:uppercase">Rahul Mitra</h1>
+        <p style="margin:0 0 10px;font-size:12.5px;color:var(--color-accent-700);font-family:var(--font-heading);font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Systems Architect &amp; AI Engineer — ISE × CS × Math</p>
+        <p style="margin:0 0 12px;font-size:12.5px;line-height:1.55;color:var(--color-neutral-800)">One searchable registry — every project, role, credential, and résumé on this bench is reachable from the bar above. Swipe the priority line, scroll to work the crane.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" style="font-size:12px">MASTER CV</button><button class="btn btn-secondary" style="font-size:12px">EMAIL</button><button class="btn btn-secondary" style="font-size:12px">GITHUB</button></div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showHero }}" hint-placeholder-val="{{ true }}">
+      <div style="margin:0 -30px 18px -16px;position:relative">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 16px 4px">
+          <span style="white-space:nowrap;font-size:9.5px;letter-spacing:0.11em;color:var(--color-accent-700)">H / TRAVERSE — PRIORITY LINE</span>
+          <span data-tvro style="white-space:nowrap;font-size:9px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">CAR 01 / 06</span>
+        </div>
+        <div style="position:relative;height:52px">
+          <svg data-tvline aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"></svg>
+        </div>
+        <div data-tvscroll style="display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;overscroll-behavior-x:contain;padding:16px 16px 14px;scrollbar-width:none">
+          <sc-for list="{{ boards }}" as="b" hint-placeholder-count="6">
+            <div data-board style="flex:none;width:190px;scroll-snap-align:center;will-change:transform;touch-action:pan-x pan-y">
+              <article class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:11px 12px 12px;background:color-mix(in srgb, var(--color-bg) 55%, white);min-height:136px">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <span style="font-size:9px;letter-spacing:0.12em;color:var(--color-accent-700)">{{ b.no }} · {{ b.cat }}</span>
+                <h3 style="margin:0;font-size:15px;line-height:1.08;letter-spacing:0.02em;text-transform:uppercase">{{ b.title }}</h3>
+                <p style="margin:0;font-size:10.5px;line-height:1.45;color:var(--color-neutral-700);flex:1">{{ b.outcome }}</p>
+                <span class="tag tag-accent" style="font-size:9.5px;align-self:flex-start">{{ b.tag }}</span>
+              </article>
+            </div>
+          </sc-for>
+        </div>
+        <p style="margin:0;padding:0 16px;font-size:9px;letter-spacing:0.1em;color:var(--color-neutral-600)">SWIPE THE LINE — BOARDS RIDE IT · TAP ONE TO SET IT SWINGING</p>
+      </div>
+    </sc-if>
+    <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+      <div class="blueprint" style="padding:22px 16px;text-align:center;margin-top:8px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.06em;color:var(--color-neutral-700)">NO ENTRIES MATCH “{{ q }}”</p>
+        <button class="btn btn-secondary" onClick="{{ clearAll }}" style="font-size:11px">CLEAR SEARCH &amp; FILTERS</button>
+      </div>
+    </sc-if>
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="white-space:nowrap;font-size:9.5px;letter-spacing:0.14em;color:var(--color-accent-700)">{{ g.label }}</span>
+          <span style="white-space:nowrap;font-size:9px;letter-spacing:0.1em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">{{ g.count }}</span>
+        </div>
+        <hr style="height:1px;border:0;background:var(--color-divider);margin:5px 0 0">
+        <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4">
+          <div data-hoist style="position:relative">
+            <div data-track aria-hidden="true" style="position:absolute;left:-8px;right:-26px;top:1px;height:12px;pointer-events:none;opacity:0;background-image:linear-gradient(color-mix(in srgb, var(--color-accent) 60%, transparent),color-mix(in srgb, var(--color-accent) 60%, transparent)),repeating-linear-gradient(90deg, color-mix(in srgb, var(--color-text) 26%, transparent) 0 1px, transparent 1px 13px);background-size:100% 1px, 100% 6px;background-position:0 6px, 0 7px;background-repeat:no-repeat, repeat-x">
+              <svg data-trolley width="26" height="13" viewBox="0 0 26 13" fill="none" style="position:absolute;left:6px;top:0;color:var(--color-accent-800)"><path d="M2 6.5h22M6 6.5V3h14v3.5" stroke="currentColor" stroke-width="1"></path><circle cx="9.5" cy="9" r="2.3" stroke="currentColor" stroke-width="1"></circle><circle cx="16.5" cy="9" r="2.3" stroke="currentColor" stroke-width="1"></circle></svg>
+            </div>
+            <div data-car style="will-change:transform">
+            <button data-rid="{{ r.id }}" onClick="{{ toggleRow }}" aria-expanded="{{ r.open }}" style="width:100%;display:grid;grid-template-columns:54px 1fr 14px;gap:10px;align-items:baseline;text-align:left;padding:11px 4px 10px;background:{{ r.bg }};border:0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent);cursor:pointer;font-family:var(--font-body)" style-hover="background:color-mix(in srgb, var(--color-accent) 7%, transparent)">
+              <span style="font-size:9px;letter-spacing:0.05em;color:var(--color-neutral-600);font-feature-settings:'tnum' 1">{{ r.d }}</span>
+              <span style="min-width:0">
+                <span style="display:block;font-family:var(--font-heading);font-weight:600;font-size:15px;letter-spacing:0.03em;text-transform:uppercase;line-height:1.15">{{ r.title }}</span>
+                <span style="display:block;font-size:10.5px;color:var(--color-neutral-700);margin-top:1px">{{ r.sub }}</span>
+              </span>
+              <span aria-hidden="true" style="font-size:11px;color:var(--color-neutral-600);justify-self:end">{{ r.chev }}</span>
+            </button>
+            <sc-if value="{{ r.open }}" hint-placeholder-val="{{ false }}">
+              <svg aria-hidden="true" width="40" height="14" viewBox="0 0 40 14" style="display:block;margin:9px auto 0;color:var(--color-neutral-500)"><path d="M4 14 20 4m16 10L20 4" stroke="currentColor" stroke-width="1.1" fill="none"></path><circle cx="20" cy="2.8" r="2" stroke="currentColor" stroke-width="1.1" fill="none"></circle></svg>
+              <div data-swing class="blueprint" style="margin:1px 2px 14px;padding:12px 13px;background:color-mix(in srgb, var(--color-bg) 55%, white);will-change:transform">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <p style="margin:0 0 9px;font-size:12px;line-height:1.55;color:var(--color-neutral-800)">{{ r.detail }}</p>
+                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px">
+                  <sc-for list="{{ r.tags }}" as="t" hint-placeholder-count="3"><span class="tag tag-accent" style="font-size:10px">{{ t }}</span></sc-for>
+                </div>
+                <div style="display:flex;gap:8px"><button class="btn btn-secondary" style="font-size:10.5px;padding:4px 10px">{{ r.cta }}</button><button class="btn btn-ghost" style="font-size:10.5px;padding:4px 6px">SHARE ↗</button></div>
+              </div>
+            </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+    <p style="margin:6px 0 0;font-size:9px;letter-spacing:0.11em;color:var(--color-neutral-600);text-align:center">FIELD INDEX · SAME REGISTRY POWERS THE DESKTOP LONG VIEW</p>
+  </div>
+  <svg data-crane aria-hidden="true" style="position:absolute;top:96px;right:0;width:26px;bottom:64px;height:auto;pointer-events:none;overflow:visible"></svg>
+  <div style="position:absolute;left:0;right:0;bottom:0;display:flex;border-top:1px solid var(--color-divider);background:color-mix(in srgb, var(--color-bg) 45%, white)">
+    <a href="#" style="flex:1;text-align:center;padding:13px 0 15px;font-family:var(--font-heading);font-weight:600;font-size:11px;letter-spacing:0.12em;text-decoration:none;color:var(--color-accent-800);border-right:1px solid var(--color-divider)">EMAIL</a>
+    <a href="#" style="flex:1;text-align:center;padding:13px 0 15px;font-family:var(--font-heading);font-weight:600;font-size:11px;letter-spacing:0.12em;text-decoration:none;color:var(--color-accent-800);border-right:1px solid var(--color-divider)">LINKEDIN</a>
+    <a href="#" style="flex:1;text-align:center;padding:13px 0 15px;font-family:var(--font-heading);font-weight:600;font-size:11px;letter-spacing:0.12em;text-decoration:none;color:var(--color-accent-800);border-right:1px solid var(--color-divider)">GITHUB</a>
+    <a href="#" style="flex:1;text-align:center;padding:13px 0 15px;font-family:var(--font-heading);font-weight:600;font-size:11px;letter-spacing:0.12em;text-decoration:none;color:var(--color-bg);background:var(--color-accent)">CV ↓</a>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 400, &quot;height&quot;: 844}, &quot;motion&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Crane physics&quot;}, &quot;railSag&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 7, &quot;min&quot;: 0, &quot;max&quot;: 16, &quot;step&quot;: 1, &quot;unit&quot;: &quot;px&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Crane physics&quot;}, &quot;swingGain&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 1, &quot;min&quot;: 0, &quot;max&quot;: 2, &quot;step&quot;: 0.1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Crane physics&quot;}}">
+class Component extends DCLogic {
+  state = { q: '', kind: 'ALL', expanded: null, loaded: false };
+  async componentDidMount() {
+    const [D, R] = await Promise.all([import('./portfolio-data.js'), import('./pga-rig.js')]);
+    this.D = D; this.R = R;
+    this.sc = { st: 0, prev: 0, vel: 0, max: 1 };
+    this.wt = { y: 0, v: 0 }; this.rot = 0; this.hoists = []; this.swingers = []; this.boards = [];
+    this.rail = { sl: 0, prev: 0, vel: 0 };
+    this.index = this.buildIndex(D);
+    this.setState({ loaded: true });
+    requestAnimationFrame(() => { this.layoutCrane(); this.cacheHoists(); });
+    this.onDown = (e) => {
+      const b = e.target.closest?.('[data-board]');
+      if (b) {
+        const o = this.boards.find((x) => x.el === b);
+        if (o) { const r = b.getBoundingClientRect(); o.v += (e.clientX - r.left - r.width / 2 > 0 ? -1 : 1) * 140; }
+        return;
+      }
+      const s = e.target.closest?.('[data-swing]');
+      if (s) { const o = this.swingers.find((x) => x.el === s); if (o) o.v += 100; }
+    };
+    this.onResize = () => { this.layoutCrane(); this.cacheHoists(); };
+    this.root()?.addEventListener('pointerdown', this.onDown);
+    window.addEventListener('resize', this.onResize);
+    this.raf = requestAnimationFrame(this.tick);
+  }
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf);
+    this.root()?.removeEventListener('pointerdown', this.onDown);
+    window.removeEventListener('resize', this.onResize);
+  }
+  buildIndex(D) {
+    const feat = Object.fromEntries(D.FEATURED.map((f) => [f.title, f]));
+    const rows = [];
+    D.ARCHIVE.forEach((r, i) => {
+      const f = feat[r.title] || feat[Object.keys(feat).find((k) => r.title.startsWith(k.slice(0, 8)))] || null;
+      rows.push({ id: 'p' + i, kind: 'PROJECTS', d: r.d, title: r.title, sub: r.cat + ' · ' + r.dom, detail: (f ? f.desc + ' Outcome — ' + f.outcome : r.cat + ' — ' + r.tags + '.'), tags: r.tags.split(' · '), cta: 'OPEN REPO ↗' });
+    });
+    D.EXPERIENCE.forEach((x, i) => rows.push({ id: 'x' + i, kind: 'EXPERIENCE', d: x.d.split(' — ')[0], title: x.org, sub: x.role, detail: x.sum, tags: x.tags, cta: 'LINKED PROOF' }));
+    D.CAPABILITIES.forEach((c, i) => rows.push({ id: 'c' + i, kind: 'METHODS', d: c.no, title: c.title, sub: c.tools, detail: c.sum + ' Proof — ' + c.proof + '.', tags: c.tools.split(' · ').slice(0, 3), cta: 'SEE PROOF' }));
+    D.PROOF.forEach((v, i) => rows.push({ id: 'v' + i, kind: 'PROOF', d: v.d, title: v.title, sub: v.cat, detail: v.note, tags: [v.cat], cta: v.link.toUpperCase() + ' ↗' }));
+    D.RESUMES.forEach((r, i) => rows.push({ id: 'r' + i, kind: 'RESUMES', d: 'PDF·DOCX', title: r.role, sub: r.kw, detail: r.head + ' Edition REV 2026-09, generated from the same registry.', tags: r.kw.split(' · ').slice(0, 3), cta: 'DOWNLOAD PDF' }));
+    return rows;
+  }
+  root() { this._root = this._root || document.querySelector('[data-dc="fieldindex"]'); return this._root; }
+  cacheHoists() {
+    const sc = this.root()?.querySelector('[data-scroll]'); if (!sc) return;
+    this.sc.el = sc; this.sc.st = sc.scrollTop; this.sc.max = sc.scrollHeight - sc.clientHeight;
+    this.hoists = [...sc.querySelectorAll('[data-hoist]')].map((el, i) => ({
+      el, car: el.querySelector('[data-car]') || el, track: el.querySelector('[data-track]'),
+      trolley: el.querySelector('[data-trolley]'), y: 12, v: 0, x: 62, xv: 0, dir: i % 2 === 0 ? 1 : -1,
+    }));
+    this.swingers = [...sc.querySelectorAll('[data-swing]')].map((el) => ({ el, a: 0, v: 100 }));
+    this.layoutTraverse();
+  }
+  layoutTraverse() {
+    const svg = this.root()?.querySelector('[data-tvline]');
+    const row = this.root()?.querySelector('[data-tvscroll]');
+    if (!svg || !row) { this.boards = []; this.tvRow = null; return; }
+    const W = svg.clientWidth; if (!W) { this.boards = []; return; }
+    if (!this.tvObs && window.ResizeObserver) {
+      this.tvObs = new ResizeObserver(() => { if (!this.tvBusy) { this.tvBusy = true; requestAnimationFrame(() => { this.tvBusy = false; this.layoutTraverse(); }); } });
+      this.tvObs.observe(svg.parentElement);
+    }
+    const sag = this.props.railSag ?? 7;
+    const ink = 'color-mix(in srgb, #1d1f20 38%, transparent)';
+    const mx = W * 0.44;
+    const nodes = [[12, 16], [mx, 28], [W - 12, 13]];
+    const sheave = (x, y, r, tag) => `<g ${tag} transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><circle r="${r}" fill="none" stroke="#416180" stroke-width="1.1"></circle><g data-spokes><path d="M-${r} 0H${r}M0 -${r}V${r}" stroke="#416180" stroke-width="0.85"></path></g><circle r="1.3" fill="#416180"></circle></g>`;
+    svg.innerHTML = `
+      <path d="M4 4 H${(W - 4).toFixed(1)}" stroke="${ink}" stroke-width="1" fill="none"></path>
+      <path d="M12 4 V10 M${mx.toFixed(1)} 4 V21 M${(W - 12).toFixed(1)} 4 V7" stroke="${ink}" stroke-width="1" fill="none"></path>
+      <path data-tvcable d="${this.R.routePath(nodes, sag)}" stroke="#5980a6" stroke-width="1.2" fill="none"></path>
+      ${sheave(12, 16, 6, 'data-tvs1')}${sheave(mx, 28, 7, 'data-tvs2')}${sheave(W - 12, 13, 6, 'data-tvs3')}
+      <g data-tvdrops>${Array.from({ length: 8 }, (_, i) => `<g data-drop-i="${i}" style="display:none"><path d="" stroke="#5980a6" stroke-width="1" fill="none"></path><g data-runner><rect x="-4.5" y="-3.5" width="9" height="7" fill="none" stroke="#416180" stroke-width="1"></rect><circle r="1.2" fill="#416180"></circle></g></g>`).join('')}</g>`;
+    this.tvW = W;
+    this.tvTop = 52 + 16;
+    this.tvRow = row;
+    this.tvS = this.R.pathSampler(svg.querySelector('[data-tvcable]'));
+    this.dropG = [...svg.querySelectorAll('[data-drop-i]')];
+    this.boards = [...row.querySelectorAll('[data-board]')].map((el) => ({ el, x: el.offsetLeft + el.offsetWidth / 2, a: 0, v: 0 }));
+  }
+  layoutCrane() {
+    const svg = this.root()?.querySelector('[data-crane]'); if (!svg) return;
+    const H = svg.clientHeight || 500;
+    const ink = 'color-mix(in srgb, #1d1f20 40%, transparent)';
+    const nodes = [[13, 15], [6, H * 0.34], [20, H * 0.63], [13, H - 14]];
+    const defl = (x, y) => `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><circle r="4.2" fill="none" stroke="#416180" stroke-width="1"></circle><circle r="1.1" fill="#416180"></circle></g>`;
+    svg.innerHTML = `
+      ${Array.from({ length: 11 }, (_, i) => { const y = 26 + (H - 66) * i / 10; return `<path d="M9 ${y.toFixed(1)} h8" stroke="${ink}" stroke-width="${i % 5 === 0 ? 1 : 0.6}"></path>`; }).join('')}
+      <path data-cpath d="${this.R.routePath(nodes, 2)}" stroke="${ink}" stroke-width="1.1" fill="none"></path>
+      ${defl(6, H * 0.34)}${defl(20, H * 0.63)}
+      <g data-csheave transform="translate(13,15)"><circle r="7.5" fill="none" stroke="#416180" stroke-width="1.2"></circle><g data-cspokes><path d="M-7.5 0H7.5M0 -7.5V7.5" stroke="#416180" stroke-width="0.9"></path></g><circle r="1.6" fill="#416180"></circle></g>
+      <g data-cweight><rect x="-5.5" y="-2" width="11" height="20" fill="#5980a6" stroke="#2c455d" stroke-width="1"></rect><path d="M-5.5 3 L5.5 8 M-5.5 9 L5.5 14" stroke="#2c455d" stroke-width="0.7"></path></g>`;
+    this.craneH = H;
+    this.cS = this.R.pathSampler(svg.querySelector('[data-cpath]'));
+  }
+  filtered() {
+    if (!this.D) return null;
+    const q = this.state.q.trim().toLowerCase();
+    return this.index.filter((r) => (this.state.kind === 'ALL' || r.kind === this.state.kind)
+      && (!q || (r.title + ' ' + r.sub + ' ' + r.detail + ' ' + r.tags.join(' ')).toLowerCase().includes(q)));
+  }
+  renderVals() {
+    const S = this.state;
+    const KINDS = ['ALL', 'PROJECTS', 'EXPERIENCE', 'METHODS', 'PROOF', 'RESUMES'];
+    const chips = KINDS.map((label) => ({ label, bg: label === S.kind ? 'var(--color-accent)' : 'transparent', fg: label === S.kind ? 'var(--color-bg)' : 'var(--color-neutral-800)' }));
+    const hits = this.filtered();
+    const order = ['PROJECTS', 'EXPERIENCE', 'METHODS', 'PROOF', 'RESUMES'];
+    const groups = hits ? order.map((k) => {
+      const rows = hits.filter((r) => r.kind === k).map((r) => ({ ...r, open: S.expanded === r.id, chev: S.expanded === r.id ? '−' : '+', bg: S.expanded === r.id ? 'color-mix(in srgb, var(--color-accent) 9%, transparent)' : 'transparent' }));
+      return { label: k + ' REGISTRY', count: String(rows.length).padStart(2, '0') + ' ENTRIES', rows };
+    }).filter((g) => g.rows.length) : undefined;
+    return {
+      q: S.q, chips, groups,
+      boards: this.D ? this.D.FEATURED.map((f) => ({ no: f.no, cat: f.cat.split(' · ')[0].toUpperCase(), title: f.title, outcome: f.outcome, tag: f.tags[0] })) : undefined,
+      hitCount: hits ? String(hits.length).padStart(2, '0') + '/49' : '',
+      showHero: !S.q.trim() && S.kind === 'ALL',
+      empty: !!hits && hits.length === 0,
+      setQ: (e) => this.setState({ q: e.target.value }, () => this.cacheHoists()),
+      setKind: (e) => this.setState({ kind: e.currentTarget.dataset.kind }, () => this.cacheHoists()),
+      toggleRow: (e) => {
+        const id = e.currentTarget.dataset.rid;
+        this.setState({ expanded: this.state.expanded === id ? null : id }, () => this.cacheHoists());
+      },
+      clearAll: () => this.setState({ q: '', kind: 'ALL' }, () => this.cacheHoists()),
+      onScroll: (e) => {
+        const el = e.currentTarget;
+        this.sc.el = el; this.sc.st = el.scrollTop; this.sc.max = el.scrollHeight - el.clientHeight;
+      },
+    };
+  }
+  tick = () => {
+    this.raf = requestAnimationFrame(this.tick);
+    if (!this.R) return;
+    const motion = this.props.motion ?? true;
+    const gain = this.props.swingGain ?? 1;
+    const R = this.R, cl = (v, m) => Math.max(-m, Math.min(m, v));
+    const S = this.sc;
+    if (S.el && S.el.isConnected) { S.st = S.el.scrollTop; S.max = S.el.scrollHeight - S.el.clientHeight; }
+    const dv = (S.st || 0) - (S.prev || 0); S.prev = S.st || 0;
+    S.vel = (S.vel || 0) * 0.86 + dv * 0.14;
+    const p = S.max > 0 ? Math.min(1, Math.max(0, (S.st || 0) / S.max)) : 0;
+    const spokes = this.root()?.querySelector('[data-cspokes]');
+    this.rot += dv * 0.8;
+    if (spokes) spokes.setAttribute('transform', `rotate(${(this.rot % 360).toFixed(1)})`);
+    if (motion) { const [ny, nv] = R.spring(this.wt.y, this.wt.v, p, 64, 7, 1 / 60); this.wt.y = ny; this.wt.v = nv; }
+    else { this.wt.y = p; this.wt.v = 0; }
+    const wg = this.root()?.querySelector('[data-cweight]');
+    if (wg && this.cS) {
+      const q = Math.max(0, Math.min(1, this.wt.y));
+      const s = 20 + q * Math.max(0, this.cS.len - 44);
+      const pt = this.cS.atLen(s);
+      wg.setAttribute('transform', `translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})`);
+    }
+    // Horizontal traverse: boards ride a routed cable, swinging off their spreaders.
+    const rl = this.rail;
+    this.tvTry = (this.tvTry || 0) + 1;
+    if (this.tvTry % 15 === 0) {
+      const row = this.root()?.querySelector('[data-tvscroll]');
+      if (row && (!this.boards.length || !this.tvS || !this.tvRow?.isConnected || this.boards[0]?.el?.isConnected === false)) this.layoutTraverse();
+    }
+    if (this.tvRow && this.tvRow.isConnected) rl.sl = this.tvRow.scrollLeft;
+    const dh = (rl.sl || 0) - (rl.prev || 0); rl.prev = rl.sl || 0;
+    rl.vel = (rl.vel || 0) * 0.82 + dh * 0.18;
+    if (this.boards && this.boards.length && this.tvS && this.dropG) {
+      const W = this.tvW || 400, top = this.tvTop || 68;
+      let bi = 0, bd = 1e9;
+      this.boards.forEach((b, i) => {
+        const g = this.dropG[i]; if (!g) return;
+        const cx = b.x - (rl.sl || 0);
+        if (cx < -70 || cx > W + 70) { g.style.display = 'none'; b.el.style.transform = 'none'; return; }
+        g.style.display = '';
+        const cy = this.tvS.at(Math.max(2, Math.min(W - 2, cx))).y;
+        const tgt = motion ? cl(-(rl.vel * 1.5 + S.vel * 0.12) * gain, 8) : 0;
+        if (motion) { const [na, nv] = R.spring(b.a, b.v, tgt, 54, 3.0, 1 / 60); b.a = cl(na, 8.5); b.v = nv; }
+        else { b.a = 0; b.v = 0; }
+        const rad = b.a * Math.PI / 180, co = Math.cos(rad), si = Math.sin(rad);
+        const rot = (x, y) => [cx + (x - cx) * co - (y - cy) * si, cy + (x - cx) * si + (y - cy) * co];
+        const [lx, ly] = rot(cx - 24, top), [rx, ry] = rot(cx + 24, top);
+        g.firstElementChild.setAttribute('d', `M${lx.toFixed(1)} ${ly.toFixed(1)} L${cx.toFixed(1)} ${cy.toFixed(1)} L${rx.toFixed(1)} ${ry.toFixed(1)}`);
+        g.querySelector('[data-runner]').setAttribute('transform', `translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${this.tvS.at(Math.max(2, Math.min(W - 2, cx))).ang.toFixed(1)})`);
+        b.el.style.transformOrigin = `50% ${(cy - top).toFixed(1)}px`;
+        b.el.style.transform = `rotate(${b.a.toFixed(2)}deg)`;
+        const dc = Math.abs(cx - W / 2); if (dc < bd) { bd = dc; bi = i; }
+      });
+      this.hrot = (this.hrot || 0) - dh * 1.7;
+      const s3 = this.root()?.querySelector('[data-tvs3] [data-spokes]');
+      if (s3) s3.setAttribute('transform', `rotate(${(this.hrot % 360).toFixed(1)})`);
+      const s2 = this.root()?.querySelector('[data-tvs2] [data-spokes]');
+      if (s2) s2.setAttribute('transform', `rotate(${((-this.hrot * 0.8) % 360).toFixed(1)})`);
+      const tro = this.root()?.querySelector('[data-tvro]');
+      if (tro) tro.textContent = `CAR ${String(bi + 1).padStart(2, '0')} / ${String(this.boards.length).padStart(2, '0')}`;
+    }
+    const sc = S.el;
+    if (sc && this.hoists) {
+      const vb = sc.getBoundingClientRect().bottom;
+      for (const h of this.hoists) {
+        if (!h.el.isConnected) continue;
+        const r = h.el.getBoundingClientRect();
+        const t = Math.min(1, Math.max(0, (vb - r.top) / 120));
+        const ty = (1 - t) * 12, tx = (1 - t) * 62 * (h.dir || 1);
+        if (motion) {
+          const [ny, nv] = R.spring(h.y, h.v, ty, 120, 12, 1 / 60); h.y = ny; h.v = nv;
+          const [nx, nxv] = R.spring(h.x, h.xv, tx, 88, 12.5, 1 / 60); h.x = nx; h.xv = nxv;
+        } else { h.y = ty; h.v = 0; h.x = tx; h.xv = 0; }
+        h.car.style.transform = `translate(${h.x.toFixed(2)}px,${h.y.toFixed(2)}px)`;
+        h.car.style.opacity = (0.35 + 0.65 * t).toFixed(3);
+        if (h.track) h.track.style.opacity = Math.max(0, Math.min(1, (1 - t) * 1.6)).toFixed(3);
+        if (h.trolley) h.trolley.style.transform = `translateX(${(h.x + (h.dir === -1 ? 26 : 0)).toFixed(2)}px)`;
+      }
+    }
+    if (this.swingers) for (const s of this.swingers) {
+      if (!s.el.isConnected) continue;
+      const tgt = motion ? cl(-S.vel * 0.45 * gain, 4) : 0;
+      if (motion) { const [na, nv] = R.spring(s.a, s.v, tgt, 46, 3.0, 1 / 60); s.a = cl(na, 6); s.v = nv; }
+      else { s.a = 0; s.v = 0; }
+      s.el.style.transformOrigin = '50% -15px';
+      s.el.style.transform = `rotate(${s.a.toFixed(2)}deg)`;
+    }
+  };
+}
+
+</script>
+</body>
+</html>

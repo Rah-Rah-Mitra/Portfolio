@@ -1,3 +1,8 @@
+> **SUPERSEDED (2026-08):** the shipped UI is now the Industry blueprint
+> "Field Workbench" — see `design/industry/readme.md` and the UI section of
+> `CLAUDE.md`. This document describes the previous "continuous field test"
+> design and is kept for the retired-but-on-disk components it documents.
+
 ---
 name: "Rahul Mitra Engineering Portfolio"
 description: "A dark-first optical desktop where recruiter evidence leads and interactive technical tools remain optional."

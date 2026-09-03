@@ -26,7 +26,7 @@ This portfolio explains intelligent systems as one connected engineering practic
 
 - Single-page portfolio with anchored navigation and a visible, searchable, filterable index containing every project.
 - One unified evidence model; no profile lenses or lens-dependent content branches.
-- Role-targeted resume library with seven DOCX/PDF pairs.
+- Resume library with eight DOCX/PDF pairs (six role-targeted one-pagers, a one-page Highlights best-of, and the two-page General / Master CV).
 - "Ask this portfolio" assistant backed by the private `/api/page-agent` endpoint and a safe local fallback.
 - Optional Effects Lab plus an Explore World link to the shared `#world` optical-test-bench anchor. Guided and Explore use the same lazy renderer and no separate world modal ships.
 - Quick Scan is the canonical static-first route. It preserves the resolved Dark or Light scheme and keeps recruiter evidence available without background simulation, video, or heavy rendering.

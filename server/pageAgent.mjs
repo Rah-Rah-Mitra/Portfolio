@@ -92,8 +92,8 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     references = [{ label: '3D perception capability map', href: '#domains' }, { label: 'NUS distinction and proof', href: '#proof' }];
     commands.push({ type: 'focusGuideChapter', chapterId: 'domains' });
   } else if (text.includes('resume') || text.includes('résumé') || text.includes('cv')) {
-    reply = 'Use the role-specific résumé when the vacancy is clear; use the two-page General / Master CV for broad or multidisciplinary applications. Seven PDF and DOCX variants are available.';
-    references = [{ label: 'Compare all seven résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: '/resume/generated/rahul-mitra-general-2026-09.pdf' }];
+    reply = 'Use the role-specific résumé when the vacancy is clear; use the one-page Highlights résumé for preference forms and broad applications, or the two-page General / Master CV for full detail. Eight PDF and DOCX variants are available.';
+    references = [{ label: 'Compare all eight résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: '/resume/generated/rahul-mitra-general-2026-09.pdf' }];
     commands.push({ type: 'focusGuideChapter', chapterId: 'resumes' });
   } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty') || text.includes('adversarial')) {
     reply = 'Rahul’s security record covers responsible bug-bounty research, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';

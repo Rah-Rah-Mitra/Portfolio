@@ -361,7 +361,7 @@ export const ProofWindow: React.FC = () => (
 
 export const ResumesWindow: React.FC = () => (
   <div id="resumes">
-    <Kicker>C7 / TARGET — SEVEN ROLE-TARGETED EDITIONS · REV {SITE_CONFIG.resumeEdition}</Kicker>
+    <Kicker>C7 / TARGET — EIGHT EDITIONS · SEVEN ROLE-TARGETED + ONE-PAGE HIGHLIGHTS · REV {SITE_CONFIG.resumeEdition}</Kicker>
     {resumeProfiles.map((profile) => (
       <article className="wb-resumerow" key={profile.id}>
         <h3>{profile.role}</h3>

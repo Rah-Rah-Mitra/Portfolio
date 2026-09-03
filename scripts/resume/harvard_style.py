@@ -31,12 +31,16 @@ def content_width(section):
     return section.page_width - section.left_margin - section.right_margin
 
 
-def setup_document(doc, body_pt=BODY_PT):
-    """Page geometry + Normal style. Returns the usable content width."""
+def setup_document(doc, body_pt=BODY_PT, margin_in=None):
+    """Page geometry + Normal style. Returns the usable content width.
+
+    margin_in: optional per-resume side margin in inches (config `marginIn`,
+    trim-ladder last step "margins toward 0.5\""). None keeps MARGIN_LR.
+    """
     section = doc.sections[0]
     section.page_width = PAGE_WIDTH
     section.page_height = PAGE_HEIGHT
-    section.left_margin = section.right_margin = MARGIN_LR
+    section.left_margin = section.right_margin = Inches(margin_in) if margin_in is not None else MARGIN_LR
     section.top_margin = MARGIN_TOP
     section.bottom_margin = MARGIN_BOTTOM
 

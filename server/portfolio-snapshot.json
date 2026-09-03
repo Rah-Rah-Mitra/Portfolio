@@ -1,0 +1,1372 @@
+{
+  "site": {
+    "name": "Rahul Mitra",
+    "canonicalUrl": "https://rahul-mitra.com/",
+    "email": "mitrarahul2002@gmail.com",
+    "location": "Singapore",
+    "social": {
+      "linkedin": "https://www.linkedin.com/in/rahulmitra-dev",
+      "github": "https://github.com/Rah-Rah-Mitra",
+      "instagram": "https://www.instagram.com/rah.rah.mitra/"
+    },
+    "resumeEdition": "2026-09"
+  },
+  "profile": {
+    "tagline": "Intelligent Systems Engineer · AI, Optimization, Software & 3D Perception",
+    "bio": "NUS Industrial Systems Engineering student with a Second Major in Computer Science and a Mathematics Minor. I turn ambiguous operational problems into evidence-led systems across applied AI, mathematical optimization, software architecture, 3D perception, and responsible security.",
+    "skills": [
+      "Python (asyncio, FastAPI, Flask)",
+      "Deep Learning & Transformers (BERT, GPT-4, RAG)",
+      "Deep Reinforcement Learning (PPO, A2C, DDPG, DQN)",
+      "TypeScript, React & Next.js",
+      "HPC & Distributed Training (ASPIRE 2A, CUDA)",
+      "SQL & NoSQL Databases",
+      "Mathematical Modeling (Linear Algebra, Probability, Calculus)",
+      "Rust (Systems Programming & Digital Twins)",
+      "Web App Penetration Testing (Burp Suite)",
+      "Network Analysis (Wireshark, TCP/UDP, TLS)",
+      "Vuln Research (SSRF, CSRF, SQLi, Auth Bypass)",
+      "Custom Exploit Scripting (Python, Bash)",
+      "CTF Competitions",
+      "OWASP Top 10 & Secure Design",
+      "JWT / OAuth2 / Session Analysis",
+      "Cloud Security (AWS IMDSv2, Metadata APIs)"
+    ],
+    "competencies": [
+      {
+        "id": "software-systems",
+        "title": "Software & Systems Engineering",
+        "summary": "Builds production-minded software with typed frontends, Python services, async libraries, automated tests, CI/CD, and maintainable public artifacts.",
+        "tools": [
+          "Python",
+          "TypeScript",
+          "React",
+          "Next.js",
+          "FastAPI",
+          "aiohttp",
+          "Docker",
+          "GitHub Actions"
+        ],
+        "proof": [
+          "AsyncDDGS",
+          "Interactive Portfolio",
+          "SmartExam",
+          "Churp"
+        ]
+      },
+      {
+        "id": "solution-architecture",
+        "title": "Solution Architecture",
+        "summary": "Turns ambiguous operational and civic problems into deployable architectures with cloud hosting, containerization, product requirements, and stakeholder feedback loops.",
+        "tools": [
+          "Azure",
+          "Docker",
+          "Bitbucket CI/CD",
+          "API Design",
+          "Singpass/Myinfo",
+          "OAuth2",
+          "Supabase",
+          "Manufacturing Systems"
+        ],
+        "proof": [
+          "APC Simulator Cloud Operations",
+          "Churp",
+          "Project Utopia",
+          "Volt Pulse SG"
+        ]
+      },
+      {
+        "id": "ai-engineering",
+        "title": "AI Engineering",
+        "summary": "Ships applied AI across NLP, RAG, vector search, agents, computer vision, and high-performance training without losing sight of evaluation and deployment constraints.",
+        "tools": [
+          "BERT",
+          "RAG",
+          "AI Agents",
+          "OpenAI GPT-4",
+          "Gemini",
+          "Vector Search",
+          "ASPIRE 2A",
+          "SEALION"
+        ],
+        "proof": [
+          "Maritime BERT/DNN",
+          "AgeWellLah.AI",
+          "SmartExam",
+          "EthosLens"
+        ]
+      },
+      {
+        "id": "operations-research",
+        "title": "Operations Research",
+        "summary": "Connects ISE modeling with practical optimization: scheduling, discrete-event simulation, graph algorithms, robust-optimization research, and automation inside real operating constraints.",
+        "tools": [
+          "CP-SAT",
+          "Hybrid Flow Shop",
+          "SimPy",
+          "Robust Optimization",
+          "Dijkstra",
+          "Statistics",
+          "Excel VBA"
+        ],
+        "proof": [
+          "Hybrid Flow Shop Digital Twin",
+          "Changeover Data Pipeline",
+          "IE2110 Graph Optimization"
+        ]
+      },
+      {
+        "id": "cybersecurity",
+        "title": "Cybersecurity",
+        "summary": "Applies an adversarial engineering lens through bug bounty research, secure design, traffic analysis, exploit automation, and responsible disclosure reporting.",
+        "tools": [
+          "Burp Suite",
+          "Wireshark",
+          "SSRF",
+          "CSRF",
+          "SQL/NoSQL Injection",
+          "OAuth2/JWT",
+          "Python",
+          "Bash",
+          "Rust"
+        ],
+        "proof": [
+          "GovTech GBBP12/13",
+          "LTA Bug Bounty",
+          "Arcane",
+          "DSTA BRINHACK"
+        ]
+      },
+      {
+        "id": "data-product",
+        "title": "Data & Product Analytics",
+        "summary": "Pairs analytics with product judgment: auditable data pipelines, workforce enablement, user testing, operational dashboards, civic feedback workflows, and decision-ready reporting.",
+        "tools": [
+          "Data Quality",
+          "Excel VBA",
+          "Process Analytics",
+          "AI Enablement",
+          "User Testing",
+          "Stakeholder Mapping"
+        ],
+        "proof": [
+          "15-Stage Changeover Pipeline",
+          "Abbott AI Upskilling",
+          "Churp",
+          "Volt Pulse SG"
+        ]
+      }
+    ],
+    "stats": [
+      {
+        "value": "06",
+        "label": "ENGINEERING DOMAINS"
+      },
+      {
+        "value": "28",
+        "label": "PUBLIC PROJECTS INDEXED"
+      },
+      {
+        "value": "S$20K",
+        "label": "SPARKS INNOVATION FUND"
+      },
+      {
+        "value": "1/24",
+        "label": "TOP STUDENT — 3D CV, NUS"
+      }
+    ]
+  },
+  "experience": [
+    {
+      "id": "career-stmicro-or",
+      "dateLabel": "Aug 2026-Present",
+      "sortDate": "2026-08-01",
+      "tags": [
+        "STMicroelectronics",
+        "Operations Research",
+        "Warehouse Optimization",
+        "Demand Forecasting",
+        "AI"
+      ],
+      "linkedProjectIds": [],
+      "kind": "professional",
+      "role": "Operations Research (NUS System Design Project), Contract",
+      "organization": "STMicroelectronics",
+      "location": "Singapore",
+      "scope": "AI-driven put-away recommendation for semiconductor warehouse logistics.",
+      "responsibilities": [
+        "Build an AI-driven put-away recommendation system for the Singapore warehouse, combining picking history, demand forecasts, and live capacity."
+      ],
+      "outcomes": [
+        "Targets replacing experience-based slotting decisions with systematic, capacity-aware storage recommendations."
+      ]
+    },
+    {
+      "id": "career-amazon-vision",
+      "dateLabel": "Jul 2026-Present",
+      "sortDate": "2026-07-01",
+      "tags": [
+        "Amazon",
+        "Computer Vision",
+        "Robotics",
+        "Image Restoration",
+        "Super-Resolution"
+      ],
+      "linkedProjectIds": [],
+      "kind": "professional",
+      "role": "Robotics Vision Engineer (BlendED AI+X)",
+      "organization": "Amazon",
+      "location": "Singapore",
+      "scope": "Vision systems for robotic perception image quality.",
+      "responsibilities": [
+        "Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light."
+      ],
+      "outcomes": [
+        "Delivers perception-ready frame quality for downstream robotics vision."
+      ]
+    },
+    {
+      "id": "abbott-internship",
+      "dateLabel": "Jan 2026 - Present",
+      "sortDate": "2026-01-01",
+      "tags": [
+        "Data Quality",
+        "CP-SAT",
+        "Robust Optimization",
+        "Cloud Operations",
+        "AI Upskilling"
+      ],
+      "linkedProjectIds": [
+        "hybrid-flow-shop-digital-twin",
+        "changeover-data-quality-pipeline",
+        "azure-apc-web-simulator"
+      ],
+      "kind": "professional",
+      "role": "Operational AI Systems & Data Engineer",
+      "organization": "Abbott",
+      "location": "Singapore",
+      "scope": "Manufacturing decision support, operational data quality, cloud operations, and regional AI enablement.",
+      "responsibilities": [
+        "Built a hybrid flow-shop digital twin using SimPy and OR-Tools CP-SAT and researched robust optimization for operational uncertainty.",
+        "Designed a non-destructive 15-stage transformation and audit workflow for complex historical changeover matrices.",
+        "Productionized, supported, and documented an internal APC simulator on Docker and Azure App Service; delivered practical AI upskilling."
+      ],
+      "outcomes": [
+        "Processed five years of previously unseen, unclean operational data without errors.",
+        "Supported an actively used manufacturing and engineer-training simulator while preserving the originating team’s authorship."
+      ]
+    },
+    {
+      "id": "nus-education",
+      "dateLabel": "2023-Present",
+      "sortDate": "2023-08-01",
+      "tags": [
+        "NUS",
+        "ISE",
+        "Computer Science",
+        "Mathematics",
+        "Undergraduate"
+      ],
+      "linkedProjectIds": [
+        "geometry",
+        "information-lab",
+        "project-utopia"
+      ],
+      "kind": "education",
+      "role": "BEng, Industrial Systems Engineering",
+      "organization": "National University of Singapore",
+      "location": "Singapore",
+      "scope": "Second Major in Computer Science and Minor in Mathematics, connecting systems engineering with computing and quantitative methods.",
+      "responsibilities": [
+        "Applied optimization, simulation, software engineering, and multi-view geometry through coursework and project systems."
+      ],
+      "outcomes": [
+        "Awarded the CS4277 Certificate of Outstanding Performance as top student in a class of 24 for 3D Computer Vision."
+      ]
+    },
+    {
+      "id": "cyber-achievement-3",
+      "dateLabel": "May 2024 – Present",
+      "sortDate": "2023-01-01",
+      "tags": [
+        "Vulnerability Disclosure",
+        "Bug Bounty",
+        "YesWeHack",
+        "GovTech",
+        "LTA",
+        "SSRF",
+        "CSRF",
+        "SQLi",
+        "Security"
+      ],
+      "linkedProjectIds": [
+        "arcane"
+      ],
+      "kind": "professional",
+      "role": "Independent Bug Bounty Researcher",
+      "organization": "YesWeHack programs · GovTech · LTA",
+      "location": "Singapore / remote",
+      "scope": "Responsible security research across public and private vulnerability-disclosure programs.",
+      "responsibilities": [
+        "Tested web applications and APIs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and adjacent trust-boundary failures.",
+        "Built Python and Bash automation around Burp Suite and Wireshark-assisted investigation."
+      ],
+      "outcomes": [
+        "Submitted responsible disclosures across government, transport, and other public/private programs without publishing sensitive target details."
+      ]
+    },
+    {
+      "id": "career-singapore-navy",
+      "dateLabel": "Jan 2022-Jan 2023",
+      "sortDate": "2022-01-01",
+      "tags": [
+        "Singapore Navy",
+        "Excel VBA",
+        "Operations",
+        "Automation",
+        "Process Improvement"
+      ],
+      "linkedProjectIds": [
+        "information-lab"
+      ],
+      "kind": "professional",
+      "role": "Base Support Assistant",
+      "organization": "Republic of Singapore Navy",
+      "location": "Singapore",
+      "scope": "Operational reporting and process improvement inside a security-constrained environment.",
+      "responsibilities": [
+        "Mapped the food-waste reporting process and automated its calculations and reporting steps with Excel VBA."
+      ],
+      "outcomes": [
+        "Reduced a six-month manual reporting cycle to a repeatable workflow completing in under three minutes."
+      ]
+    },
+    {
+      "id": "education-asrjc-stem",
+      "dateLabel": "2019-2020",
+      "sortDate": "2019-01-01",
+      "tags": [
+        "ASRJC",
+        "STEM Inc.",
+        "Astronomy",
+        "Robotics",
+        "Leadership"
+      ],
+      "linkedProjectIds": [
+        "on-the-spectrum"
+      ],
+      "kind": "education",
+      "role": "STEM Inc. member and outreach lead",
+      "organization": "Anderson Serangoon Junior College",
+      "location": "Singapore",
+      "scope": "Astronomy outreach, autonomous robotics, competition work, and technical leadership.",
+      "responsibilities": [
+        "Led astronomy outreach, competed in the Singapore Astronomical Olympiad, and built autonomous robotics systems."
+      ],
+      "outcomes": [
+        "Received the ASRJC Outstanding Contribution Award."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "on-the-spectrum",
+      "title": "OnTheSpectrum",
+      "category": "3D Asset Pipeline",
+      "description": "A local-first Blender-to-Three.js asset and world prototyping pipeline with generated GLBs, metadata, previews, and playable world QA.",
+      "tags": [
+        "Python",
+        "Three.js",
+        "Blender MCP",
+        "GLB",
+        "World Builder"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/OnTheSpectrum",
+      "dateLabel": "May 2026",
+      "sortDate": "2026-05-31",
+      "imageUrl": "/renders/on_the_spectrum-painter-chibi-preview-720.webp",
+      "accent": "cyan",
+      "linkedEventIds": [
+        "january-gauntlet-2026"
+      ],
+      "npcRole": "3D world architect",
+      "featuredPriority": 2,
+      "spotlight": {
+        "context": "A local-first pipeline for moving authored 3D assets from Blender into a browser-based interactive world.",
+        "contribution": "Built the asset, metadata, preview, and playable-world workflow around generated GLBs.",
+        "approach": "Python orchestration, Blender MCP, Three.js runtime integration, asset previews, and world QA.",
+        "outcome": "A reusable prototyping pipeline and the existing spatial portfolio asset library."
+      }
+    },
+    {
+      "id": "asyncddgs",
+      "title": "AsyncDDGS",
+      "category": "Open-Source Engineering",
+      "description": "An asyncio-first DuckDuckGo search client built with aiohttp, maintained with pytest CI/CD and referenced in AI tooling projects.",
+      "tags": [
+        "Python",
+        "asyncio",
+        "aiohttp",
+        "PyPI",
+        "Open Source"
+      ],
+      "dateLabel": "2024-Present",
+      "sortDate": "2026-05-14",
+      "accent": "cyan",
+      "linkedEventIds": [
+        "software-achievement-6"
+      ],
+      "npcRole": "open-source systems guide",
+      "featuredPriority": 3,
+      "spotlight": {
+        "context": "Search-enabled Python systems needed an asyncio-first DuckDuckGo client built around aiohttp.",
+        "contribution": "Authored and maintain the AsyncDDGS package and its public release workflow.",
+        "approach": "Python asyncio, aiohttp, pytest, GitHub Actions, and PyPI packaging.",
+        "outcome": "A maintained public library referenced by AI tooling, search projects, and Discord bot frameworks."
+      }
+    },
+    {
+      "id": "geometry",
+      "title": "Geometry",
+      "category": "Mathematics Knowledge Lab",
+      "description": "A living undergraduate-to-graduate geometry notebook and visual reference space for mathematical modeling foundations.",
+      "tags": [
+        "Mathematics",
+        "Geometry",
+        "HTML",
+        "Learning Systems"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/Geometry",
+      "dateLabel": "Apr 2026",
+      "sortDate": "2026-04-30",
+      "accent": "blue",
+      "linkedEventIds": [
+        "nus-education"
+      ],
+      "npcRole": "mathematics map guide"
+    },
+    {
+      "id": "information-lab",
+      "title": "Information Lab",
+      "category": "Rust Systems Research",
+      "description": "A Rust-forward information systems lab for experimenting with fast local tooling, data structures, and systems-level interfaces.",
+      "tags": [
+        "Rust",
+        "Systems",
+        "Information Retrieval",
+        "Tooling"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/Information-Lab",
+      "dateLabel": "Apr 2026",
+      "sortDate": "2026-04-30",
+      "accent": "cyan",
+      "linkedEventIds": [
+        "certification-trail"
+      ],
+      "npcRole": "information systems guide"
+    },
+    {
+      "id": "arcane",
+      "title": "Arcane",
+      "category": "Security Tooling",
+      "description": "A Rust-forward security and red-team tooling family connected to Arcane, Arcane-PP, Arcane-GLM, and Arcane-OCR experiments.",
+      "tags": [
+        "Rust",
+        "Security",
+        "Automation",
+        "OCR"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/Arcane",
+      "dateLabel": "Mar 2026",
+      "sortDate": "2026-03-31",
+      "links": [
+        {
+          "label": "Arcane-PP",
+          "url": "https://github.com/Rah-Rah-Mitra/Arcane-PP"
+        },
+        {
+          "label": "Arcane-GLM",
+          "url": "https://github.com/Rah-Rah-Mitra/Arcane-GLM"
+        },
+        {
+          "label": "Arcane-OCR",
+          "url": "https://github.com/Rah-Rah-Mitra/Arcane-OCR"
+        }
+      ],
+      "imageUrl": "/images/generated/arcane-security.webp",
+      "accent": "violet",
+      "linkedEventIds": [
+        "certification-trail"
+      ],
+      "npcRole": "security tooling guide",
+      "featuredPriority": 7,
+      "spotlight": {
+        "context": "A family of responsible security and red-team tooling experiments.",
+        "contribution": "Developed Rust-forward automation, OCR, and adversarial workflow prototypes across the Arcane repositories.",
+        "approach": "Systems programming, automation, OCR experiments, and responsible security research practices.",
+        "outcome": "A public tooling family that demonstrates the engineering side of the security profile."
+      }
+    },
+    {
+      "id": "hailo-training",
+      "title": "Hailo Training",
+      "category": "Edge AI Training",
+      "description": "A compact training and experimentation repo for edge-AI workflows around Hailo-style model deployment and acceleration.",
+      "tags": [
+        "Edge AI",
+        "Model Training",
+        "HTML",
+        "Acceleration"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/Hailo-Training",
+      "dateLabel": "Mar 2026",
+      "sortDate": "2026-03-31",
+      "accent": "amber",
+      "linkedEventIds": [
+        "certification-trail"
+      ],
+      "npcRole": "edge inference guide"
+    },
+    {
+      "id": "project-utopia",
+      "title": "Project Utopia",
+      "category": "Situational Awareness",
+      "description": "A real-time global intelligence dashboard for AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking.",
+      "tags": [
+        "Dashboard",
+        "OSINT",
+        "Geospatial",
+        "AI"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/Project-Utopia",
+      "dateLabel": "Mar 2026",
+      "sortDate": "2026-03-31",
+      "imageUrl": "/images/generated/project-utopia.webp",
+      "accent": "amber",
+      "linkedEventIds": [
+        "january-gauntlet-2026"
+      ],
+      "npcRole": "global-systems analyst",
+      "featuredPriority": 3,
+      "spotlight": {
+        "context": "A need to combine fast-moving global news, geopolitical signals, and infrastructure context in one view.",
+        "contribution": "Built the real-time situational-awareness dashboard and its AI-assisted aggregation workflow.",
+        "approach": "Geospatial visualization, AI news aggregation, infrastructure tracking, and dashboard system design.",
+        "outcome": "A public experimental platform for exploring global events and infrastructure signals."
+      }
+    },
+    {
+      "id": "volt-pulse-sg",
+      "title": "Volt Pulse SG",
+      "category": "Agentic AI & Sustainability",
+      "description": "Top 8 finalist at SMU Hack For Cities 2026: an agentic AI system for household energy-cost tracking, multilingual retrieval, and recommendation routing.",
+      "tags": [
+        "Agentic AI",
+        "SEALION",
+        "Supabase",
+        "RRF",
+        "Net Zero"
+      ],
+      "dateLabel": "Jan 2026",
+      "sortDate": "2026-01-31",
+      "imageUrl": "/images/generated/volt-pulse-sg.webp",
+      "accent": "green",
+      "linkedEventIds": [
+        "smu-hack-for-cities-2026"
+      ],
+      "npcRole": "sustainability systems guide",
+      "featuredPriority": 6,
+      "spotlight": {
+        "context": "Household energy information is fragmented and difficult to translate into timely action.",
+        "contribution": "Co-built an agentic AI platform for HDB energy-cost tracking and recommendation routing.",
+        "approach": "SEALION embeddings, Supabase vector search, reciprocal-rank fusion, and scheduler-agent planning.",
+        "outcome": "Top 8 finalist of 50+ teams at SMU Hack For Cities 2026."
+      }
+    },
+    {
+      "id": "waaah-comics",
+      "title": "Waaah Comics",
+      "category": "Generative AI & Computer Vision",
+      "description": "A 24-hour build turning physical hand gestures into digital comic strips with MediaPipe 3D landmarks, Gemini, Veo, and canvas tooling.",
+      "tags": [
+        "MediaPipe",
+        "Gemini",
+        "Veo",
+        "Konva.js",
+        "Computer Vision"
+      ],
+      "liveUrl": "https://lnkd.in/gneUG9fj",
+      "dateLabel": "Jan 2026",
+      "sortDate": "2026-01-31",
+      "imageUrl": "/images/generated/waaah-comics.webp",
+      "accent": "violet",
+      "linkedEventIds": [
+        "january-gauntlet-2026",
+        "waaah-comics"
+      ],
+      "npcRole": "gesture-to-story creator"
+    },
+    {
+      "id": "hybrid-flow-shop-digital-twin",
+      "title": "Hybrid Flow Shop Digital Twin Optimizer",
+      "category": "Operations Research & Manufacturing AI",
+      "description": "An Abbott manufacturing project modeling a complex hybrid flow-shop scheduling problem through SimPy discrete-event simulation and OR-Tools CP-SAT, alongside research into robust optimization for uncertainty-aware decisions.",
+      "tags": [
+        "Python",
+        "SimPy",
+        "CP-SAT",
+        "Robust Optimization",
+        "Scheduling",
+        "Manufacturing"
+      ],
+      "dateLabel": "2026",
+      "sortDate": "2026-01-01",
+      "accent": "amber",
+      "linkedEventIds": [
+        "abbott-internship"
+      ],
+      "npcRole": "operations research optimizer",
+      "featuredPriority": 1,
+      "spotlight": {
+        "context": "A professional manufacturing scheduling problem with hybrid flow-shop constraints and real operating complexity.",
+        "contribution": "Built the event-driven production model, optimization workflow, and validation outputs; researched robust-optimization approaches for operational uncertainty.",
+        "approach": "SimPy discrete-event simulation, OR-Tools CP-SAT, interval and precedence constraints, heuristic baselines, and decision-ready schedule generation.",
+        "outcome": "A deployment-oriented decision-support workflow; confidential operating details remain intentionally abstracted."
+      }
+    },
+    {
+      "id": "azure-apc-web-simulator",
+      "title": "APC Simulator Cloud Operations",
+      "category": "Cloud Solution Architecture",
+      "description": "Productionized and operated an internal Advanced Process Control simulator built by another team: Docker-packaged for Azure App Service and actively used by manufacturing teams and for engineer training.",
+      "tags": [
+        "Azure App Service",
+        "Docker",
+        "Cloud Operations",
+        "APC",
+        "Manufacturing Training"
+      ],
+      "dateLabel": "2026",
+      "sortDate": "2026-01-01",
+      "accent": "blue",
+      "linkedEventIds": [
+        "abbott-internship"
+      ],
+      "npcRole": "manufacturing cloud operations guide",
+      "spotlight": {
+        "context": "A simulator created by another team needed a controlled, supportable cloud runtime for real internal use.",
+        "contribution": "Handled hosting and production support, resolved runtime and request-flow issues, and packaged the application as a Docker container for Azure App Service.",
+        "approach": "Flask and JavaScript debugging, containerization, sessions and request tracking, access restrictions, deployment documentation, and handover.",
+        "outcome": "An actively used internal simulator supporting manufacturing work and engineer training; the originating team retains credit for building the application."
+      }
+    },
+    {
+      "id": "changeover-data-quality-pipeline",
+      "title": "Manufacturing Changeover Data Pipeline",
+      "category": "Data Quality & Industrial Automation",
+      "description": "A non-destructive 15-stage cleaning and transformation pipeline for complex changeover matrices, handling human- and machine-generated data errors and processing five years of previously unseen, unclean data without errors.",
+      "tags": [
+        "Data Quality",
+        "Excel VBA",
+        "Python",
+        "Audit Trail",
+        "Manufacturing"
+      ],
+      "dateLabel": "2026",
+      "sortDate": "2026-01-01",
+      "accent": "green",
+      "linkedEventIds": [
+        "abbott-internship"
+      ],
+      "npcRole": "manufacturing data-quality guide",
+      "spotlight": {
+        "context": "Operational matrices encoded meaning through values, labels, colours, merged regions, blanks, and exception rules accumulated over years.",
+        "contribution": "Designed a 15-stage, non-destructive workflow that exposes intermediate repair and transformation states instead of silently mutating source data.",
+        "approach": "Controlled staging sheets, normalization, repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling.",
+        "outcome": "Processed five years of previously unseen, unclean data without errors while covering both human- and machine-generated data issues."
+      }
+    },
+    {
+      "id": "portfolio-repo",
+      "title": "Portfolio",
+      "category": "Portfolio Infrastructure",
+      "description": "The interactive portfolio itself: React, Three.js, CFD background experiments, chatbot controls, and profile switching.",
+      "tags": [
+        "TypeScript",
+        "React",
+        "Three.js",
+        "Portfolio"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/Portfolio",
+      "dateLabel": "2026",
+      "sortDate": "2026-01-01",
+      "accent": "cyan"
+    },
+    {
+      "id": "github-profile-repo",
+      "title": "Rah-Rah-Mitra Profile Repo",
+      "category": "GitHub Profile",
+      "description": "Personal GitHub profile repository and public profile automation surface.",
+      "tags": [
+        "Python",
+        "GitHub",
+        "Profile"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/Rah-Rah-Mitra",
+      "dateLabel": "2026",
+      "sortDate": "2026-01-01",
+      "accent": "blue"
+    },
+    {
+      "id": "kalidokit-fork",
+      "title": "kalidokit",
+      "category": "Computer Vision Fork",
+      "description": "A fork around MediaPipe/TensorFlow.js pose, face, eye, and finger tracking kinematics.",
+      "tags": [
+        "TypeScript",
+        "MediaPipe",
+        "Kinematics",
+        "Fork"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/kalidokit",
+      "dateLabel": "2026",
+      "sortDate": "2026-01-01",
+      "accent": "violet"
+    },
+    {
+      "id": "kaogenie",
+      "title": "KaoGenie",
+      "category": "AI Experiment",
+      "description": "A Python experimentation repo for fast AI prototyping, prompt workflows, and applied model exploration.",
+      "tags": [
+        "Python",
+        "AI",
+        "Prototype",
+        "Automation"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/KaoGenie",
+      "dateLabel": "Jul 2025",
+      "sortDate": "2025-07-31",
+      "accent": "violet",
+      "linkedEventIds": [
+        "january-gauntlet-2026"
+      ],
+      "npcRole": "rapid prototype guide"
+    },
+    {
+      "id": "smart-exam",
+      "title": "SmartExam",
+      "category": "AI Agents & RAG",
+      "description": "A multi-agent autonomous exam-generation system from varied source material, built for the GovTech x NTUPC Product Hackathon.",
+      "tags": [
+        "Next.js",
+        "RAG",
+        "AI Agents",
+        "System Design"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/SmartExam",
+      "dateLabel": "2025",
+      "sortDate": "2025-01-01",
+      "imageUrl": "/images/se-achievement-smartexam.webp",
+      "accent": "blue",
+      "linkedEventIds": [
+        "january-gauntlet-2026"
+      ],
+      "npcRole": "education-agent guide"
+    },
+    {
+      "id": "ethos-lens",
+      "title": "EthosLens",
+      "category": "AI Research Engine",
+      "description": "An automated research engine scoring brands on ethical and sustainability practices, built at LifeHack 2025.",
+      "tags": [
+        "FastAPI",
+        "Python",
+        "LangChain",
+        "Sustainability"
+      ],
+      "dateLabel": "2025",
+      "sortDate": "2025-01-01",
+      "imageUrl": "/images/se-achievement-ethoslens.webp",
+      "accent": "red",
+      "linkedEventIds": [
+        "january-gauntlet-2026"
+      ],
+      "npcRole": "ethical intelligence guide"
+    },
+    {
+      "id": "agewelllah-ai",
+      "title": "AgeWellLah.AI",
+      "category": "AI & HealthTech",
+      "description": "A HealthHack 2025 elderly patient triage system using RAG, InterSystems IRIS vector search, Flask, OAuth2, and PDPA-aware architecture.",
+      "tags": [
+        "RAG",
+        "HealthTech",
+        "Flask",
+        "OAuth2",
+        "Vector Search"
+      ],
+      "repoUrl": "https://github.com/ZulfaqarHafez/AgeWellLah.AI",
+      "dateLabel": "2025",
+      "sortDate": "2025-01-01",
+      "imageUrl": "/images/se-achievement-agewell.jpg",
+      "accent": "green",
+      "linkedEventIds": [
+        "january-gauntlet-2026"
+      ],
+      "npcRole": "healthtech triage guide"
+    },
+    {
+      "id": "maritime-deficiency-severity",
+      "title": "Maritime Deficiency Severity Forecasting",
+      "category": "AI & NLP",
+      "description": "A Maritime Hackathon 2025 predictive system using a fine-tuned 109M-parameter BERT model, DNN layers, and ASPIRE 2A supercomputing.",
+      "tags": [
+        "BERT",
+        "DNN",
+        "NLP",
+        "HPC",
+        "Maritime"
+      ],
+      "dateLabel": "2025",
+      "sortDate": "2025-01-01",
+      "links": [
+        {
+          "label": "Certificate of submission",
+          "url": "/certificates/maritime-hackathon-2025-submission.pdf"
+        }
+      ],
+      "imageUrl": "/images/se-achievement-maritime.jpg",
+      "accent": "blue",
+      "linkedEventIds": [
+        "january-gauntlet-2026"
+      ],
+      "npcRole": "maritime AI guide",
+      "featuredPriority": 5,
+      "spotlight": {
+        "context": "Forecasting the severity of maritime inspection deficiencies from complex operational logs.",
+        "contribution": "Led the multidisciplinary team and model-training work for the predictive system.",
+        "approach": "A fine-tuned 109M-parameter BERT model, DNN layers, gradient clipping, hyperparameter optimization, and ASPIRE 2A HPC.",
+        "outcome": "A completed Maritime Hackathon 2025 submission with certificate evidence."
+      }
+    },
+    {
+      "id": "churp",
+      "title": "Churp",
+      "category": "Citizen Developer Platform",
+      "description": "An end-to-end digital garden-plot balloting platform for People's Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.",
+      "tags": [
+        "Civic Tech",
+        "Singpass",
+        "GIS",
+        "Balloting",
+        "Smart Nation"
+      ],
+      "dateLabel": "2025 - Present",
+      "sortDate": "2025-01-01",
+      "imageUrl": "/images/generated/churp-community.webp",
+      "accent": "green",
+      "linkedEventIds": [
+        "sparks-by-pa-churp"
+      ],
+      "npcRole": "community systems guide",
+      "featuredPriority": 4,
+      "spotlight": {
+        "context": "Community garden-plot allocation needed a complete civic workflow rather than another isolated form.",
+        "contribution": "Built the admin and public surfaces, backend, GIS allocation, and Singpass/Myinfo identity flow.",
+        "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, stakeholder coordination, and rollout planning.",
+        "outcome": "Production-ready for national rollout and awarded the S$20,000 Sparks Community Innovation Fund."
+      }
+    },
+    {
+      "id": "tp-java",
+      "title": "tp",
+      "category": "Coursework Archive",
+      "description": "Java coursework repository preserved as part of the learning and software engineering archive.",
+      "tags": [
+        "Java",
+        "Coursework",
+        "Software Engineering"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/tp",
+      "dateLabel": "2025",
+      "sortDate": "2025-01-01",
+      "accent": "amber"
+    },
+    {
+      "id": "ip-java",
+      "title": "ip",
+      "category": "Coursework Archive",
+      "description": "Java individual project repository from the software engineering coursework trail.",
+      "tags": [
+        "Java",
+        "Coursework",
+        "CLI"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/ip",
+      "dateLabel": "2025",
+      "sortDate": "2025-01-01",
+      "accent": "amber"
+    },
+    {
+      "id": "crawl4ai-deepseek-example",
+      "title": "crawl4ai-deepseek-example",
+      "category": "AI Experiment Archive",
+      "description": "A small crawl4ai and DeepSeek example repository kept as an experimentation reference.",
+      "tags": [
+        "AI",
+        "Crawling",
+        "DeepSeek"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/crawl4ai-deepseek-example",
+      "dateLabel": "2025",
+      "sortDate": "2025-01-01",
+      "accent": "green"
+    },
+    {
+      "id": "ie2110-grp-13",
+      "title": "IE2110 Operations Research I",
+      "category": "Operations Research Coursework",
+      "description": "Operations Research I coursework applying foundational OR concepts: linear programming, network flow models, nonlinear programming, and engineering-management decision applications, with a Jupyter graph-optimization project for SSSP/APSP analysis.",
+      "tags": [
+        "Jupyter Notebook",
+        "Operations Research",
+        "Network Flow",
+        "Dijkstra",
+        "ISE"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/IE2110-GRP-13",
+      "dateLabel": "2024",
+      "sortDate": "2024-01-01",
+      "accent": "blue"
+    },
+    {
+      "id": "fine-tuning-llms-cybersecurity",
+      "title": "Fine-tuning LLMs for Cybersecurity",
+      "category": "Learning Archive",
+      "description": "Course repository connected to Mistral, LLaMA, AutoTrain, and AutoGen fine-tuning workflows for cybersecurity.",
+      "tags": [
+        "LLM",
+        "Cybersecurity",
+        "Fine-Tuning",
+        "Learning"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/fine-tuning-llms-for-cybersecurity-mistral-llama-autotrain-autogen-3893128",
+      "dateLabel": "2024",
+      "sortDate": "2024-01-01",
+      "accent": "red"
+    },
+    {
+      "id": "references",
+      "title": "References",
+      "category": "Notebook Archive",
+      "description": "Python and Jupyter notebook references from the broader learning archive.",
+      "tags": [
+        "Jupyter Notebook",
+        "Python",
+        "References"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/References",
+      "dateLabel": "2024",
+      "sortDate": "2024-01-01",
+      "accent": "violet"
+    },
+    {
+      "id": "eg1311-project",
+      "title": "EG1311 Project",
+      "category": "Engineering Coursework",
+      "description": "C++ group project repository from the early engineering project trail.",
+      "tags": [
+        "C++",
+        "Engineering",
+        "Coursework"
+      ],
+      "repoUrl": "https://github.com/Rah-Rah-Mitra/EG1311_Project",
+      "dateLabel": "2023",
+      "sortDate": "2023-01-01",
+      "accent": "green"
+    }
+  ],
+  "archive": [
+    {
+      "id": "on-the-spectrum",
+      "date": "2026-05",
+      "title": "OnTheSpectrum",
+      "category": "3D Asset Pipeline",
+      "stack": "Python · Three.js · Blender MCP",
+      "domain": "3D / Vision",
+      "href": "https://github.com/Rah-Rah-Mitra/OnTheSpectrum"
+    },
+    {
+      "id": "asyncddgs",
+      "date": "2026-05",
+      "title": "AsyncDDGS",
+      "category": "Open-Source Engineering",
+      "stack": "Python · asyncio · aiohttp",
+      "domain": "Software"
+    },
+    {
+      "id": "geometry",
+      "date": "2026-04",
+      "title": "Geometry",
+      "category": "Mathematics Knowledge Lab",
+      "stack": "Mathematics · Geometry · HTML",
+      "domain": "3D / Vision",
+      "href": "https://github.com/Rah-Rah-Mitra/Geometry"
+    },
+    {
+      "id": "information-lab",
+      "date": "2026-04",
+      "title": "Information Lab",
+      "category": "Rust Systems Research",
+      "stack": "Rust · Systems · Information Retrieval",
+      "domain": "Software",
+      "href": "https://github.com/Rah-Rah-Mitra/Information-Lab"
+    },
+    {
+      "id": "arcane",
+      "date": "2026-03",
+      "title": "Arcane",
+      "category": "Security Tooling",
+      "stack": "Rust · Security · Automation",
+      "domain": "Security",
+      "href": "https://github.com/Rah-Rah-Mitra/Arcane"
+    },
+    {
+      "id": "hailo-training",
+      "date": "2026-03",
+      "title": "Hailo Training",
+      "category": "Edge AI Training",
+      "stack": "Edge AI · Model Training · HTML",
+      "domain": "AI",
+      "href": "https://github.com/Rah-Rah-Mitra/Hailo-Training"
+    },
+    {
+      "id": "project-utopia",
+      "date": "2026-03",
+      "title": "Project Utopia",
+      "category": "Situational Awareness",
+      "stack": "Dashboard · OSINT · Geospatial",
+      "domain": "AI",
+      "href": "https://github.com/Rah-Rah-Mitra/Project-Utopia"
+    },
+    {
+      "id": "volt-pulse-sg",
+      "date": "2026-01",
+      "title": "Volt Pulse SG",
+      "category": "Agentic AI & Sustainability",
+      "stack": "Agentic AI · SEALION · Supabase",
+      "domain": "AI"
+    },
+    {
+      "id": "waaah-comics",
+      "date": "2026-01",
+      "title": "Waaah Comics",
+      "category": "Generative AI & Computer Vision",
+      "stack": "MediaPipe · Gemini · Veo",
+      "domain": "3D / Vision",
+      "href": "https://lnkd.in/gneUG9fj"
+    },
+    {
+      "id": "hybrid-flow-shop-digital-twin",
+      "date": "2026-01",
+      "title": "Hybrid Flow Shop Digital Twin Optimizer",
+      "category": "Operations Research & Manufacturing AI",
+      "stack": "Python · SimPy · CP-SAT",
+      "domain": "Operations"
+    },
+    {
+      "id": "azure-apc-web-simulator",
+      "date": "2026-01",
+      "title": "APC Simulator Cloud Operations",
+      "category": "Cloud Solution Architecture",
+      "stack": "Azure App Service · Docker · Cloud Operations",
+      "domain": "Operations"
+    },
+    {
+      "id": "changeover-data-quality-pipeline",
+      "date": "2026-01",
+      "title": "Manufacturing Changeover Data Pipeline",
+      "category": "Data Quality & Industrial Automation",
+      "stack": "Data Quality · Excel VBA · Python",
+      "domain": "Operations"
+    },
+    {
+      "id": "portfolio-repo",
+      "date": "2026-01",
+      "title": "Portfolio",
+      "category": "Portfolio Infrastructure",
+      "stack": "TypeScript · React · Three.js",
+      "domain": "Software",
+      "href": "https://github.com/Rah-Rah-Mitra/Portfolio"
+    },
+    {
+      "id": "github-profile-repo",
+      "date": "2026-01",
+      "title": "Rah-Rah-Mitra Profile Repo",
+      "category": "GitHub Profile",
+      "stack": "Python · GitHub · Profile",
+      "domain": "Software",
+      "href": "https://github.com/Rah-Rah-Mitra/Rah-Rah-Mitra"
+    },
+    {
+      "id": "kalidokit-fork",
+      "date": "2026-01",
+      "title": "kalidokit",
+      "category": "Computer Vision Fork",
+      "stack": "TypeScript · MediaPipe · Kinematics",
+      "domain": "3D / Vision",
+      "href": "https://github.com/Rah-Rah-Mitra/kalidokit"
+    },
+    {
+      "id": "kaogenie",
+      "date": "2025-07",
+      "title": "KaoGenie",
+      "category": "AI Experiment",
+      "stack": "Python · AI · Prototype",
+      "domain": "AI",
+      "href": "https://github.com/Rah-Rah-Mitra/KaoGenie"
+    },
+    {
+      "id": "smart-exam",
+      "date": "2025-01",
+      "title": "SmartExam",
+      "category": "AI Agents & RAG",
+      "stack": "Next.js · RAG · AI Agents",
+      "domain": "AI",
+      "href": "https://github.com/Rah-Rah-Mitra/SmartExam"
+    },
+    {
+      "id": "ethos-lens",
+      "date": "2025-01",
+      "title": "EthosLens",
+      "category": "AI Research Engine",
+      "stack": "FastAPI · Python · LangChain",
+      "domain": "AI"
+    },
+    {
+      "id": "agewelllah-ai",
+      "date": "2025-01",
+      "title": "AgeWellLah.AI",
+      "category": "AI & HealthTech",
+      "stack": "RAG · HealthTech · Flask",
+      "domain": "AI",
+      "href": "https://github.com/ZulfaqarHafez/AgeWellLah.AI"
+    },
+    {
+      "id": "maritime-deficiency-severity",
+      "date": "2025-01",
+      "title": "Maritime Deficiency Severity Forecasting",
+      "category": "AI & NLP",
+      "stack": "BERT · DNN · NLP",
+      "domain": "AI"
+    },
+    {
+      "id": "churp",
+      "date": "2025-01",
+      "title": "Churp",
+      "category": "Citizen Developer Platform",
+      "stack": "Civic Tech · Singpass · GIS",
+      "domain": "Civic"
+    },
+    {
+      "id": "tp-java",
+      "date": "2025-01",
+      "title": "tp",
+      "category": "Coursework Archive",
+      "stack": "Java · Coursework · Software Engineering",
+      "domain": "Software",
+      "href": "https://github.com/Rah-Rah-Mitra/tp"
+    },
+    {
+      "id": "ip-java",
+      "date": "2025-01",
+      "title": "ip",
+      "category": "Coursework Archive",
+      "stack": "Java · Coursework · CLI",
+      "domain": "Software",
+      "href": "https://github.com/Rah-Rah-Mitra/ip"
+    },
+    {
+      "id": "crawl4ai-deepseek-example",
+      "date": "2025-01",
+      "title": "crawl4ai-deepseek-example",
+      "category": "AI Experiment Archive",
+      "stack": "AI · Crawling · DeepSeek",
+      "domain": "AI",
+      "href": "https://github.com/Rah-Rah-Mitra/crawl4ai-deepseek-example"
+    },
+    {
+      "id": "ie2110-grp-13",
+      "date": "2024-01",
+      "title": "IE2110 Operations Research I",
+      "category": "Operations Research Coursework",
+      "stack": "Jupyter Notebook · Operations Research · Network Flow",
+      "domain": "Operations",
+      "href": "https://github.com/Rah-Rah-Mitra/IE2110-GRP-13"
+    },
+    {
+      "id": "fine-tuning-llms-cybersecurity",
+      "date": "2024-01",
+      "title": "Fine-tuning LLMs for Cybersecurity",
+      "category": "Learning Archive",
+      "stack": "LLM · Cybersecurity · Fine-Tuning",
+      "domain": "Security",
+      "href": "https://github.com/Rah-Rah-Mitra/fine-tuning-llms-for-cybersecurity-mistral-llama-autotrain-autogen-3893128"
+    },
+    {
+      "id": "references",
+      "date": "2024-01",
+      "title": "References",
+      "category": "Notebook Archive",
+      "stack": "Jupyter Notebook · Python · References",
+      "domain": "Software",
+      "href": "https://github.com/Rah-Rah-Mitra/References"
+    },
+    {
+      "id": "eg1311-project",
+      "date": "2023-01",
+      "title": "EG1311 Project",
+      "category": "Engineering Coursework",
+      "stack": "C++ · Engineering · Coursework",
+      "domain": "Software",
+      "href": "https://github.com/Rah-Rah-Mitra/EG1311_Project"
+    }
+  ],
+  "domains": [
+    "All",
+    "AI",
+    "Operations",
+    "Software",
+    "Security",
+    "Civic",
+    "3D / Vision"
+  ],
+  "resumes": [
+    {
+      "id": "software-engineer",
+      "role": "Software Engineer",
+      "headline": "Python, TypeScript, React, CI/CD, and open-source systems for product-facing engineering roles.",
+      "keywords": [
+        "Python",
+        "TypeScript",
+        "React",
+        "FastAPI",
+        "Docker",
+        "CI/CD",
+        "System Design"
+      ],
+      "pdfUrl": "/resume/generated/rahul-mitra-software-engineer-2026-09.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-software-engineer-2026-09.docx"
+    },
+    {
+      "id": "solution-architect",
+      "role": "Solution Architect",
+      "headline": "Cloud, product, and stakeholder architecture across Azure simulators, civic tech, and agentic AI.",
+      "keywords": [
+        "Azure",
+        "Docker",
+        "Bitbucket",
+        "RAG",
+        "APIs",
+        "Singpass",
+        "Stakeholders"
+      ],
+      "pdfUrl": "/resume/generated/rahul-mitra-solution-architect-2026-09.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-solution-architect-2026-09.docx"
+    },
+    {
+      "id": "ai-engineer",
+      "role": "AI Engineer",
+      "headline": "Applied AI profile spanning BERT, RAG, vector search, agents, HPC, and model deployment.",
+      "keywords": [
+        "BERT",
+        "RAG",
+        "AI Agents",
+        "Vector Search",
+        "OpenAI",
+        "HPC",
+        "Model Evaluation"
+      ],
+      "pdfUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-09.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-09.docx"
+    },
+    {
+      "id": "operations-research-engineer",
+      "role": "Operations Research Engineer",
+      "headline": "Scheduling, simulation, graph optimization, analytics automation, and decision-support engineering.",
+      "keywords": [
+        "Constraint Programming",
+        "Scheduling",
+        "Simulation",
+        "Dijkstra",
+        "Statistics",
+        "Excel VBA"
+      ],
+      "pdfUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-09.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-09.docx"
+    },
+    {
+      "id": "cyber-security",
+      "role": "Cyber Security",
+      "headline": "Bug bounty, web application security, custom exploit scripting, and secure system design.",
+      "keywords": [
+        "Burp Suite",
+        "Wireshark",
+        "SSRF",
+        "CSRF",
+        "SQLi",
+        "OAuth2/JWT",
+        "Rust"
+      ],
+      "pdfUrl": "/resume/generated/rahul-mitra-cyber-security-2026-09.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-cyber-security-2026-09.docx"
+    },
+    {
+      "id": "civic-tech-solution-architect",
+      "role": "Solution Architect · Civic Tech",
+      "headline": "Technology for social good: Singpass-integrated civic platforms, cloud architecture, and AI that reaches vulnerable communities.",
+      "keywords": [
+        "Civic Tech",
+        "Social Impact",
+        "Singpass/Myinfo",
+        "Solution Architecture",
+        "Full-Stack",
+        "GIS",
+        "Accessibility"
+      ],
+      "pdfUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-09.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-09.docx"
+    },
+    {
+      "id": "highlights",
+      "role": "Highlights (One-Page)",
+      "headline": "One-page best-of across every profile — civic platform delivery, applied AI, optimization, security research, and open source — for preference forms and general applications.",
+      "keywords": [
+        "One Page",
+        "Full Stack",
+        "AI/ML",
+        "Singpass/Myinfo",
+        "Security",
+        "Open Source"
+      ],
+      "pdfUrl": "/resume/generated/rahul-mitra-highlights-2026-09.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-highlights-2026-09.docx"
+    },
+    {
+      "id": "general",
+      "role": "General / Master CV",
+      "headline": "Two-page cross-disciplinary CV unifying every profile — software, AI/ML, operations research, architecture, and security — for broad job search.",
+      "keywords": [
+        "Full Stack",
+        "AI/ML",
+        "Operations Research",
+        "Solution Architecture",
+        "Security",
+        "Two Pages"
+      ],
+      "pdfUrl": "/resume/generated/rahul-mitra-general-2026-09.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-general-2026-09.docx"
+    }
+  ]
+}

@@ -113,8 +113,8 @@ export const localAgent = (message: string): AgentResponse => {
     references = [{ label: '3D perception capability map', href: '#domains' }, { label: 'NUS distinction and proof', href: '#proof' }];
     commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.DOMAINS });
   } else if (text.includes('resume') || text.includes('résumé') || text.includes('cv')) {
-    reply = 'Choose the role-specific résumé when the vacancy is clear: Software, Solution Architecture, AI, Operations Research, Cyber Security, or Civic Tech. Use the two-page General / Master CV for broad or multidisciplinary applications.';
-    references = [{ label: 'Compare all seven résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: resumeProfiles.find((resume) => resume.id === 'general')!.pdfUrl }];
+    reply = 'Choose the role-specific résumé when the vacancy is clear: Software, Solution Architecture, AI, Operations Research, Cyber Security, or Civic Tech. Use the one-page Highlights résumé for preference forms and broad applications, or the two-page General / Master CV for full multidisciplinary detail.';
+    references = [{ label: 'Compare all eight résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: resumeProfiles.find((resume) => resume.id === 'general')!.pdfUrl }];
     commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.RESUMES });
   } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty') || text.includes('adversarial')) {
     reply = 'Rahul’s security record includes responsible bug-bounty research for government and transport programs, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';

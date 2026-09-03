@@ -1,0 +1,24 @@
+# Rahul Mitra — rahul-mitra.com
+
+> Multidisciplinary engineer in Singapore: software systems, AI engineering, operations research, 3D computer vision, solution architecture, and cybersecurity. NUS Industrial Systems Engineering (Second Major in Computer Science, Minor in Mathematics).
+
+## Machine-readable access
+- MCP server (Streamable HTTP, read-only, no auth): https://rahul-mitra.com/api/mcp
+  Tools: get_profile, list_experience, list_projects, get_project, list_resumes, get_resume
+- JSON export of the same data, résumés included as Markdown: https://rahul-mitra.com/api/portfolio
+- Site: https://rahul-mitra.com/
+
+## Résumés (PDF, edition 2026-09; swap .pdf for .docx for Word)
+- Highlights, one page — best-of across every profile, for preference forms and general applications: https://rahul-mitra.com/resume/generated/rahul-mitra-highlights-2026-09.pdf
+- General / Master CV, two pages — cross-disciplinary CV unifying every profile: https://rahul-mitra.com/resume/generated/rahul-mitra-general-2026-09.pdf
+- Software Engineer — Python, TypeScript, React, CI/CD, open-source systems: https://rahul-mitra.com/resume/generated/rahul-mitra-software-engineer-2026-09.pdf
+- Solution Architect — cloud, product, and stakeholder architecture: https://rahul-mitra.com/resume/generated/rahul-mitra-solution-architect-2026-09.pdf
+- AI Engineer — BERT, RAG, vector search, agents, HPC, model deployment: https://rahul-mitra.com/resume/generated/rahul-mitra-ai-engineer-2026-09.pdf
+- Operations Research Engineer — scheduling, simulation, graph optimization, decision support: https://rahul-mitra.com/resume/generated/rahul-mitra-operations-research-engineer-2026-09.pdf
+- Cyber Security — bug bounty, web application security, secure system design: https://rahul-mitra.com/resume/generated/rahul-mitra-cyber-security-2026-09.pdf
+- Solution Architect · Civic Tech — Singpass-integrated civic platforms and AI for social good: https://rahul-mitra.com/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-09.pdf
+
+## Contact
+- Email: mitrarahul2002@gmail.com
+- LinkedIn: https://www.linkedin.com/in/rahulmitra-dev
+- GitHub: https://github.com/Rah-Rah-Mitra

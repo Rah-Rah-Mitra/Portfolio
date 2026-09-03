@@ -7,7 +7,8 @@ version: 1.0.0
 # Resume editing
 
 All resumes are generated, Harvard-style (Harvard OCS conventions), from
-in-repo content. Seven outputs: 6 one-page role resumes + the 2-page
+in-repo content. Eight outputs: 6 one-page role resumes, the 1-page
+`highlights` best-of (10pt body, 0.6" side margins), and the 2-page
 `general` master CV.
 
 ## Hard bans
@@ -42,13 +43,15 @@ python scripts/resume/verify_resumes.py --edition <YYYY-MM>  # must exit 0
 
 Content: pools in `scripts/resume/content/{education,experience,projects,leadership,skills}.json`
 (bullet text supports per-slug overrides via the `text` map); per-resume
-selection in `content/resumes/<slug>.json` (`pages`, optional `bodyPt`).
+selection in `content/resumes/<slug>.json` (`pages`, optional `bodyPt`,
+optional `marginIn` side margin in inches — only `highlights` uses it).
 Reference template: `public/resume/template/harvard-template-2026.docx`
 (rebuild with `--sample`).
 
 After verifying, render PDFs to PNG (pdftoppm, 130 dpi) into
 `.impeccable/resume-qa/` and LOOK at every page: dates flush right at one x,
-no orphaned entry headers, page counts 1/1/1/1/1/1 and 2 for general.
+no orphaned entry headers, page counts 1 for every one-pager (incl.
+`highlights`) and 2 for general.
 
 Full edition-bump checklist (archiving, siteConfig, pageAgent): see
 [CLAUDE.md](../../../CLAUDE.md).
@@ -57,5 +60,6 @@ Full edition-bump checklist (archiving, siteConfig, pageAgent): see
 
 Overflow trim ladder, in order: drop coursework bullet → reduce 3-bullet
 entries to 2 → drop least-relevant project → body 10.5→10pt (general already
-runs 10pt) → margins toward 0.5". Never below 10pt. Fit truth is the pypdf
-page count of the exported PDF, never an estimate.
+runs 10pt) → margins toward 0.5" (per-config `marginIn`; `highlights` is
+at 0.6"). Never below 10pt. Fit truth is the pypdf page count of the
+exported PDF, never an estimate.

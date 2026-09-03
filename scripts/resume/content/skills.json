@@ -89,6 +89,26 @@
       "id": "certs-general",
       "label": "Certifications",
       "items": "NVIDIA Disaster Risk Monitoring with Satellite Imagery; Deep Reinforcement Learning Hands-On (Packt); Docker for the Absolute Beginner; Reverse Engineering Windows Executables; Excel 2019 Advanced; Deep Learning CNN and RNN with Python (Packt); Learning C# by Developing Games with Unity (Packt)"
+    },
+    {
+      "id": "hl-languages",
+      "label": "Languages",
+      "items": "Python, TypeScript, JavaScript, Java, Rust, SQL, Bash"
+    },
+    {
+      "id": "hl-web-cloud",
+      "label": "Web and Cloud",
+      "items": "React, Next.js, FastAPI, Flask, aiohttp/asyncio, Docker, Azure App Service, GitHub Actions and Bitbucket CI/CD, Supabase, Singpass Login and Myinfo (OIDC), API design, GIS mapping"
+    },
+    {
+      "id": "hl-ai-data",
+      "label": "AI and Data",
+      "items": "RAG, AI agents, vector search, LangChain, BERT/transformer fine-tuning, model evaluation, OR-Tools CP-SAT, SimPy, 3D CV (SfM, multi-view stereo), CUDA/HPC"
+    },
+    {
+      "id": "hl-security",
+      "label": "Security",
+      "items": "OWASP Top 10, Burp Suite, OAuth2/JWT, SSRF/CSRF/injection testing, fuzzing, secure design"
     }
   ]
 }

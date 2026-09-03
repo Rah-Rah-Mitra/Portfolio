@@ -38,7 +38,7 @@ def bullet_text(bullet, slug):
 def build_resume(config, pools, profile, edition):
     slug = config["slug"]
     doc = Document()
-    width = hs.setup_document(doc, body_pt=config.get("bodyPt", hs.BODY_PT))
+    width = hs.setup_document(doc, body_pt=config.get("bodyPt", hs.BODY_PT), margin_in=config.get("marginIn"))
 
     hs.add_name(doc, profile["name"])
     hs.add_contact_line(doc, profile["contact"])

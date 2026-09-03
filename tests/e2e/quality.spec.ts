@@ -41,11 +41,11 @@ test.describe('field workbench — desktop', () => {
     await expect(experience).toBeHidden();
   });
 
-  test('serves seven role-targeted résumés and the contact handoff', async ({ page }) => {
+  test('serves eight résumés and the contact handoff', async ({ page }) => {
     await page.goto('/?app=resumes-contact');
     const resumes = page.getByRole('dialog', { name: 'Resumes & Contact' });
     await expect(resumes).toBeVisible();
-    await expect(resumes.getByRole('link', { name: /Download résumé .*PDF/ })).toHaveCount(7);
+    await expect(resumes.getByRole('link', { name: /Download résumé .*PDF/ })).toHaveCount(8);
     const first = resumes.getByRole('link', { name: /Download résumé .*PDF/ }).first();
     await expect(first).toHaveAttribute('href', /\/resume\/generated\/rahul-mitra-.+\.pdf/);
     await expect(resumes.getByRole('link', { name: 'Email Rahul' })).toBeVisible();

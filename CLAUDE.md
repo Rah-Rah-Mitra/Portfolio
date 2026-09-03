@@ -53,6 +53,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   all deliberate; change nothing there without explicit approval).
 - Current edition: **2026-09**. `generated/` keeps the current + previous
   edition; older sets live in `public/resume/archive/`.
+- Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
+  across all profiles; `bodyPt: 10` + `marginIn: 0.6`), and the two-page
+  `general` master CV.
 - Edition bump checklist:
   1. Edit content JSONs.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`
@@ -67,13 +70,36 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   7. Bump `resumeEdition` in `siteConfig.ts` **and** the hardcoded general-PDF
      path in `server/pageAgent.mjs` (an .mjs file — it cannot import the TS
      constant).
+  8. Update the edition-stamped URLs in `public/llms.txt`, then `npm run
+     snapshot` and commit `server/portfolio-snapshot.json`.
 - Ordering policy (user-mandated): experience/education/leadership sort
   strictly reverse-chronologically by start date — never "relevance-first".
   Projects sort by most recent activity; ongoing entries first; the general
   CV's "Additional Projects" is pinned last (`sort: "0000-00"`).
 - One-page fit trim ladder (in order): drop coursework bullet → reduce
   3-bullet entries to 2 → drop least-relevant project → body 10.5→10pt →
-  margins toward 0.5". Never below 10pt. Fit truth = pypdf page count.
+  margins toward 0.5" (per-config `marginIn`, inches). Never below 10pt. Fit
+  truth = pypdf page count.
+
+## Machine access (MCP + llms.txt)
+
+- `api/mcp.mjs` is the public read-only MCP endpoint
+  (`https://rahul-mitra.com/api/mcp`, stateless Streamable HTTP via
+  `mcp-handler@2`, six tools) and `api/portfolio.mjs` returns the same data as
+  one JSON document. Both read `server/portfolioMcp.mjs`, which imports ONLY
+  `server/portfolio-snapshot.json`, the resume content JSONs, and packages —
+  never `portfolioData.ts`: Vercel compiles `api/` per file as native ESM with
+  no bundling, so relative imports there must carry `.mjs`/`.json` and JSON
+  imports need `with { type: 'json' }`.
+- `server/portfolio-snapshot.json` is a committed build artifact of
+  `lib/portfolioSnapshot.ts`. After changing data in `portfolioData.ts`,
+  `lib/workbench.ts`, or `siteConfig.ts`, run `npm run snapshot` and commit —
+  `tests/portfolio-mcp.test.ts` fails when it is stale. A new resume config
+  also needs an import added to `resumeConfigs` in `server/portfolioMcp.mjs`.
+- `public/llms.txt` is hand-maintained and edition-stamped (checklist step 8).
+- `npm run dev` 404s `/api/mcp` and `/api/portfolio` (`server.mjs` routes only
+  `POST /api/page-agent`). `npm test` drives the real handlers; after deploy:
+  `npx @modelcontextprotocol/inspector --cli https://rahul-mitra.com/api/mcp --transport http --method tools/list`.
 
 ## Experience data (site)
 
@@ -83,7 +109,7 @@ requires THREE entries: a `kind: 'career'` FieldNote in
 `careerAndEducationNotes`, a record in `experienceDetailById`, and a start
 date in `experienceStartById`. `tests/portfolio-data.test.ts` asserts the
 newest organization and ordering; `tests/semantic-render.test.ts` pins
-`experienceRecords` length — update both.
+`experienceRecords` length — update both, then `npm run snapshot`.
 
 ## Gotchas
 

@@ -210,6 +210,16 @@ export const resumeProfiles: ResumeProfile[] = [
     recommendedFor: ['build'],
   },
   {
+    id: 'highlights',
+    role: 'Highlights (One-Page)',
+    headline: 'One-page best-of across every profile — civic platform delivery, applied AI, optimization, security research, and open source — for preference forms and general applications.',
+    keywords: ['One Page', 'Full Stack', 'AI/ML', 'Singpass/Myinfo', 'Security', 'Open Source'],
+    docxUrl: resumeAssetUrl('highlights', 'docx'),
+    pdfUrl: resumeAssetUrl('highlights', 'pdf'),
+    accent: 'cyan',
+    recommendedFor: ['build', 'secure'],
+  },
+  {
     id: 'general',
     role: 'General / Master CV',
     headline: 'Two-page cross-disciplinary CV unifying every profile — software, AI/ML, operations research, architecture, and security — for broad job search.',

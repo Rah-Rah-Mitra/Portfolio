@@ -74,7 +74,8 @@
           "text": {
             "default": "Productionized a team-built APC simulator for live manufacturing and engineer training, packaging it in Docker and deploying it to Azure App Service.",
             "cyber-security": "Productionized a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime and session hardening, and Docker packaging.",
-            "solution-architect": "Owned cloud deployment and production support for a team-built APC simulator used in manufacturing and engineer training, with Docker packaging, Azure App Service hosting, and documented handover."
+            "solution-architect": "Owned cloud deployment and production support for a team-built APC simulator used in manufacturing and engineer training, with Docker packaging, Azure App Service hosting, and documented handover.",
+            "highlights": "Productionized a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime and session hardening, and Docker packaging."
           }
         },
         {
@@ -115,7 +116,10 @@
       "bullets": [
         {
           "id": "programs",
-          "text": { "default": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and authorization weaknesses." }
+          "text": {
+            "default": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and authorization weaknesses.",
+            "highlights": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and authorization weaknesses, automating endpoint discovery, payload delivery, and evidence collection with Burp Suite and custom fuzzing scripts."
+          }
         },
         {
           "id": "automation",

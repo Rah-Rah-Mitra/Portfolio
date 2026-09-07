@@ -88,6 +88,24 @@ describe('résumé renderer', () => {
     expect(markdown).toContain('Excel VBA automation workflow');
   });
 
+  it('swaps in deep variants without touching the standard build', async () => {
+    const standard = renderResumeMarkdown(highlights, pools, profile) as string;
+    const deep = renderResumeMarkdown({ ...highlights, detail: 'deep' }, pools, profile) as string;
+    expect(standard).not.toContain('fundamental and essential matrices');
+    expect(deep).toContain('fundamental and essential matrices');
+    expect(deep).toContain('From-To edge-list');
+    expect(deep.length).toBeGreaterThan(standard.length);
+    // A bullet with no deep variant still falls back to its usual text.
+    expect(deep).toContain('Support weekly senior-engagement activities');
+  });
+
+  it('reports overflow rather than trimming when deep detail outgrows the page budget', async () => {
+    const general = configBySlug('general') as Spec;
+    const { fit } = await renderResumePdf({ ...general, detail: 'deep' }, pools, profile) as { fit: Fit };
+    expect(fit.fitted).toBe(false);
+    expect(fit.overflow).toMatch(/Remove content/);
+  });
+
   it('names the offending id when a selection does not exist', async () => {
     const broken = { pages: 1, sections: [{ type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'nope', bullets: [] }] }] };
     await expect(renderResumePdf(broken, pools, profile)).rejects.toThrow(/unknown experience entry: nope/);

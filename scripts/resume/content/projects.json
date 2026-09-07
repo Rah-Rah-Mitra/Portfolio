@@ -8,7 +8,10 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Authored and maintain an asyncio-first, aiohttp-based DuckDuckGo client on PyPI with pytest CI/CD, adopted across AI tooling, Discord bots, and search projects." }
+          "text": {
+            "default": "Authored and maintain an asyncio-first, aiohttp-based DuckDuckGo client on PyPI with pytest CI/CD, adopted across AI tooling, Discord bots, and search projects.",
+            "deep": "Authored and maintain an asyncio-first, aiohttp-based DuckDuckGo client on PyPI achieving sub-100ms query responses by working with Python's event loop rather than against the GIL, maintained with pytest CI/CD on GitHub Actions and referenced by starred AI projects including SearchGPT and Auto-Photoshop-StableDiffusion-Plugin as well as Discord bot frameworks."
+          }
         }
       ]
     },
@@ -20,7 +23,9 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built an AI-assisted portfolio in React, TypeScript, Three.js, and Matter.js with profile switching, searchable field notes, analytics, and a 3D project world." }
+          "text": {
+            "default": "Built an AI-assisted portfolio in React, TypeScript, Three.js, and Matter.js with profile switching, searchable field notes, analytics, and a 3D project world."
+          }
         }
       ]
     },
@@ -32,7 +37,10 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Modeled hybrid flow-shop scheduling as a SimPy digital twin with explicit objectives and constraints, using CP-SAT, simulation, and deployment-oriented Python tooling." }
+          "text": {
+            "default": "Modeled hybrid flow-shop scheduling as a SimPy digital twin with explicit objectives and constraints, using CP-SAT, simulation, and deployment-oriented Python tooling.",
+            "deep": "Modeled hybrid flow-shop scheduling as a SimPy discrete-event digital twin paired with an OR-Tools CP-SAT optimizer over interval and precedence constraints, benchmarked against heuristic baselines, and researched robust optimization for operational uncertainty."
+          }
         }
       ]
     },
@@ -44,7 +52,9 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built a local-first Blender-to-Three.js asset pipeline using Codex and Blender MCP, generating GLB assets, metadata, previews, playable-world QA, and Remotion video workflows." }
+          "text": {
+            "default": "Built a local-first Blender-to-Three.js asset pipeline using Codex and Blender MCP, generating GLB assets, metadata, previews, playable-world QA, and Remotion video workflows."
+          }
         }
       ]
     },
@@ -56,7 +66,9 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built Rust-forward security and red-team tooling (Arcane, Arcane-PP, Arcane-GLM, Arcane-OCR) for automation, OCR, and adversarial workflows." }
+          "text": {
+            "default": "Built Rust-forward security and red-team tooling (Arcane, Arcane-PP, Arcane-GLM, Arcane-OCR) for automation, OCR, and adversarial workflows."
+          }
         }
       ]
     },
@@ -68,7 +80,9 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built a real-time global intelligence dashboard for AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking with geospatial visualization." }
+          "text": {
+            "default": "Built a real-time global intelligence dashboard for AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking with geospatial visualization."
+          }
         }
       ]
     },
@@ -80,7 +94,10 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning." }
+          "text": {
+            "default": "Built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning.",
+            "deep": "Co-built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing; Top 8 of 50+ teams at SMU Hack For Cities 2026."
+          }
         }
       ]
     },
@@ -92,7 +109,10 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Led model training for a maritime-inspection NLP system, fine-tuning a 109M-parameter BERT with DNN layers, gradient clipping, and hyperparameter optimization on the ASPIRE 2A supercomputer." }
+          "text": {
+            "default": "Led model training for a maritime-inspection NLP system, fine-tuning a 109M-parameter BERT with DNN layers, gradient clipping, and hyperparameter optimization on the ASPIRE 2A supercomputer.",
+            "deep": "Led a multidisciplinary team and owned model training for a maritime deficiency-severity forecasting system, fine-tuning a 109M-parameter BERT with DNN layers on the ASPIRE 2A supercomputer, applying gradient clipping to prevent catastrophic forgetting and hyperparameter optimization over engineered inspection-log features."
+          }
         }
       ]
     },
@@ -104,7 +124,10 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built an elderly-care triage chatbot using OpenAI GPT-4, InterSystems IRIS Vector Search, and Flask, with OAuth2-secured patient profiles and PDPA-aware design." }
+          "text": {
+            "default": "Built an elderly-care triage chatbot using OpenAI GPT-4, InterSystems IRIS Vector Search, and Flask, with OAuth2-secured patient profiles and PDPA-aware design.",
+            "deep": "Served as primary AI/ML engineer on an elderly-care triage system, deploying a RAG architecture over OpenAI GPT-4 and InterSystems IRIS Vector Search with cosine-similarity semantic retrieval, a Flask backend, OAuth2-secured patient profiles, and PDPA-aware design."
+          }
         }
       ]
     },
@@ -116,7 +139,9 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built a multi-agent autonomous exam-generation system with a RAG pipeline and Next.js frontend, automating source ingestion, question generation, and education workflows." }
+          "text": {
+            "default": "Built a multi-agent autonomous exam-generation system with a RAG pipeline and Next.js frontend, automating source ingestion, question generation, and education workflows."
+          }
         }
       ]
     },
@@ -128,7 +153,9 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built an AI research engine scoring brand ethics and sustainability using FastAPI, Python, and LangChain with automated evidence retrieval." }
+          "text": {
+            "default": "Built an AI research engine scoring brand ethics and sustainability using FastAPI, Python, and LangChain with automated evidence retrieval."
+          }
         }
       ]
     },
@@ -140,7 +167,10 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure in a first CTF, finishing in the top quartile among 400+ teams." }
+          "text": {
+            "default": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure in a first CTF, finishing in the top quartile among 400+ teams.",
+            "deep": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure in a first CTF, finishing around 90th among 400+ teams at DSTA BRINHACK 2025."
+          }
         }
       ]
     },
@@ -152,7 +182,9 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Built LP, network-flow, and nonlinear programming models, including a Jupyter SSSP/APSP (Dijkstra) graph optimization for engineering decision support." }
+          "text": {
+            "default": "Built LP, network-flow, and nonlinear programming models, including a Jupyter SSSP/APSP (Dijkstra) graph optimization for engineering decision support."
+          }
         }
       ]
     },
@@ -164,19 +196,28 @@
       "bullets": [
         {
           "id": "nvidia",
-          "text": { "default": "NVIDIA Disaster Risk Monitoring with Satellite Imagery — geospatial AI with U-Net semantic segmentation on GPU/ASPIRE 2A workflows (2023)." }
+          "text": {
+            "default": "NVIDIA Disaster Risk Monitoring with Satellite Imagery — geospatial AI with U-Net semantic segmentation on GPU/ASPIRE 2A workflows (2023).",
+            "deep": "NVIDIA Deep Learning Institute, Disaster Risk Monitoring with Satellite Imagery — multi-spectral geospatial data and U-Net semantic segmentation with HPC-accelerated training on ASPIRE 2A (2023)."
+          }
         },
         {
           "id": "llm-cyber",
-          "text": { "default": "Fine-tuning LLMs for Cybersecurity — coursework exploring Mistral/LLaMA fine-tuning with AutoTrain and AutoGen (2024)." }
+          "text": {
+            "default": "Fine-tuning LLMs for Cybersecurity — coursework exploring Mistral/LLaMA fine-tuning with AutoTrain and AutoGen (2024)."
+          }
         },
         {
           "id": "utopia-short",
-          "text": { "default": "Project Utopia — real-time situational-awareness dashboard with AI news aggregation and geospatial visualization (2026)." }
+          "text": {
+            "default": "Project Utopia — real-time situational-awareness dashboard with AI news aggregation and geospatial visualization (2026)."
+          }
         },
         {
           "id": "portfolio-short",
-          "text": { "default": "Interactive Portfolio Infrastructure — AI-assisted React, TypeScript, and Three.js portfolio with analytics (2026)." }
+          "text": {
+            "default": "Interactive Portfolio Infrastructure — AI-assisted React, TypeScript, and Three.js portfolio with analytics (2026)."
+          }
         }
       ]
     }

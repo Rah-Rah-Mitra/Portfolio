@@ -10,11 +10,16 @@
       "bullets": [
         {
           "id": "majors",
-          "text": { "default": "Pursuing a Second Major in Computer Science and a Minor in Mathematics." }
+          "text": {
+            "default": "Pursuing a Second Major in Computer Science and a Minor in Mathematics."
+          }
         },
         {
           "id": "award",
-          "text": { "default": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277) — top student in a class of 24, NUS School of Computing." }
+          "text": {
+            "default": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277) — top student in a class of 24, NUS School of Computing.",
+            "deep": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277) — top student in a class of 24, NUS School of Computing — covering projective geometry, camera models, fundamental and essential matrices, absolute pose estimation, three-view geometry, structure-from-motion with bundle adjustment, two-view and multi-view stereo, and generalized cameras."
+          }
         },
         {
           "id": "coursework",

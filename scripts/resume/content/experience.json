@@ -10,7 +10,10 @@
       "bullets": [
         {
           "id": "putaway",
-          "text": { "default": "Build an AI-driven put-away recommendation system for STMicroelectronics' Singapore warehouse, combining picking history, demand forecasts, and live capacity to replace experience-based slotting decisions." }
+          "text": {
+            "default": "Build an AI-driven put-away recommendation system for STMicroelectronics' Singapore warehouse, combining picking history, demand forecasts, and live capacity to replace experience-based slotting decisions.",
+            "deep": "Build an AI-driven put-away recommendation system for STMicroelectronics' Singapore semiconductor warehouse, combining picking history, demand forecasts, and live capacity to replace experience-based slotting with systematic, capacity-aware storage recommendations."
+          }
         }
       ]
     },
@@ -24,11 +27,15 @@
       "bullets": [
         {
           "id": "isp",
-          "text": { "default": "Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light." }
+          "text": {
+            "default": "Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light."
+          }
         },
         {
           "id": "frame-quality",
-          "text": { "default": "Engineer processing and evaluation stages that deliver perception-ready frame quality for downstream robotics vision." }
+          "text": {
+            "default": "Engineer processing and evaluation stages that deliver perception-ready frame quality for downstream robotics vision."
+          }
         }
       ]
     },
@@ -42,11 +49,15 @@
       "bullets": [
         {
           "id": "ai-systems",
-          "text": { "default": "Build AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation." }
+          "text": {
+            "default": "Build AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation."
+          }
         },
         {
           "id": "supply-chain",
-          "text": { "default": "Strengthen monitoring and process structure across healthcare supply chains with AI, helping ensure reliable product availability for vulnerable patient groups." }
+          "text": {
+            "default": "Strengthen monitoring and process structure across healthcare supply chains with AI, helping ensure reliable product availability for vulnerable patient groups."
+          }
         }
       ]
     },
@@ -62,12 +73,16 @@
           "id": "digital-twin",
           "text": {
             "default": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
-            "operations-research-engineer": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling; compared heuristic, MIP, and genetic-algorithm approaches and researched robust optimization."
+            "operations-research-engineer": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling; compared heuristic, MIP, and genetic-algorithm approaches and researched robust optimization.",
+            "deep": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling over interval and precedence constraints, compared heuristic, MIP, and genetic-algorithm approaches against heuristic baselines, and researched robust optimization for operational uncertainty."
           }
         },
         {
           "id": "pipeline",
-          "text": { "default": "Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of unseen raw data with zero execution failures." }
+          "text": {
+            "default": "Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of unseen raw data with zero execution failures.",
+            "deep": "Engineered a non-destructive, 15-stage changeover-data pipeline over operational matrices that encoded meaning in values, labels, colours, merged regions, and blanks — controlled staging sheets, normalization and repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling — exposing every intermediate state instead of mutating source data, and validated against five years of unseen raw data with zero execution failures."
+          }
         },
         {
           "id": "apc",
@@ -75,12 +90,15 @@
             "default": "Productionized a team-built APC simulator for live manufacturing and engineer training, packaging it in Docker and deploying it to Azure App Service.",
             "cyber-security": "Productionized a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime and session hardening, and Docker packaging.",
             "solution-architect": "Owned cloud deployment and production support for a team-built APC simulator used in manufacturing and engineer training, with Docker packaging, Azure App Service hosting, and documented handover.",
-            "highlights": "Productionized a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime and session hardening, and Docker packaging."
+            "highlights": "Productionized a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime and session hardening, and Docker packaging.",
+            "deep": "Productionized a team-built Advanced Process Control simulator for live internal users on Azure App Service, handling Flask and JavaScript debugging, Docker packaging, session and request tracking, access restrictions, and documented deployment handover, with the originating team retaining authorship."
           }
         },
         {
           "id": "upskilling",
-          "text": { "default": "Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use." }
+          "text": {
+            "default": "Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use."
+          }
         }
       ]
     },
@@ -94,15 +112,22 @@
       "bullets": [
         {
           "id": "churp",
-          "text": { "default": "Built an end-to-end digital garden-plot balloting platform spanning admin and public frontends, backend, GIS mapping, and deployment, now production-ready for national rollout across Singapore." }
+          "text": {
+            "default": "Built an end-to-end digital garden-plot balloting platform spanning admin and public frontends, backend, GIS mapping, and deployment, now production-ready for national rollout across Singapore.",
+            "deep": "Built an end-to-end digital garden-plot balloting platform spanning admin and public frontends, backend, GIS-based plot allocation, and deployment, coordinating stakeholders and rollout planning across product, engineering, and operations; now production-ready for national rollout across Singapore."
+          }
         },
         {
           "id": "singpass",
-          "text": { "default": "Integrated Singpass Login (OIDC) and Myinfo for passwordless authentication and consent-based retrieval of verified identity and registered address, automating resident eligibility checks." }
+          "text": {
+            "default": "Integrated Singpass Login (OIDC) and Myinfo for passwordless authentication and consent-based retrieval of verified identity and registered address, automating resident eligibility checks."
+          }
         },
         {
           "id": "sparks",
-          "text": { "default": "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations; awarded the S$20,000 Sparks Community Innovation Fund." }
+          "text": {
+            "default": "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations; awarded the S$20,000 Sparks Community Innovation Fund."
+          }
         }
       ]
     },
@@ -123,11 +148,15 @@
         },
         {
           "id": "automation",
-          "text": { "default": "Automated endpoint discovery, payload delivery, and evidence collection for responsible-disclosure reports using Burp Suite, Wireshark, Python, Bash, and custom fuzzing scripts." }
+          "text": {
+            "default": "Automated endpoint discovery, payload delivery, and evidence collection for responsible-disclosure reports using Burp Suite, Wireshark, Python, Bash, and custom fuzzing scripts."
+          }
         },
         {
           "id": "network",
-          "text": { "default": "Applied Burp Suite for MitM HTTP interception and Wireshark for OSI Layer 3–4 deep packet inspection and TLS handshake analysis." }
+          "text": {
+            "default": "Applied Burp Suite for MitM HTTP interception and Wireshark for OSI Layer 3–4 deep packet inspection and TLS handshake analysis."
+          }
         }
       ]
     },
@@ -141,11 +170,16 @@
       "bullets": [
         {
           "id": "vba",
-          "text": { "default": "Engineered an Excel VBA automation workflow that compressed a six-month food-waste analysis cycle into a sub-three-minute reporting process inside a security-constrained environment." }
+          "text": {
+            "default": "Engineered an Excel VBA automation workflow that compressed a six-month food-waste analysis cycle into a sub-three-minute reporting process inside a security-constrained environment.",
+            "deep": "Mapped the food-waste reporting process end to end, then automated its calculations and reporting steps with an Excel VBA workflow that compressed a six-month manual cycle into a sub-three-minute repeatable process inside a security-constrained environment."
+          }
         },
         {
           "id": "data",
-          "text": { "default": "Managed sensitive operational data under SAF confidentiality expectations while improving reliability, traceability, and analyst capacity." }
+          "text": {
+            "default": "Managed sensitive operational data under SAF confidentiality expectations while improving reliability, traceability, and analyst capacity."
+          }
         }
       ]
     }

@@ -6,6 +6,7 @@
 - MCP server (Streamable HTTP, read-only, no auth): https://rahul-mitra.com/api/mcp
   Tools: get_profile, list_experience, list_projects, get_project, list_resumes, get_resume
 - JSON export of the same data, résumés included as Markdown: https://rahul-mitra.com/api/portfolio
+- Résumé builder: call get_resume_guide, then list_resume_blocks, then build_resume to compose a Harvard-style résumé targeted at a specific role. Content is selected from Rahul's approved blocks; bullet text cannot be supplied, so nothing on a generated résumé is invented.
 - Site: https://rahul-mitra.com/
 
 ## Résumés (PDF, edition 2026-09; swap .pdf for .docx for Word)

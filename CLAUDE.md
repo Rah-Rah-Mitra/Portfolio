@@ -96,6 +96,19 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `lib/workbench.ts`, or `siteConfig.ts`, run `npm run snapshot` and commit —
   `tests/portfolio-mcp.test.ts` fails when it is stale. A new resume config
   also needs an import added to `resumeConfigs` in `server/portfolioMcp.mjs`.
+- **Résumé builder.** `api/resume.mjs` renders a résumé on demand from a spec in
+  the URL (`?spec=<base64url deflated JSON>&format=pdf|docx|md`, POST for long
+  specs) — stateless, no storage. `server/resumeRender.mjs` is a JS port of
+  `harvard_style.py` using pdfkit's Standard-14 Times fonts; its layout
+  constants were calibrated from the Word output (line advance 1.152x size,
+  baseline 0.93x, Word takes the MAX of adjacent paragraph spacing). It measures
+  before drawing, so page counts are exact. Auto-fit walks the typography ladder
+  only and never drops selected content. **The eight canonical résumés stay
+  Word-built** — this renderer serves custom builds. Shared content lives in
+  `server/resumeContent.mjs`; a new résumé config needs an import added there.
+  MCP tools `get_resume_guide`, `list_resume_blocks` and `build_resume` expose
+  it; agents may only select ids, never supply bullet text
+  (`server/resumeGuide.mjs` is the single source of those instructions).
 - `public/llms.txt` is hand-maintained and edition-stamped (checklist step 8).
 - `npm run dev` 404s `/api/mcp` and `/api/portfolio` (`server.mjs` routes only
   `POST /api/page-agent`). `npm test` drives the real handlers; after deploy:

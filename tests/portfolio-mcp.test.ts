@@ -8,7 +8,7 @@ import { listResumes, resumeConfigs, resumeMarkdown } from '../server/portfolioM
 import { POST } from '../api/mcp.mjs';
 import { GET } from '../api/portfolio.mjs';
 
-const TOOLS = ['get_profile', 'get_project', 'get_resume', 'list_experience', 'list_projects', 'list_resumes'];
+const TOOLS = ['build_resume', 'get_profile', 'get_project', 'get_resume', 'get_resume_guide', 'list_experience', 'list_projects', 'list_resume_blocks', 'list_resumes'];
 const highlightsPdf = `${SITE_CONFIG.canonicalUrl}resume/generated/rahul-mitra-highlights-${SITE_CONFIG.resumeEdition}.pdf`;
 
 const rpc = async (method: string, params?: unknown) => {
@@ -55,15 +55,50 @@ describe('résumé data', () => {
 });
 
 describe('api/mcp', () => {
-  it('lists the six tools', async () => {
+  it('lists the read and builder tools', async () => {
     const { tools } = await rpc('tools/list');
     expect(tools.map((tool: { name: string }) => tool.name).sort()).toEqual(TOOLS);
   });
 
-  it('returns the highlights résumé through get_resume', async () => {
+  it('returns the highlights résumé through get_resume, with its build spec', async () => {
     const { content } = await rpc('tools/call', { name: 'get_resume', arguments: { slug: 'highlights' } });
-    expect(content[0].text).toContain('put-away');
-    expect(content[0].text).toContain(highlightsPdf);
+    const payload = JSON.parse(content[0].text);
+    expect(payload.markdown).toContain('put-away');
+    expect(payload.pdfUrl).toBe(highlightsPdf);
+    expect(payload.spec.slug).toBe('highlights');
+  });
+
+  it('builds a tailored résumé from selected block ids', async () => {
+    const spec = {
+      subject: 'Test build',
+      pages: 1,
+      sections: [
+        { type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'stmicro-or', bullets: ['putaway'] }] },
+        { type: 'skills', title: 'SKILLS AND CERTIFICATIONS', lines: ['se-skills'] },
+      ],
+    };
+    const { content } = await rpc('tools/call', { name: 'build_resume', arguments: { spec } });
+    const built = JSON.parse(content[0].text);
+    expect(built.pages).toBe(1);
+    expect(built.fit.fitted).toBe(true);
+    expect(built.pdfUrl).toMatch(/^https:\/\/rahul-mitra\.com\/api\/resume\?spec=/);
+    expect(built.markdown).toContain('put-away');
+  });
+
+  it('refuses a build whose spec carries bullet prose instead of ids', async () => {
+    const spec = {
+      sections: [{ type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'stmicro-or', bullets: ['I invented a thing'] }] }],
+    };
+    const result = await rpc('tools/call', { name: 'build_resume', arguments: { spec } });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(/unknown bullet/);
+  });
+
+  it('serves the building blocks and the guide', async () => {
+    const blocks = await rpc('tools/call', { name: 'list_resume_blocks', arguments: { section: 'skills' } });
+    expect(JSON.parse(blocks.content[0].text).skillLines.length).toBeGreaterThan(15);
+    const guide = await rpc('tools/call', { name: 'get_resume_guide', arguments: {} });
+    expect(guide.content[0].text).toContain('Never write your own bullet text');
   });
 
   it('filters projects and flags unknown ids', async () => {

@@ -25,6 +25,7 @@ loadEnvFile(path.join(__dirname, '.env.local'));
 
 const { createPageAgentResponse } = await import('./server/pageAgent.mjs');
 const { emitServerLog } = await import('./server/posthogTelemetry.mjs');
+const resumeRoute = await import('./api/resume.mjs');
 
 const PORT = Number(process.env.PORT || process.env.API_PORT || 5174);
 
@@ -60,6 +61,28 @@ const writeJson = (response, status, payload) => {
 const server = http.createServer(async (request, response) => {
   if (request.method === 'OPTIONS') {
     writeJson(response, 204, {});
+    return;
+  }
+
+  // The resume builder window fetches /api/resume, so dev has to serve it too.
+  // Vercel routes it from api/resume.mjs; here we hand the same handler a
+  // web-standard Request and stream its Response back.
+  if (request.url?.startsWith('/api/resume')) {
+    const handler = request.method === 'POST' ? resumeRoute.POST : resumeRoute.GET;
+    const body = request.method === 'POST' ? await new Promise((resolve) => {
+      let raw = '';
+      request.on('data', (chunk) => { raw += chunk; });
+      request.on('end', () => resolve(raw));
+    }) : undefined;
+    const result = await handler(new Request(`http://127.0.0.1:${PORT}${request.url}`, {
+      method: request.method,
+      headers: { 'content-type': 'application/json' },
+      ...(body ? { body } : {}),
+    }));
+    const headers = Object.fromEntries(result.headers.entries());
+    headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:5173';
+    response.writeHead(result.status, headers);
+    response.end(Buffer.from(await result.arrayBuffer()));
     return;
   }
 

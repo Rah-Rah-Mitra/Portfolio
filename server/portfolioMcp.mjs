@@ -1,65 +1,20 @@
-// portfolioMcp.mjs — read-only portfolio + résumé data for api/mcp.mjs (MCP
-// tools) and api/portfolio.mjs (JSON export). Imports ONLY JSON and packages:
-// Vercel compiles api/ per file as native ESM (no bundling), so nothing here
-// may import portfolioData.ts — regenerate server/portfolio-snapshot.json with
-// `npm run snapshot` after data changes.
+// portfolioMcp.mjs — read-only portfolio data plus the résumé builder tools for
+// api/mcp.mjs (MCP) and api/portfolio.mjs (JSON export). Imports ONLY JSON and
+// packages: Vercel compiles api/ per file as native ESM (no bundling), so
+// nothing here may import portfolioData.ts — regenerate
+// server/portfolio-snapshot.json with `npm run snapshot` after data changes.
 import { z } from 'zod';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
-import profile from '../scripts/resume/content/profile.json' with { type: 'json' };
-import education from '../scripts/resume/content/education.json' with { type: 'json' };
-import experience from '../scripts/resume/content/experience.json' with { type: 'json' };
-import projects from '../scripts/resume/content/projects.json' with { type: 'json' };
-import leadership from '../scripts/resume/content/leadership.json' with { type: 'json' };
-import skills from '../scripts/resume/content/skills.json' with { type: 'json' };
-import softwareEngineer from '../scripts/resume/content/resumes/software-engineer.json' with { type: 'json' };
-import solutionArchitect from '../scripts/resume/content/resumes/solution-architect.json' with { type: 'json' };
-import aiEngineer from '../scripts/resume/content/resumes/ai-engineer.json' with { type: 'json' };
-import operationsResearchEngineer from '../scripts/resume/content/resumes/operations-research-engineer.json' with { type: 'json' };
-import cyberSecurity from '../scripts/resume/content/resumes/cyber-security.json' with { type: 'json' };
-import civicTechSolutionArchitect from '../scripts/resume/content/resumes/civic-tech-solution-architect.json' with { type: 'json' };
-import highlights from '../scripts/resume/content/resumes/highlights.json' with { type: 'json' };
-import general from '../scripts/resume/content/resumes/general.json' with { type: 'json' };
+import { configBySlug, pools, profile, resumeBlocks, resumeConfigs } from './resumeContent.mjs';
+import { encodeSpec, renderResume, renderResumeMarkdown, specSchema } from './resumeRender.mjs';
+import { RESUME_GUIDE } from './resumeGuide.mjs';
 
-// ponytail: static imports so Vercel's file tracing bundles the configs; no fs/glob.
-export const resumeConfigs = [softwareEngineer, solutionArchitect, aiEngineer, operationsResearchEngineer, cyberSecurity, civicTechSolutionArchitect, highlights, general];
+export { resumeConfigs };
 
 const abs = (path) => new URL(path, snapshot.site.canonicalUrl).href;
-const pools = { education: education.entries, experience: experience.entries, projects: projects.entries, leadership: leadership.entries };
-const skillLines = new Map(skills.lines.map((line) => [line.id, line]));
-const configBySlug = (slug) => resumeConfigs.find((config) => config.slug === slug);
 
-// Mirrors scripts/resume/build_resumes.py:38-74 — bullet override by slug, sort
-// policy (projects by `sort`, everything else by `start`, both desc), and
-// two-line (role) vs one-line (project) entries.
-export const resumeMarkdown = (config) => {
-  const out = [`# ${profile.name}`, profile.contact.map((item) => (item.url ? `[${item.text}](${item.url})` : item.text)).join(' · ')];
-  for (const section of config.sections) {
-    out.push('', `## ${section.title}`);
-    if (section.type === 'skills') {
-      for (const id of section.lines) {
-        const line = skillLines.get(id);
-        out.push(`- **${line.label}:** ${line.items}`);
-      }
-      continue;
-    }
-    const pool = new Map(pools[section.type].map((entry) => [entry.id, entry]));
-    const key = section.type === 'projects' ? 'sort' : 'start';
-    const chosen = section.entries
-      .map((selection) => ({ entry: pool.get(selection.id), bullets: selection.bullets ?? [] }))
-      .sort((a, b) => b.entry[key].localeCompare(a.entry[key]));
-    for (const { entry, bullets } of chosen) {
-      out.push('', entry.role
-        ? `**${entry.organization}**, ${entry.location ?? ''} — *${entry.role}* (${entry.dateLabel})`
-        : `**${entry.organization}** (${entry.dateLabel})`);
-      const byId = new Map((entry.bullets ?? []).map((bullet) => [bullet.id, bullet]));
-      for (const id of bullets) {
-        const bullet = byId.get(id);
-        out.push(`- ${bullet.text[config.slug] ?? bullet.text.default}`);
-      }
-    }
-  }
-  return out.join('\n');
-};
+/** Markdown for one canonical résumé config. */
+export const resumeMarkdown = (config) => renderResumeMarkdown(config, pools, profile);
 
 export const listResumes = () => snapshot.resumes.map((resume) => ({
   slug: resume.id,
@@ -86,6 +41,19 @@ export const filterProjects = (query = '', domain = 'All') => {
   const q = query.trim().toLowerCase();
   return snapshot.archive.filter((row) => (domain === 'All' || row.domain === domain)
     && (!q || `${row.title} ${row.category} ${row.stack} ${row.domain}`.toLowerCase().includes(q)));
+};
+
+/** Render a spec and return links plus the fit report. Used by the MCP tool. */
+export const buildResume = async (spec) => {
+  const result = await renderResume(spec, pools, profile);
+  const encoded = encodeSpec(spec);
+  return {
+    pages: result.pages,
+    fit: result.fit,
+    pdfUrl: abs(`/api/resume?spec=${encoded}`),
+    docxUrl: abs(`/api/resume?format=docx&spec=${encoded}`),
+    markdown: result.markdown,
+  };
 };
 
 export const portfolioExport = () => ({
@@ -128,16 +96,48 @@ export const registerPortfolioTools = (server) => {
 
   server.registerTool('list_resumes', {
     title: 'Résumés',
-    description: 'The résumé variants (role-targeted one-pagers, the one-page "highlights" best-of, the two-page "general" master CV) with absolute PDF/DOCX URLs and page counts.',
+    description: 'The ready-made résumé variants (role-targeted one-pagers, the one-page "highlights" best-of, the two-page "general" master CV) with absolute PDF/DOCX URLs and page counts.',
     inputSchema: z.object({}),
   }, async () => text(listResumes()));
 
   server.registerTool('get_resume', {
     title: 'Résumé content',
-    description: 'Rendered Markdown of one résumé variant plus its PDF/DOCX URLs. Use "highlights" for the one-page best-of and "general" for the full two-page CV.',
+    description: 'One ready-made résumé as Markdown, plus its PDF/DOCX URLs and its build spec. Use the spec as the starting point for a tailored build.',
     inputSchema: z.object({ slug: z.enum(resumeConfigs.map((config) => config.slug)) }),
   }, async ({ slug }) => {
     const resume = listResumes().find((candidate) => candidate.slug === slug);
-    return text(`${resumeMarkdown(configBySlug(slug))}\n\nPDF: ${resume.pdfUrl}\nDOCX: ${resume.docxUrl}`);
+    const config = configBySlug(slug);
+    return text({ ...resume, markdown: resumeMarkdown(config), spec: config });
+  });
+
+  // ── résumé builder ──────────────────────────────────────────────────────
+  server.registerTool('get_resume_guide', {
+    title: 'How to build a résumé',
+    description: 'Read this before build_resume. The Harvard layout rules, the spec schema, the ordering policy, how auto-fit works, and the rule that you may only select from list_resume_blocks and must never write your own bullet text.',
+    inputSchema: z.object({}),
+  }, async () => text(RESUME_GUIDE));
+
+  server.registerTool('list_resume_blocks', {
+    title: 'Résumé building blocks',
+    description: 'Every entry, bullet (with its depth variants) and skills line you may select, plus the ready-made résumés you can start from. These ids are the only content build_resume accepts. Optionally filter to one section type to keep the response small.',
+    inputSchema: z.object({ section: z.enum(['education', 'experience', 'projects', 'leadership', 'skills']).optional() }),
+  }, async ({ section }) => {
+    const blocks = resumeBlocks();
+    if (!section) return text(blocks);
+    if (section === 'skills') return text({ skillLines: blocks.skillLines });
+    return text({ sections: blocks.sections.filter((item) => item.type === section) });
+  });
+
+  server.registerTool('build_resume', {
+    title: 'Build a résumé',
+    description: 'Render a Harvard-style résumé from selected block ids and return PDF, DOCX and Markdown. Content comes only from list_resume_blocks — bullet text cannot be supplied. Auto-fit adjusts typography within sanctioned limits and never drops what you chose; if it still overflows you get an overflow report to act on.',
+    inputSchema: z.object({ spec: specSchema }),
+  }, async ({ spec }) => {
+    try {
+      const built = await buildResume(spec);
+      return text(built);
+    } catch (error) {
+      return { ...text(error instanceof Error ? error.message : 'Could not build résumé'), isError: true };
+    }
   });
 };

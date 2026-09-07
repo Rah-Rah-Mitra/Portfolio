@@ -15,7 +15,7 @@ npm run dev
 
 The Vite app runs at `http://127.0.0.1:5173` and proxies `/api/page-agent` to `http://127.0.0.1:5174`. Set `GEMINI_API_KEY` or `GOOGLE_API_KEY` in `.env.local` for the private assistant endpoint. Never expose model keys through a `VITE_` variable.
 
-Models can read the site without a browser: `/api/mcp` is a public read-only MCP endpoint (tools listed in `public/llms.txt`) and `/api/portfolio` returns the same data as JSON. `npm run dev` does not serve those two routes; `npm test` exercises the handlers directly.
+Models can read the site without a browser: `/api/mcp` is a public MCP endpoint (tools listed in `public/llms.txt`) and `/api/portfolio` returns the same data as JSON. The MCP tools also build résumés: an agent selects from approved blocks and `/api/resume` renders the Harvard-style PDF, DOCX or Markdown from a spec carried in the URL. `npm run dev` serves `/api/resume` and `/api/page-agent` only; `npm test` exercises every handler directly.
 
 ## Verify
 

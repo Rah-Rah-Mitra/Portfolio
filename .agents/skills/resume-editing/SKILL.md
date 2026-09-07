@@ -56,6 +56,16 @@ no orphaned entry headers, page counts 1 for every one-pager (incl.
 Full edition-bump checklist (archiving, siteConfig, pageAgent): see
 [CLAUDE.md](../../../CLAUDE.md).
 
+## On-demand builds (agents and the builder window)
+
+Custom résumés are rendered by `server/resumeRender.mjs` (pdfkit, Standard-14
+Times) through `api/resume.mjs` and the `build_resume` MCP tool — the Python +
+Word pipeline above still owns the eight canonical editions. The instructions
+agents receive live in `server/resumeGuide.mjs`; that file is the single source,
+so change it there rather than restating the rules. Its load-bearing rule:
+callers select block ids and can never supply bullet text, because these
+documents reach employers unsupervised.
+
 ## Fit
 
 Overflow trim ladder, in order: drop coursework bullet → reduce 3-bullet

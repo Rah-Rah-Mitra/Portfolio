@@ -27,7 +27,7 @@ const { createPageAgentResponse } = await import('./server/pageAgent.mjs');
 const { emitServerLog } = await import('./server/posthogTelemetry.mjs');
 const resumeRoute = await import('./api/resume.mjs');
 
-const PORT = Number(process.env.PORT || process.env.API_PORT || 5174);
+const PORT = Number(process.env.API_PORT || process.env.PORT || 5174);
 
 const readJsonBody = (request) => new Promise((resolve, reject) => {
   let body = '';

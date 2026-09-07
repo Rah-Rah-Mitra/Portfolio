@@ -48,6 +48,7 @@ export type AnalyticsEvent =
   | { event: 'project_showcase_opened'; props: { title: string } }
   | { event: 'archive_search_changed'; props: { query_length: number; result_count: number } }
   | { event: 'resume_download_clicked'; props: { role: string; format: 'docx' | 'pdf' } }
+  | { event: 'resume_builder_preset_applied'; props: { preset: string } }
   | { event: 'qr_target_selected'; props: UrlTargetSummary }
   | { event: 'qr_code_clicked'; props: UrlTargetSummary }
   | { event: 'qr_code_downloaded'; props: UrlTargetSummary & { format: 'png' | 'svg' } }

@@ -4,8 +4,9 @@
     {
       "name": "portfolio",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:vite"],
-      "port": 5173
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173,
+      "url": "http://127.0.0.1:5173"
     }
   ]
 }

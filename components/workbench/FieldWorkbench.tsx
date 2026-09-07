@@ -21,6 +21,7 @@ const DEFAULT_BOUNDS: Record<DesktopAppId, Bounds> = {
   'capabilities': [250, 70, 900, 620],
   'proof-vault': [290, 90, 880, 600],
   'resumes-contact': [320, 80, 880, 600],
+  'resume-builder': [200, 54, 1000, 660],
 };
 
 const WINDOW_FOOTERS: Record<DesktopAppId, [string, string]> = {
@@ -34,12 +35,13 @@ const WINDOW_FOOTERS: Record<DesktopAppId, [string, string]> = {
   'capabilities': ['SHEET WIN-08', 'EVERY METHOD CITES EVIDENCE'],
   'proof-vault': ['SHEET WIN-09 · EVERY CLAIM LINKS OUT', 'EVIDENCE-FIRST'],
   'resumes-contact': ['SHEET WIN-10 · HANDOFF', 'DOCX + PDF PER EDITION'],
+  'resume-builder': ['SHEET WIN-11 · COMPOSE TO ORDER', 'SELECTED EVIDENCE ONLY'],
 };
 
 const INITIAL_OPEN: Record<DesktopAppId, boolean> = {
   'home': true, 'selected-work': true, 'experience': false, 'project-archive': false,
   'systems-lab': false, 'camera-lab': false, 'world-3d': false, 'capabilities': false,
-  'proof-vault': false, 'resumes-contact': false,
+  'proof-vault': false, 'resumes-contact': false, 'resume-builder': false,
 };
 
 interface ScrollState { el: HTMLElement | null; st: number; prev: number; vel: number; max: number }

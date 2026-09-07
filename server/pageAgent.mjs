@@ -14,7 +14,7 @@ const canonicalProjectIds = new Set([
 ]);
 const canonicalExperienceIds = new Set(['career-stmicro-or', 'career-amazon-vision', 'abbott-internship', 'nus-education', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
 const canonicalChapterIds = new Set(['home', 'work', 'experience', 'all-work', 'technical-lab', 'domains', 'proof', 'resumes', 'contact']);
-const canonicalDesktopAppIds = new Set(['home', 'selected-work', 'experience', 'project-archive', 'systems-lab', 'camera-lab', 'world-3d', 'capabilities', 'proof-vault', 'resumes-contact']);
+const canonicalDesktopAppIds = new Set(['home', 'selected-work', 'experience', 'project-archive', 'systems-lab', 'camera-lab', 'world-3d', 'capabilities', 'proof-vault', 'resumes-contact', 'resume-builder']);
 
 const getGeminiModel = () => process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 const getGeminiApiKey = () => process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;

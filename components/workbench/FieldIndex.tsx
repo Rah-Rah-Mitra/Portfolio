@@ -62,6 +62,18 @@ const INDEX_ROWS: IndexRow[] = [
     tags: achievement.tags?.slice(0, 3) ?? [],
     link: achievement.proofUrl ? { label: `${(achievement.proofLabel ?? 'View proof').toUpperCase()} ↗`, href: achievement.proofUrl } : undefined,
   })),
+  // The builder is a two-column desktop surface; mobile gets a pointer to it,
+  // the same way the labs and the 3D world are not reproduced here.
+  {
+    id: 'resume:builder',
+    kind: 'RESUMES',
+    date: 'BUILD',
+    title: 'Resume Builder',
+    sub: 'Compose a targeted resume from the evidence record',
+    detail: 'Pick the experience, projects and skills a role calls for and the Harvard-style PDF rebuilds as you go. Needs a wider screen — open it on a desktop browser.',
+    tags: ['Custom', 'PDF · DOCX', 'Harvard'],
+    link: { label: 'OPEN ON DESKTOP', href: '/?app=resume-builder' },
+  },
   ...resumeProfiles.map((profile): IndexRow => ({
     id: `resume:${profile.id}`,
     kind: 'RESUMES',
@@ -87,6 +99,7 @@ const APP_TO_KIND: Partial<Record<DesktopAppId, Kind>> = {
   'capabilities': 'METHODS',
   'proof-vault': 'PROOF',
   'resumes-contact': 'RESUMES',
+  'resume-builder': 'RESUMES',
 };
 
 interface Rig {

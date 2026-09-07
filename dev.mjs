@@ -5,9 +5,13 @@ import { fileURLToPath } from 'node:url';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const viteEntry = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js');
 
+const { PORT, ...env } = process.env;
+const apiPort = env.API_PORT ?? '5174';
+const vitePort = PORT ?? '5173';
+
 const children = [
-  spawn(process.execPath, ['server.mjs'], { cwd: root, stdio: 'inherit', env: process.env }),
-  spawn(process.execPath, [viteEntry, '--host', '127.0.0.1'], { cwd: root, stdio: 'inherit', env: process.env }),
+  spawn(process.execPath, ['server.mjs'], { cwd: root, stdio: 'inherit', env: { ...env, API_PORT: apiPort } }),
+  spawn(process.execPath, [viteEntry, '--host', '127.0.0.1', '--port', vitePort, '--strictPort'], { cwd: root, stdio: 'inherit', env }),
 ];
 
 const shutdown = () => {

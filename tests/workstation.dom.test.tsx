@@ -30,7 +30,7 @@ describe('workstation shell', () => {
   it('opens multiple application windows, focuses one, and writes only the focused route', async () => {
     render(<Harness />);
     await waitFor(() => expect(screen.getByRole('navigation', { name: 'Workstation applications' })).not.toBeNull());
-    expect(screen.getAllByRole('button', { name: /Open / })).toHaveLength(10);
+    expect(screen.getAllByRole('button', { name: /Open / })).toHaveLength(11);
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Camera Lab' }));
     expect(window.location.search).toBe('?app=camera-lab');

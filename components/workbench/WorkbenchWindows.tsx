@@ -11,6 +11,8 @@ import {
   type WorkbenchDomain,
 } from '../../lib/workbench';
 import { coreCompetencies, experienceRecords, resumeProfiles, unifiedPortfolioData } from '../../portfolioData';
+import { ResumeBuilder } from './ResumeBuilder';
+import type { DesktopAppId } from '../../types';
 import { SITE_CONFIG } from '../../siteConfig';
 import { SE_PROFILE_IMAGE } from '../../assets';
 import { track } from '../../lib/analytics';
@@ -410,7 +412,9 @@ export const ResumesWindow: React.FC = () => (
   </div>
 );
 
-export const WINDOW_BODIES: Record<string, React.FC> = {
+export const ResumeBuilderWindow: React.FC = () => <ResumeBuilder />;
+
+export const WINDOW_BODIES: Record<DesktopAppId, React.FC> = {
   'home': HomeWindow,
   'selected-work': WorkWindow,
   'experience': ExperienceWindow,
@@ -421,4 +425,5 @@ export const WINDOW_BODIES: Record<string, React.FC> = {
   'capabilities': CapabilitiesWindow,
   'proof-vault': ProofWindow,
   'resumes-contact': ResumesWindow,
+  'resume-builder': ResumeBuilderWindow,
 };

@@ -19,6 +19,7 @@ export const workstationApps: readonly DesktopAppDefinition[] = [
   { id: 'capabilities', label: 'Capabilities', shortLabel: 'Capabilities', compactLabel: 'Cap', description: 'Methods linked directly to supporting proof.', kind: 'evidence', fallbackAnchor: '#domains', iconAsset: '/workstation/icons/capabilities.webp', loadStrategy: 'eager' },
   { id: 'proof-vault', label: 'Proof Vault', shortLabel: 'Proof', compactLabel: 'Proof', description: 'Distinctions, credentials, and evidence links.', kind: 'proof', fallbackAnchor: '#proof', iconAsset: '/workstation/icons/proof-vault.webp', loadStrategy: 'eager' },
   { id: 'resumes-contact', label: 'Resumes & Contact', shortLabel: 'Resumes', compactLabel: 'CV', description: 'Role-targeted resumes and direct contact.', kind: 'proof', fallbackAnchor: '#resumes', iconAsset: '/workstation/icons/resumes-contact.webp', loadStrategy: 'eager' },
+  { id: 'resume-builder', label: 'Resume Builder', shortLabel: 'Builder', compactLabel: 'Build', description: 'Compose a targeted resume from the evidence record.', kind: 'proof', fallbackAnchor: '#resume-builder', iconAsset: '/workstation/icons/resumes-contact.webp', loadStrategy: 'lazy' },
 ] as const;
 
 const appIds = new Set<DesktopAppId>(workstationApps.map((app) => app.id));

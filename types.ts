@@ -174,7 +174,8 @@ export type DesktopAppId =
   | 'world-3d'
   | 'capabilities'
   | 'proof-vault'
-  | 'resumes-contact';
+  | 'resumes-contact'
+  | 'resume-builder';
 
 export type ColorSchemePreference = 'dark' | 'light' | 'system';
 export type ResolvedColorScheme = 'dark' | 'light';

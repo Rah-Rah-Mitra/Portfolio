@@ -17,6 +17,7 @@ const APP_ICONS: Record<DesktopAppId, string> = {
   'capabilities': 'M3.5 3.5h7v7h-7zM13.5 3.5h7v7h-7zM3.5 13.5h7v7h-7zM13.5 13.5h7v7h-7z',
   'proof-vault': 'M12 3l7 2.8V11c0 4.8-3.2 7.7-7 9.7C8.2 18.7 5 15.8 5 11V5.8zM9 11.5l2 2 4-4.5',
   'resumes-contact': 'M6.5 3h7L18 7.5V21h-11.5zM13.5 3v4.5H18M9.5 12h5M9.5 15.5h5',
+  'resume-builder': 'M4 4h9l4 4v12H4zM13 4v4h4M7 12h7M7 15.5h7M18.5 3.5v5M16 6h5',
 };
 
 export interface WorkbenchApp {

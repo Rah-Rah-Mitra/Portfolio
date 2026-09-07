@@ -24,12 +24,12 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 `tests/e2e/quality.spec.ts`.
 
 - Desktop ≥881px: `components/workbench/FieldWorkbench.tsx` — a windowed
-  drawing set (10 draggable windows over a blueprint desk, crane-rig physics
+  drawing set (11 draggable windows over a blueprint desk, crane-rig physics
   from `lib/rig.ts`). App registry/data adapters: `lib/workbench.ts` (ids
   reuse `lib/workstation.ts` so the AI assistant + `server/pageAgent.mjs`
   command contract stay valid). Window sections keep the legacy anchors
   (`#home #work #experience #all-work #technical-lab #world #domains #proof
-  #resumes #contact`, `experience-<id>`, `project-<id>`) — the assistant and
+  #resumes #contact #resume-builder`, `experience-<id>`, `project-<id>`) — the assistant and
   `tests/semantic-render.test.ts` depend on them.
 - Mobile ≤880px: `components/workbench/FieldIndex.tsx` — one searchable
   registry with traverse/crane rigs. SSR renders both surfaces (CSS hides
@@ -108,7 +108,14 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `server/resumeContent.mjs`; a new résumé config needs an import added there.
   MCP tools `get_resume_guide`, `list_resume_blocks` and `build_resume` expose
   it; agents may only select ids, never supply bullet text
-  (`server/resumeGuide.mjs` is the single source of those instructions).
+  (`server/resumeGuide.mjs` is the single source of those instructions). The
+  same surface is the `resume-builder` window
+  (`components/workbench/ResumeBuilder.tsx`), which loads blocks after mount and
+  previews the real PDF in an iframe. Bullets carry optional `deep`/`short`
+  variants beside `default` and the per-slug overrides; the Python builder
+  ignores any key that is not a slug, so they cost the canonical eight nothing.
+  Deep detail generally needs a 2-page budget. What the repo cannot support is
+  listed in `docs/resume-detail-gaps.md` — do not claim any of it.
 - `public/llms.txt` is hand-maintained and edition-stamped (checklist step 8).
 - `npm run dev` 404s `/api/mcp` and `/api/portfolio` (`server.mjs` routes only
   `POST /api/page-agent`). `npm test` drives the real handlers; after deploy:

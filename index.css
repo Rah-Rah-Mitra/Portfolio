@@ -256,6 +256,7 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-win-capabilities { left: 250px; top: 70px; }
 .wb-win-proof-vault { left: 290px; top: 90px; }
 .wb-win-resumes-contact { left: 320px; top: 80px; }
+.wb-win-resume-builder { left: 200px; top: 54px; }
 
 .wb-titlebar {
   display: flex; align-items: center; gap: 12px; padding: 7px 12px;
@@ -362,6 +363,36 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-archrow-stack { color: var(--color-neutral-700); font-size: 11px; }
 .wb-archrow .tag { justify-self: start; }
 .wb-empty { padding: 22px 16px; text-align: center; margin-top: 8px; }
+
+/* — Resume Builder (WIN-11): pick blocks left, real PDF preview right — */
+.wb-builder-field { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.11em; color: var(--color-neutral-700); }
+.wb-builder-field .input { width: 210px; min-height: 30px; font-size: 12px; }
+.wb-builder-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.wb-builder-picker { max-height: 520px; overflow-y: auto; scrollbar-width: none; padding-right: 4px; }
+.wb-builder-picker::-webkit-scrollbar { display: none; }
+.wb-builder-group { border: 0; padding: 0; margin: 0 0 14px; }
+.wb-builder-group legend {
+  padding: 0; margin-bottom: 6px; width: 100%;
+  font-family: var(--font-heading); font-weight: 600; font-size: 11px;
+  letter-spacing: 0.13em; color: var(--color-accent-700);
+  border-bottom: 1px solid var(--color-divider); padding-bottom: 4px;
+}
+.wb-builder-entry { margin-bottom: 6px; }
+.wb-tick {
+  display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: baseline;
+  padding: 4px 6px; cursor: pointer; font-size: 12px;
+}
+.wb-tick:hover { background: color-mix(in srgb, var(--color-accent) 7%, transparent); }
+.wb-tick input { width: 13px; height: 13px; accent-color: var(--color-accent-700); cursor: pointer; margin: 0; }
+.wb-tick-title { font-family: var(--font-heading); font-weight: 600; font-size: 13px; letter-spacing: 0.03em; text-transform: uppercase; }
+.wb-tick-meta { font-size: 10px; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; text-align: right; }
+.wb-tick-sub { grid-template-columns: 16px 1fr; margin-left: 18px; font-size: 11.5px; color: var(--color-neutral-800); line-height: 1.45; }
+.wb-builder-preview { position: sticky; top: 0; }
+.wb-builder-frame { height: 480px; padding: 8px; display: flex; }
+.wb-builder-frame iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+.wb-builder-frame .wb-note { margin: auto; text-align: center; }
+.wb-builder-preview .wb-actions { margin-top: 10px; }
+@media (max-width: 1100px) { .wb-builder-grid { grid-template-columns: minmax(0, 1fr); } .wb-builder-preview { position: static; } }
 .wb-empty p { margin-bottom: 10px; font-size: 12px; letter-spacing: 0.06em; color: var(--color-neutral-700); }
 
 .wb-figblock { margin-bottom: 22px; }

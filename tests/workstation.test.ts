@@ -21,7 +21,7 @@ import type { WorkstationEvent } from '../types';
 const viewport = { width: 1440, height: 1000, taskbarHeight: 96, topBarHeight: 76 };
 
 describe('retro optical workstation contract', () => {
-  it('exposes the complete ten-application evidence map in recruiter order', () => {
+  it('exposes the complete eleven-application evidence map in recruiter order', () => {
     expect(workstationApps.map((app) => [app.id, app.label])).toEqual([
       ['home', 'Home / Dossier'],
       ['selected-work', 'Selected Work'],
@@ -33,11 +33,12 @@ describe('retro optical workstation contract', () => {
       ['capabilities', 'Capabilities'],
       ['proof-vault', 'Proof Vault'],
       ['resumes-contact', 'Resumes & Contact'],
+      ['resume-builder', 'Resume Builder'],
     ]);
-    expect(new Set(workstationApps.map((app) => app.id)).size).toBe(10);
+    expect(new Set(workstationApps.map((app) => app.id)).size).toBe(11);
     expect(workstationApps.every((app) => app.fallbackAnchor.startsWith('#'))).toBe(true);
     expect(workstationApps.map((app) => app.compactLabel)).toEqual([
-      'Home', 'Work', 'Exp', 'Arc', 'Sys', 'Cam', '3D', 'Cap', 'Proof', 'CV',
+      'Home', 'Work', 'Exp', 'Arc', 'Sys', 'Cam', '3D', 'Cap', 'Proof', 'CV', 'Build',
     ]);
   });
 

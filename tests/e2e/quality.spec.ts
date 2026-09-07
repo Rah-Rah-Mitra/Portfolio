@@ -12,7 +12,7 @@ test.describe('field workbench — desktop', () => {
     await expect(page.getByRole('dialog', { name: 'Selected Work' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1, name: 'Rahul Mitra' })).toBeVisible();
     const rail = page.getByRole('navigation', { name: 'Tool rail' });
-    await expect(rail.getByRole('button')).toHaveCount(11); // 10 modules + DESK
+    await expect(rail.getByRole('button')).toHaveCount(12); // 11 modules + DESK
     // AI / FX layers stay mounted.
     await expect(page.getByRole('button', { name: 'AI, open Ask this portfolio' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'FX, open optional effects lab' })).toBeVisible();
@@ -49,6 +49,23 @@ test.describe('field workbench — desktop', () => {
     const first = resumes.getByRole('link', { name: /Download résumé .*PDF/ }).first();
     await expect(first).toHaveAttribute('href', /\/resume\/generated\/rahul-mitra-.+\.pdf/);
     await expect(resumes.getByRole('link', { name: 'Email Rahul' })).toBeVisible();
+  });
+
+  test('resume builder offers the evidence record as accessible controls', async ({ page }) => {
+    await page.goto('/?app=resume-builder');
+    const builder = page.getByRole('dialog', { name: 'Resume Builder' });
+    await expect(builder).toBeVisible();
+    // Blocks load after mount, so the picker appears without the API.
+    await expect(builder.getByRole('group', { name: 'EXPERIENCE' })).toBeVisible();
+    const ticks = builder.getByRole('checkbox');
+    expect(await ticks.count()).toBeGreaterThan(10);
+    await expect(builder.getByRole('combobox', { name: 'Start from an existing résumé' })).toBeVisible();
+    await expect(builder.getByRole('group', { name: 'Bullet detail' })).toBeVisible();
+    // The builder must not reuse the anchors the no-JS evidence count relies on.
+    expect(await builder.locator('[id^="experience-"]').count()).toBe(0);
+    // This is the design system's first checkbox UI — hold it to the same bar.
+    const results = await new AxeBuilder({ page }).include('[data-win="resume-builder"]').analyze();
+    expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
   });
 
   test('prerendered document keeps the semantic evidence without JavaScript', async ({ browser }) => {

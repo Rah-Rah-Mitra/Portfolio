@@ -2,7 +2,6 @@
   "slug": "civic-tech-solution-architect",
   "subject": "Civic Tech Solution Architect Resume",
   "pages": 1,
-  "bodyPt": 10,
   "sections": [
     {
       "type": "education",
@@ -52,7 +51,8 @@
           "bullets": [
             "churp",
             "singpass",
-            "sparks"
+            "sparks",
+            "infra"
           ]
         }
       ]
@@ -69,12 +69,6 @@
         },
         {
           "id": "agewelllah",
-          "bullets": [
-            "main"
-          ]
-        },
-        {
-          "id": "ethoslens",
           "bullets": [
             "main"
           ]

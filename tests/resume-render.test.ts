@@ -124,6 +124,26 @@ describe('résumé spec', () => {
     expect(specSchema.safeParse({ ...highlights, bodyPt: 8 }).success).toBe(false);
   });
 
+  it('exposes every pool bullet and skills line, so nothing is hidden from a model', () => {
+    // Rahul's requirement: material that is on no ready-made résumé — the AWS
+    // deployment bullet, say — must still be offered to anything building one.
+    const blocks = resumeBlocks() as { sections: Array<{ type: string; entries: BlockEntry[] }>; skillLines: Array<{ id: string }> };
+    const exposed = new Set(blocks.sections.flatMap((section) => section.entries
+      .flatMap((entry) => (entry.bullets ?? []).map((bullet) => `${entry.id}.${bullet.id}`))));
+    for (const type of ['education', 'experience', 'projects', 'leadership'] as const) {
+      for (const entry of pools[type].entries as unknown as PoolEntry[]) {
+        for (const bullet of entry.bullets ?? []) {
+          expect(exposed.has(`${entry.id}.${bullet.id}`), `${entry.id}.${bullet.id} missing from list_resume_blocks`).toBe(true);
+        }
+      }
+    }
+    expect(exposed.has('pa.infra')).toBe(true);
+    const lines = new Set(blocks.skillLines.map((line) => line.id));
+    for (const line of pools.skills.lines as Array<{ id: string }>) {
+      expect(lines.has(line.id), `${line.id} missing from list_resume_blocks`).toBe(true);
+    }
+  });
+
   it('offers only selectable ids as building blocks', () => {
     const blocks = resumeBlocks() as {
       sections: Array<{ type: string; entries: BlockEntry[] }>;

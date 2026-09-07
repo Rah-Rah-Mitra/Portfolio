@@ -9,8 +9,7 @@ version: 1.0.0
 All resumes are generated, Harvard-style (Harvard OCS conventions), from
 in-repo content. Eight outputs: 6 one-page role resumes, the 1-page
 `highlights` best-of (10pt body, 0.5" side margins), and the 2-page
-`general` master CV. `solution-architect` and `civic-tech-solution-architect`
-also run `bodyPt: 10`.
+`general` master CV.
 
 ## Hard bans
 
@@ -30,7 +29,9 @@ A4, 0.7" side margins; centered 16pt bold name; one centered 9.5pt contact
 line (5 items, 4 live hyperlinks — must stay on ONE line); uppercase
 letterspaced section headers with full-width bottom rule; entries are two
 lines (bold org + right-aligned location, italic role + right-aligned dates
-via a right tab at content width); 1–3 bullets per entry, action verb first,
+via a right tab at content width); 1–3 bullets per entry and 4 where the
+material earns it (People's Association on the two architecture résumés — buy
+the room by dropping a project, not by cutting a bullet), action verb first,
 past tense except current roles; literal "• " bullets with hanging indent
 (ATS-safe, deliberate).
 

@@ -120,16 +120,18 @@ Still unused by any résumé: `hailo-training`, `kalidokit-fork`
 
 **Question:** should any of these become selectable résumé project entries too?
 
-## 8. Open decision — where the `pa.infra` bullet goes
+## 8. Where the `pa.infra` bullet goes — answered
 
-The AWS deployment bullet exists and is selectable, but no canonical résumé uses it:
-the layout invariant caps an entry at three bullets and People's Association already
-has three (platform, Singpass, Sparks fund). On `solution-architect` and
-`civic-tech-solution-architect` it would fit at the current type size if it replaced
-one of them.
+Rahul: a project may be dropped to make room. On `solution-architect` the AWS
+deployment bullet replaced OnTheSpectrum, the only one of its three projects not
+listed as solution-architecture proof in `coreCompetencies`. On
+`civic-tech-solution-architect` it replaced EthosLens, the least civic-service of
+its three beside HDB energy and elderly care. All three People's Association
+bullets were kept, and both résumés fit at the default 10.5pt again.
 
-**Question:** on those two résumés, should the deployment bullet replace the Sparks
-fund line, the Singpass line, or neither?
+The bullet stays selectable everywhere else, and `tests/resume-render.test.ts`
+now asserts that every pool bullet and skills line is offered through
+`list_resume_blocks`, so nothing can be hidden from a model building a résumé.
 
 ---
 

@@ -2,7 +2,6 @@
   "slug": "solution-architect",
   "subject": "Solution Architect Resume",
   "pages": 1,
-  "bodyPt": 10,
   "sections": [
     {
       "type": "education",
@@ -52,7 +51,8 @@
           "bullets": [
             "churp",
             "singpass",
-            "sparks"
+            "sparks",
+            "infra"
           ]
         }
       ]
@@ -63,12 +63,6 @@
       "entries": [
         {
           "id": "utopia",
-          "bullets": [
-            "main"
-          ]
-        },
-        {
-          "id": "onthespectrum",
           "bullets": [
             "main"
           ]

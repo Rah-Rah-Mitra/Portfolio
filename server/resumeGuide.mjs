@@ -22,16 +22,26 @@ keyword is recoverable; an inaccurate one is not.
 ## How to tailor
 
 1. \`get_resume_guide\` (this), then \`list_resume_blocks\` for the menu.
+
+   **The menu is larger than any ready-made résumé.** Some of the strongest
+   material sits on only one of them, or on none — the People's Association AWS
+   deployment bullet (\`pa.infra\`: Terraform, Fargate, Route 53, Redis, Kafka,
+   cloud security) is one such. Read the menu; never treat a ready-made résumé
+   as the full inventory.
 2. Pick the closest starting point from \`startingPoints\` and fetch it with
    \`get_resume(slug)\`, which returns its spec. Six are role-targeted, plus
    \`highlights\` (one-page best-of) and \`general\` (two-page master CV).
 3. Swap bullets and skills lines for ones that match the posting. Prefer the
    entry whose evidence is closest to what the job asks for, not the one whose
    wording matches the keywords.
-4. Choose depth. Bullets can carry \`deep\` and \`short\` variants alongside the
+4. Three bullets per entry is typical and four is the practical ceiling. When
+   an entry genuinely earns a fourth — People's Association carries platform,
+   Singpass, Sparks fund and AWS deployment on the architecture résumés — pay
+   for it by dropping a weaker project rather than by cutting one of the four.
+5. Choose depth. Bullets can carry \`deep\` and \`short\` variants alongside the
    default. Set \`detail: "deep"\` on the spec, or \`variant\` on a single entry.
    Deep variants are longer, so they usually need \`pages: 2\`.
-5. \`build_resume(spec)\`. You get PDF, DOCX and Markdown URLs plus a fit report.
+6. \`build_resume(spec)\`. You get PDF, DOCX and Markdown URLs plus a fit report.
 
 ## Layout, which you do not control
 

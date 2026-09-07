@@ -55,7 +55,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   edition; older sets live in `public/resume/archive/`.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
   across all profiles; `bodyPt: 10` + `marginIn: 0.5`), and the two-page
-  `general` master CV.
+  `general` master CV. Several one-pagers now carry `bodyPt: 10` to hold the
+  denser Abbott bullets — each config declares its own; do not assume 10.5.
 - Edition bump checklist:
   1. Edit content JSONs.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`

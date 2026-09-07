@@ -232,6 +232,16 @@
       "dateLabel": "Jan 2026 - Present",
       "sortDate": "2026-01-01",
       "tags": [
+        "Air-Gapped RAG",
+        "PyTorch",
+        "ONNX",
+        "Chroma",
+        "LangChain",
+        "llama.cpp",
+        "Seeq",
+        "HiGHS",
+        "SciPy",
+        "STUMPY",
         "Data Quality",
         "CP-SAT",
         "Robust Optimization",
@@ -247,13 +257,18 @@
       "role": "Operational AI Systems & Data Engineer",
       "organization": "Abbott",
       "location": "Singapore",
-      "scope": "Manufacturing decision support, operational data quality, cloud operations, and regional AI enablement.",
+      "scope": "Air-gapped process intelligence, multi-site historian analytics, setpoint optimization, manufacturing decision support, and regional AI enablement.",
       "responsibilities": [
+        "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, bge-small ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted quantized Gemma model.",
+        "Reverse-engineered four plants’ APC steady-state optimizers from their Excel master files into one HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.",
+        "Build a live multi-site data layer over read-only Seeq historian pulls, canonicalizing each site by configuration rather than forks, with Kalman smoothing, Welch PSD, change-point detection, and matrix-profile motifs in SciPy and pandas.",
+        "Designed a hallucination-resistant tool loop: the model emits schema-constrained JSON, the solver computes every number, and an automated numeric-fidelity gate and per-call audit log sit in front of a system with no write path to plant control.",
         "Built a hybrid flow-shop digital twin using SimPy and OR-Tools CP-SAT and researched robust optimization for operational uncertainty.",
         "Designed a non-destructive 15-stage transformation and audit workflow for complex historical changeover matrices.",
         "Productionized, supported, and documented an internal APC simulator on Docker and Azure App Service; delivered practical AI upskilling."
       ],
       "outcomes": [
+        "Replaced four site-specific vendor optimizers with one solver-backed engine carrying no commercial licence, back-tested against the production optimizer’s own historical targets.",
         "Processed five years of previously unseen, unclean operational data without errors.",
         "Supported an actively used manufacturing and engineer-training simulator while preserving the originating team’s authorship."
       ]

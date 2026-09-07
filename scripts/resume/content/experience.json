@@ -58,6 +58,45 @@
           "text": {
             "default": "Strengthen monitoring and process structure across healthcare supply chains with AI, helping ensure reliable product availability for vulnerable patient groups."
           }
+        },
+        {
+          "id": "platform",
+          "text": {
+            "default": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants, spanning GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted quantized Gemma model.",
+            "deep": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants — GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain over a locally hosted quantized Gemma 4 E4B served through llama.cpp GGUF."
+          }
+        },
+        {
+          "id": "setpoint",
+          "text": {
+            "default": "Reverse-engineer four plants' APC steady-state optimizers from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency without a commercial solver license.",
+            "deep": "Reverse-engineer four site-specific vendor formulations' APC steady-state optimizers from their Excel master files into a single HiGHS linear program (scipy.optimize.linprog) with a tracking QP and PLC predictor covering every site, returning setpoints, binding constraints, shadow prices, and trust-region warnings at millisecond latency with no commercial solver license, back-tested against the production optimizer's own historical targets."
+          }
+        },
+        {
+          "id": "datalayer",
+          "text": {
+            "default": "Build a live multi-site data layer over read-only Seeq historian pulls, with per-site canonicalization driven by configuration rather than forks and automated operating-window qualification that excludes downtime.",
+            "deep": "Build a live multi-site data layer over read-only Seeq (SPy) historian pulls, canonicalizing each site through configuration rather than forks — status predicates, production thresholds, time zones, tag mapping, unit overrides — with automated operating-window qualification excluding downtime, then Kalman smoothing, Welch PSD, lag and coherence, change-point detection (ruptures), and matrix-profile motifs (STUMPY) in SciPy and pandas."
+          }
+        },
+        {
+          "id": "guardrails",
+          "text": {
+            "default": "Design a hallucination-resistant tool loop in which the model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log, with no write path to plant control."
+          }
+        },
+        {
+          "id": "harness",
+          "text": {
+            "default": "Build the engine's test harness: 20+ assert-based regression tests, a headless notebook runner, a deterministic LLM stand-in for GPU-free CI, and committed golden snapshots for credential-free reproducible runs."
+          }
+        },
+        {
+          "id": "hardening",
+          "text": {
+            "default": "Harden global deployment with lock-pinned CUDA and CPU builds for commodity CPU-only plant hardware, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference."
+          }
         }
       ]
     },

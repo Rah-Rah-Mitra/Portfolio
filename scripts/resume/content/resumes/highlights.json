@@ -37,7 +37,7 @@
         {
           "id": "abbott-contract",
           "bullets": [
-            "ai-systems"
+            "platform"
           ]
         },
         {
@@ -69,12 +69,6 @@
       "entries": [
         {
           "id": "asyncddgs",
-          "bullets": [
-            "main"
-          ]
-        },
-        {
-          "id": "voltpulse",
           "bullets": [
             "main"
           ]

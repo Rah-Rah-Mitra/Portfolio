@@ -75,18 +75,26 @@ The put-away recommendation bullet describes intent ("targets replacing
 experience-based slotting"). There is no measured result yet. Worth revisiting once
 the System Design Project produces one.
 
-## 4. Abbott contract role — no tools or metrics
+## 4. Abbott contract role — answered in full
 
-The two contract bullets name four abstract areas (process improvement,
-manufacturing analytics, decision support, supply-chain automation) with no tool,
-technique, or measurement. The *internship* has plenty of depth; the contract role
-has none.
+Rahul supplied the detail on 2026-09-04. Six bullets now exist (`platform`,
+`setpoint`, `datalayer`, `guardrails`, `harness`, `hardening`), the site's
+experience record carries the work, and the role went from the thinnest entry in
+the corpus to the strongest. Newly attested through it: PyTorch, CUDA, ONNX,
+Chroma, LangChain over llama.cpp/GGUF, quantized Gemma, marker, chonkie,
+fastembed, bge-small, Seeq/SPy, HiGHS, `scipy.optimize.linprog`, SciPy, pandas,
+ruptures, STUMPY, Kalman smoothing, Welch PSD, and matrix-profile motifs.
+
+The generic `ai-systems` and `supply-chain` bullets are kept in the pool — they
+still suit a non-technical reader — but no résumé leads with them any more.
 
 ## 5. ML tooling that is absent everywhere
 
 *Partly answered.*
 
 - Terraform, Redis and Kafka are attested through the Churp deployment.
+- **PyTorch, ONNX, Chroma, SciPy, pandas and quantization** are attested through
+  the Abbott contract work (§4), along with HiGHS, Seeq, STUMPY and ruptures.
 - **3D computer vision: settled.** Rahul confirmed (2026-09-04) that the CV
   entries already in the skills lines are correct as written — projective and
   epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo,
@@ -97,10 +105,10 @@ has none.
 
 Still absent from every content source, and therefore still unusable:
 
-PyTorch, TensorFlow (except a passing reference to TensorFlow.js in a fork),
-Hugging Face, scikit-learn, Keras, NumPy, pandas, RANSAC, PnP, SIFT, ORB, Gurobi,
-Pyomo, Kubernetes, PostgreSQL, MongoDB, Pinecone, FAISS, Chroma, pgvector,
-Weights & Biases, MLflow, ONNX, TensorRT, quantization, distillation, Optuna.
+TensorFlow (except a passing reference to TensorFlow.js in a fork), Hugging Face,
+scikit-learn, Keras, NumPy, RANSAC, PnP, SIFT, ORB, Gurobi, Pyomo, Kubernetes,
+PostgreSQL, MongoDB, Pinecone, FAISS, pgvector, Weights & Biases, MLflow,
+TensorRT, distillation, Optuna.
 
 **Question (still open):** which of the remaining names have you actually used,
 and on what?

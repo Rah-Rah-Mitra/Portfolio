@@ -2,6 +2,7 @@
   "slug": "solution-architect",
   "subject": "Solution Architect Resume",
   "pages": 1,
+  "bodyPt": 10,
   "sections": [
     {
       "type": "education",
@@ -36,7 +37,7 @@
         {
           "id": "abbott-contract",
           "bullets": [
-            "ai-systems"
+            "platform"
           ]
         },
         {

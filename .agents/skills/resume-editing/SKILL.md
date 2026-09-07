@@ -9,7 +9,8 @@ version: 1.0.0
 All resumes are generated, Harvard-style (Harvard OCS conventions), from
 in-repo content. Eight outputs: 6 one-page role resumes, the 1-page
 `highlights` best-of (10pt body, 0.5" side margins), and the 2-page
-`general` master CV.
+`general` master CV. Most one-pagers now declare `bodyPt: 10` to carry the
+denser Abbott contract bullets — read each config rather than assuming 10.5.
 
 ## Hard bans
 

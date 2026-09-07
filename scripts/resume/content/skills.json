@@ -3,17 +3,17 @@
     {
       "id": "se-skills",
       "label": "Technical",
-      "items": "Python, TypeScript, React, Next.js, Three.js, FastAPI, aiohttp/asyncio, Docker, CI/CD, Azure; 3D CV: projective & epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo"
+      "items": "Python, TypeScript, React, Next.js, Three.js, FastAPI, aiohttp/asyncio, PyTorch, ONNX, Docker, CI/CD, Azure; 3D CV: projective & epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo"
     },
     {
       "id": "ai-skills",
       "label": "Technical",
-      "items": "Python, BERT, DNN, RAG, AI agents, GPT-4, Gemini, SEALION, vector search, model evaluation, NLP; vision: camera ISP, super-resolution, image restoration, SfM, epipolar geometry, multi-view stereo; HPC: ASPIRE 2A, CUDA"
+      "items": "Python, PyTorch, BERT, DNN, RAG, AI agents, GPT-4, Gemini, SEALION, ONNX, Chroma, local LLM serving (llama.cpp), vector search, model evaluation, NLP; vision: camera ISP, super-resolution, image restoration, SfM, epipolar geometry, multi-view stereo; HPC: ASPIRE 2A, CUDA"
     },
     {
       "id": "or-skills",
       "label": "Technical",
-      "items": "CP-SAT, hybrid flow-shop scheduling, SimPy, digital-twin simulation, robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, Python, Excel VBA"
+      "items": "CP-SAT, HiGHS linear and quadratic programming, SciPy, hybrid flow-shop scheduling, SimPy, digital-twin simulation, robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, Python, Excel VBA"
     },
     {
       "id": "cyber-skills",
@@ -38,12 +38,12 @@
     {
       "id": "gen-ai",
       "label": "AI/ML",
-      "items": "BERT, DNN, transformers, RAG, AI agents, GPT-4, Gemini, SEALION, LangChain, vector search, NLP, deep RL (PPO, A2C, DDPG, DQN), model evaluation; vision: camera ISP, super-resolution, image restoration, 3D CV (projective & epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo); HPC: ASPIRE 2A, CUDA, distributed training"
+      "items": "BERT, DNN, transformers, PyTorch, RAG, AI agents, GPT-4, Gemini, SEALION, LangChain, ONNX, Chroma, local LLM serving (llama.cpp GGUF), vector search, NLP, deep RL (PPO, A2C, DDPG, DQN), model evaluation; vision: camera ISP, super-resolution, image restoration, 3D CV (projective & epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo); HPC: ASPIRE 2A, CUDA, distributed training"
     },
     {
       "id": "gen-or",
       "label": "Operations Research",
-      "items": "CP-SAT, hybrid flow-shop scheduling, SimPy, digital-twin simulation, robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, mathematical modeling"
+      "items": "CP-SAT, HiGHS linear and quadratic programming, SciPy, hybrid flow-shop scheduling, SimPy, digital-twin simulation, signal processing (Kalman, Welch PSD, change-point, matrix profile), robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, mathematical modeling"
     },
     {
       "id": "gen-cloud",
@@ -103,7 +103,7 @@
     {
       "id": "hl-ai-data",
       "label": "AI and Data",
-      "items": "RAG, AI agents, vector search, LangChain, BERT/transformer fine-tuning, model evaluation, OR-Tools CP-SAT, SimPy, 3D CV (SfM, multi-view stereo), CUDA/HPC"
+      "items": "RAG, AI agents, vector search, LangChain, PyTorch, ONNX, Chroma, BERT/transformer fine-tuning, model evaluation, OR-Tools CP-SAT, SimPy, 3D CV (SfM, multi-view stereo), CUDA/HPC"
     },
     {
       "id": "hl-security",

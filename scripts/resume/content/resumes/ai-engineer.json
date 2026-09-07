@@ -7,40 +7,97 @@
       "type": "education",
       "title": "EDUCATION",
       "entries": [
-        { "id": "nus", "bullets": ["majors", "award", "coursework"] }
+        {
+          "id": "nus",
+          "bullets": [
+            "majors",
+            "award",
+            "coursework"
+          ]
+        }
       ]
     },
     {
       "type": "experience",
       "title": "EXPERIENCE",
       "entries": [
-        { "id": "stmicro-or", "bullets": ["putaway"] },
-        { "id": "amazon-vision", "bullets": ["isp", "frame-quality"] },
-        { "id": "abbott-contract", "bullets": ["ai-systems"] },
-        { "id": "abbott-intern", "bullets": ["digital-twin", "upskilling"] },
-        { "id": "pa", "bullets": ["churp"] }
+        {
+          "id": "stmicro-or",
+          "bullets": [
+            "putaway"
+          ]
+        },
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp",
+            "frame-quality"
+          ]
+        },
+        {
+          "id": "abbott-contract",
+          "bullets": [
+            "platform"
+          ]
+        },
+        {
+          "id": "abbott-intern",
+          "bullets": [
+            "digital-twin",
+            "upskilling"
+          ]
+        },
+        {
+          "id": "pa",
+          "bullets": [
+            "churp"
+          ]
+        }
       ]
     },
     {
       "type": "projects",
       "title": "PROJECTS",
       "entries": [
-        { "id": "maritime", "bullets": ["main"] },
-        { "id": "voltpulse", "bullets": ["main"] },
-        { "id": "agewelllah", "bullets": ["main"] }
+        {
+          "id": "maritime",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "voltpulse",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "agewelllah",
+          "bullets": [
+            "main"
+          ]
+        }
       ]
     },
     {
       "type": "leadership",
       "title": "LEADERSHIP AND ACTIVITIES",
       "entries": [
-        { "id": "ntuc", "bullets": ["main"] }
+        {
+          "id": "ntuc",
+          "bullets": [
+            "main"
+          ]
+        }
       ]
     },
     {
       "type": "skills",
       "title": "SKILLS AND CERTIFICATIONS",
-      "lines": ["ai-skills", "certs-core"]
+      "lines": [
+        "ai-skills",
+        "certs-core"
+      ]
     }
   ]
 }

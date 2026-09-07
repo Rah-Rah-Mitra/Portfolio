@@ -2,46 +2,108 @@
   "slug": "operations-research-engineer",
   "subject": "Operations Research Engineer Resume",
   "pages": 1,
+  "bodyPt": 10,
   "sections": [
     {
       "type": "education",
       "title": "EDUCATION",
       "entries": [
-        { "id": "nus", "bullets": ["majors", "award", "coursework"] }
+        {
+          "id": "nus",
+          "bullets": [
+            "majors",
+            "award",
+            "coursework"
+          ]
+        }
       ]
     },
     {
       "type": "experience",
       "title": "EXPERIENCE",
       "entries": [
-        { "id": "stmicro-or", "bullets": ["putaway"] },
-        { "id": "amazon-vision", "bullets": ["isp"] },
-        { "id": "abbott-contract", "bullets": ["ai-systems"] },
-        { "id": "abbott-intern", "bullets": ["digital-twin", "pipeline"] },
-        { "id": "pa", "bullets": ["churp"] },
-        { "id": "navy", "bullets": ["vba"] }
+        {
+          "id": "stmicro-or",
+          "bullets": [
+            "putaway"
+          ]
+        },
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp"
+          ]
+        },
+        {
+          "id": "abbott-contract",
+          "bullets": [
+            "setpoint"
+          ]
+        },
+        {
+          "id": "abbott-intern",
+          "bullets": [
+            "digital-twin",
+            "pipeline"
+          ]
+        },
+        {
+          "id": "pa",
+          "bullets": [
+            "churp"
+          ]
+        },
+        {
+          "id": "navy",
+          "bullets": [
+            "vba"
+          ]
+        }
       ]
     },
     {
       "type": "projects",
       "title": "PROJECTS",
       "entries": [
-        { "id": "flowshop", "bullets": ["main"] },
-        { "id": "voltpulse", "bullets": ["main"] },
-        { "id": "ie2110", "bullets": ["main"] }
+        {
+          "id": "flowshop",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "voltpulse",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "ie2110",
+          "bullets": [
+            "main"
+          ]
+        }
       ]
     },
     {
       "type": "leadership",
       "title": "LEADERSHIP AND ACTIVITIES",
       "entries": [
-        { "id": "ntuc", "bullets": ["main"] }
+        {
+          "id": "ntuc",
+          "bullets": [
+            "main"
+          ]
+        }
       ]
     },
     {
       "type": "skills",
       "title": "SKILLS AND CERTIFICATIONS",
-      "lines": ["or-skills", "certs-or"]
+      "lines": [
+        "or-skills",
+        "certs-or"
+      ]
     }
   ]
 }

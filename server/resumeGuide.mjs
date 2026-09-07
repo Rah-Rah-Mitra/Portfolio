@@ -36,6 +36,11 @@ keyword is recoverable; an inaccurate one is not.
 3. Swap bullets and skills lines for ones that match the posting. Prefer the
    entry whose evidence is closest to what the job asks for, not the one whose
    wording matches the keywords.
+
+   One standing preference: **Volt Pulse SG** is on all eight ready-made
+   résumés at Rahul's instruction. It was a Top 8 finalist of 50+ teams and he
+   rates it among his strongest work, so keep it unless the posting makes it
+   genuinely irrelevant.
 4. Three bullets per entry is typical and four is the practical ceiling. When
    an entry genuinely earns a fourth — People's Association carries platform,
    Singpass, Sparks fund and AWS deployment on the architecture résumés — pay

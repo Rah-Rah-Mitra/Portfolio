@@ -107,7 +107,7 @@
     },
     {
       "id": "voltpulse",
-      "organization": "Volt Pulse SG — SMU Hack For Cities 2026 (Top 8 of 50+ teams)",
+      "organization": "Volt Pulse SG — SMU Hack For Cities 2026 (Top 8 Finalist of 50+ teams)",
       "sort": "2026-01",
       "dateLabel": "Jan 2026",
       "bullets": [
@@ -115,7 +115,7 @@
           "id": "main",
           "text": {
             "default": "Built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning.",
-            "deep": "Co-built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing; Top 8 of 50+ teams at SMU Hack For Cities 2026."
+            "deep": "Co-built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing; Top 8 finalist of 50+ teams at SMU Hack For Cities 2026."
           }
         }
       ]

@@ -78,6 +78,12 @@
           ]
         },
         {
+          "id": "voltpulse",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
           "id": "waaah",
           "bullets": [
             "main"

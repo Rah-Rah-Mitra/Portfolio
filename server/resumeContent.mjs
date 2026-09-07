@@ -42,7 +42,8 @@ export const resumeBlocks = () => ({
     entries: pools[type].entries.filter((entry) => !entry.blocked).map((entry) => ({
       id: entry.id,
       organization: entry.organization,
-      role: entry.role ?? null,
+      role: typeof entry.role === 'object' ? entry.role.default : entry.role ?? null,
+      roleOptions: typeof entry.role === 'object' ? entry.role : null,
       location: entry.location ?? null,
       dateLabel: entry.dateLabel,
       sort: entry.sort ?? entry.start,

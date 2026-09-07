@@ -118,15 +118,15 @@ export const assemble = (spec, pools) => {
       const entry = pool.get(selection.id);
       if (!entry) throw new Error(`unknown ${section.type} entry: ${selection.id}`);
       if (entry.blocked) throw new Error(`${selection.id} is not available for résumés: ${entry.blocked}`);
-      return { entry, bullets: selection.bullets ?? [], variant: selection.variant };
+      return { entry, bullets: selection.bullets ?? [], variant: selection.variant, role: resolveRole(entry, selection) };
     }).sort((a, b) => b.entry[key].localeCompare(a.entry[key]));
 
-    for (const { entry, bullets, variant } of chosen) {
+    for (const { entry, bullets, variant, role } of chosen) {
       items.push({
         kind: 'entry',
         organization: entry.organization,
         location: entry.location ?? '',
-        role: entry.role ?? null,
+        role,
         dateLabel: entry.dateLabel,
       });
       const byId = new Map((entry.bullets ?? []).map((bullet) => [bullet.id, bullet]));
@@ -204,6 +204,14 @@ const buildBlocks = (doc, spec, pools, profile, bodyPt, contentWidth) => {
 
 // text[variant] ?? text[slug] ?? text.default — mirrors build_resumes.py:33-35
 // with the reserved depth keys layered on top.
+export const resolveRole = (entry, selection) => {
+  const role = entry.role;
+  if (role == null || typeof role === 'string') return role ?? null;
+  const key = selection?.roleVariant ?? 'default';
+  if (!role[key]) throw new Error(`unknown role option "${key}" on ${entry.id}; choose one of ${Object.keys(role).join(', ')}`);
+  return role[key];
+};
+
 export const resolveBulletText = (bullet, spec, entryVariant) => {
   const variant = entryVariant ?? spec.detail;
   const text = bullet.text;
@@ -500,6 +508,7 @@ const entrySection = z.object({
     id,
     bullets: z.array(id).max(10).optional(),
     variant: z.enum(['standard', 'deep', 'short']).optional(),
+    roleVariant: id.optional(),
   })).max(24),
 });
 const skillsSection = z.object({

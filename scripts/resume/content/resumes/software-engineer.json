@@ -51,7 +51,8 @@
           "bullets": [
             "churp",
             "singpass"
-          ]
+          ],
+          "roleVariant": "software"
         },
         {
           "id": "navy",

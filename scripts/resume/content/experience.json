@@ -145,7 +145,10 @@
       "id": "pa",
       "organization": "People's Association",
       "location": "Singapore",
-      "role": "Software Engineer (Citizen Developer)",
+      "role": {
+        "default": "Platform & Solutions Engineer (Sparks Citizen Developer)",
+        "software": "Software Engineer (Citizen Developer)"
+      },
       "start": "2025-09",
       "dateLabel": "Sep 2025 – Sep 2026",
       "bullets": [

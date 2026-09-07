@@ -13,7 +13,7 @@ import { track } from '../../lib/analytics';
 
 type PoolBullet = { id: string; text: Record<string, string> };
 type PoolEntry = {
-  id: string; organization: string; role?: string; location?: string;
+  id: string; organization: string; role?: string | Record<string, string>; location?: string;
   dateLabel: string; start?: string; sort?: string; blocked?: string; bullets?: PoolBullet[];
 };
 type SkillLine = { id: string; label: string; items: string };

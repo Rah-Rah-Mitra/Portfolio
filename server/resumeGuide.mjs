@@ -48,7 +48,13 @@ keyword is recoverable; an inaccurate one is not.
 5. Choose depth. Bullets can carry \`deep\` and \`short\` variants alongside the
    default. Set \`detail: "deep"\` on the spec, or \`variant\` on a single entry.
    Deep variants are longer, so they usually need \`pages: 2\`.
-6. \`build_resume(spec)\`. You get PDF, DOCX and Markdown URLs plus a fit report.
+6. Check whether the entry offers more than one job title. An entry with
+   \`roleOptions\` was held under several hats, and you pick one with
+   \`roleVariant\` on that entry. People's Association is the current example:
+   \`default\` is "Platform & Solutions Engineer (Sparks Citizen Developer)",
+   his formal title, and \`software\` is "Software Engineer (Citizen
+   Developer)". Both are true, so choose the one the posting is hiring for.
+7. \`build_resume(spec)\`. You get PDF, DOCX and Markdown URLs plus a fit report.
 
 ## Layout, which you do not control
 

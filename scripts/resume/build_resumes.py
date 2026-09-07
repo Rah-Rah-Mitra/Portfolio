@@ -30,6 +30,16 @@ def load(name):
         return json.load(f)
 
 
+def entry_role(entry, selection):
+    role = entry.get("role")
+    if not isinstance(role, dict):
+        return role
+    key = selection.get("roleVariant", "default")
+    if key not in role:
+        raise SystemExit(f"unknown role option {key!r} on {entry['id']}")
+    return role[key]
+
+
 def bullet_text(bullet, slug):
     text = bullet["text"]
     return text.get(slug, text["default"])
@@ -58,7 +68,8 @@ def build_resume(config, pools, profile, edition):
             if blocked:
                 raise SystemExit(f"{slug}: {sel['id']} is blocked from resumes - {blocked}")
         chosen = [
-            {"entry": pool[sel["id"]], "bullets": sel.get("bullets", [])}
+            {"entry": pool[sel["id"]], "bullets": sel.get("bullets", []),
+             "role": entry_role(pool[sel["id"]], sel)}
             for sel in section["entries"]
         ]
         if section["type"] == "projects":
@@ -68,9 +79,9 @@ def build_resume(config, pools, profile, edition):
 
         for c in chosen:
             e = c["entry"]
-            if "role" in e:
+            if c["role"]:
                 hs.add_entry(doc, width, e["organization"], e.get("location", ""),
-                             e["role"], e["dateLabel"])
+                             c["role"], e["dateLabel"])
             else:  # single-line entry (projects)
                 hs.add_entry(doc, width, e["organization"], e["dateLabel"])
             bullets = {b["id"]: b for b in e.get("bullets", [])}

@@ -126,6 +126,20 @@ describe('résumé renderer', () => {
     }
   });
 
+  it('offers both PA job titles and refuses an invented one', async () => {
+    const pa = (pools.experience.entries as unknown as Array<{ id: string; role: Record<string, string> }>)
+      .find((entry) => entry.id === 'pa');
+    expect(Object.keys(pa?.role ?? {})).toEqual(['default', 'software']);
+    const spec = (roleVariant?: string) => ({
+      pages: 1,
+      sections: [{ type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'pa', bullets: ['churp'], roleVariant }] }],
+    });
+    expect(renderResumeMarkdown(spec(), pools, profile) as string).toContain('Platform & Solutions Engineer');
+    expect(renderResumeMarkdown(spec('software'), pools, profile) as string).toContain('Software Engineer (Citizen Developer)');
+    // A key that is not on the entry fails loudly rather than falling back.
+    await expect(renderResumePdf(spec('vp-of-everything'), pools, profile)).rejects.toThrow(/unknown role option/);
+  });
+
   it('names the offending id when a selection does not exist', async () => {
     const broken = { pages: 1, sections: [{ type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'nope', bullets: [] }] }] };
     await expect(renderResumePdf(broken, pools, profile)).rejects.toThrow(/unknown experience entry: nope/);

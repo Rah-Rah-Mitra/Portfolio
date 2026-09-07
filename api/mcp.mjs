@@ -1,7 +1,7 @@
 import { createMcpHandler } from 'mcp-handler';
 import { registerPortfolioTools } from '../server/portfolioMcp.mjs';
 
-// https://rahul-mitra.com/api/mcp — read-only, no auth.
+// https://rahul-mitra.com/api/mcp, read-only, no auth.
 // ponytail: stateless per-request server; mcp-handler answers legacy GET/DELETE session ops itself.
 const handler = createMcpHandler(registerPortfolioTools, {
   serverInfo: { name: 'rahul-mitra-portfolio', version: '1.0.0' },

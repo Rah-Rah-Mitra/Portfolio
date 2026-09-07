@@ -11,7 +11,7 @@ import { resumeAssetUrl, SITE_CONFIG } from './siteConfig';
 export const softwareEngineerData: PortfolioData = {
   name: "Rahul Mitra",
   tagline: "Systems Architect & AI Engineer | ISE × CS × Mathematics",
-  bio: "NUS Industrial Systems Engineering student (Second Major CS, Minor Math). I build intelligent systems at the intersection of agentic AI, high-performance computing, and open-source engineering — from fine-tuned 109M-parameter transformer models to async Python libraries with global PyPI adoption.",
+  bio: "NUS Industrial Systems Engineering student (Second Major CS, Minor Math). I build intelligent systems at the intersection of agentic AI, high-performance computing, and open-source engineering, from fine-tuned 109M-parameter transformer models to async Python libraries with global PyPI adoption.",
   profileImageUrl: assets.SE_PROFILE_IMAGE,
   contactEmail: SITE_CONFIG.email,
   linkedinUrl: SITE_CONFIG.social.linkedin,
@@ -20,7 +20,7 @@ export const softwareEngineerData: PortfolioData = {
   achievements: [
     {
       id: 7,
-      title: "Top Student — 3D Computer Vision @ NUS School of Computing",
+      title: "Top Student: 3D Computer Vision @ NUS School of Computing",
       description: "Awarded the NUS School of Computing Certificate of Outstanding Performance in 3D Computer Vision (CS4277), placed as the top student in a class of 24 for AY2025/26 Semester 2. The course covers projective geometry, camera models, fundamental and essential matrices, absolute pose estimation, three-view geometry, structure-from-motion with bundle adjustment, two-view and multi-view stereo, and generalized cameras.",
       date: "2026 Jul",
       imageUrl: assets.SE_ACHIEVEMENT_3DCV,
@@ -31,7 +31,7 @@ export const softwareEngineerData: PortfolioData = {
     },
     {
       id: 6,
-      title: "AsyncDDGS — Open-Source PyPI Library",
+      title: "AsyncDDGS: Open-Source PyPI Library",
       description: "Engineered and maintain AsyncDDGS, an asyncio-first, aiohttp-based DuckDuckGo search client on PyPI. Achieves sub-100ms query responses via Python's event loop, bypassing the GIL bottleneck. Actively referenced in starred AI projects (SearchGPT, Auto-Photoshop-StableDiffusion-Plugin) and Discord bot frameworks. Maintained with pytest CI/CD via GitHub Actions.",
       date: "2024 – Present",
       category: "Open-Source Engineering",
@@ -39,7 +39,7 @@ export const softwareEngineerData: PortfolioData = {
     },
     {
       id: 5,
-      title: "Maritime Hackathon 2025 — Team Lead & Model Trainer",
+      title: "Maritime Hackathon 2025: Team Lead & Model Trainer",
       description: "Led a multidisciplinary team at Maritime Hackathon 2025 to build a predictive system for maritime deficiency severity forecasting. Fine-tuned a 109-million parameter BERT model integrated with Deep Neural Networks (DNN) on the ASPIRE 2A supercomputer. Executed complex data engineering on maritime inspection logs, hyperparameter optimization, and gradient clipping to prevent catastrophic forgetting.",
       date: "2025",
       imageUrl: assets.SE_ACHIEVEMENT_MARITIME,
@@ -58,7 +58,7 @@ export const softwareEngineerData: PortfolioData = {
     {
       id: 3,
       title: "EthosLens @ LifeHack 2025",
-      description: "Backend developer for 'EthosLens' at LifeHack 2025 — an automated research engine scoring brands on ethical/sustainability practices using AI. View on Devpost (devpost.com/software/ethoslens) or GitHub (github.com/Rah-Rah-Mitra/EthosLens).",
+      description: "Backend developer for 'EthosLens' at LifeHack 2025, an automated research engine scoring brands on ethical/sustainability practices using AI. View on Devpost (devpost.com/software/ethoslens) or GitHub (github.com/Rah-Rah-Mitra/EthosLens).",
       date: "2025",
       imageUrl: assets.SE_ACHIEVEMENT_ETHOSLENS,
       category: "AI & Sustainability Tech",
@@ -67,7 +67,7 @@ export const softwareEngineerData: PortfolioData = {
     {
       id: 2,
       title: "AgeWellLah.AI @ HealthHack 2025",
-      description: "Primary AI/ML Engineer at HealthHack 2025, deploying a Retrieval-Augmented Generation (RAG) architecture with OpenAI GPT-4 and InterSystems IRIS Vector Search for elderly patient triage. Implemented cosine similarity semantic retrieval, Flask backend, and OAuth2-secured patient profiles — bridging experimental AI with PDPA-compliant production engineering. (github.com/ZulfaqarHafez/AgeWellLah.AI)",
+      description: "Primary AI/ML Engineer at HealthHack 2025, deploying a Retrieval-Augmented Generation (RAG) architecture with OpenAI GPT-4 and InterSystems IRIS Vector Search for elderly patient triage. Implemented cosine similarity semantic retrieval, Flask backend, and OAuth2-secured patient profiles, bridging experimental AI with PDPA-compliant production engineering. (github.com/ZulfaqarHafez/AgeWellLah.AI)",
       date: "2025",
       imageUrl: assets.SE_ACHIEVEMENT_AGEWELLAI,
       category: "AI & HealthTech",
@@ -75,7 +75,7 @@ export const softwareEngineerData: PortfolioData = {
     },
     {
       id: 1,
-      title: "Disaster Risk Monitoring Using Satellite Imagery — NVIDIA",
+      title: "Disaster Risk Monitoring Using Satellite Imagery (NVIDIA)",
       description: "Completed an NVIDIA Deep Learning Institute certification applying AI to monitor and assess disaster risks via satellite imagery. Gained hands-on experience with multi-spectral geospatial data, U-Net semantic segmentation, and HPC-accelerated model training on the ASPIRE 2A supercomputer. (learn.nvidia.com/certificates?id=15f34263397c4584b947c5d6b449139a)",
       date: "2023 Dec",
       imageUrl: assets.SE_ACHIEVEMENT_NVIDIA_DIL_DRM,
@@ -101,7 +101,7 @@ export const softwareEngineerData: PortfolioData = {
 export const cybersecurityData: PortfolioData = {
   name: "Rahul Mitra",
   tagline: "Adversarial Security Researcher & Bug Bounty Hunter",
-  bio: "NUS Engineering student and active bug bounty hunter on YesWeHack. I've uncovered critical vulnerabilities — SSRF, CSRF, SQL/NoSQL Injection, and authentication bypasses — for Singapore's GovTech (GBBP12/13) and the Land Transport Authority. My adversarial mindset drives security-first design across every system I build.",
+  bio: "NUS Engineering student and active bug bounty hunter on YesWeHack. I've uncovered critical vulnerabilities (SSRF, CSRF, SQL/NoSQL Injection, and authentication bypasses) for Singapore's GovTech (GBBP12/13) and the Land Transport Authority. My adversarial mindset drives security-first design across every system I build.",
   profileImageUrl: assets.CS_PROFILE_IMAGE,
   contactEmail: SITE_CONFIG.email,
   linkedinUrl: SITE_CONFIG.social.linkedin,
@@ -110,7 +110,7 @@ export const cybersecurityData: PortfolioData = {
   achievements: [
     {
       id: 3,
-      title: "Active Bug Bounty Hunter — GovTech & LTA",
+      title: "Active Bug Bounty Hunter: GovTech & LTA",
       description: "Actively participating in bug bounty programs on YesWeHack. Key engagements include Singapore's Government Technology Agency (GovTech GBBP12/13) and the Land Transport Authority (LTA) Bug Bounty Program, plus 13+ other private/public programs. Discovered and responsibly disclosed high-impact vulnerabilities including SSRF, CSRF, SQL/NoSQL Injection, and authentication bypasses. Utilizes Burp Suite for MitM traffic interception and Wireshark for deep packet inspection (OSI Layers 3–4).",
       date: "May 2024 – Present",
       imageUrl: assets.CS_ACHIEVEMENT_BUG_BOUNTY,
@@ -129,7 +129,7 @@ export const cybersecurityData: PortfolioData = {
     {
       id: 1,
       title: "Bespoke Vulnerability Automation Tooling",
-      description: "Developed custom Python and Bash scripts to automate fuzzing, payload delivery, and endpoint enumeration — transitioning from manual exploitation to programmatic, engineering-led vulnerability research. Enables scalable coverage across large attack surfaces in competitive bug bounty environments.",
+      description: "Developed custom Python and Bash scripts to automate fuzzing, payload delivery, and endpoint enumeration, transitioning from manual exploitation to programmatic, engineering-led vulnerability research. Enables scalable coverage across large attack surfaces in competitive bug bounty environments.",
       date: "May 2024 – Present",
       imageUrl: assets.CS_ACHIEVEMENT_BUG_BOUNTY,
       category: "Security Engineering",
@@ -212,7 +212,7 @@ export const resumeProfiles: ResumeProfile[] = [
   {
     id: 'highlights',
     role: 'Highlights (One-Page)',
-    headline: 'One-page best-of across every profile — civic platform delivery, applied AI, optimization, security research, and open source — for preference forms and general applications.',
+    headline: 'One-page best-of across every profile (civic platform delivery, applied AI, optimization, security research, and open source) for preference forms and general applications.',
     keywords: ['One Page', 'Full Stack', 'AI/ML', 'Singpass/Myinfo', 'Security', 'Open Source'],
     docxUrl: resumeAssetUrl('highlights', 'docx'),
     pdfUrl: resumeAssetUrl('highlights', 'pdf'),
@@ -222,7 +222,7 @@ export const resumeProfiles: ResumeProfile[] = [
   {
     id: 'general',
     role: 'General / Master CV',
-    headline: 'Two-page cross-disciplinary CV unifying every profile — software, AI/ML, operations research, architecture, and security — for broad job search.',
+    headline: 'Two-page cross-disciplinary CV unifying every profile (software, AI/ML, operations research, architecture, and security) for broad job search.',
     keywords: ['Full Stack', 'AI/ML', 'Operations Research', 'Solution Architecture', 'Security', 'Two Pages'],
     docxUrl: resumeAssetUrl('general', 'docx'),
     pdfUrl: resumeAssetUrl('general', 'pdf'),
@@ -495,7 +495,7 @@ export const projectHighlights: ProjectHighlight[] = [
     spotlight: {
       context: 'A 24-hour build asking whether physical hand movement could drive a generated comic strip end to end.',
       contribution: 'Built the gesture-tracking, generation, and composition pipeline that turns hand movement into finished panels.',
-      approach: 'MediaPipe 3D hand landmarks feeding Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition — several generative models exercised in one interactive workflow.',
+      approach: 'MediaPipe 3D hand landmarks feeding Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition: several generative models exercised in one interactive workflow.',
       outcome: 'A working gesture-to-comic demo produced inside the 24-hour window.',
     },
   },
@@ -565,7 +565,7 @@ export const projectHighlights: ProjectHighlight[] = [
     spotlight: {
       context: 'Community garden-plot allocation needed a complete civic workflow rather than another isolated form.',
       contribution: 'Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it.',
-      approach: 'Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure — Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and cloud security controls — with stakeholder coordination and rollout planning.',
+      approach: 'Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and cloud security controls), with stakeholder coordination and rollout planning.',
       outcome: 'Production-ready for national rollout and awarded the S$20,000 Sparks Community Innovation Fund.',
     },
   },
@@ -777,7 +777,7 @@ export const eventHighlights: EventHighlight[] = [
     dateLabel: 'Jan 2026 - Present',
     exactDateRange: '2026-01-01 to Present',
     source: 'LinkedIn',
-    summary: 'Built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce. Now builds an air-gapped process-intelligence platform for globally distributed spray-drying plants — GPU document parsing, ONNX embeddings, a Chroma vector store, and a locally hosted quantized Gemma model — alongside a Seeq-backed multi-site data layer and a HiGHS setpoint optimizer that replaced four site-specific vendor optimizers.',
+    summary: 'Built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce. Now builds an air-gapped process-intelligence platform for globally distributed spray-drying plants (GPU document parsing, ONNX embeddings, a Chroma vector store, and a locally hosted quantized Gemma model), alongside a Seeq-backed multi-site data layer and a HiGHS setpoint optimizer that replaced four site-specific vendor optimizers.',
     tags: ['Air-Gapped RAG', 'PyTorch', 'ONNX', 'Chroma', 'LangChain', 'llama.cpp', 'Seeq', 'HiGHS', 'SciPy', 'STUMPY', 'Data Quality', 'CP-SAT', 'Robust Optimization', 'Cloud Operations', 'AI Upskilling'],
     organizations: ['Abbott'],
     linkedProjectIds: ['hybrid-flow-shop-digital-twin', 'changeover-data-quality-pipeline', 'azure-apc-web-simulator'],
@@ -817,13 +817,13 @@ export const eventHighlights: EventHighlight[] = [
 ];
 
 const achievementProjectLinks: Record<string, string[]> = {
-  'AsyncDDGS — Open-Source PyPI Library': ['asyncddgs'],
-  'Maritime Hackathon 2025 — Team Lead & Model Trainer': ['maritime-deficiency-severity'],
+  'AsyncDDGS: Open-Source PyPI Library': ['asyncddgs'],
+  'Maritime Hackathon 2025: Team Lead & Model Trainer': ['maritime-deficiency-severity'],
   'SmartExam @ GovTech x NTUPC Hackathon 2025': ['smart-exam'],
   'EthosLens @ LifeHack 2025': ['ethos-lens'],
   'AgeWellLah.AI @ HealthHack 2025': ['agewelllah-ai'],
-  'Disaster Risk Monitoring Using Satellite Imagery — NVIDIA': ['project-utopia'],
-  'Active Bug Bounty Hunter — GovTech & LTA': ['arcane'],
+  'Disaster Risk Monitoring Using Satellite Imagery (NVIDIA)': ['project-utopia'],
+  'Active Bug Bounty Hunter: GovTech & LTA': ['arcane'],
   'CTF @ DSTA BRINHACK 2025': ['arcane'],
   'Bespoke Vulnerability Automation Tooling': ['arcane'],
 };
@@ -870,14 +870,14 @@ const projectToFieldNote = (project: ProjectHighlight): FieldNote => ({
 });
 
 const achievementSortDates: Record<string, string> = {
-  'Top Student — 3D Computer Vision @ NUS School of Computing': '2026-07-03',
-  'AsyncDDGS — Open-Source PyPI Library': '2026-05-01',
-  'Maritime Hackathon 2025 — Team Lead & Model Trainer': '2025-08-01',
+  'Top Student: 3D Computer Vision @ NUS School of Computing': '2026-07-03',
+  'AsyncDDGS: Open-Source PyPI Library': '2026-05-01',
+  'Maritime Hackathon 2025: Team Lead & Model Trainer': '2025-08-01',
   'SmartExam @ GovTech x NTUPC Hackathon 2025': '2025-07-01',
   'EthosLens @ LifeHack 2025': '2025-06-01',
   'AgeWellLah.AI @ HealthHack 2025': '2025-05-01',
-  'Disaster Risk Monitoring Using Satellite Imagery — NVIDIA': '2023-12-01',
-  'Active Bug Bounty Hunter — GovTech & LTA': '2026-03-01',
+  'Disaster Risk Monitoring Using Satellite Imagery (NVIDIA)': '2023-12-01',
+  'Active Bug Bounty Hunter: GovTech & LTA': '2026-03-01',
   'CTF @ DSTA BRINHACK 2025': '2025-06-01',
   'Bespoke Vulnerability Automation Tooling': '2026-02-01',
 };
@@ -1227,7 +1227,7 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     role: 'Robotics Vision Engineer (BlendED AI+X)',
     organization: 'Amazon',
     location: 'Singapore',
-    scope: 'Vision systems for robotic perception image quality — camera ISP, super-resolution, and restoration.',
+    scope: 'Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.',
     responsibilities: [
       'Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light.',
     ],

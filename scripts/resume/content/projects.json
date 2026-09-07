@@ -2,7 +2,7 @@
   "entries": [
     {
       "id": "asyncddgs",
-      "organization": "AsyncDDGS — Open-Source Async Search Client (PyPI)",
+      "organization": "AsyncDDGS: Open-Source Async Search Client (PyPI)",
       "sort": "9999-12",
       "dateLabel": "2024 – Present",
       "bullets": [
@@ -14,7 +14,7 @@
           }
         }
       ],
-      "blocked": "Rahul: keep off résumés — many projects to choose from, this is not one he wants sent."
+      "blocked": "Rahul asked to keep this off résumés: he has many projects and this is not one he wants sent."
     },
     {
       "id": "portfolio",
@@ -29,7 +29,7 @@
           }
         }
       ],
-      "blocked": "Rahul: keep off résumés — the site speaks for itself in the contact line."
+      "blocked": "Rahul asked to keep this off résumés: the site speaks for itself in the contact line."
     },
     {
       "id": "flowshop",
@@ -45,11 +45,11 @@
           }
         }
       ],
-      "blocked": "Rahul: keep off résumés."
+      "blocked": "Rahul asked to keep this off résumés."
     },
     {
       "id": "onthespectrum",
-      "organization": "OnTheSpectrum — Codex & Blender MCP 3D Pipeline",
+      "organization": "OnTheSpectrum: Codex & Blender MCP 3D Pipeline",
       "sort": "2026-05",
       "dateLabel": "May 2026",
       "bullets": [
@@ -77,7 +77,7 @@
     },
     {
       "id": "utopia",
-      "organization": "Project Utopia — Global Situational Awareness",
+      "organization": "Project Utopia: Global Situational Awareness",
       "sort": "2026-03",
       "dateLabel": "Mar 2026",
       "bullets": [
@@ -88,11 +88,11 @@
           }
         }
       ],
-      "blocked": "Rahul: keep off résumés."
+      "blocked": "Rahul asked to keep this off résumés."
     },
     {
       "id": "waaah",
-      "organization": "Waaah Comics — 24-Hour Gesture-to-Comic Build",
+      "organization": "Waaah Comics: 24-Hour Gesture-to-Comic Build",
       "sort": "2026-01",
       "dateLabel": "Jan 2026",
       "bullets": [
@@ -100,14 +100,14 @@
           "id": "main",
           "text": {
             "default": "Built a gesture-to-comic pipeline in a 24-hour sprint, turning MediaPipe 3D hand landmarks into generated comic strips with Gemini 2.0 Flash, Veo 3, and Konva.js canvas tooling.",
-            "deep": "Built a gesture-to-comic pipeline in a 24-hour sprint, tracking MediaPipe 3D hand landmarks and routing them through Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition — exercising several generative models end to end in one interactive workflow."
+            "deep": "Built a gesture-to-comic pipeline in a 24-hour sprint, tracking MediaPipe 3D hand landmarks and routing them through Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition, exercising several generative models end to end in one interactive workflow."
           }
         }
       ]
     },
     {
       "id": "voltpulse",
-      "organization": "Volt Pulse SG — SMU Hack For Cities 2026 (Top 8 Finalist of 50+ teams)",
+      "organization": "Volt Pulse SG: SMU Hack For Cities 2026 (Top 8 Finalist of 50+ teams)",
       "sort": "2026-01",
       "dateLabel": "Jan 2026",
       "bullets": [
@@ -122,7 +122,7 @@
     },
     {
       "id": "maritime",
-      "organization": "Maritime Deficiency Severity Forecasting — Maritime Hackathon 2025 (Team Lead)",
+      "organization": "Maritime Deficiency Severity Forecasting: Maritime Hackathon 2025 (Team Lead)",
       "sort": "2025-06",
       "dateLabel": "2025",
       "bullets": [
@@ -137,7 +137,7 @@
     },
     {
       "id": "agewelllah",
-      "organization": "AgeWellLah.AI — NUS HealthHack 2025",
+      "organization": "AgeWellLah.AI: NUS HealthHack 2025",
       "sort": "2025-05",
       "dateLabel": "2025",
       "bullets": [
@@ -152,7 +152,7 @@
     },
     {
       "id": "smartexam",
-      "organization": "SmartExam — GovTech x NTUPC Product Hackathon",
+      "organization": "SmartExam: GovTech x NTUPC Product Hackathon",
       "sort": "2025-04",
       "dateLabel": "2025",
       "bullets": [
@@ -166,7 +166,7 @@
     },
     {
       "id": "ethoslens",
-      "organization": "EthosLens — LifeHack 2025",
+      "organization": "EthosLens: LifeHack 2025",
       "sort": "2025-03",
       "dateLabel": "2025",
       "bullets": [
@@ -206,7 +206,7 @@
           }
         }
       ],
-      "blocked": "Rahul: keep off résumés — coursework, weakest entry in the pool."
+      "blocked": "Rahul asked to keep this off résumés: coursework, and the weakest entry in the pool."
     },
     {
       "id": "hailo",
@@ -231,14 +231,14 @@
         {
           "id": "nvidia",
           "text": {
-            "default": "NVIDIA Disaster Risk Monitoring with Satellite Imagery — geospatial AI with U-Net semantic segmentation on GPU/ASPIRE 2A workflows (2023).",
-            "deep": "NVIDIA Deep Learning Institute, Disaster Risk Monitoring with Satellite Imagery — multi-spectral geospatial data and U-Net semantic segmentation with HPC-accelerated training on ASPIRE 2A (2023)."
+            "default": "NVIDIA Disaster Risk Monitoring with Satellite Imagery: geospatial AI with U-Net semantic segmentation on GPU/ASPIRE 2A workflows (2023).",
+            "deep": "NVIDIA Deep Learning Institute, Disaster Risk Monitoring with Satellite Imagery: multi-spectral geospatial data and U-Net semantic segmentation with HPC-accelerated training on ASPIRE 2A (2023)."
           }
         },
         {
           "id": "llm-cyber",
           "text": {
-            "default": "Fine-tuning LLMs for Cybersecurity — coursework exploring Mistral/LLaMA fine-tuning with AutoTrain and AutoGen (2024)."
+            "default": "Fine-tuning LLMs for Cybersecurity: coursework exploring Mistral/LLaMA fine-tuning with AutoTrain and AutoGen (2024)."
           }
         }
       ]

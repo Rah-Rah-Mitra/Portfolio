@@ -1,4 +1,4 @@
-// resumeRender.mjs — Harvard-style résumé renderer for on-demand builds
+// resumeRender.mjs: Harvard-style résumé renderer for on-demand builds
 // (api/resume.mjs and the build_resume MCP tool).
 //
 // This is a JS port of scripts/resume/harvard_style.py + the assembly loop in
@@ -16,18 +16,18 @@
 // Times New Roman, and no font file to ship. The bullet, middle dot and en dash
 // are all in WinAnsi, which is the encoding pdfkit uses for these fonts.
 //
-// Imports only packages and JSON — Vercel compiles api/ per file as native ESM
+// Imports only packages and JSON. Vercel compiles api/ per file as native ESM
 // with no bundling.
 import PDFDocument from 'pdfkit';
 
-// — page geometry (harvard_style.py:19-23) —
+// page geometry (harvard_style.py:19-23)
 const PAGE_W = 595.276;           // A4
 const PAGE_H = 841.890;
 const MARGIN_TOP = 39.6;          // 0.55in
 const MARGIN_BOTTOM = 36;         // 0.5in
 const MARGIN_LR = 50.4;           // 0.7in default
 
-// — type (harvard_style.py:13-16) —
+// type (harvard_style.py:13-16)
 const NAME_PT = 16;
 const CONTACT_PT = 9.5;
 export const BODY_PT = 10.5;
@@ -35,7 +35,7 @@ const REGULAR = 'Times-Roman';
 const BOLD = 'Times-Bold';
 const ITALIC = 'Times-Italic';
 
-// — calibrated from the Word output —
+// calibrated from the Word output
 const LINE_RATIO = 1.152;         // baseline-to-baseline / nominal size
 const ASCENT_RATIO = 0.93;        // line-box top to baseline / nominal size
 const HEADER_TRACKING = 1;        // w:spacing w:val="20" = 1pt
@@ -46,7 +46,7 @@ const BULLET = '• ';
 const SEP = ' · ';
 
 // The trim ladder from .agents/skills/resume-editing/SKILL.md, typography half
-// only. Content is never dropped automatically — the caller chose it.
+// only. Content is never dropped automatically; the caller chose it.
 const FIT_LADDER = [
   { bodyPt: null, marginIn: null },
   { bodyPt: 10, marginIn: null },
@@ -95,8 +95,8 @@ const block = (lines, { size, spaceBefore = 0, spaceAfter = 0, keepWithNext = fa
 
 /**
  * Resolve a spec against the content pools into a flat, ordered item list.
- * This is the single place the assembly rules from build_resumes.py:46-74 live —
- * sort policy, bullet selection order, and one-line vs two-line entries — so the
+ * This is the single place the assembly rules from build_resumes.py:46-74 live:
+ * sort policy, bullet selection order, and one-line vs two-line entries, so the
  * PDF, DOCX and Markdown outputs can never drift apart.
  */
 export const assemble = (spec, pools) => {
@@ -144,13 +144,13 @@ const buildBlocks = (doc, spec, pools, profile, bodyPt, contentWidth) => {
   const blocks = [];
   const items = assemble(spec, pools);
 
-  // name — centered, bold
+  // name: centered, bold
   blocks.push(block(
     [[{ text: profile.name, font: BOLD, size: NAME_PT, width: measure(doc, profile.name, BOLD, NAME_PT) }]],
     { size: NAME_PT, spaceAfter: 2, align: 'center' },
   ));
 
-  // contact — centered, 5 items, 4 of them live links
+  // contact: centered, 5 items, 4 of them live links
   const contactRuns = [];
   profile.contact.forEach((item, index) => {
     if (index) contactRuns.push({ text: SEP, font: REGULAR, size: CONTACT_PT });
@@ -178,7 +178,7 @@ const buildBlocks = (doc, spec, pools, profile, bodyPt, contentWidth) => {
       return;
     }
     if (item.kind === 'entry') {
-      // Line one: bold organisation, right-flush location — or the date when
+      // Line one: bold organisation, right-flush location, or the date when
       // there is no role, which is how projects render as a single line.
       const rightOne = item.role ? item.location : item.dateLabel;
       blocks.push(block(
@@ -202,7 +202,7 @@ const buildBlocks = (doc, spec, pools, profile, bodyPt, contentWidth) => {
   return blocks;
 };
 
-// text[variant] ?? text[slug] ?? text.default — mirrors build_resumes.py:33-35
+// text[variant] ?? text[slug] ?? text.default, mirroring build_resumes.py:33-35
 // with the reserved depth keys layered on top.
 export const resolveRole = (entry, selection) => {
   const role = entry.role;
@@ -284,7 +284,7 @@ const draw = (doc, placed, pages, marginLR) => {
         doc.font(run.font).fontSize(run.size).fillColor('#000000');
         doc.text(run.text, x, y, { lineBreak: false, baseline: 'alphabetic', ...(run.tracking ? { characterSpacing: run.tracking } : {}) });
         // Harvard convention: links are black and unmarked, but they must still
-        // be real annotations — verify_resumes.py checks for them.
+        // be real annotations; verify_resumes.py checks for them.
         if (run.link) doc.link(x, y - run.size * ASCENT_RATIO, run.width, run.size * LINE_RATIO, run.link);
         x += run.width;
       }
@@ -377,7 +377,7 @@ export const renderResumePdf = async (spec, pools, profile) => {
       maxPages,
       fitted: false,
       attempts,
-      overflow: `Does not fit ${maxPages} page(s) even at ${last.bodyPt}pt with 0.5in margins — it runs to ${last.pages}. Remove content and rebuild: a project entry costs about 3 lines, a bullet about 2.`,
+      overflow: `Does not fit ${maxPages} page(s) even at ${last.bodyPt}pt with 0.5in margins; it runs to ${last.pages}. Remove content and rebuild: a project entry costs about 3 lines, a bullet about 2.`,
     },
   };
 };
@@ -479,7 +479,7 @@ export const renderResumeMarkdown = (spec, pools, profile) => {
     else if (item.kind === 'skill') out.push(`- **${item.label}:** ${item.items}`);
     else if (item.kind === 'entry') {
       out.push('', item.role
-        ? `**${item.organization}**, ${item.location} — *${item.role}* (${item.dateLabel})`
+        ? `**${item.organization}**, ${item.location} · *${item.role}* (${item.dateLabel})`
         : `**${item.organization}** (${item.dateLabel})`);
     } else out.push(`- ${item.text}`);
   }

@@ -1,4 +1,4 @@
-// resumeGuide.mjs — the instructions returned by the get_resume_guide MCP tool.
+// resumeGuide.mjs: the instructions returned by the get_resume_guide MCP tool.
 // Single source: .agents/skills/resume-editing/SKILL.md links here rather than
 // restating it, so the rules an agent reads are the rules in the repo.
 export const RESUME_GUIDE = `# Building a résumé for Rahul Mitra
@@ -24,7 +24,7 @@ keyword is recoverable; an inaccurate one is not.
 1. \`get_resume_guide\` (this), then \`list_resume_blocks\` for the menu.
 
    **The menu is larger than any ready-made résumé.** Some of the strongest
-   material sits on only one of them, or on none — the People's Association AWS
+   material sits on only one of them, or on none: the People's Association AWS
    deployment bullet (\`pa.infra\`: Terraform, Fargate, Route 53, Redis, Kafka,
    cloud security) is one such. Read the menu; never treat a ready-made résumé
    as the full inventory. It is also not everything he has built: material he
@@ -42,8 +42,8 @@ keyword is recoverable; an inaccurate one is not.
    rates it among his strongest work, so keep it unless the posting makes it
    genuinely irrelevant.
 4. Three bullets per entry is typical and four is the practical ceiling. When
-   an entry genuinely earns a fourth — People's Association carries platform,
-   Singpass, Sparks fund and AWS deployment on the architecture résumés — pay
+   an entry genuinely earns a fourth (People's Association carries platform,
+   Singpass, Sparks fund and AWS deployment on the architecture résumés), pay
    for it by dropping a weaker project rather than by cutting one of the four.
 5. Choose depth. Bullets can carry \`deep\` and \`short\` variants alongside the
    default. Set \`detail: "deep"\` on the spec, or \`variant\` on a single entry.
@@ -97,7 +97,7 @@ Certifications are not a separate section: they are skills lines whose label is
 
 \`\`\`json
 {
-  "subject": "Software Engineer — Acme",
+  "subject": "Software Engineer, Acme",
   "pages": 1,
   "detail": "standard",
   "sections": [
@@ -118,7 +118,7 @@ Certifications are not a separate section: they are skills lines whose label is
 }
 \`\`\`
 
-\`bodyPt\`, \`marginIn\` and \`autoFit\` exist but you rarely want them — let
+\`bodyPt\`, \`marginIn\` and \`autoFit\` exist but you rarely want them; let
 auto-fit decide.
 
 ## Applying on Rahul's behalf

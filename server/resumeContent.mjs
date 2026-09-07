@@ -1,4 +1,4 @@
-// resumeContent.mjs — the résumé content pools and canonical configs, imported
+// resumeContent.mjs: the résumé content pools and canonical configs, imported
 // once and shared by the MCP tools, the build API, and the renderer.
 //
 // Static imports only: Vercel compiles api/ per file as native ESM with no

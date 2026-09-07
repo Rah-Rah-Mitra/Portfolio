@@ -63,7 +63,7 @@
           "id": "platform",
           "text": {
             "default": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants, spanning GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted quantized Gemma model.",
-            "deep": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants — GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain over a locally hosted quantized Gemma 4 E4B served through llama.cpp GGUF."
+            "deep": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain over a locally hosted quantized Gemma 4 E4B served through llama.cpp GGUF."
           }
         },
         {
@@ -77,7 +77,7 @@
           "id": "datalayer",
           "text": {
             "default": "Build a live multi-site data layer over read-only Seeq historian pulls, with per-site canonicalization driven by configuration rather than forks and automated operating-window qualification that excludes downtime.",
-            "deep": "Build a live multi-site data layer over read-only Seeq (SPy) historian pulls, canonicalizing each site through configuration rather than forks — status predicates, production thresholds, time zones, tag mapping, unit overrides — with automated operating-window qualification excluding downtime, then Kalman smoothing, Welch PSD, lag and coherence, change-point detection (ruptures), and matrix-profile motifs (STUMPY) in SciPy and pandas."
+            "deep": "Build a live multi-site data layer over read-only Seeq (SPy) historian pulls, canonicalizing each site through configuration rather than forks (status predicates, production thresholds, time zones, tag mapping, unit overrides), with automated operating-window qualification excluding downtime, then Kalman smoothing, Welch PSD, lag and coherence, change-point detection (ruptures), and matrix-profile motifs (STUMPY) in SciPy and pandas."
           }
         },
         {
@@ -120,7 +120,7 @@
           "id": "pipeline",
           "text": {
             "default": "Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of unseen raw data with zero execution failures.",
-            "deep": "Engineered a non-destructive, 15-stage changeover-data pipeline over operational matrices that encoded meaning in values, labels, colours, merged regions, and blanks — controlled staging sheets, normalization and repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling — exposing every intermediate state instead of mutating source data, and validated against five years of unseen raw data with zero execution failures."
+            "deep": "Engineered a non-destructive, 15-stage changeover-data pipeline over operational matrices that encoded meaning in values, labels, colours, merged regions, and blanks, using controlled staging sheets, normalization and repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling to expose every intermediate state instead of mutating source data, and validated against five years of unseen raw data with zero execution failures."
           }
         },
         {
@@ -174,7 +174,7 @@
         {
           "id": "infra",
           "text": {
-            "default": "Provisioned and deployed the platform's AWS infrastructure with Terraform — Fargate services, Route 53 DNS, Redis caching, and Kafka messaging — applying cloud security controls across the environment.",
+            "default": "Provisioned and deployed the platform's AWS infrastructure with Terraform (Fargate services, Route 53 DNS, Redis caching, and Kafka messaging), applying cloud security controls across the environment.",
             "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure spanning Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, with cloud security controls applied across the environment alongside multi-repo coordination and rollout planning."
           }
         }

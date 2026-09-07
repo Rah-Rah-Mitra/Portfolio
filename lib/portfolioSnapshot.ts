@@ -1,4 +1,4 @@
-// portfolioSnapshot.ts — JSON-safe projection of the TypeScript portfolio data
+// portfolioSnapshot.ts: JSON-safe projection of the TypeScript portfolio data
 // for the serverless MCP + JSON routes (server/portfolioMcp.mjs). Vercel
 // compiles api/ per file as native ESM without bundling, so the function cannot
 // import portfolioData.ts directly; it imports the committed

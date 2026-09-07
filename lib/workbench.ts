@@ -1,4 +1,4 @@
-// workbench.ts — registry + data adapters for the Industry "Field Workbench" UI.
+// workbench.ts: registry + data adapters for the Industry "Field Workbench" UI.
 // App ids, labels, and anchors reuse lib/workstation.ts so the AI assistant and
 // server/pageAgent.mjs command contract keep working unchanged.
 import type { DesktopAppId, ProjectHighlight } from '../types';
@@ -115,7 +115,7 @@ export interface ArchiveRow {
 
 export const archiveRows: readonly ArchiveRow[] = allProjects.map((project) => ({
   id: project.id,
-  date: project.sortDate?.slice(0, 7) ?? project.dateLabel ?? '—',
+  date: project.sortDate?.slice(0, 7) ?? project.dateLabel ?? '-',
   title: project.title,
   category: project.category,
   stack: project.tags.slice(0, 3).join(' · '),
@@ -134,7 +134,7 @@ export const dossierStats = [
   { value: String(coreCompetencies.length).padStart(2, '0'), label: 'ENGINEERING DOMAINS' },
   { value: String(allProjects.length), label: 'PUBLIC PROJECTS INDEXED' },
   { value: 'S$20K', label: 'SPARKS INNOVATION FUND' },
-  { value: '1/24', label: 'TOP STUDENT — 3D CV, NUS' },
+  { value: '1/24', label: 'TOP STUDENT: 3D CV, NUS' },
 ] as const;
 
 export const CONTACT = {

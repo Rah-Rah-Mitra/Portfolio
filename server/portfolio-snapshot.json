@@ -172,7 +172,7 @@
       },
       {
         "value": "1/24",
-        "label": "TOP STUDENT — 3D CV, NUS"
+        "label": "TOP STUDENT: 3D CV, NUS"
       }
     ]
   },
@@ -219,7 +219,7 @@
       "role": "Robotics Vision Engineer (BlendED AI+X)",
       "organization": "Amazon",
       "location": "Singapore",
-      "scope": "Vision systems for robotic perception image quality — camera ISP, super-resolution, and restoration.",
+      "scope": "Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.",
       "responsibilities": [
         "Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light."
       ],
@@ -630,7 +630,7 @@
       "spotlight": {
         "context": "A 24-hour build asking whether physical hand movement could drive a generated comic strip end to end.",
         "contribution": "Built the gesture-tracking, generation, and composition pipeline that turns hand movement into finished panels.",
-        "approach": "MediaPipe 3D hand landmarks feeding Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition — several generative models exercised in one interactive workflow.",
+        "approach": "MediaPipe 3D hand landmarks feeding Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition: several generative models exercised in one interactive workflow.",
         "outcome": "A working gesture-to-comic demo produced inside the 24-hour window."
       }
     },
@@ -908,7 +908,7 @@
       "spotlight": {
         "context": "Community garden-plot allocation needed a complete civic workflow rather than another isolated form.",
         "contribution": "Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it.",
-        "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure — Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and cloud security controls — with stakeholder coordination and rollout planning.",
+        "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and cloud security controls), with stakeholder coordination and rollout planning.",
         "outcome": "Production-ready for national rollout and awarded the S$20,000 Sparks Community Innovation Fund."
       }
     },
@@ -1375,7 +1375,7 @@
     {
       "id": "highlights",
       "role": "Highlights (One-Page)",
-      "headline": "One-page best-of across every profile — civic platform delivery, applied AI, optimization, security research, and open source — for preference forms and general applications.",
+      "headline": "One-page best-of across every profile (civic platform delivery, applied AI, optimization, security research, and open source) for preference forms and general applications.",
       "keywords": [
         "One Page",
         "Full Stack",
@@ -1390,7 +1390,7 @@
     {
       "id": "general",
       "role": "General / Master CV",
-      "headline": "Two-page cross-disciplinary CV unifying every profile — software, AI/ML, operations research, architecture, and security — for broad job search.",
+      "headline": "Two-page cross-disciplinary CV unifying every profile (software, AI/ML, operations research, architecture, and security) for broad job search.",
       "keywords": [
         "Full Stack",
         "AI/ML",

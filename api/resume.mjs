@@ -26,7 +26,7 @@ const build = async (rawSpec, format, download) => {
   try {
     result = await renderResume(parsed.data, pools, profile);
   } catch (error) {
-    // Unknown entry/bullet/skills-line ids land here — tell the caller which.
+    // Unknown entry/bullet/skills-line ids land here; tell the caller which.
     return fail(error instanceof Error ? error.message : 'Could not render résumé');
   }
   const name = `rahul-mitra-${(parsed.data.slug ?? 'custom').replace(/[^a-z0-9-]/gi, '')}.${format}`;
@@ -65,7 +65,7 @@ export const GET = async (request) => {
   try {
     spec = decodeSpec(url.searchParams.get('spec'));
   } catch {
-    return fail('spec must be base64url-encoded deflated JSON — build it with the build_resume MCP tool');
+    return fail('spec must be base64url-encoded deflated JSON; build it with the build_resume MCP tool');
   }
   return build(spec, format, url.searchParams.get('download') === '1');
 };

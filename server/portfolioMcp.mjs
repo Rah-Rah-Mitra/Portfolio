@@ -1,7 +1,7 @@
-// portfolioMcp.mjs — read-only portfolio data plus the résumé builder tools for
+// portfolioMcp.mjs: read-only portfolio data plus the résumé builder tools for
 // api/mcp.mjs (MCP) and api/portfolio.mjs (JSON export). Imports ONLY JSON and
 // packages: Vercel compiles api/ per file as native ESM (no bundling), so
-// nothing here may import portfolioData.ts — regenerate
+// nothing here may import portfolioData.ts; regenerate
 // server/portfolio-snapshot.json with `npm run snapshot` after data changes.
 import { z } from 'zod';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
@@ -130,7 +130,7 @@ export const registerPortfolioTools = (server) => {
 
   server.registerTool('build_resume', {
     title: 'Build a résumé',
-    description: 'Render a Harvard-style résumé from selected block ids and return PDF, DOCX and Markdown. Content comes only from list_resume_blocks — bullet text cannot be supplied. Auto-fit adjusts typography within sanctioned limits and never drops what you chose; if it still overflows you get an overflow report to act on.',
+    description: 'Render a Harvard-style résumé from selected block ids and return PDF, DOCX and Markdown. Content comes only from list_resume_blocks; bullet text cannot be supplied. Auto-fit adjusts typography within sanctioned limits and never drops what you chose; if it still overflows you get an overflow report to act on.',
     inputSchema: z.object({ spec: specSchema }),
   }, async ({ spec }) => {
     try {

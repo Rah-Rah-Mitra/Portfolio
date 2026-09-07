@@ -66,19 +66,19 @@
       "title": "PROJECTS",
       "entries": [
         {
-          "id": "flowshop",
-          "bullets": [
-            "main"
-          ]
-        },
-        {
           "id": "voltpulse",
           "bullets": [
             "main"
           ]
         },
         {
-          "id": "ie2110",
+          "id": "maritime",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "smartexam",
           "bullets": [
             "main"
           ]

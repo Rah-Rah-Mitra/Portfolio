@@ -53,6 +53,10 @@ def build_resume(config, pools, profile, edition):
             continue
 
         pool = {e["id"]: e for e in pools[section["type"]]["entries"]}
+        for sel in section["entries"]:
+            blocked = pool[sel["id"]].get("blocked")
+            if blocked:
+                raise SystemExit(f"{slug}: {sel['id']} is blocked from resumes - {blocked}")
         chosen = [
             {"entry": pool[sel["id"]], "bullets": sel.get("bullets", [])}
             for sel in section["entries"]

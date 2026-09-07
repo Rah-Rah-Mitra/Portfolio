@@ -31,11 +31,15 @@ export const configBySlug = (slug) => resumeConfigs.find((config) => config.slug
  * Every block an agent may select, with each bullet's depth variants. This is
  * the menu for build_resume: selection is the only way to compose a résumé, so
  * nothing outside this list can reach a document.
+ *
+ * Entries carrying `blocked` are withheld: Rahul has material he does not want
+ * on a résumé at all, and the builder is meant to run without him reviewing the
+ * output, so the block has to hold at the menu and again at render time.
  */
 export const resumeBlocks = () => ({
   sections: ['education', 'experience', 'projects', 'leadership'].map((type) => ({
     type,
-    entries: pools[type].entries.map((entry) => ({
+    entries: pools[type].entries.filter((entry) => !entry.blocked).map((entry) => ({
       id: entry.id,
       organization: entry.organization,
       role: entry.role ?? null,

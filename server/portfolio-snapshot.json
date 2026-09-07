@@ -530,11 +530,12 @@
       "id": "hailo-training",
       "title": "Hailo Training",
       "category": "Edge AI Training",
-      "description": "A compact training and experimentation repo for edge-AI workflows around Hailo-style model deployment and acceleration.",
+      "description": "Training and experimentation workflows for edge AI, deploying OCR and object-detection models to Hailo accelerators for on-device inference.",
       "tags": [
         "Edge AI",
+        "OCR",
+        "Object Detection",
         "Model Training",
-        "HTML",
         "Acceleration"
       ],
       "repoUrl": "https://github.com/Rah-Rah-Mitra/Hailo-Training",
@@ -1070,7 +1071,7 @@
       "date": "2026-03",
       "title": "Hailo Training",
       "category": "Edge AI Training",
-      "stack": "Edge AI · Model Training · HTML",
+      "stack": "Edge AI · OCR · Object Detection",
       "domain": "AI",
       "href": "https://github.com/Rah-Rah-Mitra/Hailo-Training"
     },

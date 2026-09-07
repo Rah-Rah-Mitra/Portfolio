@@ -14,7 +14,7 @@ import { track } from '../../lib/analytics';
 type PoolBullet = { id: string; text: Record<string, string> };
 type PoolEntry = {
   id: string; organization: string; role?: string; location?: string;
-  dateLabel: string; start?: string; sort?: string; bullets?: PoolBullet[];
+  dateLabel: string; start?: string; sort?: string; blocked?: string; bullets?: PoolBullet[];
 };
 type SkillLine = { id: string; label: string; items: string };
 type SpecSection =
@@ -54,7 +54,7 @@ const buildSpec = (content: Content, picks: Picks, lines: string[], detail: 'sta
   const sections: SpecSection[] = [];
   for (const { type, title } of SECTIONS) {
     const entries = (content.pools[type].entries ?? [])
-      .filter((entry) => picks[entry.id])
+      .filter((entry) => !entry.blocked && picks[entry.id])
       .map((entry) => ({ id: entry.id, bullets: picks[entry.id] }));
     if (entries.length) sections.push({ type, title, entries });
   }
@@ -230,7 +230,7 @@ export const ResumeBuilder: React.FC = () => {
           {SECTIONS.map(({ type, title }) => (
             <fieldset key={type} className="wb-builder-group">
               <legend>{title}</legend>
-              {(content.pools[type].entries ?? []).map((entry) => {
+              {(content.pools[type].entries ?? []).filter((entry) => !entry.blocked).map((entry) => {
                 const chosen = picks[entry.id];
                 return (
                   <div className="wb-builder-entry" key={entry.id}>

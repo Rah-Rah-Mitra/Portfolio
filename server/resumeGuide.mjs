@@ -27,7 +27,9 @@ keyword is recoverable; an inaccurate one is not.
    material sits on only one of them, or on none — the People's Association AWS
    deployment bullet (\`pa.infra\`: Terraform, Fargate, Route 53, Redis, Kafka,
    cloud security) is one such. Read the menu; never treat a ready-made résumé
-   as the full inventory.
+   as the full inventory. It is also not everything he has built: material he
+   has asked to keep off résumés is withheld from the menu and refused by the
+   builder, so if you know of a project and cannot find it, that is deliberate.
 2. Pick the closest starting point from \`startingPoints\` and fetch it with
    \`get_resume(slug)\`, which returns its spec. Six are role-targeted, plus
    \`highlights\` (one-page best-of) and \`general\` (two-page master CV).

@@ -117,6 +117,7 @@ export const assemble = (spec, pools) => {
     const chosen = section.entries.map((selection) => {
       const entry = pool.get(selection.id);
       if (!entry) throw new Error(`unknown ${section.type} entry: ${selection.id}`);
+      if (entry.blocked) throw new Error(`${selection.id} is not available for résumés: ${entry.blocked}`);
       return { entry, bullets: selection.bullets ?? [], variant: selection.variant };
     }).sort((a, b) => b.entry[key].localeCompare(a.entry[key]));
 

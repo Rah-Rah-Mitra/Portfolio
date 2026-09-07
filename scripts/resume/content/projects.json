@@ -13,7 +13,8 @@
             "deep": "Authored and maintain an asyncio-first, aiohttp-based DuckDuckGo client on PyPI achieving sub-100ms query responses by working with Python's event loop rather than against the GIL, maintained with pytest CI/CD on GitHub Actions and referenced by starred AI projects including SearchGPT and Auto-Photoshop-StableDiffusion-Plugin as well as Discord bot frameworks."
           }
         }
-      ]
+      ],
+      "blocked": "Rahul: keep off résumés — many projects to choose from, this is not one he wants sent."
     },
     {
       "id": "portfolio",
@@ -27,7 +28,8 @@
             "default": "Built an AI-assisted portfolio in React, TypeScript, Three.js, and Matter.js with profile switching, searchable field notes, analytics, and a 3D project world."
           }
         }
-      ]
+      ],
+      "blocked": "Rahul: keep off résumés — the site speaks for itself in the contact line."
     },
     {
       "id": "flowshop",
@@ -42,7 +44,8 @@
             "deep": "Modeled hybrid flow-shop scheduling as a SimPy discrete-event digital twin paired with an OR-Tools CP-SAT optimizer over interval and precedence constraints, benchmarked against heuristic baselines, and researched robust optimization for operational uncertainty."
           }
         }
-      ]
+      ],
+      "blocked": "Rahul: keep off résumés."
     },
     {
       "id": "onthespectrum",
@@ -84,7 +87,8 @@
             "default": "Built a real-time global intelligence dashboard for AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking with geospatial visualization."
           }
         }
-      ]
+      ],
+      "blocked": "Rahul: keep off résumés."
     },
     {
       "id": "waaah",
@@ -201,6 +205,21 @@
             "default": "Built LP, network-flow, and nonlinear programming models, including a Jupyter SSSP/APSP (Dijkstra) graph optimization for engineering decision support."
           }
         }
+      ],
+      "blocked": "Rahul: keep off résumés — coursework, weakest entry in the pool."
+    },
+    {
+      "id": "hailo",
+      "organization": "Hailo Edge AI Training and Deployment",
+      "sort": "2026-03",
+      "dateLabel": "Mar 2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": {
+            "default": "Trained and deployed OCR and object-detection models to Hailo edge accelerators, building the training and experimentation workflows around on-device inference and model acceleration."
+          }
+        }
       ]
     },
     {
@@ -220,18 +239,6 @@
           "id": "llm-cyber",
           "text": {
             "default": "Fine-tuning LLMs for Cybersecurity — coursework exploring Mistral/LLaMA fine-tuning with AutoTrain and AutoGen (2024)."
-          }
-        },
-        {
-          "id": "utopia-short",
-          "text": {
-            "default": "Project Utopia — real-time situational-awareness dashboard with AI news aggregation and geospatial visualization (2026)."
-          }
-        },
-        {
-          "id": "portfolio-short",
-          "text": {
-            "default": "Interactive Portfolio Infrastructure — AI-assisted React, TypeScript, and Three.js portfolio with analytics (2026)."
           }
         }
       ]

@@ -68,7 +68,7 @@
     {
       "id": "gen-hardware",
       "label": "Hardware/Embedded",
-      "items": "Edge AI / Hailo model deployment, autonomous robotics (sensor integration)"
+      "items": "Edge AI / Hailo model deployment (OCR, object detection), autonomous robotics (sensor integration)"
     },
     {
       "id": "certs-core",

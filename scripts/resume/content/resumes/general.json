@@ -82,13 +82,19 @@
       "title": "PROJECTS AND COMPETITIONS",
       "entries": [
         {
-          "id": "asyncddgs",
+          "id": "waaah",
           "bullets": [
             "main"
           ]
         },
         {
           "id": "onthespectrum",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "hailo",
           "bullets": [
             "main"
           ]
@@ -138,8 +144,6 @@
         {
           "id": "additional",
           "bullets": [
-            "utopia-short",
-            "portfolio-short",
             "nvidia",
             "llm-cyber"
           ]

@@ -6,7 +6,7 @@ import { configBySlug, pools, profile, resumeBlocks, resumeConfigs } from '../se
 import { GET, POST } from '../api/resume.mjs';
 
 // server/*.mjs is plain JS, so give the shapes this test relies on a name.
-type PoolEntry = { id: string; bullets?: Array<{ id: string }> };            // content pool
+type PoolEntry = { id: string; blocked?: string; bullets?: Array<{ id: string }> }; // content pool
 type BlockEntry = { id: string; bullets?: Array<{ id: string; variants: Record<string, string> }> }; // list_resume_blocks
 type SpecEntry = { id: string; bullets?: string[] };                          // a spec: bullets are ids
 type Section = { type: string; title: string; entries?: SpecEntry[]; lines?: string[] };
@@ -25,6 +25,7 @@ const CONTACT_URIS = [
 const configs = resumeConfigs as Spec[];
 const highlights = configBySlug('highlights') as Spec;
 const entryIds = (type: 'experience' | 'projects'): SpecEntry[] => (pools[type].entries as unknown as PoolEntry[])
+  .filter((entry) => !entry.blocked)
   .map((entry) => ({ id: entry.id, bullets: (entry.bullets ?? []).map((bullet) => bullet.id) }));
 
 describe('résumé renderer', () => {
@@ -106,6 +107,25 @@ describe('résumé renderer', () => {
     expect(fit.overflow).toMatch(/Remove content/);
   });
 
+  it('refuses a project Rahul has blocked, even when a spec names it directly', async () => {
+    const blocked = (pools.projects.entries as unknown as PoolEntry[]).filter((entry) => entry.blocked);
+    expect(blocked.map((entry) => entry.id)).toEqual(
+      expect.arrayContaining(['asyncddgs', 'portfolio', 'utopia', 'flowshop', 'ie2110']),
+    );
+    for (const entry of blocked) {
+      const spec = { pages: 1, sections: [{ type: 'projects', title: 'PROJECTS', entries: [{ id: entry.id, bullets: [] }] }] };
+      await expect(renderResumePdf(spec, pools, profile)).rejects.toThrow(/is not available for résumés/);
+    }
+    // No canonical résumé may name one either.
+    for (const config of configs) {
+      for (const section of config.sections) {
+        for (const selection of section.entries ?? []) {
+          expect(blocked.map((entry) => entry.id), `${config.slug} selects ${selection.id}`).not.toContain(selection.id);
+        }
+      }
+    }
+  });
+
   it('names the offending id when a selection does not exist', async () => {
     const broken = { pages: 1, sections: [{ type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'nope', bullets: [] }] }] };
     await expect(renderResumePdf(broken, pools, profile)).rejects.toThrow(/unknown experience entry: nope/);
@@ -132,12 +152,16 @@ describe('résumé spec', () => {
       .flatMap((entry) => (entry.bullets ?? []).map((bullet) => `${entry.id}.${bullet.id}`))));
     for (const type of ['education', 'experience', 'projects', 'leadership'] as const) {
       for (const entry of pools[type].entries as unknown as PoolEntry[]) {
+        if (entry.blocked) continue;
         for (const bullet of entry.bullets ?? []) {
           expect(exposed.has(`${entry.id}.${bullet.id}`), `${entry.id}.${bullet.id} missing from list_resume_blocks`).toBe(true);
         }
       }
     }
     expect(exposed.has('pa.infra')).toBe(true);
+    // ...and the converse: what Rahul blocked is not on the menu at all.
+    expect(exposed.has('asyncddgs.main')).toBe(false);
+    expect(exposed.has('portfolio.main')).toBe(false);
     const lines = new Set(blocks.skillLines.map((line) => line.id));
     for (const line of pools.skills.lines as Array<{ id: string }>) {
       expect(lines.has(line.id), `${line.id} missing from list_resume_blocks`).toBe(true);

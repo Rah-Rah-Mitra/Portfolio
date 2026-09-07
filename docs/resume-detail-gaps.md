@@ -119,19 +119,31 @@ and on what?
   experience. **Still open:** the narrower `AWS IMDSv2, metadata APIs` phrasing in
   `gen-security` reads as bug-bounty research rather than deployment. Confirm which
   context it should sit in, since the two tell a reader different stories.
-- `Edge AI / Hailo model deployment` and `autonomous robotics (sensor integration)`
-  still appear only as skills-line entries — the Hailo repository exists on the site
-  but has no résumé project entry and no described outcome.
+- `Edge AI / Hailo model deployment` — **answered** (Rahul, 2026-09-07): the Hailo
+  repository genuinely deploys OCR and object-detection models, so it is now the
+  `hailo` résumé project. `autonomous robotics (sensor integration)` is still a
+  skills-line entry with no project or outcome behind it.
 
 ## 7. Work on the site with no résumé entry at all
 
 `waaah-comics` — **answered**: now the `waaah` résumé project.
 
-Still unused by any résumé: `hailo-training`, `kalidokit-fork`
-(MediaPipe/TensorFlow.js kinematics), `crawl4ai-deepseek-example`, `geometry`,
-`information-lab`, `kaogenie`.
+Still unused by any résumé: `kalidokit-fork` (MediaPipe/TensorFlow.js kinematics),
+`crawl4ai-deepseek-example`, `geometry`, `information-lab`, `kaogenie`.
 
 **Question:** should any of these become selectable résumé project entries too?
+
+## 9. Projects Rahul has blocked from résumés — 2026-09-07
+
+`asyncddgs`, `portfolio`, `utopia`, `flowshop` and `ie2110` carry a `blocked`
+reason in `projects.json`. They are withheld from `list_resume_blocks` and refused
+by both renderers, so neither an agent nor a canonical config can put them on a
+document. Do not "helpfully" restore one; ask Rahul first.
+
+Blocking `flowshop` cost nothing: the same SimPy digital twin and CP-SAT
+optimizer is already an Abbott internship bullet (`abbott-intern.digital-twin`), so
+the operations-research résumé had been carrying that work twice. It now appears
+once, as experience, which is the stronger placement.
 
 ## 8. Where the `pa.infra` bullet goes — answered
 

@@ -555,7 +555,7 @@ export const projectHighlights: ProjectHighlight[] = [
     category: 'Citizen Developer Platform',
     description: 'An end-to-end digital garden-plot balloting platform for People\'s Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.',
     tags: ['Civic Tech', 'Singpass', 'AWS Fargate', 'Terraform', 'GIS', 'Redis', 'Kafka', 'Route 53', 'Cloud Security', 'Balloting', 'Smart Nation'],
-    dateLabel: '2025 - Present',
+    dateLabel: '2025 - 2026',
     sortDate: '2025-01-01',
     imageUrl: '/images/generated/churp-community.webp',
     accent: 'green',
@@ -786,7 +786,7 @@ export const eventHighlights: EventHighlight[] = [
   {
     id: 'sparks-by-pa-churp',
     title: 'Sparks by PA - Churp',
-    dateLabel: '2025 - Present',
+    dateLabel: '2025 - 2026',
     source: 'LinkedIn',
     summary: 'Built Churp into an end-to-end digital garden-plot balloting platform - admin and public frontends, GIS mapping, and Singpass Login + Myinfo identity verification - now production-ready for national rollout across Singapore. Awarded the S$20,000 Sparks Community Innovation Fund.',
     tags: ['Citizen Developer', 'Singpass', 'GIS', 'Balloting', 'Smart Nation'],

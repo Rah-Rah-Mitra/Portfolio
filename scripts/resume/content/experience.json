@@ -128,6 +128,13 @@
           "text": {
             "default": "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations; awarded the S$20,000 Sparks Community Innovation Fund."
           }
+        },
+        {
+          "id": "infra",
+          "text": {
+            "default": "Provisioned and deployed the platform's AWS infrastructure with Terraform — Fargate services, Route 53 DNS, Redis caching, and Kafka messaging — applying cloud security controls across the environment.",
+            "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure spanning Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, with cloud security controls applied across the environment alongside multi-repo coordination and rollout planning."
+          }
         }
       ]
     },

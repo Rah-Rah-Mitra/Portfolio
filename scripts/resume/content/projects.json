@@ -87,6 +87,21 @@
       ]
     },
     {
+      "id": "waaah",
+      "organization": "Waaah Comics — 24-Hour Gesture-to-Comic Build",
+      "sort": "2026-01",
+      "dateLabel": "Jan 2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": {
+            "default": "Built a gesture-to-comic pipeline in a 24-hour sprint, turning MediaPipe 3D hand landmarks into generated comic strips with Gemini 2.0 Flash, Veo 3, and Konva.js canvas tooling.",
+            "deep": "Built a gesture-to-comic pipeline in a 24-hour sprint, tracking MediaPipe 3D hand landmarks and routing them through Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition — exercising several generative models end to end in one interactive workflow."
+          }
+        }
+      ]
+    },
+    {
       "id": "voltpulse",
       "organization": "Volt Pulse SG — SMU Hack For Cities 2026 (Top 8 of 50+ teams)",
       "sort": "2026-01",

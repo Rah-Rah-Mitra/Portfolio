@@ -12,6 +12,19 @@ the fact is written into the content pools.
 Answer a question by adding the fact to `scripts/resume/content/*.json` (or to
 `portfolioData.ts` if it belongs on the site too), then delete the entry here.
 
+**Answered 2026-09-04** (Rahul, in conversation) and now in the data:
+
+- The **Churp deployment at People's Association ran on AWS**: Terraform-provisioned
+  infrastructure, Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and
+  the cloud security work that went with it. Added as the selectable `pa.infra` bullet,
+  to the `sa-skills` / `civic-skills` / `gen-cloud` / `hl-web-cloud` skills lines, and to
+  the Churp project's tags and spotlight on the site.
+- **Waaah Comics** is now a selectable résumé project (`waaah`) and has a spotlight on
+  the site, naming MediaPipe 3D landmarks, Gemini 2.0 Flash, Veo 3, and Konva.js.
+- **Computer-vision provenance**: the CV terms in the skills lines come from the CS4277
+  3D Computer Vision course (top of a class of 24) and the Amazon robotics-vision role.
+  That settles where they came from — it does not add new ones (see §5).
+
 ---
 
 ## 1. Reinforcement learning — the largest gap
@@ -71,34 +84,52 @@ has none.
 
 ## 5. ML tooling that is absent everywhere
 
-An agent tailoring to a machine-learning posting will look for these and find
-nothing. Confirmed absent from every content source:
+*Partly answered.* Terraform, Redis and Kafka are now attested through the Churp
+deployment. The computer-vision terms already in the skills lines trace to CS4277
+and the Amazon role.
+
+Still absent from every content source, and therefore still unusable:
 
 PyTorch, TensorFlow (except a passing reference to TensorFlow.js in a fork),
 Hugging Face, scikit-learn, Keras, NumPy, pandas, RANSAC, PnP, SIFT, ORB, Gurobi,
-Pyomo, Kubernetes, Terraform, Redis, Kafka, PostgreSQL, MongoDB, Pinecone, FAISS,
-Chroma, pgvector, Weights & Biases, MLflow, ONNX, TensorRT, quantization,
-distillation, Optuna.
+Pyomo, Kubernetes, PostgreSQL, MongoDB, Pinecone, FAISS, Chroma, pgvector,
+Weights & Biases, MLflow, ONNX, TensorRT, quantization, distillation, Optuna.
 
-**Question:** which of these have you actually used, and on what?
+**Question:** which of these have you actually used, and on what? Note that naming
+the CS4277 course as the source of the CV skills does *not* license the specific
+algorithms it did not enumerate — RANSAC, PnP, SIFT and ORB appear nowhere in the
+syllabus text on record, so they still need your confirmation.
 
 ## 6. Attested but unconnected to any work
 
-These appear only as skills-line entries with no project or role behind them. They
-are usable in a skills line but not in a bullet:
-
-- `cloud security (AWS IMDSv2, metadata APIs)`
+- `cloud security` — **answered**: the deployment work on Churp is the backing
+  experience. The narrower `AWS IMDSv2, metadata APIs` phrasing still reads as
+  bug-bounty research rather than deployment; confirm which context you want it to
+  sit in, since the two tell different stories to a reader.
 - `Edge AI / Hailo model deployment` and `autonomous robotics (sensor integration)`
-  — the Hailo repository exists on the site but has no résumé project entry.
+  still appear only as skills-line entries — the Hailo repository exists on the site
+  but has no résumé project entry and no described outcome.
 
 ## 7. Work on the site with no résumé entry at all
 
-Attested and potentially résumé-worthy, currently unused by any résumé:
-`waaah-comics` (MediaPipe 3D landmarks, Gemini 2.0 Flash, Veo 3, Konva.js),
-`hailo-training`, `kalidokit-fork` (MediaPipe/TensorFlow.js kinematics),
-`crawl4ai-deepseek-example`, `geometry`, `information-lab`, `kaogenie`.
+`waaah-comics` — **answered**: now the `waaah` résumé project.
 
-**Question:** should any of these become selectable résumé project entries?
+Still unused by any résumé: `hailo-training`, `kalidokit-fork`
+(MediaPipe/TensorFlow.js kinematics), `crawl4ai-deepseek-example`, `geometry`,
+`information-lab`, `kaogenie`.
+
+**Question:** should any of these become selectable résumé project entries too?
+
+## 8. Open decision — where the `pa.infra` bullet goes
+
+The AWS deployment bullet exists and is selectable, but no canonical résumé uses it:
+the layout invariant caps an entry at three bullets and People's Association already
+has three (platform, Singpass, Sparks fund). On `solution-architect` and
+`civic-tech-solution-architect` it would fit at the current type size if it replaced
+one of them.
+
+**Question:** on those two résumés, should the deployment bullet replace the Sparks
+fund line, the Singpass line, or neither?
 
 ---
 

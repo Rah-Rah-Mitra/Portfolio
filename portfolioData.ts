@@ -484,7 +484,7 @@ export const projectHighlights: ProjectHighlight[] = [
     title: 'Waaah Comics',
     category: 'Generative AI & Computer Vision',
     description: 'A 24-hour build turning physical hand gestures into digital comic strips with MediaPipe 3D landmarks, Gemini, Veo, and canvas tooling.',
-    tags: ['MediaPipe', 'Gemini', 'Veo', 'Konva.js', 'Computer Vision'],
+    tags: ['MediaPipe', 'Gemini 2.0 Flash', 'Veo 3', 'Konva.js', 'Computer Vision', '3D Landmarks', 'Generative Video'],
     liveUrl: 'https://lnkd.in/gneUG9fj',
     dateLabel: 'Jan 2026',
     sortDate: '2026-01-31',
@@ -492,6 +492,12 @@ export const projectHighlights: ProjectHighlight[] = [
     accent: 'violet',
     linkedEventIds: ['january-gauntlet-2026', 'waaah-comics'],
     npcRole: 'gesture-to-story creator',
+    spotlight: {
+      context: 'A 24-hour build asking whether physical hand movement could drive a generated comic strip end to end.',
+      contribution: 'Built the gesture-tracking, generation, and composition pipeline that turns hand movement into finished panels.',
+      approach: 'MediaPipe 3D hand landmarks feeding Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition — several generative models exercised in one interactive workflow.',
+      outcome: 'A working gesture-to-comic demo produced inside the 24-hour window.',
+    },
   },
   {
     id: 'ethos-lens',
@@ -548,7 +554,7 @@ export const projectHighlights: ProjectHighlight[] = [
     title: 'Churp',
     category: 'Citizen Developer Platform',
     description: 'An end-to-end digital garden-plot balloting platform for People\'s Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.',
-    tags: ['Civic Tech', 'Singpass', 'GIS', 'Balloting', 'Smart Nation'],
+    tags: ['Civic Tech', 'Singpass', 'AWS Fargate', 'Terraform', 'GIS', 'Redis', 'Kafka', 'Route 53', 'Cloud Security', 'Balloting', 'Smart Nation'],
     dateLabel: '2025 - Present',
     sortDate: '2025-01-01',
     imageUrl: '/images/generated/churp-community.webp',
@@ -558,8 +564,8 @@ export const projectHighlights: ProjectHighlight[] = [
     featuredPriority: 4,
     spotlight: {
       context: 'Community garden-plot allocation needed a complete civic workflow rather than another isolated form.',
-      contribution: 'Built the admin and public surfaces, backend, GIS allocation, and Singpass/Myinfo identity flow.',
-      approach: 'Full-stack delivery, GIS-based allocation, OIDC identity, stakeholder coordination, and rollout planning.',
+      contribution: 'Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it.',
+      approach: 'Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure — Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and cloud security controls — with stakeholder coordination and rollout planning.',
       outcome: 'Production-ready for national rollout and awarded the S$20,000 Sparks Community Innovation Fund.',
     },
   },
@@ -951,7 +957,7 @@ const careerAndEducationNotes: FieldNote[] = [
     sortDate: '2026-07-01',
     source: 'LinkedIn',
     summary: 'Building vision systems for camera ISP enhancement, super-resolution, image restoration under motion and low light, and perception-ready frame quality.',
-    tags: ['Amazon', 'Computer Vision', 'Robotics', 'Image Restoration', 'Super-Resolution'],
+    tags: ['Amazon', 'Computer Vision', 'Robotics', 'Camera ISP', 'Image Restoration', 'Super-Resolution', 'Low-Light Imaging'],
   },
   {
     id: 'nus-education',
@@ -962,7 +968,7 @@ const careerAndEducationNotes: FieldNote[] = [
     sortDate: '2023-08-01',
     source: 'Education',
     summary: 'Penultimate undergraduate in Industrial Systems Engineering with a Second Major in Computer Science and a Mathematics Minor.',
-    tags: ['NUS', 'ISE', 'Computer Science', 'Mathematics', 'Undergraduate'],
+    tags: ['NUS', 'ISE', 'Computer Science', 'Mathematics', '3D Computer Vision', 'Multi-View Geometry', 'Undergraduate'],
     linkedProjectIds: ['geometry', 'information-lab', 'project-utopia'],
   },
   {
@@ -1221,7 +1227,7 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     role: 'Robotics Vision Engineer (BlendED AI+X)',
     organization: 'Amazon',
     location: 'Singapore',
-    scope: 'Vision systems for robotic perception image quality.',
+    scope: 'Vision systems for robotic perception image quality — camera ISP, super-resolution, and restoration.',
     responsibilities: [
       'Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light.',
     ],

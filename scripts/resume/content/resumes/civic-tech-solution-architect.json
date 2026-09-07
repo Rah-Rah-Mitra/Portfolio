@@ -2,45 +2,104 @@
   "slug": "civic-tech-solution-architect",
   "subject": "Civic Tech Solution Architect Resume",
   "pages": 1,
+  "bodyPt": 10,
   "sections": [
     {
       "type": "education",
       "title": "EDUCATION",
       "entries": [
-        { "id": "nus", "bullets": ["majors", "award", "coursework"] }
+        {
+          "id": "nus",
+          "bullets": [
+            "majors",
+            "award",
+            "coursework"
+          ]
+        }
       ]
     },
     {
       "type": "experience",
       "title": "EXPERIENCE",
       "entries": [
-        { "id": "stmicro-or", "bullets": ["putaway"] },
-        { "id": "amazon-vision", "bullets": ["isp"] },
-        { "id": "abbott-contract", "bullets": ["ai-systems", "supply-chain"] },
-        { "id": "abbott-intern", "bullets": ["apc"] },
-        { "id": "pa", "bullets": ["churp", "singpass", "sparks"] }
+        {
+          "id": "stmicro-or",
+          "bullets": [
+            "putaway"
+          ]
+        },
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp"
+          ]
+        },
+        {
+          "id": "abbott-contract",
+          "bullets": [
+            "ai-systems",
+            "supply-chain"
+          ]
+        },
+        {
+          "id": "abbott-intern",
+          "bullets": [
+            "apc"
+          ]
+        },
+        {
+          "id": "pa",
+          "bullets": [
+            "churp",
+            "singpass",
+            "sparks"
+          ]
+        }
       ]
     },
     {
       "type": "projects",
       "title": "PROJECTS",
       "entries": [
-        { "id": "voltpulse", "bullets": ["main"] },
-        { "id": "agewelllah", "bullets": ["main"] },
-        { "id": "ethoslens", "bullets": ["main"] }
+        {
+          "id": "voltpulse",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "agewelllah",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "ethoslens",
+          "bullets": [
+            "main"
+          ]
+        }
       ]
     },
     {
       "type": "leadership",
       "title": "LEADERSHIP AND ACTIVITIES",
       "entries": [
-        { "id": "ntuc", "bullets": ["main"] }
+        {
+          "id": "ntuc",
+          "bullets": [
+            "main"
+          ]
+        }
       ]
     },
     {
       "type": "skills",
       "title": "SKILLS AND CERTIFICATIONS",
-      "lines": ["civic-skills", "certs-core"]
+      "lines": [
+        "civic-skills",
+        "certs-core"
+      ]
     }
   ]
 }

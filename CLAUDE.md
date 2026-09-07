@@ -54,8 +54,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - Current edition: **2026-09**. `generated/` keeps the current + previous
   edition; older sets live in `public/resume/archive/`.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
-  across all profiles; `bodyPt: 10` + `marginIn: 0.6`), and the two-page
-  `general` master CV.
+  across all profiles; `bodyPt: 10` + `marginIn: 0.5`), and the two-page
+  `general` master CV. `solution-architect` and `civic-tech-solution-architect`
+  also carry `bodyPt: 10`.
 - Edition bump checklist:
   1. Edit content JSONs.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`

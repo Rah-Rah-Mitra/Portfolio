@@ -3,46 +3,106 @@
   "subject": "Highlights Resume (One Page)",
   "pages": 1,
   "bodyPt": 10,
-  "marginIn": 0.6,
+  "marginIn": 0.5,
   "sections": [
     {
       "type": "education",
       "title": "EDUCATION",
       "entries": [
-        { "id": "nus", "bullets": ["majors", "award"] }
+        {
+          "id": "nus",
+          "bullets": [
+            "majors",
+            "award"
+          ]
+        }
       ]
     },
     {
       "type": "experience",
       "title": "EXPERIENCE",
       "entries": [
-        { "id": "stmicro-or", "bullets": ["putaway"] },
-        { "id": "amazon-vision", "bullets": ["isp"] },
-        { "id": "abbott-contract", "bullets": ["ai-systems"] },
-        { "id": "abbott-intern", "bullets": ["pipeline", "apc"] },
-        { "id": "pa", "bullets": ["churp", "singpass", "sparks"] },
-        { "id": "ywh", "bullets": ["programs"] }
+        {
+          "id": "stmicro-or",
+          "bullets": [
+            "putaway"
+          ]
+        },
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp"
+          ]
+        },
+        {
+          "id": "abbott-contract",
+          "bullets": [
+            "ai-systems"
+          ]
+        },
+        {
+          "id": "abbott-intern",
+          "bullets": [
+            "pipeline",
+            "apc"
+          ]
+        },
+        {
+          "id": "pa",
+          "bullets": [
+            "churp",
+            "singpass",
+            "sparks"
+          ]
+        },
+        {
+          "id": "ywh",
+          "bullets": [
+            "programs"
+          ]
+        }
       ]
     },
     {
       "type": "projects",
       "title": "PROJECTS",
       "entries": [
-        { "id": "asyncddgs", "bullets": ["main"] },
-        { "id": "voltpulse", "bullets": ["main"] }
+        {
+          "id": "asyncddgs",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
+          "id": "voltpulse",
+          "bullets": [
+            "main"
+          ]
+        }
       ]
     },
     {
       "type": "leadership",
       "title": "LEADERSHIP AND ACTIVITIES",
       "entries": [
-        { "id": "ntuc", "bullets": ["main"] }
+        {
+          "id": "ntuc",
+          "bullets": [
+            "main"
+          ]
+        }
       ]
     },
     {
       "type": "skills",
       "title": "SKILLS AND CERTIFICATIONS",
-      "lines": ["hl-languages", "hl-web-cloud", "hl-ai-data", "hl-security", "certs-core"]
+      "lines": [
+        "hl-languages",
+        "hl-web-cloud",
+        "hl-ai-data",
+        "hl-security",
+        "certs-core"
+      ]
     }
   ]
 }

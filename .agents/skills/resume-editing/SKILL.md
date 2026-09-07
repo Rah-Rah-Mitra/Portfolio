@@ -8,8 +8,9 @@ version: 1.0.0
 
 All resumes are generated, Harvard-style (Harvard OCS conventions), from
 in-repo content. Eight outputs: 6 one-page role resumes, the 1-page
-`highlights` best-of (10pt body, 0.6" side margins), and the 2-page
-`general` master CV.
+`highlights` best-of (10pt body, 0.5" side margins), and the 2-page
+`general` master CV. `solution-architect` and `civic-tech-solution-architect`
+also run `bodyPt: 10`.
 
 ## Hard bans
 

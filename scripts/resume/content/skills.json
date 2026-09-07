@@ -23,12 +23,12 @@
     {
       "id": "sa-skills",
       "label": "Technical",
-      "items": "Solution architecture, Azure, Docker, Bitbucket CI/CD, API design, Singpass Login & Myinfo (OIDC), RAG architecture, vector search, Supabase, GIS mapping, stakeholder discovery, manufacturing systems"
+      "items": "Solution architecture, AWS (Fargate, Route 53), Terraform, Azure, Docker, Redis, Kafka, Bitbucket CI/CD, API design, Singpass Login & Myinfo (OIDC), RAG architecture, vector search, Supabase, GIS mapping, stakeholder discovery, manufacturing systems"
     },
     {
       "id": "civic-skills",
       "label": "Technical",
-      "items": "Solution architecture; cloud (Azure, Docker, CI/CD); full-stack (React, TypeScript, FastAPI, Flask); Singpass Login & Myinfo (OIDC); RAG & AI agents; GIS mapping; accessibility; rapid prototyping"
+      "items": "Solution architecture; cloud (AWS Fargate, Terraform, Azure, Docker, CI/CD); full-stack (React, TypeScript, FastAPI, Flask); Singpass Login & Myinfo (OIDC); RAG & AI agents; GIS mapping; accessibility; rapid prototyping"
     },
     {
       "id": "gen-languages",
@@ -48,7 +48,7 @@
     {
       "id": "gen-cloud",
       "label": "Cloud/DevOps",
-      "items": "Azure, Docker, CI/CD, Bitbucket CI/CD, GitHub Actions, Supabase, API design, Codex"
+      "items": "AWS (Fargate, Route 53), Terraform, Azure, Docker, Redis, Kafka, CI/CD, Bitbucket CI/CD, GitHub Actions, Supabase, API design, Codex"
     },
     {
       "id": "gen-security",
@@ -98,7 +98,7 @@
     {
       "id": "hl-web-cloud",
       "label": "Web and Cloud",
-      "items": "React, Next.js, FastAPI, Flask, aiohttp/asyncio, Docker, Azure App Service, GitHub Actions and Bitbucket CI/CD, Supabase, Singpass Login and Myinfo (OIDC), API design, GIS mapping"
+      "items": "React, Next.js, FastAPI, Flask, aiohttp/asyncio, Docker, AWS Fargate, Terraform, Azure App Service, Redis, Kafka, GitHub Actions and Bitbucket CI/CD, Supabase, Singpass Login and Myinfo (OIDC), API design, GIS mapping"
     },
     {
       "id": "hl-ai-data",

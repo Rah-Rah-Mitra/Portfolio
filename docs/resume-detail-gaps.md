@@ -84,9 +84,16 @@ has none.
 
 ## 5. ML tooling that is absent everywhere
 
-*Partly answered.* Terraform, Redis and Kafka are now attested through the Churp
-deployment. The computer-vision terms already in the skills lines trace to CS4277
-and the Amazon role.
+*Partly answered.*
+
+- Terraform, Redis and Kafka are attested through the Churp deployment.
+- **3D computer vision: settled.** Rahul confirmed (2026-09-04) that the CV
+  entries already in the skills lines are correct as written — projective and
+  epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo,
+  from CS4277, alongside camera ISP, super-resolution and image restoration from
+  the Amazon role. **He did not claim RANSAC, PnP, SIFT or ORB**, and they appear
+  nowhere in the recorded syllabus, so they stay off the list below only as
+  unclaimed — do not add them.
 
 Still absent from every content source, and therefore still unusable:
 
@@ -95,17 +102,15 @@ Hugging Face, scikit-learn, Keras, NumPy, pandas, RANSAC, PnP, SIFT, ORB, Gurobi
 Pyomo, Kubernetes, PostgreSQL, MongoDB, Pinecone, FAISS, Chroma, pgvector,
 Weights & Biases, MLflow, ONNX, TensorRT, quantization, distillation, Optuna.
 
-**Question:** which of these have you actually used, and on what? Note that naming
-the CS4277 course as the source of the CV skills does *not* license the specific
-algorithms it did not enumerate — RANSAC, PnP, SIFT and ORB appear nowhere in the
-syllabus text on record, so they still need your confirmation.
+**Question (still open):** which of the remaining names have you actually used,
+and on what?
 
 ## 6. Attested but unconnected to any work
 
 - `cloud security` — **answered**: the deployment work on Churp is the backing
-  experience. The narrower `AWS IMDSv2, metadata APIs` phrasing still reads as
-  bug-bounty research rather than deployment; confirm which context you want it to
-  sit in, since the two tell different stories to a reader.
+  experience. **Still open:** the narrower `AWS IMDSv2, metadata APIs` phrasing in
+  `gen-security` reads as bug-bounty research rather than deployment. Confirm which
+  context it should sit in, since the two tell a reader different stories.
 - `Edge AI / Hailo model deployment` and `autonomous robotics (sensor integration)`
   still appear only as skills-line entries — the Hailo repository exists on the site
   but has no résumé project entry and no described outcome.

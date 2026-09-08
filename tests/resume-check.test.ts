@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   CHECK_VERSION, LEXICON, checkPool, checkResume, framesIn, hedgesIn,
-  isLabelLine, isOngoing, leadLemma, metricsIn,
+  isLabelLine, isOngoing, isWinAnsi, leadLemma, metricsIn,
 } from '../server/resumeCheck.mjs';
 import { checkSpec, decoratedBlocks } from '../server/portfolioMcp.mjs';
 import { pools, resumeConfigs } from '../server/resumeContent.mjs';
@@ -237,6 +237,18 @@ describe('checkResume', () => {
     expect(note?.more).toBe(8);
     // The cap never hides the true size of what was found.
     expect(note?.where).toMatchObject({ quantified: 0, of: 20 });
+  });
+
+  it('rejects a glyph the PDF fonts cannot encode', () => {
+    // WinAnsi is Latin-1 plus a scattered set in 0x80-0x9F, so a codepoint
+    // ceiling would wave through Latin Extended-A, Greek and Cyrillic.
+    for (const glyph of ['a', 'é', '–', '—', '€', '™', '·']) expect(isWinAnsi(glyph), glyph).toBe(true);
+    for (const glyph of ['ā', 'Ω', 'д', '中', '🙂']) expect(isWinAnsi(glyph), glyph).toBe(false);
+    const report = checkResume([bullet('a.one', 'Led a Ω project')]) as Report;
+    expect(report.gate).toBe('fail');
+    expect(report.findings.find((item) => item.category === 'unrenderable-glyph')?.occurrences[0].surface).toBe('Ω');
+    // The one non-ASCII character the corpus does contain must stay legal.
+    expect((checkResume([bullet('a.one', text('ywh.network'))]) as Report).counts.errors).toBe(0);
   });
 
   it('survives the empty and single-bullet cases without NaN', () => {

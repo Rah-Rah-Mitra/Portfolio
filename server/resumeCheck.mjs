@@ -139,7 +139,13 @@ export const metricsIn = (text) => {
   // Mask non-metric digit runs in place, preserving every offset.
   let masked = source;
   for (const rule of NON_METRIC) {
-    masked = masked.replace(new RegExp(rule.source, rule.flags), (match, offset) => {
+    // The offset is read from the end of the argument list rather than as the
+    // second parameter: String.replace inserts one argument per capture group,
+    // so a group added to any NON_METRIC pattern later would otherwise shift the
+    // offset silently and mask the wrong span.
+    masked = masked.replace(new RegExp(rule.source, rule.flags), (...args) => {
+      const match = args[0];
+      const offset = args[args.length - 2];
       suppressed.push({ surface: match, start: offset, reason: 'product-number' });
       return ' '.repeat(match.length);
     });
@@ -211,6 +217,24 @@ export const isOngoing = (dateLabel, today) => {
   }
   const yearOnly = /^(\d{4})$/.exec(tail);
   return yearOnly ? `${yearOnly[1]}-12` > today : false;
+};
+
+// The PDF fonts are Standard-14 Times, which pdfkit writes in WinAnsi. That is
+// Latin-1 plus the printable set Windows-1252 maps into 0x80-0x9F, and it is not
+// a contiguous range: a codepoint ceiling would pass Latin Extended-A, Greek and
+// Cyrillic, all of which would drop out of the document. The corpus contains one
+// non-ASCII character today, the en dash in "OSI Layer 3-4", and it is in the
+// set; this guard is for whatever gets pasted in next.
+const WINANSI_SPECIALS = new Set([
+  0x20ac, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021, 0x02c6, 0x2030, 0x0160,
+  0x2039, 0x0152, 0x017d, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014,
+  0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x017e, 0x0178,
+]);
+
+export const isWinAnsi = (glyph) => {
+  const code = glyph.codePointAt(0);
+  return (code >= 0x20 && code <= 0x7e) || (code >= 0xa0 && code <= 0xff)
+    || code === 0x09 || code === 0x0a || WINANSI_SPECIALS.has(code);
 };
 
 // ── report assembly ───────────────────────────────────────────────────────
@@ -475,7 +499,7 @@ export const checkResume = (bullets, { candidates = [], maxLines = 3, typography
       { kind: 'drop', note: 'The same block is selected twice and would render twice.' }));
   }
   const unrenderable = rows
-    .map((row) => ({ ref: row.ref, surface: [...row.text].filter((glyph) => glyph.codePointAt(0) > 0x2122).join('') }))
+    .map((row) => ({ ref: row.ref, surface: [...row.text].filter((glyph) => !isWinAnsi(glyph)).join('') }))
     .filter((row) => row.surface);
   if (unrenderable.length) {
     findings.push(finding('R6', 'error', 'unrenderable-glyph', {}, unrenderable.sort(byRef),

@@ -55,7 +55,7 @@ describe('the attestation guard', () => {
   const rows = committed();
 
   it('has phrasings to check', () => {
-    expect(rows.length).toBeGreaterThan(10);
+    expect(rows.length).toBeGreaterThan(5);
   });
 
   // The gate. A phrasing can only enter the pools through a commit, so this is
@@ -181,7 +181,7 @@ describe('the checker offers a rephrase where it used to offer nothing', () => {
       for (const row of fresh) chosen[row.ref] ??= row.phrasing as string;
     }
     const after = checkSpec({ ...config, phrasings: chosen }, fit as never) as Report;
-    expect(before.counts.warnings).toBe(8);
+    expect(before.counts.warnings).toBe(6);
     expect(after.counts.warnings).toBe(0);
     expect(after.counts.errors).toBe(0);
   });

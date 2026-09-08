@@ -28,7 +28,7 @@ type Report = {
 };
 type PoolBullet = { id: string; text: Record<string, string> };
 type PoolEntry = { id: string; blocked?: string; bullets?: PoolBullet[] };
-type Spec = { slug: string; pages: number };
+type Spec = { slug: string; pages: number; bodyPt?: number; marginIn?: number };
 
 const bullet = (ref: string, text: string, extra: Record<string, unknown> = {}) => ({
   ref, entryId: ref.split('.')[0], bulletId: ref.split('.')[1], sectionType: 'experience',
@@ -337,7 +337,7 @@ describe('the real corpus', () => {
   it('reports the block pool the checker was built to describe', () => {
     const report = checkPool(poolEntries()) as Report;
     expect(report.metrics.bullets).toBe(42);
-    expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 13 });
+    expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 12 });
     expect(report.metrics.metricCoverage).toBe(0.24);
     // The headline finding: seven of eleven project bullets open with "Built".
     const projects = report.findings.find((item) => item.category === 'pool-lead-concentration'
@@ -351,8 +351,7 @@ describe('the real corpus', () => {
   });
 
   it.each(resumeConfigs as Spec[])('checks $slug at the typography it ships at', (config) => {
-    const wide = config.slug === 'ai-engineer' || config.slug === 'civic-tech-solution-architect';
-    const fit = { bodyPt: wide ? 10.5 : 10, marginIn: config.slug === 'highlights' ? 0.5 : 0.7 };
+    const fit = { bodyPt: config.bodyPt ?? 10.5, marginIn: config.marginIn ?? 0.7 };
     const report = checkSpec(config, fit as never) as Report;
     expect(report.gate).toBe('pass');
     expect(report.counts.errors).toBe(0);
@@ -371,14 +370,14 @@ describe('the real corpus', () => {
       }];
     }));
     expect(digest).toEqual({
-      'software-engineer': { bullets: 15, top: 7, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,unquantified,unused-evidence' },
-      'solution-architect': { bullets: 15, top: 6, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified' },
-      'ai-engineer': { bullets: 14, top: 6, codes: 'adjacent-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
-      'operations-research-engineer': { bullets: 14, top: 5, codes: 'adjacent-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
-      'cyber-security': { bullets: 14, top: 4, codes: 'adjacent-repeat,adjacent-repeat,unquantified,unused-evidence' },
-      'civic-tech-solution-architect': { bullets: 15, top: 6, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
-      highlights: { bullets: 13, top: 5, codes: 'adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified,unused-evidence' },
-      general: { bullets: 31, top: 11, codes: 'adjacent-repeat,adjacent-repeat,adjacent-repeat,frame-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,lead-verb-repeat,unquantified,unused-evidence' },
+      'software-engineer': { bullets: 15, top: 6, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,unquantified,unused-evidence' },
+      'solution-architect': { bullets: 15, top: 5, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified' },
+      'ai-engineer': { bullets: 14, top: 5, codes: 'adjacent-repeat,adjacent-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
+      'operations-research-engineer': { bullets: 14, top: 4, codes: 'adjacent-repeat,hedge,unquantified,unused-evidence' },
+      'cyber-security': { bullets: 15, top: 4, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,unquantified,unused-evidence' },
+      'civic-tech-solution-architect': { bullets: 15, top: 5, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
+      highlights: { bullets: 14, top: 4, codes: 'adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified,unused-evidence' },
+      general: { bullets: 32, top: 10, codes: 'adjacent-repeat,adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,unquantified,unused-evidence' },
     });
   });
 

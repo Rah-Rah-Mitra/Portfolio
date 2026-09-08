@@ -116,7 +116,7 @@ describe('api/mcp', () => {
     const { content } = await rpc('tools/call', { name: 'check_resume', arguments: { slug: 'highlights' } });
     const report = JSON.parse(content[0].text);
     expect(report.version).toBe(1);
-    expect(report.metrics.bullets).toBe(13);
+    expect(report.metrics.bullets).toBe(14);
     expect(report.metrics.topOpener.openers).toContain('Built');
     expect(report.gate).toBe('pass');
     // Every finding points at block ids, which are the only thing an agent may act on.

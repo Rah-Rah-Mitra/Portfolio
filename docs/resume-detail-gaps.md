@@ -181,7 +181,20 @@ certification. A Technical line sits beside applied skills and will read as
 applied experience. If there is real RL work behind it, it belongs in §1 as a
 bullet; if there is not, the certification line is the honest place for it.
 
-## 11. Volt Pulse: one settled, one open - 2026-09-08
+**Decided (Rahul, 2026-09-08, edition 2026-10):** `ai-engineer` now selects
+`ai-skills-rl`, so the RL algorithms ship on that résumé under Technical. §1 is
+unchanged by that decision and is still the open gap: the claim rests on the Packt
+certification alone. Recorded here so the decision is written down rather than
+inferred from a config diff.
+
+`cv-skills` also ships on `ai-engineer`, relabelled from "Technical" to
+**"3D Vision"**. Two lines both labelled "Technical" would have been a first for
+these documents, and nothing would have caught it: `checkResume` never sees skills
+items, `checkPool` never reads `skills.json`, and R6 `duplicate-label-line`
+inspects bullets only. The label is presentation, not a claim, so no content
+moved.
+
+## 11. Volt Pulse: both settled - 2026-09-08
 
 **Answered (Rahul, in conversation):** the **scheduler-agent planning shipped**; it
 was not a roadmap. `projects.json` says "scheduler-agent planning", the event
@@ -189,11 +202,13 @@ record in `portfolioData.ts` says "a scheduler-agent roadmap", and the npcDialog
 says "a plan for scheduler agents". The bullet is right and the other two should
 be brought into line the next time that record is touched.
 
-**Still open:** `voltpulse.main` says "Built" in its default and "Co-built" in its
-deep variant. `leadLemma` strips a leading `co-`, so the checker has never
-reported the disagreement and cannot. One of the two is wrong. Until Rahul says
-which, the `retrieval-first` phrasing avoids the question by opening on the
-retrieval stack, and no phrasing of that bullet should open "Built" or "Co-built".
+**Settled (Rahul, 2026-09-08, edition 2026-10):** "Built" is correct. The `deep`
+variant's "Co-built" was the error and now reads "Built", so the two agree. No
+shipped document moved on this alone: `build_resumes.py` resolves
+`text.get(slug, text["default"])` and never reads `deep`, and `checkPool` filters
+to `variant === 'default'`, so neither the digests nor the pool metrics could see
+it. `leadLemma` strips a leading `co-`, so the checker never reported the
+disagreement and still cannot; this one was found by reading, not by a rule.
 
 ## 10. What the checker cannot judge
 

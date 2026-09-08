@@ -53,14 +53,14 @@ describe('the shipped documents are a function of the content pool', () => {
   // means those files no longer say what this repo says.
   it('pins every canonical résumé to the words Word would render', () => {
     expect(Object.fromEntries(configs.map((config) => [config.slug, documentDigest(config)]))).toEqual({
-      'software-engineer': '53e808e29be0014b',
-      'solution-architect': '2174c5a5ac49f577',
-      'ai-engineer': '95fbe37622b896e5',
-      'operations-research-engineer': '890c9fcf95bbc5ec',
-      'cyber-security': '13e76ece2ea27962',
-      'civic-tech-solution-architect': '1e07e3e1a290b44b',
-      highlights: 'f2788c7bc4e585fb',
-      general: '9e0db344d5da5991',
+      'software-engineer': '2ba1ae08db2b1de7',
+      'solution-architect': '3eece3f9d71bc723',
+      'ai-engineer': 'c53efa12f43ba41b',
+      'operations-research-engineer': 'be75a5ae726ceb35',
+      'cyber-security': '4428fa7571183786',
+      'civic-tech-solution-architect': '6819b108ac9cf595',
+      highlights: '1f35f69edec213c9',
+      general: '288a38662814c84c',
     });
   });
 

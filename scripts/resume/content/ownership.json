@@ -5,6 +5,7 @@
   "ranks": {
     "advance": "agent",
     "assembl": "agent",
+    "assemble": "agent",
     "automat": "agent",
     "build": "agent",
     "combin": "agent",

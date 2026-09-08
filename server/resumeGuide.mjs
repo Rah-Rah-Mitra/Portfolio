@@ -50,7 +50,7 @@ keyword is recoverable; an inaccurate one is not.
    for it by dropping a weaker project rather than by cutting one of the four.
 5. Choose depth. Bullets can carry a \`deep\` variant alongside the default; set
    \`detail: "deep"\` on the spec, or \`variant\` on a single entry. Deep variants
-   are longer, so they usually need \`pages: 2\`. Only 17 of the 41 selectable
+   are longer, so they usually need \`pages: 2\`. Only 16 of the 42 selectable
    bullets have one, and the rest fall back to their default silently, so do not
    treat depth as a way to change every bullet at once.
 6. Check whether the entry offers more than one job title. An entry with

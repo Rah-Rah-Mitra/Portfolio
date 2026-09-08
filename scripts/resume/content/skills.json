@@ -17,7 +17,7 @@
     },
     {
       "id": "cv-skills",
-      "label": "Technical",
+      "label": "3D Vision",
       "items": "3D computer vision: projective geometry, camera models, fundamental and essential matrices, absolute pose estimation, three-view geometry, structure-from-motion with bundle adjustment, two- and multi-view stereo, generalized cameras; PyTorch, ONNX, CUDA"
     },
     {

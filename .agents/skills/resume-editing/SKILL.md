@@ -118,6 +118,6 @@ sentence can pass every rule and still be wrong. Read them.
 
 Overflow trim ladder, in order: drop coursework bullet → reduce 3-bullet
 entries to 2 → drop least-relevant project → body 10.5→10pt (general already
-runs 10pt) → margins toward 0.5" (per-config `marginIn`; `highlights` is
-at 0.6"). Never below 10pt. Fit truth is the pypdf page count of the
-exported PDF, never an estimate.
+runs 10pt) → margins toward 0.5" (per-config `marginIn`; `highlights` is at
+0.5" and `general` at 0.6", the rest at the 0.7" default). Never below 10pt.
+Fit truth is the pypdf page count of the exported PDF, never an estimate.

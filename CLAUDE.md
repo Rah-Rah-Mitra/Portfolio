@@ -51,7 +51,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   per-role configs in `content/resumes/`). Styling lives in
   `scripts/resume/harvard_style.py` (Times New Roman, A4, Harvard OCS layout —
   all deliberate; change nothing there without explicit approval).
-- Current edition: **2026-09**. `generated/` keeps the current + previous
+- Current edition: **2026-10**. `generated/` keeps the current + previous
   edition; older sets live in `public/resume/archive/`.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
   across all profiles; `bodyPt: 10` + `marginIn: 0.5`), and the two-page
@@ -96,7 +96,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `lib/portfolioSnapshot.ts`. After changing data in `portfolioData.ts`,
   `lib/workbench.ts`, or `siteConfig.ts`, run `npm run snapshot` and commit —
   `tests/portfolio-mcp.test.ts` fails when it is stale. A new resume config
-  also needs an import added to `resumeConfigs` in `server/portfolioMcp.mjs`.
+  also needs an import added to `resumeConfigs` in `server/resumeContent.mjs`.
 - **Résumé builder.** `api/resume.mjs` renders a résumé on demand from a spec in
   the URL (`?spec=<base64url deflated JSON>&format=pdf|docx|md`, POST for long
   specs) — stateless, no storage. `server/resumeRender.mjs` is a JS port of

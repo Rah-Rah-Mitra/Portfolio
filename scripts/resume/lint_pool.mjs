@@ -11,6 +11,7 @@
 //
 // Exit code is 0 unless a structural error fires. Repetition is a judgement
 // call about Rahul's own approved material, not a build failure.
+import { pathToFileURL } from 'node:url';
 import { pools, profile, resumeConfigs } from '../../server/resumeContent.mjs';
 import { checkSpec } from '../../server/portfolioMcp.mjs';
 import { renderResumePdf } from '../../server/resumeRender.mjs';
@@ -130,4 +131,4 @@ const main = async () => {
   process.exitCode = errors ? 1 : 0;
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) await main();
+if (import.meta.url === pathToFileURL(process.argv[1]).href) await main();

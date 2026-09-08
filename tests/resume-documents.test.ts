@@ -92,6 +92,30 @@ describe('the shipped documents are a function of the content pool', () => {
     ]);
   });
 
+  // The property that lets phrasings ship without touching Word: they live outside
+  // `text`, and no canonical config selects one. Selecting one from a config would
+  // change word/document.xml and reopen the full edition rebuild, so the right way
+  // to adopt a winning phrasing is to promote it into text.default at the next
+  // edition bump, not to select it here.
+  it('keeps every canonical résumé free of phrasing selections', () => {
+    for (const config of configs) expect(config.phrasings, config.slug).toBeUndefined();
+  });
+
+  it('keeps alternative wordings out of the map the Python builder reads', () => {
+    const leaked: string[] = [];
+    for (const type of ['education', 'experience', 'projects', 'leadership'] as const) {
+      for (const entry of pools[type].entries as unknown as PoolEntry[]) {
+        for (const bullet of entry.bullets ?? []) {
+          const ids = Object.keys((bullet as { phrasings?: Record<string, unknown> }).phrasings ?? {});
+          for (const id of ids) {
+            if (id in bullet.text) leaked.push(`${entry.id}.${bullet.id}:${id}`);
+          }
+        }
+      }
+    }
+    expect(leaked).toEqual([]);
+  });
+
   it('reserves the depth keys, so no résumé slug can ever be named "deep"', () => {
     expect(SLUGS).not.toContain('deep');
     expect(SLUGS).not.toContain('default');

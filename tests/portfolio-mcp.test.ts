@@ -5,10 +5,11 @@ import { buildPortfolioSnapshot } from '../lib/portfolioSnapshot';
 import { SITE_CONFIG } from '../siteConfig';
 import snapshot from '../server/portfolio-snapshot.json';
 import { listResumes, resumeConfigs, resumeMarkdown } from '../server/portfolioMcp.mjs';
+import { configBySlug } from '../server/resumeContent.mjs';
 import { POST } from '../api/mcp.mjs';
 import { GET } from '../api/portfolio.mjs';
 
-const TOOLS = ['build_resume', 'get_profile', 'get_project', 'get_resume', 'get_resume_guide', 'list_experience', 'list_projects', 'list_resume_blocks', 'list_resumes'];
+const TOOLS = ['build_resume', 'check_resume', 'get_profile', 'get_project', 'get_resume', 'get_resume_guide', 'list_experience', 'list_projects', 'list_resume_blocks', 'list_resumes'];
 const highlightsPdf = `${SITE_CONFIG.canonicalUrl}resume/generated/rahul-mitra-highlights-${SITE_CONFIG.resumeEdition}.pdf`;
 
 const rpc = async (method: string, params?: unknown) => {
@@ -97,8 +98,47 @@ describe('api/mcp', () => {
   it('serves the building blocks and the guide', async () => {
     const blocks = await rpc('tools/call', { name: 'list_resume_blocks', arguments: { section: 'skills' } });
     expect(JSON.parse(blocks.content[0].text).skillLines.length).toBeGreaterThan(15);
+    // Every bullet carries the three derived fields the repetition rules are about.
+    const projects = await rpc('tools/call', { name: 'list_resume_blocks', arguments: { section: 'projects' } });
+    const bullets = JSON.parse(projects.content[0].text).sections
+      .flatMap((section: { entries: Array<{ bullets: unknown[] }> }) => section.entries.flatMap((entry) => entry.bullets));
+    expect(bullets.length).toBeGreaterThan(8);
+    for (const bullet of bullets as Array<{ lead: string; lines: number; hasMetric: boolean }>) {
+      expect(bullet.lead).toMatch(/^[A-Za-z][A-Za-z-]*$/);
+      expect(bullet.lines).toBeGreaterThan(0);
+      expect(typeof bullet.hasMetric).toBe('boolean');
+    }
     const guide = await rpc('tools/call', { name: 'get_resume_guide', arguments: {} });
     expect(guide.content[0].text).toContain('Never write your own bullet text');
+  });
+
+  it('checks a ready-made résumé and refuses to be handed text', async () => {
+    const { content } = await rpc('tools/call', { name: 'check_resume', arguments: { slug: 'highlights' } });
+    const report = JSON.parse(content[0].text);
+    expect(report.version).toBe(1);
+    expect(report.metrics.bullets).toBe(13);
+    expect(report.metrics.topOpener.openers).toContain('Built');
+    expect(report.gate).toBe('pass');
+    // Every finding points at block ids, which are the only thing an agent may act on.
+    for (const item of report.findings) for (const hit of item.occurrences) expect(hit.ref).toBeTruthy();
+
+    // The checker must not become a text back door beside build_resume.
+    for (const args of [{}, { slug: 'highlights', encodedSpec: 'x' }, { bullets: [{ text: 'I did a thing' }] }]) {
+      expect((await rpc('tools/call', { name: 'check_resume', arguments: args })).isError).toBe(true);
+    }
+  });
+
+  it('returns the check report from build_resume without being asked', async () => {
+    const spec = configBySlug('software-engineer');
+    const result = await rpc('tools/call', { name: 'build_resume', arguments: { spec } });
+    const built = JSON.parse(result.content[0].text);
+    expect(built.check.version).toBe(1);
+    expect(built.check.gate).toBe('pass');
+    // build_resume carries errors and warnings only; check_resume carries the notes too.
+    expect(built.check.findings.every((item: { severity: string }) => item.severity !== 'note')).toBe(true);
+    const encoded = new URL(built.pdfUrl).searchParams.get('spec');
+    const checked = await rpc('tools/call', { name: 'check_resume', arguments: { encodedSpec: encoded } });
+    expect(JSON.parse(checked.content[0].text).metrics).toEqual(built.check.metrics);
   });
 
   it('filters projects and flags unknown ids', async () => {
@@ -124,5 +164,11 @@ describe('api/portfolio + llms.txt', () => {
     expect(llms).toContain(`${SITE_CONFIG.canonicalUrl}api/mcp`);
     expect(llms).toContain(highlightsPdf);
     expect(llms).toContain(`rahul-mitra-general-${SITE_CONFIG.resumeEdition}.pdf`);
+  });
+
+  it('names every MCP tool in llms.txt', async () => {
+    const llms = readFileSync('public/llms.txt', 'utf8');
+    const { tools } = await rpc('tools/list');
+    for (const tool of tools as Array<{ name: string }>) expect(llms, tool.name).toContain(tool.name);
   });
 });

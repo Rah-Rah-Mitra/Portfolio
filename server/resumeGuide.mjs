@@ -21,7 +21,10 @@ keyword is recoverable; an inaccurate one is not.
 
 ## How to tailor
 
-1. \`get_resume_guide\` (this), then \`list_resume_blocks\` for the menu.
+1. \`get_resume_guide\` (this), then \`list_resume_blocks\` for the menu. Each
+   bullet there carries its opening verb, its rendered line cost and whether it
+   holds a measurement, so you can spread the verbs and the evidence as you pick
+   rather than being told afterwards that you did not.
 
    **The menu is larger than any ready-made résumé.** Some of the strongest
    material sits on only one of them, or on none: the People's Association AWS
@@ -45,9 +48,11 @@ keyword is recoverable; an inaccurate one is not.
    an entry genuinely earns a fourth (People's Association carries platform,
    Singpass, Sparks fund and AWS deployment on the architecture résumés), pay
    for it by dropping a weaker project rather than by cutting one of the four.
-5. Choose depth. Bullets can carry \`deep\` and \`short\` variants alongside the
-   default. Set \`detail: "deep"\` on the spec, or \`variant\` on a single entry.
-   Deep variants are longer, so they usually need \`pages: 2\`.
+5. Choose depth. Bullets can carry a \`deep\` variant alongside the default; set
+   \`detail: "deep"\` on the spec, or \`variant\` on a single entry. Deep variants
+   are longer, so they usually need \`pages: 2\`. Only 17 of the 41 selectable
+   bullets have one, and the rest fall back to their default silently, so do not
+   treat depth as a way to change every bullet at once.
 6. Check whether the entry offers more than one job title. An entry with
    \`roleOptions\` was held under several hats, and you pick one with
    \`roleVariant\` on that entry. People's Association is the current example:
@@ -120,6 +125,27 @@ Certifications are not a separate section: they are skills lines whose label is
 
 \`bodyPt\`, \`marginIn\` and \`autoFit\` exist but you rarely want them; let
 auto-fit decide.
+
+## Checking what you built
+
+\`build_resume\` returns a check report beside the fit report, and \`check_resume\`
+runs the same check on a slug or on the \`spec\` value out of a build URL without
+re-rendering. It reports counts, never a score: which opening verbs repeat, which
+bullets share a sentence frame, which carry no measurable outcome, and any bullet
+over the line budget. Every finding names block ids.
+
+It is advisory and it cannot fix anything. There are exactly two responses: swap
+a block id, or accept the finding. Never write a bullet to improve a count, and
+never drop good evidence to satisfy a lint.
+
+Two of these deserve a warning in advance. Rahul's project entries mostly carry a
+single bullet, so a repeated opening verb there often has no swap at all; the
+report says so, and accepting it is the right answer. And a low quantified count
+is not permission to add a number. If a measurement is not already in the blocks,
+it does not exist.
+
+Whether a bullet fits the posting is your judgement, and it outranks every
+finding here.
 
 ## Applying on Rahul's behalf
 

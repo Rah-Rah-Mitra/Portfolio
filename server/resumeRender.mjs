@@ -19,6 +19,12 @@
 // Imports only packages and JSON. Vercel compiles api/ per file as native ESM
 // with no bundling.
 import PDFDocument from 'pdfkit';
+import { assemble, resolveBulletText, resolveRole } from './resumeAssemble.mjs';
+
+// Spec resolution lives in resumeAssemble.mjs so the checker and the builder
+// window can reach it without loading pdfkit. Re-exported here because this is
+// the path every existing caller imports it from.
+export { assemble, resolveBulletText, resolveRole };
 
 // page geometry (harvard_style.py:19-23)
 const PAGE_W = 595.276;           // A4
@@ -93,52 +99,6 @@ const block = (lines, { size, spaceBefore = 0, spaceAfter = 0, keepWithNext = fa
   lines, size, spaceBefore, spaceAfter, keepWithNext, rule, indent, hanging, align, rightRun,
 });
 
-/**
- * Resolve a spec against the content pools into a flat, ordered item list.
- * This is the single place the assembly rules from build_resumes.py:46-74 live:
- * sort policy, bullet selection order, and one-line vs two-line entries, so the
- * PDF, DOCX and Markdown outputs can never drift apart.
- */
-export const assemble = (spec, pools) => {
-  const skillLines = new Map(pools.skills.lines.map((line) => [line.id, line]));
-  const items = [];
-  for (const section of spec.sections) {
-    items.push({ kind: 'section', title: section.title.toUpperCase() });
-    if (section.type === 'skills') {
-      for (const id of section.lines) {
-        const line = skillLines.get(id);
-        if (!line) throw new Error(`unknown skills line: ${id}`);
-        items.push({ kind: 'skill', label: line.label, items: line.items });
-      }
-      continue;
-    }
-    const pool = new Map(pools[section.type].entries.map((entry) => [entry.id, entry]));
-    const key = section.type === 'projects' ? 'sort' : 'start';
-    const chosen = section.entries.map((selection) => {
-      const entry = pool.get(selection.id);
-      if (!entry) throw new Error(`unknown ${section.type} entry: ${selection.id}`);
-      if (entry.blocked) throw new Error(`${selection.id} is not available for résumés: ${entry.blocked}`);
-      return { entry, bullets: selection.bullets ?? [], variant: selection.variant, role: resolveRole(entry, selection) };
-    }).sort((a, b) => b.entry[key].localeCompare(a.entry[key]));
-
-    for (const { entry, bullets, variant, role } of chosen) {
-      items.push({
-        kind: 'entry',
-        organization: entry.organization,
-        location: entry.location ?? '',
-        role,
-        dateLabel: entry.dateLabel,
-      });
-      const byId = new Map((entry.bullets ?? []).map((bullet) => [bullet.id, bullet]));
-      for (const id of bullets) {
-        const bullet = byId.get(id);
-        if (!bullet) throw new Error(`unknown bullet ${id} on ${entry.id}`);
-        items.push({ kind: 'bullet', text: resolveBulletText(bullet, spec, variant) });
-      }
-    }
-  }
-  return items;
-};
 
 const buildBlocks = (doc, spec, pools, profile, bodyPt, contentWidth) => {
   const blocks = [];
@@ -202,22 +162,6 @@ const buildBlocks = (doc, spec, pools, profile, bodyPt, contentWidth) => {
   return blocks;
 };
 
-// text[variant] ?? text[slug] ?? text.default, mirroring build_resumes.py:33-35
-// with the reserved depth keys layered on top.
-export const resolveRole = (entry, selection) => {
-  const role = entry.role;
-  if (role == null || typeof role === 'string') return role ?? null;
-  const key = selection?.roleVariant ?? 'default';
-  if (!role[key]) throw new Error(`unknown role option "${key}" on ${entry.id}; choose one of ${Object.keys(role).join(', ')}`);
-  return role[key];
-};
-
-export const resolveBulletText = (bullet, spec, entryVariant) => {
-  const variant = entryVariant ?? spec.detail;
-  const text = bullet.text;
-  if (variant && variant !== 'standard' && text[variant]) return text[variant];
-  return text[spec.slug] ?? text.default;
-};
 
 // Assign every block a page and a y, keeping keep-with-next groups intact so an
 // entry header never orphans at a page break.
@@ -303,6 +247,30 @@ const draw = (doc, placed, pages, marginLR) => {
         .lineWidth(RULE_WIDTH).strokeColor('#000000').stroke();
     }
   }
+};
+
+/**
+ * Wrapped line count for each bullet at a given typography, using the renderer's
+ * own wrapper rather than a character-count approximation. The checker is
+ * import-free by design, so it takes these counts as input instead of measuring
+ * for itself; this keeps the geometry in the one file calibrated against Word.
+ *
+ * A fresh document is cheap to construct and renderResumePdf cannot be reused:
+ * it never returns its document and calls .end() on the attempts that lose.
+ */
+export const measureBulletLines = (texts, { bodyPt = BODY_PT, marginIn = MARGIN_LR / 72 } = {}) => {
+  if (!texts.length) return [];
+  const marginLR = marginIn * 72;
+  const contentWidth = PAGE_W - marginLR * 2;
+  const doc = new PDFDocument({ size: [PAGE_W, PAGE_H], autoFirstPage: false });
+  const counts = texts.map((text) => wrapRuns(
+    doc,
+    [{ text: BULLET + text, font: REGULAR, size: bodyPt }],
+    contentWidth,
+    contentWidth - BULLET_INDENT,
+  ).length);
+  doc.end();
+  return counts;
 };
 
 const renderOnce = (spec, pools, profile, bodyPt, marginLR) => {
@@ -500,6 +468,11 @@ export const renderResume = async (spec, pools, profile) => {
 import { deflateSync, inflateSync } from 'node:zlib';
 import { z } from 'zod';
 
+// "short" was accepted here and advertised in the guide, but no bullet in the
+// content pools has ever carried a short key, so resolveBulletText fell through
+// to the default and an agent asking for it got identical output with no warning
+// and then an overflow report. Narrowed to what exists: asking for a variant that
+// is not there should be a loud rejection, not a silent no-op.
 const id = z.string().min(1).max(60);
 const entrySection = z.object({
   type: z.enum(['education', 'experience', 'projects', 'leadership']),
@@ -507,7 +480,7 @@ const entrySection = z.object({
   entries: z.array(z.object({
     id,
     bullets: z.array(id).max(10).optional(),
-    variant: z.enum(['standard', 'deep', 'short']).optional(),
+    variant: z.enum(['standard', 'deep']).optional(),
     roleVariant: id.optional(),
   })).max(24),
 });
@@ -523,7 +496,7 @@ export const specSchema = z.object({
   pages: z.number().int().min(1).max(3).optional(),
   bodyPt: z.number().min(10).max(12).optional(),   // never below 10pt
   marginIn: z.number().min(0.5).max(1).optional(),
-  detail: z.enum(['standard', 'deep', 'short']).optional(),
+  detail: z.enum(['standard', 'deep']).optional(),
   autoFit: z.boolean().optional(),
   sections: z.array(z.union([entrySection, skillsSection])).min(1).max(8),
 });

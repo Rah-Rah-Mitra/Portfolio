@@ -10,7 +10,9 @@
       "bullets": [
         {
           "id": "main",
-          "text": { "default": "Support weekly senior-engagement activities, deepening empathy for healthcare, accessibility, and human-centered community product design." }
+          "text": {
+            "default": "Support weekly senior-engagement activities, deepening empathy for healthcare, accessibility, and human-centered community product design."
+          }
         }
       ]
     },
@@ -24,7 +26,9 @@
       "bullets": [
         {
           "id": "combined",
-          "text": { "default": "Led astronomy outreach, competed in the 7th Singapore Astronomical Olympiad, engineered an autonomous robot for the National Robotics Challenge, and received the ASRJC Outstanding Contribution Award." }
+          "text": {
+            "default": "Led astronomy outreach, competed in the 7th Singapore Astronomical Olympiad, engineered an autonomous robot for the National Robotics Challenge, and received the ASRJC Outstanding Contribution Award."
+          }
         }
       ]
     }

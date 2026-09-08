@@ -237,6 +237,114 @@ export const isWinAnsi = (glyph) => {
     || code === 0x09 || code === 0x0a || WINANSI_SPECIALS.has(code);
 };
 
+
+// ── the attestation guard ─────────────────────────────────────────────────
+// Runs over COMMITTED content, in npm test and npm run resume:lint. There is no
+// request-time text to validate, because agents send ids: a bad phrasing can
+// only enter through a commit, so that is where the guard belongs.
+//
+// What it catches: invented facts, added or dropped entities and numbers, a
+// dropped product-number, fit drift, a phrasing that buys nothing, and verb-role
+// drift. What it CANNOT catch: recombination (every token attested, arranged to
+// assert something no source asserts), modality ("targets replacing" becoming
+// "replaced" keeps the lemma and turns a plan into a result), and implicature.
+// A sentence can pass every rule here and still be wrong. Human review is the
+// control; this is a filter in front of it, never a substitute for it.
+
+/** Proper nouns and numbers, which are the tokens that carry a factual claim. */
+const claimTokens = (text) => (String(text ?? '')
+  .split(/\s+/).slice(1).join(' ')                 // drop the lead verb, which is what a phrasing is FOR
+  .match(/\b(?:[A-Z][A-Za-z0-9+.#-]*|[0-9][\w.,%+-]*)\b/g) ?? [])
+  .map((token) => token.toLowerCase().replace(/[.,;:]+$/, ''));
+
+const multiset = (values) => {
+  const counts = new Map();
+  for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
+  return [...counts].sort((a, b) => a[0].localeCompare(b[0])).map(([value, count]) => `${value}x${count}`).join('|');
+};
+
+/**
+ * Check one alternative phrasing against the bullet it belongs to.
+ *
+ * `lineGrid` is [{ bodyPt, marginIn, phrasing, default }] measured by the caller
+ * with the renderer's own wrapper. It is a sweep of the whole legal spec grid,
+ * not the four-rung auto-fit ladder: specSchema lets a caller pin bodyPt 10 to
+ * 12 and marginIn 0.5 to 1.0, so parity at the ladder is a sample rather than an
+ * invariant, and a phrasing that fits at 10pt can overflow at 12.
+ *
+ * Returns [{ code, detail }]; empty means clean.
+ */
+export const attestPhrasing = (phrasing, bullet, { lineGrid = [], ownership = null } = {}) => {
+  const problems = [];
+  const text = String(phrasing?.text ?? '');
+  // Which approved wording this is an alternative TO. Almost always the default;
+  // "deep" exists so a bullet can carry a tighter form of its own long variant,
+  // which is otherwise unwritable: such a phrasing is longer than the default by
+  // construction and the fit rule would reject it for the wrong reason.
+  const basisKey = phrasing?.basis ?? 'default';
+  const base = bullet.text[basisKey];
+  const push = (code, detail) => problems.push({ code, detail });
+
+  if (!text) return [{ code: 'G0-empty', detail: 'a phrasing needs text' }];
+  if (!base) return [{ code: 'G0-basis', detail: `basis "${basisKey}" does not exist on this bullet` }];
+  if (!phrasing.note) push('G0-note', 'a phrasing needs a note saying how its shape differs');
+
+  // G1 evidence containment: every proper noun and number must already appear in
+  // one of this bullet's own approved wordings.
+  const attested = new Set([...claimTokens(base), ...claimTokens(bullet.text.deep ?? '')]);
+  const invented = claimTokens(text).filter((token) => !attested.has(token));
+  if (invented.length) push('G1-unattested', `not in this bullet's approved text: ${[...new Set(invented)].join(', ')}`);
+
+  // G2/G3 the facts are the same facts. Not subset: dropping a number is a
+  // different sentence, and dropping a suppressed product-number quietly loses
+  // evidence (the "3D" in the MediaPipe bullet is the whole 3D-landmark claim).
+  const here = metricsIn(text);
+  const there = metricsIn(base);
+  if (multiset(here.metrics.map((item) => item.surface)) !== multiset(there.metrics.map((item) => item.surface))) {
+    push('G2-metrics', `measurements differ: [${here.metrics.map((m) => m.surface)}] vs [${there.metrics.map((m) => m.surface)}]`);
+  }
+  if (multiset(here.suppressed.map((item) => item.surface)) !== multiset(there.suppressed.map((item) => item.surface))) {
+    push('G3-entities', `product numbers differ: [${here.suppressed.map((m) => m.surface)}] vs [${there.suppressed.map((m) => m.surface)}]`);
+  }
+
+  // G4 renderable in the PDF fonts.
+  const bad = [...text].filter((glyph) => !isWinAnsi(glyph));
+  if (bad.length) push('G4-glyph', `outside WinAnsi: ${[...new Set(bad)].join('')}`);
+
+  // G5 fit, swept rather than sampled.
+  const overflows = lineGrid.filter((point) => point.phrasing > point.default);
+  if (overflows.length) {
+    const worst = overflows[overflows.length - 1];
+    push('G5-fit', `longer than the ${basisKey} wording at ${overflows.length}/${lineGrid.length} typography settings, worst ${worst.bodyPt}pt/${worst.marginIn}in (${worst.phrasing} lines vs ${worst.default})`);
+  }
+
+  // G6 earns its place. Three ways to do that: open on a different verb, take a
+  // different sentence shape, or measurably cost fewer lines somewhere on the
+  // grid. The third is what a length alternative is for, and it is not supposed
+  // to change the verb, so requiring it to would reject exactly the phrasing that
+  // gives the fit ladder a content-side rung it otherwise lacks.
+  const sameLead = leadLemma(firstWord(text)) === leadLemma(firstWord(base));
+  const shape = (value) => framesIn(value).map((frame) => `${frame.kind}:${frame.surface}`).sort().join('|');
+  const shorterSomewhere = lineGrid.some((point) => point.phrasing < point.default);
+  if (sameLead && shape(text) === shape(base) && !shorterSomewhere) {
+    push('G6-redundant', `same opening verb and same sentence shape as the ${basisKey} wording, and never shorter`);
+  }
+
+  // G7 the claim itself. This is the rule a synonym list would break: containment,
+  // metrics, fit and lemma can all pass while the ownership moves.
+  if (ownership) {
+    const lemmaHere = leadLemma(firstWord(text));
+    const lemmaThere = leadLemma(firstWord(base));
+    const rankHere = ownership.ranks[lemmaHere];
+    const rankThere = ownership.ranks[lemmaThere];
+    if (!rankHere) push('G7-unranked', `"${firstWord(text)}" (${lemmaHere}) is not in ownership.json; add it deliberately`);
+    else if (rankThere && rankHere !== rankThere) {
+      push('G7-ownership', `"${firstWord(text)}" is ${rankHere} where the default is ${rankThere}; this changes what is claimed, not how it is worded`);
+    }
+  }
+  return problems;
+};
+
 // ── report assembly ───────────────────────────────────────────────────────
 
 /**
@@ -260,6 +368,17 @@ const byRef = (a, b) => String(a.ref).localeCompare(String(b.ref));
 
 /** The distinct opening words actually on the page, for one group of bullets. */
 const openersOf = (rows) => [...new Set(rows.map((row) => row.surface))].sort();
+
+/**
+ * Prefer an alternative wording over swapping a block out. A rephrase keeps the
+ * evidence and changes only the sentence; a swap trades one piece of evidence for
+ * another, which is a bigger decision and often the wrong one.
+ */
+const rephraseRemedy = (rephrase, swaps, noneNote) => {
+  if (rephrase.length) return { kind: 'rephrase', candidates: rephrase, ...(swaps.length ? { alsoSwappable: swaps.map((item) => item.ref) } : {}) };
+  if (swaps.length) return { kind: 'swap', candidates: swaps };
+  return { kind: 'none', note: noneNote };
+};
 
 const bySection = (rows) => {
   const groups = new Map();
@@ -349,8 +468,17 @@ const annotate = (bullet) => {
  * résumé: swapping one in is the only remedy an agent is allowed to apply, so a
  * finding that has none says so rather than implying a fix that does not exist.
  */
-export const checkResume = (bullets, { candidates = [], maxLines = 3, typography = null, maxFindings = 12 } = {}) => {
+export const checkResume = (bullets, { candidates = [], rephrasings = {}, maxLines = 3, typography = null, maxFindings = 12 } = {}) => {
   const rows = bullets.map(annotate);
+  // Alternative wordings Rahul has already approved for the bullets on this page,
+  // keyed by ref. These are what turn a finding that could only be reported into
+  // one that can be answered: most entries carry a single bullet, so for the bulk
+  // of the repetition there has never been another block to swap to.
+  const rephraseFor = (refs, clears) => refs.flatMap((ref) => (rephrasings[ref] ?? [])
+    .filter((option) => clears(option))
+    .map((option) => ({ ref, phrasing: option.id, lead: option.lead, lines: option.lines, hasMetric: option.hasMetric, text: option.text })))
+    .sort((a, b) => byRef(a, b) || String(a.phrasing).localeCompare(String(b.phrasing)))
+    .slice(0, MAX_CANDIDATES);
   const findings = [];
 
   // R1 lead-verb-repeat: three or more bullets in one SECTION open with the same
@@ -375,15 +503,15 @@ export const checkResume = (bullets, { candidates = [], maxLines = 3, typography
         .map((item) => ({ ref: item.ref, lead: leadSurface(item.text), hasMetric: metricsIn(item.text).metrics.length > 0 }))
         .sort((a, b) => Number(b.hasMetric) - Number(a.hasMetric) || byRef(a, b))
         .slice(0, MAX_CANDIDATES);
+      // A phrasing clears this finding exactly when it opens on a different lemma.
+      const rephrase = rephraseFor(hits.map((row) => row.ref), (option) => option.lemma !== lemma);
       findings.push(finding('R1', 'warn', 'lead-verb-repeat',
         // Openers are the surface forms actually on the page. The lemma is only a
         // grouping key, and a suffix stripper makes non-words out of some verbs
         // ("Pursuing" gives "pursu"), which have no business in agent-facing text.
         { sectionType, openers: openersOf(hits), count: hits.length, of: group.length },
         hits.map((row) => ({ ref: row.ref, surface: row.surface })),
-        swaps.length
-          ? { kind: 'swap', candidates: swaps }
-          : { kind: 'none', note: 'No unselected bullet on these entries opens differently, so there is no swap inside this section. The only levers are dropping an entry or a pool rewrite, and accepting the repeat is usually better than dropping evidence for it.' }));
+        rephraseRemedy(rephrase, swaps, 'No unselected bullet on these entries opens differently, and none of them has an alternative wording yet. The only levers are dropping an entry or a pool rewrite, and accepting the repeat is usually better than dropping evidence for it.')));
     }
   }
 
@@ -394,10 +522,15 @@ export const checkResume = (bullets, { candidates = [], maxLines = 3, typography
     let run = [];
     const flush = () => {
       if (run.length >= 2) {
+        // Only the second and later members need to move; the order is fixed by date.
+        const later = run.slice(1).map((row) => row.ref);
+        const rephrase = rephraseFor(later, (option) => option.lemma !== run[0].lemma);
         findings.push(finding('R2', 'warn', 'adjacent-repeat',
           { sectionType, openers: openersOf(run), count: run.length },
           run.map((row) => ({ ref: row.ref, surface: row.surface })),
-          { kind: 'swap-later', note: 'Change the second and any later bullet in the run. The order is fixed by date.' }));
+          rephrase.length
+            ? { kind: 'rephrase', candidates: rephrase, note: 'Change the second and any later bullet in the run. The order is fixed by date.' }
+            : { kind: 'swap-later', note: 'Change the second and any later bullet in the run. The order is fixed by date.' }));
       }
       run = [];
     };
@@ -429,10 +562,14 @@ export const checkResume = (bullets, { candidates = [], maxLines = 3, typography
       ? hits.size >= OPENER_MIN
       : hits.size >= PARTICIPLE_MIN && hits.size / rows.length >= PARTICIPLE_SHARE;
     if (!loud) continue;
+    const framed = [...hits].map(([ref]) => ref);
+    const rephrase = rephraseFor(framed, (option) => !option.frames.includes(key));
     findings.push(finding('R3', 'warn', 'frame-repeat',
       { frame: kind, ...(opener ? { opener } : {}), count: hits.size, of: rows.length },
       [...hits].map(([ref, surface]) => ({ ref, surface })).sort(byRef),
-      { kind: 'accept-or-swap', note: 'These bullets share one sentence shape, which reads as padding even though each is factual. Vary it in the pool, or accept it.' }));
+      rephrase.length
+        ? { kind: 'rephrase', candidates: rephrase, note: 'These bullets share one sentence shape, which reads as padding even though each is factual. Each wording below breaks it.' }
+        : { kind: 'accept-or-swap', note: 'These bullets share one sentence shape, which reads as padding even though each is factual. Vary it in the pool, or accept it.' }));
   }
 
   // Hedges ride as a category of R3 rather than seven rules of their own: this
@@ -476,10 +613,14 @@ export const checkResume = (bullets, { candidates = [], maxLines = 3, typography
   // renderer's own wrapper, measured by the caller at the fitted typography.
   const overLong = rows.filter((row) => typeof row.lines === 'number' && row.lines > maxLines);
   if (overLong.length) {
+    const rephrase = rephraseFor(overLong.map((row) => row.ref),
+      (option) => typeof option.lines === 'number' && option.lines <= maxLines);
     findings.push(finding('R5', 'warn', 'line-budget',
       { maxLines, count: overLong.length },
       overLong.map((row) => ({ ref: row.ref, lines: row.lines, variant: row.variant })).sort(byRef),
-      { kind: 'variant-or-pages', note: 'Set variant "standard" on these entries, or raise pages to 2.' }));
+      rephrase.length
+        ? { kind: 'rephrase', candidates: rephrase, note: 'These wordings hold the same facts inside the budget.' }
+        : { kind: 'variant-or-pages', note: 'Set variant "standard" on these entries, or raise pages to 2.' }));
   }
 
   // R6 structure: hard checks that guard a real render defect rather than taste.

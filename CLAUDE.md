@@ -117,6 +117,23 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   ignores any key that is not a slug, so they cost the canonical eight nothing.
   Deep detail generally needs a 2-page budget. What the repo cannot support is
   listed in `docs/resume-detail-gaps.md` — do not claim any of it.
+- **Alternative phrasings.** A bullet may carry `phrasings`, a sibling map of
+  wordings Rahul has approved for the same fact (`{ text, note, basis? }`). A spec
+  selects one per bullet with a flat `phrasings: { "waaah.main": "landmarks-first" }`
+  map keyed on the same ref findings report against. They live OUTSIDE `text` on
+  purpose: `build_resumes.py` reads only `text.get(slug, text["default"])`, so a
+  sibling key is invisible to Word by construction, and adding one changes no
+  shipped document (`tests/resume-documents.test.ts` pins that). A key named after
+  a résumé slug silently would, which is why they are not stored in `text`.
+  `attestPhrasing` in `resumeCheck.mjs` gates them at commit time: tokens must be
+  attested in that bullet's own approved text, metrics and product-numbers must
+  match exactly, it must fit at every point of the legal typography grid (not just
+  the four-rung ladder), it must earn its place, and its lead verb must hold the
+  same ownership rank from `content/ownership.json` (keyed on `leadLemma` OUTPUT,
+  which produces stems like `automat` and `pursu`). The guard cannot catch
+  recombination, modality or implicature: it is a filter in front of review, not a
+  substitute for it. `basis: "deep"` measures a phrasing against the deep wording
+  instead, which is how a bullet carries a tighter form of its own long variant.
 - **Résumé checker.** `server/resumeCheck.mjs` is a deterministic, rule-based
   linter. It **imports nothing** — a test enforces that, because
   `resumeRender.mjs` pulls in pdfkit (12 MB) and `ResumeBuilder.tsx` loads résumé
@@ -130,8 +147,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   (`errors === 0`). Thresholds are calibrated on the real corpus and the numbers
   each rule fires today are pinned in `tests/resume-check.test.ts` — a content
   edit that moves them fails there rather than changing the report silently.
-  `list_resume_blocks` carries `lead`, `lines` and `hasMetric` per bullet so an
-  agent can spread verbs and evidence while choosing.
+  `list_resume_blocks` carries `lead`, `lines` and `hasMetric` per bullet, and the
+  same three on each alternative wording, so an agent can spread verbs and
+  evidence while choosing. Where an alternative would clear a finding the remedy
+  is `kind: "rephrase"` naming it; that is what makes a repeat answerable at all,
+  since most entries carry a single bullet and there is nothing to swap to.
   `scripts/resume/extract_facets.py` is an optional offline LangExtract
   authoring aid: it writes to gitignored `.impeccable/resume-facets/`, nothing
   it produces is served, and it may only annotate existing bullets.

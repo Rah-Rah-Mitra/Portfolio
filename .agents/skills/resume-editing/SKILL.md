@@ -94,6 +94,25 @@ Two rules of its own, and they are the same prohibition as everywhere else here:
 Editing bullet text changes the shipped documents, so it needs the full edition
 rebuild above - Windows and Word - not just a lint that comes back quieter.
 
+## Alternative phrasings
+
+A bullet can carry `phrasings`: other sentences saying the same fact, so a resume
+that is right on the evidence is not marked down for wording it cannot change.
+They are a sibling key, never inside `text`, so Word never sees them and adding
+one changes no shipped document.
+
+`npm run resume:lint` and `npm test` run the attestation guard over every
+committed phrasing. It checks that every proper noun and number is already in
+that bullet's own approved text, that the measurements and product-numbers match
+exactly, that it fits at every legal typography, that it earns its place, and
+that its opening verb holds the same ownership rank as the original
+(`content/ownership.json`).
+
+What the guard does NOT catch: recombination (every word attested, arranged to
+assert something no source does), modality ("targets replacing" becoming
+"replaced" keeps the verb and turns a plan into a result), and implicature. A
+sentence can pass every rule and still be wrong. Read them.
+
 ## Fit
 
 Overflow trim ladder, in order: drop coursework bullet → reduce 3-bullet

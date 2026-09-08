@@ -59,7 +59,18 @@ keyword is recoverable; an inaccurate one is not.
    \`default\` is "Platform & Solutions Engineer (Sparks Citizen Developer)",
    his formal title, and \`software\` is "Software Engineer (Citizen
    Developer)". Both are true, so choose the one the posting is hiring for.
-7. \`build_resume(spec)\`. You get PDF, DOCX and Markdown URLs plus a fit report.
+7. Check whether a bullet offers more than one wording. Some carry
+   \`phrasings\`: alternative sentences Rahul has approved for the same fact, one
+   opening on the outcome, another on the technology. Each shows its opening
+   verb, its line cost and whether it holds a measurement. Pick one with a
+   spec-level map keyed on the same \`entryId.bulletId\` the check report uses:
+
+   \`"phrasings": { "waaah.main": "landmarks-first" }\`
+
+   You are choosing between Rahul's sentences, never editing one. The builder
+   accepts a phrasing id and rejects text, and an id that does not exist is an
+   error rather than a quiet fallback to something else.
+8. \`build_resume(spec)\`. You get PDF, DOCX and Markdown URLs plus a fit report.
 
 ## Layout, which you do not control
 
@@ -134,15 +145,24 @@ re-rendering. It reports counts, never a score: which opening verbs repeat, whic
 bullets share a sentence frame, which carry no measurable outcome, and any bullet
 over the line budget. Every finding names block ids.
 
-It is advisory and it cannot fix anything. There are exactly two responses: swap
-a block id, or accept the finding. Never write a bullet to improve a count, and
-never drop good evidence to satisfy a lint.
+It is advisory and it cannot fix anything itself. There are three responses:
+take an alternative wording it offers, swap a block id, or accept the finding.
+Never write a bullet to improve a count, and never drop good evidence to satisfy
+a lint.
 
-Two of these deserve a warning in advance. Rahul's project entries mostly carry a
-single bullet, so a repeated opening verb there often has no swap at all; the
-report says so, and accepting it is the right answer. And a low quantified count
-is not permission to add a number. If a measurement is not already in the blocks,
-it does not exist.
+Prefer a rephrase over a swap. A \`remedy.kind\` of \`"rephrase"\` names a wording
+that keeps the evidence and changes only the sentence; a swap trades one piece of
+evidence for another, which is a bigger decision and usually the wrong one when
+the block you have is the block that fits the posting. Take the rephrase, rebuild,
+and the finding is gone.
+
+Two things still deserve a warning. Not every bullet has an alternative wording
+yet: where none exists the report says so plainly, and accepting the repeat is
+the right answer rather than dropping evidence for it. And a low quantified count
+is never permission to add a number. Alternative wordings carry exactly the same
+measurements as the sentence they replace, by design, so no rephrase will ever
+raise that count. If a measurement is not already in the blocks, it does not
+exist.
 
 Whether a bullet fits the posting is your judgement, and it outranks every
 finding here.

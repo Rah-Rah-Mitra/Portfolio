@@ -29,6 +29,12 @@
           "id": "isp",
           "text": {
             "default": "Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light."
+          },
+          "phrasings": {
+            "capability-first": {
+              "text": "Advance camera ISP enhancement, super-resolution, and image restoration under motion and low light.",
+              "note": "leads on the imaging capability rather than the system"
+            }
           }
         },
         {
@@ -64,6 +70,12 @@
           "text": {
             "default": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants, spanning GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted quantized Gemma model.",
             "deep": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain over a locally hosted quantized Gemma 4 E4B served through llama.cpp GGUF."
+          },
+          "phrasings": {
+            "stack-first": {
+              "text": "Assembled an air-gapped process-intelligence platform for globally distributed spray-drying plants from GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted quantized Gemma model.",
+              "note": "leads on assembling the stack; no trailing participle"
+            }
           }
         },
         {
@@ -121,6 +133,12 @@
           "text": {
             "default": "Engineered a non-destructive, 15-stage changeover-data pipeline to normalize operator- and machine-generated anomalies, validating it against five years of unseen raw data with zero execution failures.",
             "deep": "Engineered a non-destructive, 15-stage changeover-data pipeline over operational matrices that encoded meaning in values, labels, colours, merged regions, and blanks, using controlled staging sheets, normalization and repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling to expose every intermediate state instead of mutating source data, and validated against five years of unseen raw data with zero execution failures."
+          },
+          "phrasings": {
+            "validation-first": {
+              "text": "Validated a non-destructive, 15-stage changeover-data pipeline against five years of unseen raw data with zero execution failures, normalizing operator- and machine-generated anomalies.",
+              "note": "leads on the validation evidence; no trailing participle"
+            }
           }
         },
         {
@@ -157,6 +175,12 @@
           "text": {
             "default": "Built an end-to-end digital garden-plot balloting platform spanning admin and public frontends, backend, GIS mapping, and deployment, now production-ready for national rollout across Singapore.",
             "deep": "Built an end-to-end digital garden-plot balloting platform spanning admin and public frontends, backend, GIS-based plot allocation, and deployment, coordinating stakeholders and rollout planning across product, engineering, and operations; now production-ready for national rollout across Singapore."
+          },
+          "phrasings": {
+            "delivery-first": {
+              "text": "Delivered a digital garden-plot balloting platform from admin and public frontends through backend, GIS mapping, and deployment, now production-ready for national rollout across Singapore.",
+              "note": "leads on delivery; no trailing participle"
+            }
           }
         },
         {
@@ -222,6 +246,12 @@
           "text": {
             "default": "Engineered an Excel VBA automation workflow that compressed a six-month food-waste analysis cycle into a sub-three-minute reporting process inside a security-constrained environment.",
             "deep": "Mapped the food-waste reporting process end to end, then automated its calculations and reporting steps with an Excel VBA workflow that compressed a six-month manual cycle into a sub-three-minute repeatable process inside a security-constrained environment."
+          },
+          "phrasings": {
+            "cycle-first": {
+              "text": "Compressed a six-month food-waste analysis cycle into a sub-three-minute reporting process with an Excel VBA automation workflow inside a security-constrained environment.",
+              "note": "leads on the compressed cycle rather than the tool"
+            }
           }
         },
         {

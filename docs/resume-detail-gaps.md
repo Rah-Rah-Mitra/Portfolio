@@ -160,6 +160,20 @@ now asserts that every pool bullet and skills line is offered through
 
 ---
 
+## 11. Volt Pulse: one settled, one open - 2026-09-08
+
+**Answered (Rahul, in conversation):** the **scheduler-agent planning shipped**; it
+was not a roadmap. `projects.json` says "scheduler-agent planning", the event
+record in `portfolioData.ts` says "a scheduler-agent roadmap", and the npcDialogue
+says "a plan for scheduler agents". The bullet is right and the other two should
+be brought into line the next time that record is touched.
+
+**Still open:** `voltpulse.main` says "Built" in its default and "Co-built" in its
+deep variant. `leadLemma` strips a leading `co-`, so the checker has never
+reported the disagreement and cannot. One of the two is wrong. Until Rahul says
+which, the `retrieval-first` phrasing avoids the question by opening on the
+retrieval stack, and no phrasing of that bullet should open "Built" or "Co-built".
+
 ## 10. What the checker cannot judge
 
 `npm run resume:lint` and the `check_resume` MCP tool are rule-based. They can

@@ -71,6 +71,12 @@
           "id": "main",
           "text": {
             "default": "Built Rust-forward security and red-team tooling (Arcane, Arcane-PP, Arcane-GLM, Arcane-OCR) for automation, OCR, and adversarial workflows."
+          },
+          "phrasings": {
+            "tooling-first": {
+              "text": "Shipped Rust-forward security and red-team tooling (Arcane, Arcane-PP, Arcane-GLM, Arcane-OCR) for automation, OCR, and adversarial workflows.",
+              "note": "leads on shipping the family; no trailing participle"
+            }
           }
         }
       ]
@@ -101,6 +107,12 @@
           "text": {
             "default": "Built a gesture-to-comic pipeline in a 24-hour sprint, turning MediaPipe 3D hand landmarks into generated comic strips with Gemini 2.0 Flash, Veo 3, and Konva.js canvas tooling.",
             "deep": "Built a gesture-to-comic pipeline in a 24-hour sprint, tracking MediaPipe 3D hand landmarks and routing them through Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition, exercising several generative models end to end in one interactive workflow."
+          },
+          "phrasings": {
+            "landmarks-first": {
+              "text": "Turned MediaPipe 3D hand landmarks into generated comic strips in a 24-hour sprint, with Gemini 2.0 Flash, Veo 3, and Konva.js canvas tooling.",
+              "note": "leads on the landmarks; no trailing participle"
+            }
           }
         }
       ]
@@ -116,6 +128,12 @@
           "text": {
             "default": "Built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning.",
             "deep": "Co-built an agentic AI system for tracking HDB household energy costs using SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing; Top 8 finalist of 50+ teams at SMU Hack For Cities 2026."
+          },
+          "phrasings": {
+            "retrieval-first": {
+              "text": "Integrated SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning into an agentic AI system tracking HDB household energy costs.",
+              "note": "leads on the retrieval stack rather than the system"
+            }
           }
         }
       ]
@@ -146,6 +164,12 @@
           "text": {
             "default": "Built an elderly-care triage chatbot using OpenAI GPT-4, InterSystems IRIS Vector Search, and Flask, with OAuth2-secured patient profiles and PDPA-aware design.",
             "deep": "Served as primary AI/ML engineer on an elderly-care triage system, deploying a RAG architecture over OpenAI GPT-4 and InterSystems IRIS Vector Search with cosine-similarity semantic retrieval, a Flask backend, OAuth2-secured patient profiles, and PDPA-aware design."
+          },
+          "phrasings": {
+            "triage-first": {
+              "text": "Developed an elderly-care triage chatbot on OpenAI GPT-4, InterSystems IRIS Vector Search, and Flask, with OAuth2-secured patient profiles and PDPA-aware design.",
+              "note": "leads on the clinical function rather than the build"
+            }
           }
         }
       ]
@@ -160,6 +184,12 @@
           "id": "main",
           "text": {
             "default": "Built a multi-agent autonomous exam-generation system with a RAG pipeline and Next.js frontend, automating source ingestion, question generation, and education workflows."
+          },
+          "phrasings": {
+            "pipeline-first": {
+              "text": "Automated source ingestion, question generation, and education workflows in a multi-agent autonomous exam-generation system with a RAG pipeline and Next.js frontend.",
+              "note": "leads on what the pipeline automates; no trailing participle"
+            }
           }
         }
       ]
@@ -174,6 +204,12 @@
           "id": "main",
           "text": {
             "default": "Built an AI research engine scoring brand ethics and sustainability using FastAPI, Python, and LangChain with automated evidence retrieval."
+          },
+          "phrasings": {
+            "evidence-first": {
+              "text": "Designed an AI research engine that scores brand ethics and sustainability from automated evidence retrieval, on FastAPI, Python, and LangChain.",
+              "note": "leads on the scoring rather than the engine"
+            }
           }
         }
       ]

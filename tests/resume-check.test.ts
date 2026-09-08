@@ -203,7 +203,7 @@ describe('checkResume', () => {
     const repeat = report.findings.find((item) => item.category === 'lead-verb-repeat');
     expect(repeat?.where.openers).toEqual(['Built']);
     expect(repeat?.remedy?.kind).toBe('none');
-    expect(repeat?.remedy?.note).toMatch(/no swap inside this section/);
+    expect(repeat?.remedy?.note).toMatch(/none of them has an alternative wording yet/);
   });
 
   it('offers a swap only from the section that fired, ranked by evidence', () => {

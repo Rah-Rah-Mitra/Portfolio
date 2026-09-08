@@ -63,6 +63,13 @@ const main = async () => {
   console.log(`  ${pool.metrics.bullets} selectable bullets, ${pool.metrics.distinctLeadLemmas} distinct opening verbs, `
     + `top "${pool.metrics.topOpener?.openers.join('/')}" on ${pool.metrics.topOpener?.count} `
     + `(${Math.round(pool.metrics.leadConcentration * 100)}%), ${Math.round(pool.metrics.metricCoverage * 100)}% carry a measurement`);
+  const withAlternatives = poolEntries().flatMap((entry) => entry.bullets)
+    .filter((bullet) => bullet.variant === 'default').length;
+  const alternatives = SECTION_TYPES.flatMap((type) => pools[type].entries
+    .filter((entry) => !entry.blocked)
+    .flatMap((entry) => (entry.bullets ?? []).map((bullet) => Object.keys(bullet.phrasings ?? {}).length)));
+  console.log(`  ${alternatives.filter(Boolean).length} of ${withAlternatives} bullets carry an alternative wording `
+    + `(${alternatives.reduce((sum, count) => sum + count, 0)} in total)`);
   console.log('');
   printFindings(pool);
 
@@ -71,9 +78,11 @@ const main = async () => {
   console.log('CANONICAL RESUMES   what an agent building from these would be told');
   console.log(BAR);
   let errors = pool.counts.errors;
+  let warnings = pool.counts.warnings;
   for (const spec of resumeConfigs) {
     const report = await checkConfig(spec);
     errors += report.counts.errors;
+    warnings += report.counts.warnings;
     const top = report.metrics.topOpener;
     console.log('');
     console.log(`${pad(spec.slug, 32)} ${report.gate}  `
@@ -89,6 +98,9 @@ const main = async () => {
   console.log(errors
     ? `${errors} structural error(s). These are render defects, not style.`
     : 'No structural errors. Everything above is a judgement call about approved material.');
+  // The closest honest thing to a progress number, and it stays here rather than
+  // in any agent-facing tool: a scalar in a tool response is a target.
+  console.log(`Corpus warning total: ${warnings}. It falls as bullets gain alternative wordings.`);
   process.exitCode = errors ? 1 : 0;
 };
 

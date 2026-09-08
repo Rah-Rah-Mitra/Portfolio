@@ -7,6 +7,7 @@
   Tools: get_profile, list_experience, list_projects, get_project, list_resumes, get_resume, get_resume_guide, list_resume_blocks, build_resume, check_resume
 - JSON export of the same data, résumés included as Markdown: https://rahul-mitra.com/api/portfolio
 - Résumé builder: call get_resume_guide, then list_resume_blocks, then build_resume to compose a Harvard-style résumé targeted at a specific role. Content is selected from Rahul's approved blocks; bullet text cannot be supplied, so nothing on a generated résumé is invented.
+- Alternative phrasings: some bullets carry more than one approved wording of the same fact, shown on list_resume_blocks with each one's opening verb, line cost and whether it holds a measurement. A build selects one by id. Nothing here lets a caller supply text: the choice is between Rahul's own sentences.
 - Résumé checker: build_resume returns a check report, and check_resume runs the same check on any ready-made résumé. It is deterministic and rule-based, naming repeated opening verbs, repeated sentence frames, hedging words, bullets with no measurable outcome and bullets over the line budget, each against the block ids it found them on. It reports counts rather than a score, and it never rewrites text.
 - Site: https://rahul-mitra.com/
 

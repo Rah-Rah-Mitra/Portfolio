@@ -505,6 +505,13 @@ export const specSchema = z.object({
   marginIn: z.number().min(0.5).max(1).optional(),
   detail: z.enum(['standard', 'deep']).optional(),
   autoFit: z.boolean().optional(),
+  // Alternative wordings, keyed on the same "entryId.bulletId" ref every finding
+  // is reported against, so a rephrase remedy is directly writable as given.
+  // Values are phrasing ids from list_resume_blocks; this never carries text.
+  phrasings: z.record(
+    z.string().regex(/^[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$/),
+    z.string().regex(/^[a-z][a-z0-9-]{1,28}$/),
+  ).optional(),
   sections: z.array(z.discriminatedUnion('type', [entrySection, skillsSection])).min(1).max(8),
 });
 

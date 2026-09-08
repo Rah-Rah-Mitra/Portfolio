@@ -19,6 +19,13 @@
           "text": {
             "default": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277): top student in a class of 24, NUS School of Computing.",
             "deep": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277): top student in a class of 24, NUS School of Computing, covering projective geometry, camera models, fundamental and essential matrices, absolute pose estimation, three-view geometry, structure-from-motion with bundle adjustment, two-view and multi-view stereo, and generalized cameras."
+          },
+          "phrasings": {
+            "syllabus-tight": {
+              "text": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277): top student in a class of 24, NUS School of Computing, covering projective geometry, camera models, fundamental/essential matrices, absolute pose estimation, three-view geometry, structure-from-motion with bundle adjustment, two- and multi-view stereo.",
+              "note": "the deep syllabus list, trimmed to three lines at 10pt",
+              "basis": "deep"
+            }
           }
         },
         {

@@ -21,7 +21,35 @@ export const resolveRole = (entry, selection) => {
   return role[key];
 };
 
-export const resolveBulletText = (bullet, spec, entryVariant) => {
+/**
+ * Which of Rahul's sentences this bullet renders as.
+ *
+ * Three axes, resolved in this order:
+ *   phrasing  a lateral alternative wording of the same fact, chosen per bullet
+ *             through spec.phrasings. Wins outright: it is the most specific
+ *             instruction the caller gave, and falling through to a depth
+ *             variant would silently undo the choice they made.
+ *   depth     text.deep, chosen per entry or per spec. Only 17 of the 41
+ *             selectable bullets carry one and the rest fall back to their
+ *             default; that fallback is deliberate and documented in the guide.
+ *   targeting text[slug], the per-résumé overrides the Python builder reads.
+ *
+ * An unknown phrasing id throws rather than falling back, because a phrasing is
+ * the caller naming one specific sentence: quietly rendering a different one is
+ * the failure mode this whole design exists to prevent.
+ */
+export const resolveBulletText = (bullet, spec, entryVariant, ref) => {
+  const phrasingId = spec.phrasings?.[ref];
+  if (phrasingId) {
+    const chosen = bullet.phrasings?.[phrasingId];
+    if (!chosen) {
+      const available = Object.keys(bullet.phrasings ?? {});
+      throw new Error(`unknown phrasing "${phrasingId}" on ${ref}; ${available.length
+        ? `choose one of ${available.join(', ')}`
+        : 'this bullet has only one wording'}`);
+    }
+    return chosen.text;
+  }
   const variant = entryVariant ?? spec.detail;
   const text = bullet.text;
   if (variant && variant !== 'standard' && text[variant]) return text[variant];
@@ -41,6 +69,7 @@ export const resolveBulletText = (bullet, spec, entryVariant) => {
 export const assemble = (spec, pools) => {
   const skillLines = new Map(pools.skills.lines.map((line) => [line.id, line]));
   const items = [];
+  const used = new Set();
   for (const section of spec.sections) {
     items.push({ kind: 'section', title: section.title.toUpperCase(), sectionType: section.type });
     if (section.type === 'skills') {
@@ -74,17 +103,27 @@ export const assemble = (spec, pools) => {
       for (const id of bullets) {
         const bullet = byId.get(id);
         if (!bullet) throw new Error(`unknown bullet ${id} on ${entry.id}`);
+        const ref = `${entry.id}.${id}`;
+        const phrasing = spec.phrasings?.[ref] ?? null;
+        used.add(ref);
         items.push({
           kind: 'bullet',
-          ref: `${entry.id}.${id}`,
+          ref,
           entryId: entry.id,
           bulletId: id,
           sectionType: section.type,
           variant: variant ?? spec.detail ?? 'standard',
-          text: resolveBulletText(bullet, spec, variant),
+          ...(phrasing ? { phrasing } : {}),
+          text: resolveBulletText(bullet, spec, variant, ref),
         });
       }
     }
+  }
+  // A phrasing named for a bullet this spec never selects is a mistake worth
+  // saying out loud: silently ignoring it leaves the caller believing they
+  // changed a sentence that is not on the page.
+  for (const ref of Object.keys(spec.phrasings ?? {})) {
+    if (!used.has(ref)) throw new Error(`spec.phrasings names ${ref}, which this résumé does not select`);
   }
   return items;
 };

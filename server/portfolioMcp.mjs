@@ -7,7 +7,7 @@ import { z } from 'zod';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
 import { configBySlug, pools, profile, resumeBlocks, resumeConfigs } from './resumeContent.mjs';
 import { assemble, decodeSpec, encodeSpec, measureBulletLines, renderResume, renderResumeMarkdown, specSchema } from './resumeRender.mjs';
-import { checkResume, firstWord, metricsIn } from './resumeCheck.mjs';
+import { checkResume, firstWord, framesIn, leadLemma, metricsIn } from './resumeCheck.mjs';
 import { RESUME_GUIDE } from './resumeGuide.mjs';
 
 export { resumeConfigs };
@@ -71,12 +71,46 @@ export const swapCandidates = (spec, chosen) => {
  * counts. `fit` comes from the render when there is one, so build_resume pays for
  * a single pass rather than two.
  */
+/**
+ * The alternative wordings available for the bullets on this page, with the three
+ * facts the rules are about derived at the résumé's own typography. A wording
+ * already selected is not offered back.
+ */
+const rephrasingsFor = (spec, bullets, typography) => {
+  const options = [];
+  for (const bullet of bullets) {
+    const [entryId, bulletId] = [bullet.entryId, bullet.bulletId];
+    const source = pools[bullet.sectionType]?.entries.find((entry) => entry.id === entryId)
+      ?.bullets?.find((item) => item.id === bulletId);
+    for (const [id, phrasing] of Object.entries(source?.phrasings ?? {})) {
+      if (bullet.phrasing === id) continue;
+      options.push({ ref: bullet.ref, id, text: phrasing.text });
+    }
+  }
+  const lines = measureBulletLines(options.map((option) => option.text), typography);
+  const byRef = {};
+  options.forEach((option, index) => {
+    const found = metricsIn(option.text);
+    byRef[option.ref] = [...(byRef[option.ref] ?? []), {
+      id: option.id,
+      text: option.text,
+      lead: firstWord(option.text).replace(/[^A-Za-z-]+$/, ''),
+      lemma: leadLemma(firstWord(option.text)),
+      frames: framesIn(option.text).map((frame) => (frame.kind === 'opener' ? `opener:${frame.surface}` : 'trailing-participle')),
+      lines: lines[index],
+      hasMetric: found.metrics.length > 0,
+    }];
+  });
+  return byRef;
+};
+
 export const checkSpec = (spec, fit = null) => {
   const typography = { bodyPt: fit?.bodyPt ?? undefined, marginIn: fit?.marginIn ?? undefined };
   const bullets = assemble(spec, pools).filter((item) => item.kind === 'bullet');
   const lines = measureBulletLines(bullets.map((bullet) => bullet.text), typography);
   return checkResume(bullets.map((bullet, index) => ({ ...bullet, lines: lines[index] })), {
     candidates: swapCandidates(spec, bullets.map((bullet) => bullet.ref)),
+    rephrasings: rephrasingsFor(spec, bullets, typography),
     typography: fit ? { bodyPt: fit.bodyPt, marginIn: fit.marginIn } : null,
   });
 };
@@ -130,6 +164,31 @@ export const decoratedBlocks = () => {
     bullet.lines = lines[index];
     bullet.hasMetric = metricsIn(texts[index]).metrics.length > 0;
   });
+  // Alternative wordings, with the same three derived fields, so an agent can see
+  // that a bullet opening "Built" also has one opening "Turned" before it picks.
+  const pool = new Map();
+  for (const type of ['education', 'experience', 'projects', 'leadership']) {
+    for (const entry of pools[type].entries) {
+      for (const bullet of entry.bullets ?? []) pool.set(`${entry.id}.${bullet.id}`, bullet);
+    }
+  }
+  for (const section of blocks.sections) {
+    for (const entry of section.entries) {
+      for (const bullet of entry.bullets) {
+        const source = pool.get(`${entry.id}.${bullet.id}`);
+        const phrasings = Object.entries(source?.phrasings ?? {});
+        if (!phrasings.length) continue;
+        const measured = measureBulletLines(phrasings.map(([, item]) => item.text));
+        bullet.phrasings = Object.fromEntries(phrasings.map(([id, item], index) => [id, {
+          text: item.text,
+          note: item.note,
+          lead: firstWord(item.text).replace(/[^A-Za-z-]+$/, ''),
+          lines: measured[index],
+          hasMetric: metricsIn(item.text).metrics.length > 0,
+        }]));
+      }
+    }
+  }
   return blocks;
 };
 

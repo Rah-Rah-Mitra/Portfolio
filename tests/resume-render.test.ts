@@ -28,6 +28,24 @@ const entryIds = (type: 'experience' | 'projects'): SpecEntry[] => (pools[type].
   .filter((entry) => !entry.blocked)
   .map((entry) => ({ id: entry.id, bullets: (entry.bullets ?? []).map((bullet) => bullet.id) }));
 
+describe('spec schema', () => {
+  it('accepts only the eight canonical slugs', () => {
+    const base = { sections: [{ type: 'skills', title: 'SKILLS', lines: ['se-skills'] }] };
+    expect(specSchema.safeParse({ ...base, slug: 'highlights' }).success).toBe(true);
+    // `slug` selects the per-slug bullet overrides, so a free string was a content
+    // lever nothing documented: an unknown slug silently selected nothing.
+    expect(specSchema.safeParse({ ...base, slug: 'made-up' }).success).toBe(false);
+  });
+
+  it('names the offending section in a validation error', () => {
+    const parsed = specSchema.safeParse({
+      sections: [{ type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'x', bullets: [1] }] }],
+    });
+    expect(parsed.success).toBe(false);
+    expect(parsed.error?.issues[0].path).toEqual(['sections', 0, 'entries', 0, 'bullets', 0]);
+  });
+});
+
 describe('résumé renderer', () => {
   it('renders every canonical config at its declared page count', async () => {
     for (const config of configs) {

@@ -491,14 +491,21 @@ const skillsSection = z.object({
 });
 
 export const specSchema = z.object({
-  slug: z.string().max(60).optional(),
+  // The eight canonical slugs, not a free string. `slug` selects the per-slug
+  // bullet overrides, so a free string was an undocumented content lever: an
+  // agent could set slug "cyber-security" on a custom spec and silently pull in
+  // overrides, or set a slug that exists nowhere and silently get nothing. Both
+  // should be answered out loud.
+  slug: z.enum(['software-engineer', 'solution-architect', 'ai-engineer',
+    'operations-research-engineer', 'cyber-security', 'civic-tech-solution-architect',
+    'highlights', 'general']).optional(),
   subject: z.string().max(120).optional(),
   pages: z.number().int().min(1).max(3).optional(),
   bodyPt: z.number().min(10).max(12).optional(),   // never below 10pt
   marginIn: z.number().min(0.5).max(1).optional(),
   detail: z.enum(['standard', 'deep']).optional(),
   autoFit: z.boolean().optional(),
-  sections: z.array(z.union([entrySection, skillsSection])).min(1).max(8),
+  sections: z.array(z.discriminatedUnion('type', [entrySection, skillsSection])).min(1).max(8),
 });
 
 export const encodeSpec = (spec) => deflateSync(Buffer.from(JSON.stringify(spec), 'utf8')).toString('base64url');

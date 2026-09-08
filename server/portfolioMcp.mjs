@@ -133,7 +133,11 @@ export const decoratedBlocks = () => {
   return blocks;
 };
 
-const text = (value) => ({ content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }] });
+// Compact, not pretty-printed. Every one of these payloads is read by a model
+// through an MCP tool result, and the indentation was 12,197 bytes of it across
+// list_resume_blocks, list_resumes and get_profile alone. Use the MCP inspector
+// with a formatter when eyeballing one by hand.
+const text = (value) => ({ content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value) }] });
 
 export const registerPortfolioTools = (server) => {
   server.registerTool('get_profile', {

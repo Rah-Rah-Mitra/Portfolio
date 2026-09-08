@@ -160,6 +160,27 @@ now asserts that every pool bullet and skills line is offered through
 
 ---
 
+## 12. Coursework and the RL line - 2026-09-08
+
+**Answered (Rahul, in conversation):** Simulation, **Stochastic Processes**,
+**Statistics for Engineering Applications** and **Computer Graphics** are courses
+he has taken. Stochastic Processes and Computer Graphics were attested nowhere in
+the repo before this; they are now in the `nus.coursework-full` block, which no
+canonical résumé selects yet.
+
+**Also on his instruction:** the CS4277 syllabus no longer appears in the
+education section at all. The award block covers the award; the topics moved to
+the `cv-skills` line under Technical, where a course syllabus reads as a skill
+rather than as a description of a certificate.
+
+**Still a gap, and worth saying plainly.** He asked for the reinforcement-learning
+algorithms under Technical, and `ai-skills-rl` now carries "deep RL (PPO, A2C,
+DDPG, DQN)". That is the same claim `gen-ai` has always made, so it is not new
+here, but §1 still stands: the only evidence in this repo is the Packt
+certification. A Technical line sits beside applied skills and will read as
+applied experience. If there is real RL work behind it, it belongs in §1 as a
+bullet; if there is not, the certification line is the honest place for it.
+
 ## 11. Volt Pulse: one settled, one open - 2026-09-08
 
 **Answered (Rahul, in conversation):** the **scheduler-agent planning shipped**; it

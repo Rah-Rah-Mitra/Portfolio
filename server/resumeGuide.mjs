@@ -145,6 +145,14 @@ re-rendering. It reports counts, never a score: which opening verbs repeat, whic
 bullets share a sentence frame, which carry no measurable outcome, and any bullet
 over the line budget. Every finding names block ids.
 
+Read \`summary\` first. It names the biggest finding, the alternative wordings
+that would clear findings at no cost, and the rule below.
+
+**Evidence outranks wording.** Never drop a bullet, a role, or a measurement to
+clear a style finding. Experience is the strongest thing on the page, and a
+repeated opening verb there is worth accepting: the report will say so rather
+than suggest removing anything.
+
 It is advisory and it cannot fix anything itself. There are three responses:
 take an alternative wording it offers, swap a block id, or accept the finding.
 Never write a bullet to improve a count, and never drop good evidence to satisfy

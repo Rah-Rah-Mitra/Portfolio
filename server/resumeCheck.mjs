@@ -31,6 +31,13 @@ const POOL_FRAME_MIN = 6;       // pool sentence-frame concentration
 const MAX_CANDIDATES = 4;       // swap suggestions per finding
 const MAX_OCCURRENCES = 12;     // block ids listed per finding
 
+// Evidence outranks wording, and paid experience is the strongest evidence on the
+// page. Every rule here is about style, so no finding in the EXPERIENCE section
+// may ever be answered by removing a role: the remedies there are reworded or
+// accepted, never dropped. A résumé that is right about the work and repeats a
+// verb beats one that reads well and has less to show.
+const EVIDENCE_FIRST = 'experience';
+
 // ── lexicon ───────────────────────────────────────────────────────────────
 // Frozen and exported so the word lists are reviewable in one place, and so a
 // test can prove the checker never emits a string it did not read from input.
@@ -400,6 +407,48 @@ const RULE_ORDER = { R1: 0, R2: 1, R3: 2, R4: 3, R5: 4, R6: 5, P1: 6, P2: 7, P3:
  * once, and derive the headline metrics. One cap and one `omitted` count, not a
  * separate truncation rule per finding type.
  */
+/**
+ * One line naming what is actually wrong and what to do about it.
+ *
+ * The findings array is precise and an agent skimming JSON reads none of it.
+ * This is the sentence that gets read, so it says the biggest problem, the fix
+ * that costs nothing, and the standing rule that keeps the fix from being
+ * "delete some evidence".
+ */
+const summarise = (rows, findings, counts) => {
+  if (!rows.length) return 'Nothing selected.';
+  const actionable = findings.filter((item) => item.remedy?.kind === 'rephrase');
+  const parts = [];
+  const worst = findings.find((item) => item.severity === 'error')
+    ?? findings.find((item) => item.category === 'lead-verb-repeat')
+    ?? findings.find((item) => item.severity === 'warn')
+    ?? findings[0];
+  if (!worst) return `${rows.length} bullets, nothing to flag.`;
+  if (counts.errors) parts.push(`${counts.errors} structural error(s) to fix before sending`);
+  const where = worst.where ?? {};
+  const section = String(where.sectionType ?? '').toUpperCase();
+  const openers = (where.openers ?? []).join('/');
+  const phrase = {
+    'lead-verb-repeat': () => `${where.count} of ${where.of} ${section} bullets open "${openers}"`,
+    'adjacent-repeat': () => `${where.count} bullets in a row in ${section} open "${openers}"`,
+    'frame-repeat': () => `${where.count} of ${where.of} bullets share one sentence shape${where.opener ? ` ("${where.opener} ...")` : ''}`,
+    unquantified: () => `only ${where.quantified} of ${where.of} bullets carry a measurement`,
+    'line-budget': () => `${where.count} bullet(s) run past ${where.maxLines} lines`,
+    hedge: () => `${where.count} bullet(s) hedge a claim the evidence already supports`,
+    'too-many-bullets': () => `an entry carries more than ${where.limit} bullets`,
+    'duplicate-block': () => 'the same block is selected twice',
+    'duplicate-label-line': () => 'two label lines are selected on one entry',
+    'unrenderable-glyph': () => 'a character will not render in the PDF fonts',
+  }[worst.category];
+  parts.push(phrase ? phrase() : `worst finding is ${worst.category}`);
+  const free = actionable.flatMap((item) => item.remedy.candidates ?? []).slice(0, 2);
+  parts.push(free.length
+    ? `${actionable.length} finding(s) have an approved alternative wording that costs no evidence, starting with ${free.map((item) => `${item.ref}@${item.phrasing}`).join(' and ')}`
+    : 'no alternative wording is available, so accept what remains');
+  parts.push('Never drop a bullet, a role, or a measurement to clear a style finding: the evidence outranks the wording');
+  return `${parts.join('. ')}.`;
+};
+
 const report = (rows, all, typography, maxFindings) => {
   const sorted = [...all].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
     || RULE_ORDER[a.rule] - RULE_ORDER[b.rule]
@@ -431,6 +480,7 @@ const report = (rows, all, typography, maxFindings) => {
   const quantified = countable.filter((row) => row.metrics.length).length;
   return {
     version: CHECK_VERSION,
+    summary: summarise(rows, findings, counts),
     metrics: {
       bullets: rows.length,
       distinctLeadLemmas: tally.size,
@@ -511,7 +561,9 @@ export const checkResume = (bullets, { candidates = [], rephrasings = {}, maxLin
         // ("Pursuing" gives "pursu"), which have no business in agent-facing text.
         { sectionType, openers: openersOf(hits), count: hits.length, of: group.length },
         hits.map((row) => ({ ref: row.ref, surface: row.surface })),
-        rephraseRemedy(rephrase, swaps, 'No unselected bullet on these entries opens differently, and none of them has an alternative wording yet. The only levers are dropping an entry or a pool rewrite, and accepting the repeat is usually better than dropping evidence for it.')));
+        rephraseRemedy(rephrase, swaps, sectionType === EVIDENCE_FIRST
+          ? 'Nothing on these entries opens differently yet, so accept this one. Never drop a role, or a bullet that carries the evidence, to fix a repeated verb: what the work was outranks how the sentence opens. A pool rewrite is the only real fix and it is not yours to make.'
+          : 'No unselected bullet on these entries opens differently, and none of them has an alternative wording yet. The levers are a pool rewrite, or dropping an entry if it was marginal anyway. Accepting the repeat is usually better than dropping evidence for it.')));
     }
   }
 
@@ -639,6 +691,24 @@ export const checkResume = (bullets, { candidates = [], rephrasings = {}, maxLin
       duplicates.sort().map((ref) => ({ ref })),
       { kind: 'drop', note: 'The same block is selected twice and would render twice.' }));
   }
+  // Two bullets on one entry opening with the SAME label render as two
+  // "Relevant coursework:" rows, which is never intended: the pool carries
+  // several course lists so a résumé can pick the one that fits the posting, not
+  // so it can print them all. Different labels on one entry are fine and
+  // deliberate: the Additional Projects entry is a titled line per project.
+  const sameLabel = new Map();
+  for (const row of rows) {
+    if (!row.isLabel) continue;
+    const key = `${row.entryId}::${row.text.slice(0, row.text.indexOf(':')).toLowerCase()}`;
+    sameLabel.set(key, [...(sameLabel.get(key) ?? []), row]);
+  }
+  const collisions = [...sameLabel.values()].filter((list) => list.length > 1);
+  if (collisions.length) {
+    findings.push(finding('R6', 'error', 'duplicate-label-line', {},
+      collisions.flat().map((row) => ({ ref: row.ref })).sort(byRef),
+      { kind: 'drop', note: 'Keep one of these. They are alternative lists under the same heading, not additions to each other.' }));
+  }
+
   const unrenderable = rows
     .map((row) => ({ ref: row.ref, surface: [...row.text].filter((glyph) => !isWinAnsi(glyph)).join('') }))
     .filter((row) => row.surface);

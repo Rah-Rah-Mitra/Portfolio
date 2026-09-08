@@ -110,8 +110,9 @@ describe('résumé renderer', () => {
   it('swaps in deep variants without touching the standard build', async () => {
     const standard = renderResumeMarkdown(highlights, pools, profile) as string;
     const deep = renderResumeMarkdown({ ...highlights, detail: 'deep' }, pools, profile) as string;
-    expect(standard).not.toContain('fundamental and essential matrices');
-    expect(deep).toContain('fundamental and essential matrices');
+    // nus.award used to carry a deep variant listing the CS4277 syllabus; that
+    // content now lives in the cv-skills line, so pick a bullet that still has one.
+    expect(standard).not.toContain('From-To edge-list');
     expect(deep).toContain('From-To edge-list');
     expect(deep.length).toBeGreaterThan(standard.length);
     // A bullet with no deep variant still falls back to its usual text.

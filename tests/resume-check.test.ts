@@ -17,6 +17,7 @@ type Finding = {
 };
 type Report = {
   version: number;
+  summary?: string;
   metrics: { bullets: number; distinctLeadLemmas: number; metricCoverage: number;
     topOpener: { openers: string[]; count: number } | null; maxBulletLines: number | null;
     typography?: { bodyPt: number; marginIn: number } };
@@ -266,12 +267,48 @@ describe('checkResume', () => {
   });
 });
 
+describe('the report leads with the problem', () => {
+  it('names the biggest finding and the fix that costs nothing', () => {
+    const rows = ['a.one', 'a.two', 'a.three'].map((ref, index) => bullet(ref, `Built a thing ${index}`));
+    const report = checkResume(rows, {
+      rephrasings: { 'a.two': [{ id: 'turn-first', text: 'Turned a thing.', lead: 'Turned', lemma: 'turn', frames: [], lines: 1, hasMetric: false }] },
+    }) as Report & { summary: string };
+    expect(report.summary).toContain('3 of 3 EXPERIENCE bullets open "Built"');
+    expect(report.summary).toContain('a.two@turn-first');
+    // The standing rule travels with every report, because the cheapest way to
+    // clear a style finding is to delete the evidence that triggered it.
+    expect(report.summary).toMatch(/Never drop a bullet, a role, or a measurement/);
+  });
+
+  it('never tells anyone to drop a role to fix a repeated verb', () => {
+    const rows = ['a.one', 'b.two', 'c.three'].map((ref, index) => bullet(ref, `Built a thing ${index}`));
+    const repeat = (checkResume(rows) as Report).findings.find((item) => item.category === 'lead-verb-repeat');
+    expect(repeat?.remedy?.kind).toBe('none');
+    expect(repeat?.remedy?.note).toMatch(/Never drop a role/);
+    expect(repeat?.remedy?.note).not.toMatch(/dropping an entry/);
+  });
+
+  it('separates two lists under one heading from two headings', () => {
+    const label = (ref: string, text: string) => ({ ...bullet(ref, text), sectionType: 'education' });
+    // Two course lists on one entry would print two "Relevant coursework:" rows.
+    expect((checkResume([
+      label('nus.coursework', 'Relevant coursework: Simulation, Statistics.'),
+      label('nus.coursework-full', 'Relevant coursework: Simulation, Computer Graphics.'),
+    ]) as Report).gate).toBe('fail');
+    // Two differently titled additional projects on one entry are deliberate.
+    expect((checkResume([
+      label('additional.nvidia', 'NVIDIA Disaster Risk Monitoring with Satellite Imagery: geospatial AI.'),
+      label('additional.llm-cyber', 'Fine-tuning LLMs for Cybersecurity: coursework.'),
+    ]) as Report).gate).toBe('pass');
+  });
+});
+
 describe('the real corpus', () => {
   // These numbers are the point of the checker: they are what Rahul asked about.
   // A content edit that moves them should show up here rather than silently.
   it('reports the block pool the checker was built to describe', () => {
     const report = checkPool(poolEntries()) as Report;
-    expect(report.metrics.bullets).toBe(41);
+    expect(report.metrics.bullets).toBe(42);
     expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 13 });
     expect(report.metrics.metricCoverage).toBe(0.24);
     // The headline finding: seven of eleven project bullets open with "Built".

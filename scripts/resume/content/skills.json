@@ -11,6 +11,16 @@
       "items": "Python, PyTorch, BERT, DNN, RAG, AI agents, GPT-4, Gemini, SEALION, ONNX, Chroma, local LLM serving (llama.cpp), vector search, model evaluation, NLP; vision: camera ISP, super-resolution, image restoration, SfM, epipolar geometry, multi-view stereo; HPC: ASPIRE 2A, CUDA"
     },
     {
+      "id": "ai-skills-rl",
+      "label": "Technical",
+      "items": "Python, PyTorch, BERT, DNN, RAG, AI agents, GPT-4, Gemini, SEALION, ONNX, Chroma, local LLM serving (llama.cpp), vector search, model evaluation, NLP; vision: camera ISP, super-resolution, image restoration, SfM, epipolar geometry, multi-view stereo; HPC: ASPIRE 2A, CUDA; deep RL (PPO, A2C, DDPG, DQN)"
+    },
+    {
+      "id": "cv-skills",
+      "label": "Technical",
+      "items": "3D computer vision: projective geometry, camera models, fundamental and essential matrices, absolute pose estimation, three-view geometry, structure-from-motion with bundle adjustment, two- and multi-view stereo, generalized cameras; PyTorch, ONNX, CUDA"
+    },
+    {
       "id": "or-skills",
       "label": "Technical",
       "items": "CP-SAT, HiGHS linear and quadratic programming, SciPy, hybrid flow-shop scheduling, SimPy, digital-twin simulation, robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, Python, Excel VBA"

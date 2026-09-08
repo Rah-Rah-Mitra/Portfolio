@@ -55,7 +55,33 @@ const printFindings = (report, indent = '  ') => {
   if (report.counts.omitted) console.log(`${indent}...and ${report.counts.omitted} more`);
 };
 
+/**
+ * `npm run resume:lint -- --phrasings` prints every alternative wording beside
+ * the sentence it replaces. The guard proves a phrasing is faithful; only Rahul
+ * can say whether it is the better sentence, so this is the view for that.
+ */
+const reviewPhrasings = () => {
+  console.log(BAR);
+  console.log('ALTERNATIVE WORDINGS   for review; edit the text in the content JSON');
+  console.log(BAR);
+  for (const sectionType of SECTION_TYPES) {
+    for (const entry of pools[sectionType].entries) {
+      if (entry.blocked) continue;
+      for (const bullet of entry.bullets ?? []) {
+        for (const [id, phrasing] of Object.entries(bullet.phrasings ?? {})) {
+          const basis = phrasing.basis ?? 'default';
+          console.log(`\n${entry.id}.${bullet.id} @${id}   scripts/resume/content/${sectionType}.json`);
+          console.log(`  ${phrasing.note}${phrasing.basis ? `   [measured against text.${basis}]` : ''}`);
+          console.log(`  was: ${bullet.text[basis]}`);
+          console.log(`  now: ${phrasing.text}`);
+        }
+      }
+    }
+  }
+};
+
 const main = async () => {
+  if (process.argv.includes('--phrasings')) return reviewPhrasings();
   const pool = checkPool(poolEntries());
   console.log(BAR);
   console.log('BLOCK POOL   what only a pool edit can fix');

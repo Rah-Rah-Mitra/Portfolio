@@ -101,8 +101,9 @@ that is right on the evidence is not marked down for wording it cannot change.
 They are a sibling key, never inside `text`, so Word never sees them and adding
 one changes no shipped document.
 
-`npm run resume:lint` and `npm test` run the attestation guard over every
-committed phrasing. It checks that every proper noun and number is already in
+`npm run resume:lint -- --phrasings` prints every alternative beside the
+sentence it replaces, with the file to edit. `npm run resume:lint` and `npm test`
+run the attestation guard over every committed phrasing. It checks that every proper noun and number is already in
 that bullet's own approved text, that the measurements and product-numbers match
 exactly, that it fits at every legal typography, that it earns its place, and
 that its opening verb holds the same ownership rank as the original

@@ -58,7 +58,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `general` master CV. Several one-pagers now carry `bodyPt: 10` to hold the
   denser Abbott bullets — each config declares its own; do not assume 10.5.
 - Edition bump checklist:
-  1. Edit content JSONs.
+  1. Edit content JSONs, then `npm run resume:lint`.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`
   3. `powershell -File scripts/resume/export-pdf.ps1 -Edition <YYYY-MM>`
      (MS Word COM; `-UseLibreOffice` fallback shifts pagination — re-verify)
@@ -86,7 +86,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 
 - `api/mcp.mjs` is the public read-only MCP endpoint
   (`https://rahul-mitra.com/api/mcp`, stateless Streamable HTTP via
-  `mcp-handler@2`, six tools) and `api/portfolio.mjs` returns the same data as
+  `mcp-handler@2`, ten tools) and `api/portfolio.mjs` returns the same data as
   one JSON document. Both read `server/portfolioMcp.mjs`, which imports ONLY
   `server/portfolio-snapshot.json`, the resume content JSONs, and packages —
   never `portfolioData.ts`: Vercel compiles `api/` per file as native ESM with
@@ -117,6 +117,24 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   ignores any key that is not a slug, so they cost the canonical eight nothing.
   Deep detail generally needs a 2-page budget. What the repo cannot support is
   listed in `docs/resume-detail-gaps.md` — do not claim any of it.
+- **Résumé checker.** `server/resumeCheck.mjs` is a deterministic, rule-based
+  linter. It **imports nothing** — a test enforces that, because
+  `resumeRender.mjs` pulls in pdfkit (12 MB) and `ResumeBuilder.tsx` loads résumé
+  modules in the browser. Text in, findings out; callers supply line counts from
+  `measureBulletLines` in the renderer. Two lanes: `checkResume` runs inside
+  `build_resume` and the `check_resume` tool and reports only what an agent
+  selecting block ids can act on; `checkPool` runs via `npm run resume:lint` and
+  reports what only a prose edit can fix (lead-verb concentration by section,
+  sentence-frame concentration, tense vs an entry's own dates, deep-variant
+  coverage). No score and no verdict, only counts; the gate is structural
+  (`errors === 0`). Thresholds are calibrated on the real corpus and the numbers
+  each rule fires today are pinned in `tests/resume-check.test.ts` — a content
+  edit that moves them fails there rather than changing the report silently.
+  `list_resume_blocks` carries `lead`, `lines` and `hasMetric` per bullet so an
+  agent can spread verbs and evidence while choosing.
+  `scripts/resume/extract_facets.py` is an optional offline LangExtract
+  authoring aid: it writes to gitignored `.impeccable/resume-facets/`, nothing
+  it produces is served, and it may only annotate existing bullets.
 - `public/llms.txt` is hand-maintained and edition-stamped (checklist step 8).
 - `npm run dev` 404s `/api/mcp` and `/api/portfolio` (`server.mjs` routes only
   `POST /api/page-agent`). `npm test` drives the real handlers; after deploy:

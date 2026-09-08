@@ -45,7 +45,7 @@ const printFindings = (report, indent = '  ') => {
     const where = Object.entries(item.where).map(([key, value]) => `${key}=${value}`).join(' ');
     console.log(`${indent}${pad(`[${item.severity}]`, 8)}${pad(item.rule, 4)}${pad(item.category, 28)}${where}`);
     const refs = item.occurrences.map((hit) => hit.ref + (hit.surface ? ` (${hit.surface})` : '')).join(', ');
-    console.log(`${indent}        ${refs}`);
+    console.log(`${indent}        ${refs}${item.more ? ` ...and ${item.more} more` : ''}`);
     if (item.remedy?.candidates?.length) {
       console.log(`${indent}        swap in: ${item.remedy.candidates.map((hit) => hit.ref).join(', ')}`);
     } else if (item.remedy?.note) {

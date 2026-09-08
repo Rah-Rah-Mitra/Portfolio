@@ -69,6 +69,31 @@ so change it there rather than restating the rules. Its load-bearing rule:
 callers select block ids and can never supply bullet text, because these
 documents reach employers unsupervised.
 
+## Checking
+
+`npm run resume:lint` after any content-pool edit. It prints two things: what
+the block pool looks like (which opening verbs it leans on, per section; which
+sentence shape repeats; tense that disagrees with an entry's own dates; which
+bullets have no `deep` variant), then the report an agent would get for each of
+the eight canonical resumes. Exit code is 0 unless a structural error fires -
+repetition is a judgement call about approved material, not a build failure.
+
+The same engine (`server/resumeCheck.mjs`) answers the `check_resume` MCP tool
+and rides along on `build_resume`. It is deterministic and rule-based: no model,
+no score, no verdict, just counts and the block ids each finding sits on.
+
+Two rules of its own, and they are the same prohibition as everywhere else here:
+
+- **Never write or reword a bullet to improve a count.** The lint tells you
+  where the pool repeats itself; the fix is still prose only Rahul can approve,
+  and only ever a rephrasing of something already attested.
+- **A low quantified count is never permission to add a number.** The checker
+  deliberately reports which digits it rejected (`GPT-4`, `Route 53`, `3D`,
+  bare years) so a thin count is understood rather than answered.
+
+Editing bullet text changes the shipped documents, so it needs the full edition
+rebuild above - Windows and Word - not just a lint that comes back quieter.
+
 ## Fit
 
 Overflow trim ladder, in order: drop coursework bullet → reduce 3-bullet

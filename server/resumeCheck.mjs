@@ -29,6 +29,7 @@ const PARTICIPLE_SHARE = 0.4;   // ...and that share of the résumé
 const POOL_LEAD_MIN = 3;        // pool lead-lemma concentration
 const POOL_FRAME_MIN = 6;       // pool sentence-frame concentration
 const MAX_CANDIDATES = 4;       // swap suggestions per finding
+const MAX_OCCURRENCES = 12;     // block ids listed per finding
 
 // ── lexicon ───────────────────────────────────────────────────────────────
 // Frozen and exported so the word lists are reviewable in one place, and so a
@@ -214,8 +215,21 @@ export const isOngoing = (dateLabel, today) => {
 
 // ── report assembly ───────────────────────────────────────────────────────
 
+/**
+ * One finding. Occurrences are capped and the overflow counted rather than
+ * dropped silently: the coverage note on the two-page CV would otherwise list
+ * two thirds of the résumé, which is a wall of ids rather than something to act
+ * on. `where` always carries the true total, so the cap never hides the size of
+ * what was found.
+ */
 const finding = (rule, severity, category, where, occurrences, remedy) => ({
-  rule, severity, category, where, occurrences, ...(remedy ? { remedy } : {}),
+  rule,
+  severity,
+  category,
+  where,
+  occurrences: occurrences.slice(0, MAX_OCCURRENCES),
+  ...(occurrences.length > MAX_OCCURRENCES ? { more: occurrences.length - MAX_OCCURRENCES } : {}),
+  ...(remedy ? { remedy } : {}),
 });
 
 const byRef = (a, b) => String(a.ref).localeCompare(String(b.ref));

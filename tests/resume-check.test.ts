@@ -12,7 +12,7 @@ import { poolEntries } from '../scripts/resume/lint_pool.mjs';
 type Occurrence = { ref: string; surface?: string; lines?: number };
 type Finding = {
   rule: string; severity: 'error' | 'warn' | 'note'; category: string;
-  where: Record<string, unknown>; occurrences: Occurrence[];
+  where: Record<string, unknown>; occurrences: Occurrence[]; more?: number;
   remedy?: { kind: string; note?: string; candidates?: Array<{ ref: string }> };
 };
 type Report = {
@@ -228,6 +228,15 @@ describe('checkResume', () => {
     expect(duplicated.findings.some((item) => item.category === 'duplicate-block')).toBe(true);
     const crowded = checkResume([...Array(5).keys()].map((index) => bullet(`a.b${index}`, `Led bid ${index}`))) as Report;
     expect(crowded.findings.some((item) => item.category === 'too-many-bullets')).toBe(true);
+  });
+
+  it('counts the ids it did not list rather than dropping them quietly', () => {
+    const bullets = [...Array(20).keys()].map((index) => bullet(`e${index}.one`, `Shipped thing ${index}`));
+    const note = (checkResume(bullets) as Report).findings.find((item) => item.category === 'unquantified');
+    expect(note?.occurrences).toHaveLength(12);
+    expect(note?.more).toBe(8);
+    // The cap never hides the true size of what was found.
+    expect(note?.where).toMatchObject({ quantified: 0, of: 20 });
   });
 
   it('survives the empty and single-bullet cases without NaN', () => {

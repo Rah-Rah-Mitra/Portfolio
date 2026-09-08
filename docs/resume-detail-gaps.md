@@ -160,6 +160,21 @@ now asserts that every pool bullet and skills line is offered through
 
 ---
 
+## 10. What the checker cannot judge
+
+`npm run resume:lint` and the `check_resume` MCP tool are rule-based. They can
+see that a bullet carries no measurement; they cannot see whether one exists.
+
+So an `unquantified` finding is a question for this file, not a licence to
+answer it. If the lint says a bullet has no measurable outcome and no number for
+it is written down anywhere in the repo, that is a gap to record here and ask
+Rahul about - exactly like every other entry above. It is never a reason to
+estimate, round, or infer one from context.
+
+The same holds for the repetition findings. The checker knows that seven of ten
+project bullets open with "Built"; it does not know which of them could honestly
+open another way. Only Rahul does.
+
 ## Standing prohibitions
 
 `PRODUCT.md` is binding regardless of anything above:

@@ -33,6 +33,7 @@ assets/optical-courier/**/*.blend1
 # Local design-review renders and document QA output
 .impeccable/review/
 .impeccable/resume-qa/
+.impeccable/resume-facets/
 test-results/
 
 # Local agent worktrees and unshipped optical-courier production assets

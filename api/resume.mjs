@@ -37,6 +37,9 @@ const build = async (rawSpec, format, download) => {
       'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${name}"`,
       'Cache-Control': 'public, max-age=86400',
       'Access-Control-Allow-Origin': '*',
+      // Without this the two custom headers below are invisible to any
+      // cross-origin caller, which is every caller this endpoint has.
+      'Access-Control-Expose-Headers': 'X-Resume-Pages, X-Resume-Fit',
       'X-Resume-Pages': String(result.pages),
       'X-Resume-Fit': `${result.fit.bodyPt}pt/${result.fit.marginIn}in${result.fit.fitted ? '' : ' OVERFLOW'}`,
     },

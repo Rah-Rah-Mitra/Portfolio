@@ -104,6 +104,25 @@ const rephrasingsFor = (spec, bullets, typography) => {
   return byRef;
 };
 
+/**
+ * Rahul's own attested technologies, taken from the skills lines rather than a
+ * dictionary: the checker imports nothing, so the vocabulary is passed in, and
+ * this keeps it to terms he has already claimed somewhere.
+ */
+const skillTerms = (() => {
+  const terms = new Set();
+  for (const line of pools.skills.lines) {
+    for (const chunk of line.items.split(/[,;]/)) {
+      const cleaned = chunk.replace(/\([^)]*\)/g, ' ').trim();
+      for (const part of cleaned.split(/\s*\/\s*|\s+&\s+/)) {
+        const term = part.trim();
+        if (term.length > 2) terms.add(term);
+      }
+    }
+  }
+  return [...terms].sort((a, b) => b.length - a.length);
+})();
+
 export const checkSpec = (spec, fit = null) => {
   const typography = { bodyPt: fit?.bodyPt ?? undefined, marginIn: fit?.marginIn ?? undefined };
   const bullets = assemble(spec, pools).filter((item) => item.kind === 'bullet');
@@ -111,6 +130,7 @@ export const checkSpec = (spec, fit = null) => {
   return checkResume(bullets.map((bullet, index) => ({ ...bullet, lines: lines[index] })), {
     candidates: swapCandidates(spec, bullets.map((bullet) => bullet.ref)),
     rephrasings: rephrasingsFor(spec, bullets, typography),
+    skillTerms,
     typography: fit ? { bodyPt: fit.bodyPt, marginIn: fit.marginIn } : null,
   });
 };

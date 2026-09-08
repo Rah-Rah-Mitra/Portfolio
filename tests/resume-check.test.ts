@@ -9,7 +9,8 @@ import { pools, resumeConfigs } from '../server/resumeContent.mjs';
 import { poolEntries } from '../scripts/resume/lint_pool.mjs';
 
 // server/*.mjs is plain JS, so name the shapes this test relies on.
-type Occurrence = { ref: string; surface?: string; lines?: number };
+type Occurrence = { ref: string; surface?: string; lines?: number;
+  instead?: string; names?: number; insteadNames?: number; hasMetric?: boolean };
 type Finding = {
   rule: string; severity: 'error' | 'warn' | 'note'; category: string;
   where: Record<string, unknown>; occurrences: Occurrence[]; more?: number;
@@ -303,6 +304,33 @@ describe('the report leads with the problem', () => {
   });
 });
 
+describe('evidence already on the page', () => {
+  it('names a richer bullet sitting unused on an entry already selected', () => {
+    const terms = ['SimPy', 'CP-SAT', 'Terraform'];
+    const rows = [{ ...bullet('e.thin', 'Engineered a 15-stage pipeline with zero execution failures.') }];
+    const report = checkResume(rows, {
+      skillTerms: terms as never,
+      candidates: [{ ref: 'e.rich', entryId: 'e', sectionType: 'experience', text: 'Modeled scheduling with SimPy, CP-SAT, and Terraform.' }] as never,
+    }) as Report;
+    const found = report.findings.find((item) => item.category === 'unused-evidence');
+    expect(found?.severity).toBe('note');
+    expect(found?.occurrences[0]).toMatchObject({ ref: 'e.thin', instead: 'e.rich', names: 0, insteadNames: 3 });
+    // The thinner bullet is not called worse: it carries the measurement, and the
+    // report says so rather than telling anyone to trade evidence for keywords.
+    expect(found?.occurrences[0].hasMetric).toBe(true);
+    expect(found?.remedy?.note).toMatch(/Not automatically better/);
+  });
+
+  it('stays quiet when the alternative is no richer, and when no lexicon is given', () => {
+    const rows = [bullet('e.one', 'Engineered a pipeline with SimPy.')];
+    const candidates = [{ ref: 'e.two', entryId: 'e', sectionType: 'experience', text: 'Built a thing with CP-SAT.' }] as never;
+    expect((checkResume(rows, { skillTerms: ['SimPy', 'CP-SAT'] as never, candidates }) as Report)
+      .findings.some((item) => item.category === 'unused-evidence')).toBe(false);
+    expect((checkResume(rows, { candidates }) as Report)
+      .findings.some((item) => item.category === 'unused-evidence')).toBe(false);
+  });
+});
+
 describe('the real corpus', () => {
   // These numbers are the point of the checker: they are what Rahul asked about.
   // A content edit that moves them should show up here rather than silently.
@@ -343,14 +371,14 @@ describe('the real corpus', () => {
       }];
     }));
     expect(digest).toEqual({
-      'software-engineer': { bullets: 15, top: 7, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,unquantified' },
+      'software-engineer': { bullets: 15, top: 7, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,unquantified,unused-evidence' },
       'solution-architect': { bullets: 15, top: 6, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified' },
-      'ai-engineer': { bullets: 14, top: 6, codes: 'adjacent-repeat,hedge,lead-verb-repeat,unquantified' },
-      'operations-research-engineer': { bullets: 14, top: 5, codes: 'adjacent-repeat,hedge,lead-verb-repeat,unquantified' },
-      'cyber-security': { bullets: 14, top: 4, codes: 'adjacent-repeat,adjacent-repeat,unquantified' },
-      'civic-tech-solution-architect': { bullets: 15, top: 6, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,hedge,lead-verb-repeat,unquantified' },
-      highlights: { bullets: 13, top: 5, codes: 'adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified' },
-      general: { bullets: 31, top: 11, codes: 'adjacent-repeat,adjacent-repeat,adjacent-repeat,frame-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,lead-verb-repeat,unquantified' },
+      'ai-engineer': { bullets: 14, top: 6, codes: 'adjacent-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
+      'operations-research-engineer': { bullets: 14, top: 5, codes: 'adjacent-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
+      'cyber-security': { bullets: 14, top: 4, codes: 'adjacent-repeat,adjacent-repeat,unquantified,unused-evidence' },
+      'civic-tech-solution-architect': { bullets: 15, top: 6, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
+      highlights: { bullets: 13, top: 5, codes: 'adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified,unused-evidence' },
+      general: { bullets: 31, top: 11, codes: 'adjacent-repeat,adjacent-repeat,adjacent-repeat,frame-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,lead-verb-repeat,unquantified,unused-evidence' },
     });
   });
 

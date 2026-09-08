@@ -18,6 +18,7 @@
     "lead": "agent",
     "manag": "agent",
     "map": "agent",
+    "model": "agent",
     "own": "agent",
     "productioniz": "agent",
     "provision": "agent",

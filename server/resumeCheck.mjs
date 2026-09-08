@@ -37,6 +37,7 @@ const MAX_OCCURRENCES = 12;     // block ids listed per finding
 // accepted, never dropped. A résumé that is right about the work and repeats a
 // verb beats one that reads well and has less to show.
 const EVIDENCE_FIRST = 'experience';
+const EVIDENCE_GAP = 2;         // extra named technologies before a stronger alternative is worth naming
 
 // ── lexicon ───────────────────────────────────────────────────────────────
 // Frozen and exported so the word lists are reviewable in one place, and so a
@@ -169,6 +170,25 @@ export const metricsIn = (text) => {
   const metrics = [];
   for (const span of spans) if (!metrics.length || span.start >= metrics[metrics.length - 1].end) metrics.push(span);
   return { metrics, suppressed: suppressed.sort((a, b) => a.start - b.start) };
+};
+
+/**
+ * How many of Rahul's own attested technologies a bullet names.
+ *
+ * The term list is supplied by the caller from the skills lines, so this file
+ * still imports nothing and the vocabulary stays the one he has already claimed
+ * rather than a dictionary. It is a measure of evidence DENSITY, not of quality:
+ * a bullet naming no technology may still carry the better outcome, which is why
+ * the rule that uses it reports both and never says one bullet beats another.
+ */
+export const termsIn = (text, terms = []) => {
+  const source = String(text ?? '');
+  const found = new Set();
+  for (const term of terms) {
+    const re = new RegExp(`(?<![A-Za-z])${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z])`, 'i');
+    if (re.test(source)) found.add(term.toLowerCase());
+  }
+  return [...found].sort();
 };
 
 /** Hedge and padding spans, matched so a hyphenated compound stays one token. */
@@ -400,7 +420,7 @@ const bySection = (rows) => {
 const round = (value) => Math.round(value * 100) / 100;
 
 const SEVERITY_ORDER = { error: 0, warn: 1, note: 2 };
-const RULE_ORDER = { R1: 0, R2: 1, R3: 2, R4: 3, R5: 4, R6: 5, P1: 6, P2: 7, P3: 8, P4: 9 };
+const RULE_ORDER = { R1: 0, R2: 1, R3: 2, R4: 3, R5: 4, R6: 5, R7: 6, P1: 7, P2: 8, P3: 9, P4: 10 };
 
 /**
  * Sort findings into a total order that does not depend on input order, cap them
@@ -439,6 +459,7 @@ const summarise = (rows, findings, counts) => {
     'duplicate-block': () => 'the same block is selected twice',
     'duplicate-label-line': () => 'two label lines are selected on one entry',
     'unrenderable-glyph': () => 'a character will not render in the PDF fonts',
+    'unused-evidence': () => `${where.count} bullet(s) you selected have a richer alternative on the same entry`,
   }[worst.category];
   parts.push(phrase ? phrase() : `worst finding is ${worst.category}`);
   const free = actionable.flatMap((item) => item.remedy.candidates ?? []).slice(0, 2);
@@ -518,7 +539,7 @@ const annotate = (bullet) => {
  * résumé: swapping one in is the only remedy an agent is allowed to apply, so a
  * finding that has none says so rather than implying a fix that does not exist.
  */
-export const checkResume = (bullets, { candidates = [], rephrasings = {}, maxLines = 3, typography = null, maxFindings = 12 } = {}) => {
+export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillTerms = [], maxLines = 3, typography = null, maxFindings = 12 } = {}) => {
   const rows = bullets.map(annotate);
   // Alternative wordings Rahul has already approved for the bullets on this page,
   // keyed by ref. These are what turn a finding that could only be reported into
@@ -673,6 +694,34 @@ export const checkResume = (bullets, { candidates = [], rephrasings = {}, maxLin
       rephrase.length
         ? { kind: 'rephrase', candidates: rephrase, note: 'These wordings hold the same facts inside the budget.' }
         : { kind: 'variant-or-pages', note: 'Set variant "standard" on these entries, or raise pages to 2.' }));
+  }
+
+  // R7 unused-evidence: an entry you already use carries a bullet that names more
+  // of the technologies your own skills lines claim than one you picked. This is
+  // the rule that answers "why does every résumé take the changeover pipeline and
+  // leave the digital twin behind" without anyone having to notice by eye.
+  //
+  // A note, and phrased as a trade rather than a verdict: the thinner bullet often
+  // carries the measured outcome, so the report names both counts and lets the
+  // agent decide which evidence the posting actually wants.
+  if (skillTerms.length) {
+    const richer = [];
+    for (const row of rows) row.terms = termsIn(row.text, skillTerms);
+    for (const item of candidates) {
+      if (rows.some((row) => row.ref === item.ref)) continue;
+      const spare = { ref: item.ref, terms: termsIn(item.text, skillTerms), metrics: metricsIn(item.text).metrics.length };
+      for (const row of rows.filter((entry) => entry.entryId === item.entryId)) {
+        if (spare.terms.length - row.terms.length < EVIDENCE_GAP) continue;
+        richer.push({ ref: row.ref, names: row.terms.length, hasMetric: row.metrics.length > 0,
+          instead: spare.ref, insteadNames: spare.terms.length, insteadHasMetric: spare.metrics > 0,
+          insteadTerms: spare.terms.slice(0, 6) });
+      }
+    }
+    if (richer.length) {
+      findings.push(finding('R7', 'note', 'unused-evidence', { count: richer.length },
+        richer.sort(byRef),
+        { kind: 'swap', note: 'These entries are already on the page, and each carries another bullet naming more of the technologies your skills lines claim. Not automatically better: check whether the one you picked carries the measured outcome instead, and keep whichever the posting is actually hiring for.' }));
+    }
   }
 
   // R6 structure: hard checks that guard a real render defect rather than taste.

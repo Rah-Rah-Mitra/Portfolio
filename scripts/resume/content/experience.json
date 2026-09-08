@@ -126,6 +126,12 @@
             "default": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
             "operations-research-engineer": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling; compared heuristic, MIP, and genetic-algorithm approaches and researched robust optimization.",
             "deep": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling over interval and precedence constraints, compared heuristic, MIP, and genetic-algorithm approaches against heuristic baselines, and researched robust optimization for operational uncertainty."
+          },
+          "phrasings": {
+            "methods-first": {
+              "text": "Modeled hybrid flow-shop scheduling as a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer, comparing heuristic, MIP, and genetic-algorithm approaches against heuristic baselines.",
+              "note": "surfaces the optimisation methods the default leaves in the deep variant"
+            }
           }
         },
         {

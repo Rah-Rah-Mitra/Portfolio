@@ -113,6 +113,37 @@ coursework:" rows. `R6 duplicate-label-line` errors if you try, so
 
 Edit `scripts/resume/content/resumes/<slug>.json` to make the swap.
 
+### 3b. Abbott: the digital twin is under-selected
+
+`npm run resume:lint` now reports this under `R7 unused-evidence`, and it is the
+one selection problem Rahul spotted by eye:
+
+- `abbott-intern.pipeline` is on **five** of the eight; `abbott-intern.digital-twin`
+  on **four**. `software-engineer`, `cyber-security` and `highlights` take the
+  pipeline and never the twin.
+- The twin names four attested technologies (SimPy, OR-Tools, CP-SAT, hybrid
+  flow-shop scheduling); the pipeline names none, though it does carry the
+  measured outcome (15 stages, five years, zero execution failures). That is a
+  real trade, not a strict improvement.
+- The optimisation depth (heuristic, MIP and genetic-algorithm comparison, robust
+  optimization) sits only in the `operations-research-engineer` slug override and
+  the `deep` variant, so the other résumés never show it. A new phrasing,
+  `abbott-intern.digital-twin@methods-first`, now carries it and is selectable
+  from any custom build.
+
+Decide per résumé whether to add `digital-twin` alongside `pipeline`, swap them,
+or promote the `methods-first` wording into `text.default` so every résumé that
+selects the twin gets the optimisation methods. All three are config or content
+edits and all three need the rebuild.
+
+**`Gurobi` may not be added.** `docs/resume-detail-gaps.md` §5 lists it under
+"still absent from every content source, and therefore still unusable". MIP,
+genetic algorithms and CP-SAT are all attested; Gurobi is not. If Rahul used it,
+add the fact to the pools first.
+
+The same rule flags `pa.infra` (Terraform, Redis, Kafka) as unused on five
+résumés, which matches what `resumeGuide.mjs` has always said about that bullet.
+
 ### 4. Optionally promote a phrasing into `text.default`
 
 A canonical config **must not** select a phrasing — a test forbids it, because a
@@ -180,7 +211,8 @@ way, and read the new numbers rather than pasting whatever the failure prints.
 ## Verification baseline before you start
 
 `npm test` → 398 passing. `npm run typecheck` → clean.
-`npm run resume:lint` → exit 0, corpus warning total **34**:
+`npm run resume:lint` → exit 0, corpus warning total **34** (notes are separate;
+`unused-evidence` fires on six of the eight):
 
 ```
 software-engineer              0e 5w 1n   15 bullets, "Build/Built" x7,  27% measured, 10pt/0.7in

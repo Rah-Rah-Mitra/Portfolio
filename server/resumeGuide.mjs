@@ -148,6 +148,12 @@ over the line budget. Every finding names block ids.
 Read \`summary\` first. It names the biggest finding, the alternative wordings
 that would clear findings at no cost, and the rule below.
 
+One finding is worth acting on before the style ones: \`unused-evidence\` names a
+bullet on an entry you already selected that mentions more of Rahul's attested
+technologies than the one you picked. It is a trade, not a verdict, and the report
+gives both sides: the thinner bullet often carries the measured outcome. Pick
+whichever the posting is hiring for.
+
 **Evidence outranks wording.** Never drop a bullet, a role, or a measurement to
 clear a style finding. Experience is the strongest thing on the page, and a
 repeated opening verb there is worth accepting: the report will say so rather

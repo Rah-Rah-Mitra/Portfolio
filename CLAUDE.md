@@ -147,6 +147,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   (`errors === 0`). Thresholds are calibrated on the real corpus and the numbers
   each rule fires today are pinned in `tests/resume-check.test.ts` — a content
   edit that moves them fails there rather than changing the report silently.
+  `R7 unused-evidence` (a note) names a bullet on a selected entry that mentions
+  more of the attested skills-line technologies than the one chosen; the term list
+  is passed in from `skills.json` so the checker still imports nothing, and both
+  sides are reported because the thinner bullet often carries the measurement.
   `list_resume_blocks` carries `lead`, `lines` and `hasMetric` per bullet, and the
   same three on each alternative wording, so an agent can spread verbs and
   evidence while choosing. Where an alternative would clear a finding the remedy

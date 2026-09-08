@@ -13,7 +13,7 @@
     {
       "id": "ai-skills-rl",
       "label": "Technical",
-      "items": "Python, PyTorch, BERT, DNN, RAG, AI agents, GPT-4, Gemini, SEALION, ONNX, Chroma, local LLM serving (llama.cpp), vector search, model evaluation, NLP; vision: camera ISP, super-resolution, image restoration, SfM, epipolar geometry, multi-view stereo; HPC: ASPIRE 2A, CUDA; deep RL (PPO, A2C, DDPG, DQN)"
+      "items": "Python, PyTorch, BERT, DNN, RAG, AI agents, GPT-4, Gemini, SEALION, ONNX, Chroma, local LLM serving (llama.cpp), vector search, model evaluation, NLP; vision: camera ISP, super-resolution, image restoration, projective geometry, camera models, fundamental and essential matrices, epipolar geometry, absolute pose estimation, three-view geometry, structure-from-motion (SfM) with bundle adjustment, two- and multi-view stereo, generalized cameras; HPC: ASPIRE 2A, CUDA; deep RL (PPO, A2C, DDPG, DQN)"
     },
     {
       "id": "cv-skills",

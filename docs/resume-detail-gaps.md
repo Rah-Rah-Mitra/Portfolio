@@ -187,12 +187,20 @@ unchanged by that decision and is still the open gap: the claim rests on the Pac
 certification alone. Recorded here so the decision is written down rather than
 inferred from a config diff.
 
-`cv-skills` also ships on `ai-engineer`, relabelled from "Technical" to
-**"3D Vision"**. Two lines both labelled "Technical" would have been a first for
-these documents, and nothing would have caught it: `checkResume` never sees skills
-items, `checkPool` never reads `skills.json`, and R6 `duplicate-label-line`
-inspects bullets only. The label is presentation, not a claim, so no content
-moved.
+The CS4277 syllabus reaches `ai-engineer` through the Technical line rather than
+a row of its own: `ai-skills-rl` now carries projective geometry, camera models,
+fundamental and essential matrices, epipolar geometry, absolute pose estimation,
+three-view geometry, structure-from-motion (SfM) with bundle adjustment, two- and
+multi-view stereo and generalized cameras. Every term came from `cv-skills`;
+PyTorch, ONNX and CUDA were not repeated because the line already held them.
+
+A separate row was tried first and rejected on sight: it would have printed two
+lines both labelled "Technical", a first for these documents, and nothing would
+have caught it (`checkResume` never sees skills items, `checkPool` never reads
+`skills.json`, R6 `duplicate-label-line` inspects bullets only). `cv-skills`
+stays in the pool for custom builds, keeping the "3D Vision" label so that a
+build selecting it beside a Technical line does not hit the same collision. No
+canonical résumé selects it.
 
 ## 11. Volt Pulse: both settled - 2026-09-08
 

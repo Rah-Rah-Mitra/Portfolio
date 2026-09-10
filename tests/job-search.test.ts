@@ -5,7 +5,7 @@
 // HGETALL. A fake that returned an object there would let a broken pairs() pass.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '../api/mcp.mjs';
-import { applicationId, isBlockedProject, toYaml, trackerTable } from '../server/jobSearch.mjs';
+import { applicationId, BLOCKED_SITE_IDS, blockedSiteProjectIds, isBlockedProject, toYaml, trackerTable } from '../server/jobSearch.mjs';
 import snapshot from '../server/portfolio-snapshot.json';
 import { decodeSpec } from '../server/resumeRender.mjs';
 import { configBySlug, pools, resumeBlocks } from '../server/resumeContent.mjs';
@@ -64,7 +64,7 @@ const listTools = async () => {
 const fakeUpstash = () => {
   const strings = new Map<string, string>();
   const hashes = new Map<string, Map<string, string>>();
-  const calls: Array<{ url: string; command: unknown[] }> = [];
+  const calls: Array<{ url: string; command: unknown[]; auth: string }> = [];
   let failWith: number | null = null;
   const hash = (key: string) => {
     if (!hashes.has(key)) hashes.set(key, new Map());
@@ -72,7 +72,8 @@ const fakeUpstash = () => {
   };
   vi.stubGlobal('fetch', async (url: string | URL, init?: RequestInit) => {
     const command = JSON.parse(String(init?.body ?? '[]')) as unknown[];
-    calls.push({ url: String(url), command });
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    calls.push({ url: String(url), command, auth: headers.authorization ?? '' });
     if (failWith) {
       return new Response(JSON.stringify({ error: `WRONGPASS token ${String(url)}` }), { status: failWith });
     }
@@ -160,6 +161,14 @@ describe('auth', () => {
 });
 
 describe('preferences', () => {
+  it('authenticates to Upstash on every call', async () => {
+    // Without this, deleting the Authorization header from the Redis request
+    // leaves the whole suite green and the failure only shows up in production.
+    await call('get_job_preferences', {}, TOKEN);
+    expect(upstash.calls.length).toBeGreaterThan(0);
+    for (const entry of upstash.calls) expect(entry.auth).toBe('Bearer fake-upstash-token');
+  });
+
   it('returns the winter internship window before anything is stored', async () => {
     const prefs = payload(await call('get_job_preferences', {}, TOKEN));
     expect(prefs.source).toBe('default');
@@ -219,6 +228,21 @@ describe('application tracker', () => {
     expect(applicationId('Acme', 'Engineer')).not.toBe(applicationId('Acme', 'Senior Engineer'));
     // The NUL separator: without it these two collapse into one row.
     expect(applicationId('Acme Pte', 'Ltd Engineer')).not.toBe(applicationId('Acme', 'Pte Ltd Engineer'));
+    // Folding to [a-z0-9] emptied every non-Latin name, so two different
+    // companies hashed alike and the second was handed the first one's row.
+    expect(applicationId('华为', 'Engineer')).not.toBe(applicationId('腾讯', 'Engineer'));
+    expect(applicationId('Acme', '工程師')).not.toBe(applicationId('Acme', 'エンジニア'));
+    expect(applicationId('Яндекс', 'Engineer')).not.toBe(applicationId('شركة', 'Engineer'));
+    // Accents still fold, so one company is not two rows.
+    expect(applicationId('Café Systems', 'Engineer')).toBe(applicationId('Cafe Systems', 'Engineer'));
+  });
+
+  it('tracks two non-Latin companies as two rows', async () => {
+    const a = payload(await call('create_application', { company: '华为', role: 'Engineer' }, TOKEN));
+    const b = payload(await call('create_application', { company: '腾讯', role: 'Engineer' }, TOKEN));
+    expect(b.created).toBe(true);
+    expect(b.id).not.toBe(a.id);
+    expect(payload(await call('list_applications', {}, TOKEN)).count).toBe(2);
   });
 
   it('treats a different jd_hash for the same company and role as a different row', async () => {
@@ -277,9 +301,14 @@ describe('application tracker', () => {
     expect(lines[3]).toContain('| - | SKIP | - | - |');
   });
 
-  it('filters by status and by since', async () => {
+  it('filters by status and by since, oldest first', async () => {
     await call('create_application', { company: 'A', role: 'R1' }, TOKEN);
     await call('create_application', { company: 'B', role: 'R2', status: 'Applied' }, TOKEN);
+    // The tool promises oldest-first and trackerTable numbers `#` off that order.
+    const listed = payload(await call('list_applications', {}, TOKEN));
+    expect(listed.applications.map((row: { company: string }) => row.company)).toEqual(['A', 'B']);
+    expect(listed.tracker_md.split('\n')[2]).toContain('| 1 |');
+    expect(listed.tracker_md.split('\n')[2]).toContain('| A |');
     expect(payload(await call('list_applications', { status: 'Applied' }, TOKEN)).count).toBe(1);
     expect(payload(await call('list_applications', { status: 'Offer' }, TOKEN)).count).toBe(0);
     expect(payload(await call('list_applications', { since: '2000-01-01' }, TOKEN)).count).toBe(2);
@@ -360,6 +389,30 @@ describe('build_tailored_resume', () => {
     expect(nothing.matched.slug).toBe('highlights');
   });
 
+  it('matches keywords on whole words, not substrings', async () => {
+    // "storage" contains "RAG" and "trusted" contains "Rust", so a substring
+    // match scored solution-architect and cyber-security on a posting that
+    // mentions neither — and then showed the agent those words as the evidence.
+    const built = payload(await call('build_tailored_resume', {
+      jd_text: 'We manage trusted storage for average workloads.',
+    }));
+    expect(built.matched.keywords).not.toContain('RAG');
+    expect(built.matched.keywords).not.toContain('Rust');
+    expect(built.matched.score).toBe(0);
+    expect(built.matched.slug).toBe('highlights');
+  });
+
+  it('rejects a selection that would render a spec api/resume.mjs refuses', async () => {
+    // specSchema caps skills lines at 16 and there are 24 to choose from. Without
+    // validating here, this rendered fine locally and handed back a pdf_url that
+    // 400s — a tool reporting success with a dead link.
+    const lines = resumeBlocks().skillLines.map((line: { id: string }) => line.id).slice(0, 17);
+    expect(lines).toHaveLength(17);
+    const result = await call('build_tailored_resume', { block_ids: lines });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(/do not make a valid/);
+  });
+
   it('carries the check report the way build_resume does', async () => {
     const built = payload(await call('build_tailored_resume', { block_ids: ['stmicro-or.putaway', 'se-skills'] }));
     expect(built.check.version).toBe(1);
@@ -398,7 +451,7 @@ describe('export_profile', () => {
     // These three are projected from the snapshot and must track it.
     for (const stat of snapshot.profile.stats) expect(exported.profile_yml, stat.label).toContain(stat.label);
     for (const item of snapshot.profile.competencies) expect(exported.profile_yml, item.title).toContain(item.title);
-    for (const project of snapshot.projects.filter((item) => item.spotlight && !isBlockedProject(item.title))) {
+    for (const project of snapshot.projects.filter((item) => item.spotlight && !isBlockedProject(item.id))) {
       expect(exported.article_digest_md, project.title).toContain(`## ${project.title} — `);
     }
   });
@@ -407,15 +460,24 @@ describe('export_profile', () => {
     const exported = payload(await call('export_profile'));
     const blocked = (pools as unknown as { projects: { entries: Array<{ id: string; blocked?: string }> } })
       .projects.entries.filter((entry) => entry.blocked);
-    expect(blocked.length).toBeGreaterThan(0);
+    expect(blocked.length).toBe(5);
 
-    // Every blocked résumé project must still resolve to the site's vocabulary.
-    // If a future block stops matching, this fails rather than silently shipping.
+    // Every blocked pool entry must be accounted for by name. Blocking a sixth
+    // project fails here until someone says which site project it maps to — the
+    // failure this list exists to prevent is a silent miss, so it is asserted
+    // per entry rather than in aggregate.
     for (const entry of blocked) {
-      const site = snapshot.projects.filter((project) => isBlockedProject(project.title));
-      expect(site.length, `no site project resolves for blocked ${entry.id}`).toBeGreaterThan(0);
+      expect(Object.keys(BLOCKED_SITE_IDS), `blocked ${entry.id} is not in BLOCKED_SITE_IDS`).toContain(entry.id);
     }
-    for (const project of snapshot.projects.filter((item) => isBlockedProject(item.title))) {
+    // And every id it does map to has to exist on the site, or the map is stale
+    // and withholding nothing.
+    for (const siteId of blockedSiteProjectIds()) {
+      expect(snapshot.projects.some((project) => project.id === siteId), String(siteId)).toBe(true);
+    }
+    const withheld = snapshot.projects.filter((item) => item.spotlight && isBlockedProject(item.id));
+    expect(withheld.map((item) => item.id).sort())
+      .toEqual(['asyncddgs', 'hybrid-flow-shop-digital-twin', 'project-utopia']);
+    for (const project of withheld) {
       expect(exported.article_digest_md, project.title).not.toContain(`## ${project.title} — `);
     }
     // AsyncDDGS is the one whose reason says outright that it is not to be sent.
@@ -450,6 +512,23 @@ describe('export_profile', () => {
   it('answers an anonymous caller, like the other open tools', async () => {
     expect((await call('export_profile')).isError).toBeUndefined();
     expect((await call('build_tailored_resume', { block_ids: ['se-skills'] })).isError).toBeUndefined();
+  });
+
+  it('never republishes the gated preferences to an anonymous caller', async () => {
+    await call('set_job_preferences', {
+      target_roles: ['Secret Target Role'],
+      exclusions: ['Never apply to SecretCorp'],
+    }, TOKEN);
+    // Open tool, no header: it must fall back to the committed defaults, or the
+    // token on get_job_preferences would be protecting nothing.
+    const anonymous = payload(await call('export_profile'));
+    expect(anonymous.profile_yml).not.toContain('Secret Target Role');
+    expect(anonymous.profile_yml).not.toContain('SecretCorp');
+    expect(anonymous.profile_yml).toContain('Software Engineer');       // the default
+    // Same tool, with the token: Rahul sees what he stored.
+    const owner = payload(await call('export_profile', {}, TOKEN));
+    expect(owner.profile_yml).toContain('Secret Target Role');
+    expect(owner.profile_yml).toContain('SecretCorp');
   });
 });
 

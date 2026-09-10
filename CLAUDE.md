@@ -84,9 +84,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 
 ## Machine access (MCP + llms.txt)
 
-- `api/mcp.mjs` is the public read-only MCP endpoint
-  (`https://rahul-mitra.com/api/mcp`, stateless Streamable HTTP via
-  `mcp-handler@2`, ten tools) and `api/portfolio.mjs` returns the same data as
+- `api/mcp.mjs` is the public MCP endpoint — open read/build tools plus a
+  bearer-gated job-search surface (`https://rahul-mitra.com/api/mcp`, stateless
+  Streamable HTTP via `mcp-handler@2`, seventeen tools) and
+  `api/portfolio.mjs` returns the same data as
   one JSON document. Both read `server/portfolioMcp.mjs`, which imports ONLY
   `server/portfolio-snapshot.json`, the resume content JSONs, and packages —
   never `portfolioData.ts`: Vercel compiles `api/` per file as native ESM with
@@ -159,6 +160,30 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `scripts/resume/extract_facets.py` is an optional offline LangExtract
   authoring aid: it writes to gitignored `.impeccable/resume-facets/`, nothing
   it produces is served, and it may only annotate existing bullets.
+- **Job search.** `server/jobSearch.mjs` holds the whole surface: seven tools
+  registered beside `registerPortfolioTools` in `api/mcp.mjs`, which needed a
+  zero-line diff to `portfolioMcp.mjs`. Storage is Upstash Redis over its REST
+  API driven by plain `fetch` (no npm dependency, and never send the
+  `Upstash-Encoding` header — the SDK's base64 default would silently encode
+  every value), reading `UPSTASH_REDIS_REST_URL/_TOKEN` with
+  `KV_REST_API_URL/_TOKEN` as fallback, both through lazy getters so vitest can
+  stub them. Two keys and no index: `job:prefs` (a JSON string) and
+  `job:applications` (a HASH, field = id). **The id IS the dedup hash** —
+  `sha256(norm(company) \0 norm(role) \0 jd_hash).slice(0,16)` — so `HSETNX`
+  makes create idempotent with no lock, no lookup and no check-then-set race,
+  and a repeat returns the existing row untouched rather than merging (an agent
+  re-evaluating a job sends the default `Evaluated`, and merging would reset a
+  live `Applied` row). The tracker `#` is a render-time ordinal. Five stateful
+  tools require `PORTFOLIO_JOB_TOKEN` (≥24 chars or they stay off), checked per
+  call off `ctx.http.req` rather than with `withMcpAuth`, which would 401 the
+  whole endpoint on a stale credential and advertise a `.well-known` document
+  nothing here serves. `export_profile` and `build_tailored_resume` stay open:
+  they return only data already published. Two hard invariants — this server
+  **never dereferences `jd_url`**, and job-description text never reaches a
+  spec, a document or storage; only its 16-hex digest and a match against
+  `snapshot.resumes[].keywords` travel back. A new MCP tool touches three
+  places: the tool, `TOOLS` in `tests/portfolio-mcp.test.ts`, and
+  `public/llms.txt` — two tests pin that.
 - `public/llms.txt` is hand-maintained and edition-stamped (checklist step 8).
 - `npm run dev` 404s `/api/mcp` and `/api/portfolio` (`server.mjs` routes only
   `POST /api/page-agent`). `npm test` drives the real handlers; after deploy:

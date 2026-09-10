@@ -9,7 +9,7 @@ import { configBySlug } from '../server/resumeContent.mjs';
 import { POST } from '../api/mcp.mjs';
 import { GET } from '../api/portfolio.mjs';
 
-const TOOLS = ['build_resume', 'check_resume', 'get_profile', 'get_project', 'get_resume', 'get_resume_guide', 'list_experience', 'list_projects', 'list_resume_blocks', 'list_resumes'];
+const TOOLS = ['build_resume', 'build_tailored_resume', 'check_resume', 'create_application', 'export_profile', 'get_job_preferences', 'get_profile', 'get_project', 'get_resume', 'get_resume_guide', 'list_applications', 'list_experience', 'list_projects', 'list_resume_blocks', 'list_resumes', 'set_job_preferences', 'update_application'];
 const highlightsPdf = `${SITE_CONFIG.canonicalUrl}resume/generated/rahul-mitra-highlights-${SITE_CONFIG.resumeEdition}.pdf`;
 
 const rpc = async (method: string, params?: unknown) => {
@@ -56,7 +56,7 @@ describe('résumé data', () => {
 });
 
 describe('api/mcp', () => {
-  it('lists the read and builder tools', async () => {
+  it('lists the read, builder and job-search tools', async () => {
     const { tools } = await rpc('tools/list');
     expect(tools.map((tool: { name: string }) => tool.name).sort()).toEqual(TOOLS);
   });

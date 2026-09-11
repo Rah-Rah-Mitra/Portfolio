@@ -5,7 +5,7 @@
 // HGETALL. A fake that returned an object there would let a broken pairs() pass.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '../api/mcp.mjs';
-import { applicationId, BLOCKED_SITE_IDS, blockedSiteProjectIds, isBlockedProject, toYaml, trackerTable } from '../server/jobSearch.mjs';
+import { applicationId, BLOCKED_SITE_IDS, blockedSiteProjectIds, isBlockedProject, normalizeJdUrl, toYaml, trackerTable } from '../server/jobSearch.mjs';
 import snapshot from '../server/portfolio-snapshot.json';
 import { decodeSpec } from '../server/resumeRender.mjs';
 import { configBySlug, pools, resumeBlocks } from '../server/resumeContent.mjs';
@@ -529,6 +529,106 @@ describe('export_profile', () => {
     const owner = payload(await call('export_profile', {}, TOKEN));
     expect(owner.profile_yml).toContain('Secret Target Role');
     expect(owner.profile_yml).toContain('SecretCorp');
+  });
+
+  it('says which preferences the availability block was built from', async () => {
+    expect(payload(await call('export_profile')).preferences_source).toBe('default');
+    await call('set_job_preferences', { locations: ['Singapore', 'Remote'] }, TOKEN);
+    expect(payload(await call('export_profile', {}, TOKEN)).preferences_source).toBe('stored');
+    // The failure this exists to make visible: a sync whose Authorization header
+    // never arrived gets a complete, plausible export built from the defaults.
+    expect(payload(await call('export_profile')).preferences_source).toBe('default');
+    expect(payload(await call('export_profile')).source.join(' ')).toContain('job:prefs');
+  });
+
+  it('gives every proof point a real outcome and an anchor of its own', async () => {
+    const exported = payload(await call('export_profile'));
+    const urls = [...(exported.profile_yml as string).matchAll(/url: "([^"]*#project-[^"]*)"/g)].map((hit) => hit[1]);
+    const sendable = snapshot.projects.filter((project) => project.spotlight && !isBlockedProject(project.id));
+    // Was four rows sharing one #proof anchor, two of them site counters.
+    expect(urls).toHaveLength(sendable.length);
+    expect(new Set(urls).size).toBe(urls.length);
+    for (const project of sendable) {
+      expect(urls, project.id).toContain(`${snapshot.site.canonicalUrl}#project-${project.id}`);
+    }
+    // proof_points is the same withholding as the digest, or the export would
+    // send an employer a project Rahul asked to keep back.
+    for (const id of blockedSiteProjectIds()) expect(exported.profile_yml, String(id)).not.toContain(`#project-${id}`);
+    // The counters keep their place as highlights rather than being dropped.
+    for (const stat of snapshot.profile.stats) expect(exported.profile_yml, stat.label).toContain(stat.label);
+  });
+
+  it('carries a level on target_roles and on every archetype', async () => {
+    const yaml = payload(await call('export_profile')).profile_yml as string;
+    // Both are true today: the winter window opens before the degree ends.
+    expect(yaml).toContain('"internship"');
+    expect(yaml).toContain('"new-grad"');
+    const archetypes = yaml.split('archetypes:')[1].split('\nnarrative:')[0];
+    expect(archetypes.match(/name: /g)).toHaveLength(archetypes.match(/ {6}level:/g)?.length ?? 0);
+  });
+
+  it('stops calling work authorization a gap once it is stored', async () => {
+    expect(payload(await call('export_profile')).gaps).toContain('location.needs_sponsorship');
+    await call('set_job_preferences', {
+      work_authorization: { visa_status: 'Singapore citizen', needs_sponsorship: false },
+    }, TOKEN);
+    const owner = payload(await call('export_profile', {}, TOKEN));
+    expect(owner.gaps).not.toContain('location.needs_sponsorship');
+    expect(owner.gaps).not.toContain('location.visa_status');
+    // Per key: authorized_in was not set, so it is still a gap.
+    expect(owner.gaps).toContain('location.authorized_in');
+    expect(owner.gaps).toContain('compensation.target_range');        // still unattested
+    expect(owner.profile_yml).toContain('needs_sponsorship: false');
+    expect(owner.profile_yml).toContain('visa_status: "Singapore citizen"');
+    // It is stored preference data, so an anonymous caller still gets none of it.
+    const anonymous = payload(await call('export_profile'));
+    expect(anonymous.profile_yml).not.toContain('needs_sponsorship');
+    expect(anonymous.gaps).toContain('location.needs_sponsorship');
+  });
+});
+
+describe('posting identity', () => {
+  it('folds the ways one posting URL varies, and keeps what identifies the job', () => {
+    const canonical = normalizeJdUrl('https://boards.greenhouse.io/acme/jobs/12345');
+    for (const variant of [
+      'http://boards.greenhouse.io/acme/jobs/12345',
+      'https://www.boards.greenhouse.io/acme/jobs/12345/',
+      'https://boards.greenhouse.io/acme/jobs/12345#application',
+      'https://boards.greenhouse.io/acme/jobs/12345?gh_src=abc&utm_source=linkedin',
+    ]) expect(normalizeJdUrl(variant), variant).toBe(canonical);
+    // A query param can BE the job id (MyCareersFuture, some Workday tenants), so
+    // only the referrer ones go, and param order must not make a second posting.
+    expect(normalizeJdUrl('https://x.gov.sg/job?b=2&a=1')).toBe(normalizeJdUrl('https://x.gov.sg/job?a=1&b=2'));
+    expect(normalizeJdUrl('https://x.gov.sg/job?id=1')).not.toBe(normalizeJdUrl('https://x.gov.sg/job?id=2'));
+    // Path case is an ATS job id often enough to leave alone.
+    expect(normalizeJdUrl('https://x.myworkdayjobs.com/job/JR-1'))
+      .not.toBe(normalizeJdUrl('https://x.myworkdayjobs.com/job/jr-1'));
+  });
+
+  it('derives jd_hash from the URL, so an edited posting stays one tracker row', async () => {
+    const url = 'https://boards.greenhouse.io/acme/jobs/12345';
+    const first = payload(await call('build_tailored_resume', {
+      block_ids: ['se-skills'], jd_url: url, jd_text: 'We need a Python engineer.',
+    }));
+    // The same job, re-scraped a night later: one sentence added, a tracking
+    // param picked up on the way in. Hashing the text made this a second row.
+    const second = payload(await call('build_tailored_resume', {
+      block_ids: ['se-skills'], jd_url: `${url}?utm_source=jobalert`, jd_text: 'We need a Python engineer. Rust a bonus.',
+    }));
+    expect(second.jd_hash).toBe(first.jd_hash);
+    const created = payload(await call('create_application', { company: 'Acme', role: 'Engineer', jd_hash: first.jd_hash }, TOKEN));
+    const repeat = payload(await call('create_application', { company: 'Acme', role: 'Engineer', jd_hash: second.jd_hash }, TOKEN));
+    expect(repeat.created).toBe(false);
+    expect(repeat.id).toBe(created.id);
+
+    // Text is still the fallback, for a posting pasted with no link at all.
+    const textOnly = payload(await call('build_tailored_resume', {
+      block_ids: ['se-skills'], jd_text: 'We need a Python engineer.',
+    }));
+    expect(textOnly.jd_hash).toMatch(/^[0-9a-f]{16}$/);
+    expect(textOnly.jd_hash).not.toBe(first.jd_hash);
+    // And the URL is hashed, never fetched: only Upstash is ever called.
+    for (const entry of upstash.calls) expect(entry.url).toBe(UPSTASH);
   });
 });
 

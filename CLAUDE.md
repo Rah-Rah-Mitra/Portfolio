@@ -173,12 +173,27 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   makes create idempotent with no lock, no lookup and no check-then-set race,
   and a repeat returns the existing row untouched rather than merging (an agent
   re-evaluating a job sends the default `Evaluated`, and merging would reset a
-  live `Applied` row). The tracker `#` is a render-time ordinal. Five stateful
+  live `Applied` row) — so moving a row is create-then-`update_application`, never
+  a second create. `jd_hash` comes from the NORMALIZED `jd_url` when there is one
+  and from the text only otherwise: posting text is edited and re-scraped between
+  runs, which grew a second row for a job already tracked, while the URL is the
+  identity the board itself uses. The tracker `#` is a render-time ordinal. Five stateful
   tools require `PORTFOLIO_JOB_TOKEN` (≥24 chars or they stay off), checked per
   call off `ctx.http.req` rather than with `withMcpAuth`, which would 401 the
   whole endpoint on a stale credential and advertise a `.well-known` document
   nothing here serves. `export_profile` and `build_tailored_resume` stay open:
-  they return only data already published. Two hard invariants — this server
+  they return only data already published. `export_profile` reads the gated
+  preferences opportunistically — an anonymous caller gets `DEFAULT_PREFERENCES`,
+  never the stored ones, since `exclusions` can name an employer — and says which
+  in `preferences_source`, so a sync whose Authorization header never arrived is
+  distinguishable from a real one rather than silently writing the defaults over
+  a good `profile.yml`. `gaps` names what the repo cannot attest and a consumer
+  must preserve locally across a sync; `work_authorization` is the one gap
+  `set_job_preferences` can fill, keyed as career-ops' own `location.*` keys so
+  filling it removes exactly those entries. `proof_points` are the spotlight
+  projects — same withholding as the digest — not `snapshot.profile.stats`, two of
+  which are site counters and all four of which shared one `#proof` anchor.
+  Two hard invariants — this server
   **never dereferences `jd_url`**, and job-description text never reaches a
   spec, a document or storage; only its 16-hex digest and a match against
   `snapshot.resumes[].keywords` travel back. A new MCP tool touches three

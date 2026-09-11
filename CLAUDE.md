@@ -184,6 +184,14 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `snapshot.resumes[].keywords` travel back. A new MCP tool touches three
   places: the tool, `TOOLS` in `tests/portfolio-mcp.test.ts`, and
   `public/llms.txt` — two tests pin that.
+- **Never provision a scratch Upstash database for this repo.** The vendored
+  `.agents/skills/upstash-redis-js/SKILL.md` tells an agent with no credentials
+  that it may mint a throwaway Redis over `POST upstash.com/start-redis`. Do not:
+  the job-search tools keep ALL their state in `job:prefs` and `job:applications`,
+  so a scratch database would silently take the application tracker with it when
+  its 3-day TTL expired, with no error at write time. The real database is a
+  Vercel Marketplace resource; when the env vars are missing the tools correctly
+  say so, and that is the answer rather than a reason to create one.
 - `public/llms.txt` is hand-maintained and edition-stamped (checklist step 8).
 - `npm run dev` 404s `/api/mcp` and `/api/portfolio` (`server.mjs` routes only
   `POST /api/page-agent`). `npm test` drives the real handlers; after deploy:

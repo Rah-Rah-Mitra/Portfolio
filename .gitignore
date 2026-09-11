@@ -41,3 +41,5 @@ test-results/
 assets/optical-courier/mixamo-raw/
 assets/optical-courier/production/
 public/models/optical-courier-production.glb
+.vercel
+.env*

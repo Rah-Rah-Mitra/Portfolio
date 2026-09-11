@@ -193,6 +193,21 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   filling it removes exactly those entries. `proof_points` are the spotlight
   projects — same withholding as the digest — not `snapshot.profile.stats`, two of
   which are site counters and all four of which shared one `#proof` anchor.
+- **`blocked` withholds a card, never a fact.** The flag in `projects.json` is a
+  curation flag: its reasons scope to "off résumés", two of them (weakest in the
+  pool; the site is already in the contact line) cannot be about secrecy, and every
+  enforcement site is a résumé emitter. It withholds a Projects-section ENTRY —
+  nothing anywhere blocks a string. `article_digest_md` and `proof_points` honour
+  the same list because they are a selected-evidence surface too; the full
+  28-project catalogue stays open on `list_projects`, `get_project` and
+  `/api/portfolio`, so withholding costs prominence, not availability. **Where a
+  blocked project's work is also attested as employment, that bullet ships
+  deliberately** — `flowshop` was blocked precisely because the same work is
+  `abbott-intern.digital-twin`, which seven of the eight canonical résumés select
+  (`docs/resume-detail-gaps.md` §9: "the stronger placement"). An integration read
+  the resulting cv_md/digest gap as a contradiction; it is not, and the fix is
+  never to delete the bullet. That section also says: do not "helpfully" restore a
+  blocked project — ask Rahul first.
   Two hard invariants — this server
   **never dereferences `jd_url`**, and job-description text never reaches a
   spec, a document or storage; only its 16-hex digest and a match against

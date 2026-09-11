@@ -8,7 +8,8 @@ import { POST } from '../api/mcp.mjs';
 import { applicationId, BLOCKED_SITE_IDS, blockedSiteProjectIds, isBlockedProject, normalizeJdUrl, toYaml, trackerTable } from '../server/jobSearch.mjs';
 import snapshot from '../server/portfolio-snapshot.json';
 import { decodeSpec } from '../server/resumeRender.mjs';
-import { configBySlug, pools, resumeBlocks } from '../server/resumeContent.mjs';
+import { configBySlug, pools, resumeBlocks, resumeConfigs } from '../server/resumeContent.mjs';
+import { RESUME_GUIDE } from '../server/resumeGuide.mjs';
 
 const TOKEN = 'a'.repeat(32);
 const UPSTASH = 'https://fake-db.upstash.io';
@@ -469,10 +470,16 @@ describe('export_profile', () => {
     for (const entry of blocked) {
       expect(Object.keys(BLOCKED_SITE_IDS), `blocked ${entry.id} is not in BLOCKED_SITE_IDS`).toContain(entry.id);
     }
-    // And every id it does map to has to exist on the site, or the map is stale
-    // and withholding nothing.
-    for (const siteId of blockedSiteProjectIds()) {
-      expect(snapshot.projects.some((project) => project.id === siteId), String(siteId)).toBe(true);
+    // Every entry maps to a real site project, and the assertion walks
+    // BLOCKED_SITE_IDS rather than blockedSiteProjectIds(): the latter drops nulls,
+    // so it was structurally blind to the two rows that were wrong. `portfolio` and
+    // `ie2110` were recorded as "no site project record" when both exist — harmless
+    // only because neither is spotlighted today, and a silent miss the day one is.
+    // A future blocked entry that genuinely has no site record fails here until
+    // someone says so out loud, which is the point.
+    for (const [poolId, siteId] of Object.entries(BLOCKED_SITE_IDS)) {
+      expect(siteId, `${poolId} maps to nothing — a null here withholds nothing`).toBeTruthy();
+      expect(snapshot.projects.some((project) => project.id === siteId), `${poolId} -> ${siteId}`).toBe(true);
     }
     const withheld = snapshot.projects.filter((item) => item.spotlight && isBlockedProject(item.id));
     expect(withheld.map((item) => item.id).sort())
@@ -484,6 +491,40 @@ describe('export_profile', () => {
     expect(exported.article_digest_md).not.toContain('AsyncDDGS');
     // And the withholding is narrow: it must not swallow the whole digest.
     expect(exported.article_digest_md.split('\n## ').length).toBeGreaterThan(5);
+  });
+
+  it('withholds the CARD and never the fact: cv_md keeps the Abbott digital-twin bullet', async () => {
+    // `blocked` is a curation flag — it withholds a Projects-section entry, not a
+    // claim. `flowshop` was blocked BECAUSE the same work is already
+    // abbott-intern.digital-twin (ce2d754, docs/resume-detail-gaps.md §9), so the
+    // gap between cv_md and the digest is deliberate, not drift. An integration
+    // read it as a contradiction once; the cheapest way to "resolve" it is to
+    // delete this bullet, which would silently require rewriting seven shipped
+    // résumés. This test is here to make that cost visible instead.
+    const exported = payload(await call('export_profile'));
+    expect(exported.cv_md).toContain('SimPy discrete-event digital twin');
+    expect(exported.cv_md).toContain('hybrid flow-shop scheduling');
+    expect(exported.article_digest_md).not.toContain('Hybrid Flow Shop Digital Twin Optimizer');
+
+    const selecting = resumeConfigs.filter((config) => (config.sections as SpecSection[]).some((section) =>
+      (section.entries ?? []).some((entry) => entry.id === 'abbott-intern'
+        && ((entry as { bullets?: string[] }).bullets ?? []).includes('digital-twin'))));
+    expect(selecting.length).toBe(7);
+
+    // The digest must say it is a selection rather than an index, or the next
+    // consumer re-derives the same false contradiction.
+    expect(exported.article_digest_md).toContain('a selected set, not a catalogue');
+    expect(exported.article_digest_md).toContain('cv.md is the authority');
+  });
+
+  it('never publishes a blocked id in the résumé guide an agent is told to copy', () => {
+    // The example spec is served by the open get_resume_guide tool. Naming a
+    // blocked entry there hands every agent a spec build_resume refuses.
+    const example = JSON.parse(/```json\n([\s\S]*?)```/.exec(RESUME_GUIDE)![1]);
+    const blocked = new Set(Object.keys(BLOCKED_SITE_IDS));
+    for (const section of example.sections as SpecSection[]) {
+      for (const entry of section.entries ?? []) expect(blocked, entry.id).not.toContain(entry.id);
+    }
   });
 
   it('keeps every project title free of the dash the digest parser splits on', () => {

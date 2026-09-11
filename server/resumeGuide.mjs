@@ -125,7 +125,7 @@ Certifications are not a separate section: they are skills lines whose label is
         { "id": "abbott-intern", "bullets": ["pipeline", "apc"], "variant": "deep" }
       ] },
     { "type": "projects", "title": "PROJECTS",
-      "entries": [{ "id": "asyncddgs", "bullets": ["main"] }] },
+      "entries": [{ "id": "voltpulse", "bullets": ["main"] }] },
     { "type": "leadership", "title": "LEADERSHIP AND ACTIVITIES",
       "entries": [{ "id": "ntuc", "bullets": ["main"] }] },
     { "type": "skills", "title": "SKILLS AND CERTIFICATIONS",

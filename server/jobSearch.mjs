@@ -301,11 +301,34 @@ export const cvMarkdown = () => {
 };
 
 /**
- * Rahul has asked that certain projects stay off documents that reach employers
- * — `blocked` in projects.json, one of which says in as many words "this is not
- * one he wants sent". The résumé builders already refuse them. The digest is
- * read by an agent writing cover letters and screening answers, which is the
- * same audience, so it honours the same list rather than routing around it.
+ * `blocked` in projects.json is a CURATION flag, not a confidentiality one, and
+ * the difference decides what may be done with it. Its five reasons all scope to
+ * a document type — "keep this off résumés" — and two of them could not be about
+ * secrecy at all: "coursework, and the weakest entry in the pool", and "the site
+ * speaks for itself in the contact line", which blocks an entry BECAUSE the
+ * employer already gets the thing. ce2d754 opens on scarcity, "more projects than
+ * any résumé can hold", and its body is a slot-reallocation table. Every
+ * enforcement site is a résumé emitter.
+ *
+ * So what it withholds is an ENTRY — a card in the Projects section — never a
+ * fact. Nothing here blocks a string. The digest honours the same list because
+ * the digest is also a curated selected-evidence surface and not an index: the
+ * complete 28-project catalogue is published openly by list_projects, get_project
+ * and /api/portfolio, so withholding here costs prominence, not availability.
+ *
+ * READ THIS BEFORE "FIXING" A DISAGREEMENT BETWEEN THE DIGEST AND cv_md. Where a
+ * blocked project's work is ALSO attested as employment, that bullet ships
+ * deliberately and must not be suppressed to make the two surfaces match.
+ * `flowshop` is exactly that case: ce2d754 blocked it because the same SimPy
+ * digital twin and CP-SAT optimizer is already `abbott-intern.digital-twin`, so
+ * the operations-research résumé "had been carrying that work twice and now shows
+ * it once, as experience" — the stronger placement, per
+ * docs/resume-detail-gaps.md §9. Seven of the eight canonical résumés select that
+ * bullet. An agent applying this rule by WORK rather than by CARD would delete it
+ * and silently require rewriting seven shipped documents. The rule is per card.
+ *
+ * docs/resume-detail-gaps.md §9 also says: do not "helpfully" restore a blocked
+ * project — ask Rahul first. That governs this map too.
  *
  * The two sides use different ids and different prose (`utopia` / "Project
  * Utopia: Global Situational Awareness" against `project-utopia` / "Project
@@ -319,8 +342,12 @@ export const BLOCKED_SITE_IDS = {
   asyncddgs: 'asyncddgs',
   utopia: 'project-utopia',
   flowshop: 'hybrid-flow-shop-digital-twin',
-  portfolio: null,   // no site project record of its own
-  ie2110: null,      // coursework; no site project record
+  // Neither of these is a spotlight project today, so neither reaches the digest
+  // either way — but they were wrongly recorded as having no site record at all,
+  // which would have failed silently the day one was promoted. blockedSiteProjectIds()
+  // drops nulls, so the existence test never walked these rows.
+  portfolio: 'portfolio-repo',
+  ie2110: 'ie2110-grp-13',
 };
 
 export const blockedSiteProjectIds = () => new Set(Object.values(BLOCKED_SITE_IDS).filter(Boolean));
@@ -354,6 +381,13 @@ export const articleDigestMarkdown = () => {
   ].join('\n'));
   return ['# Article Digest — Proof Points', '',
     "Compact proof points from Rahul Mitra's portfolio projects. Read at evaluation time.",
+    // Says what this file is NOT, because a consumer that assumed it was an index
+    // read the gap between it and cv.md as a contradiction. Positive wording on
+    // purpose: naming what was left out would invite an agent to go find it.
+    'This is a selected set, not a catalogue. cv.md is the authority on Rahul\'s'
+      + ' experience, and every bullet in it is approved for employer-facing use —'
+      + ' including where it describes work that is also a portfolio project here or'
+      + ' on the site. A project missing from this file is not a fact to avoid.',
     '', blocks.join('\n\n---\n\n'), ''].join('\n');
 };
 

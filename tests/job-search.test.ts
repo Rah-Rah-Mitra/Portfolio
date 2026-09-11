@@ -230,16 +230,16 @@ describe('application tracker', () => {
     expect(applicationId('Acme Pte', 'Ltd Engineer')).not.toBe(applicationId('Acme', 'Pte Ltd Engineer'));
     // Folding to [a-z0-9] emptied every non-Latin name, so two different
     // companies hashed alike and the second was handed the first one's row.
-    expect(applicationId('华为', 'Engineer')).not.toBe(applicationId('腾讯', 'Engineer'));
-    expect(applicationId('Acme', '工程師')).not.toBe(applicationId('Acme', 'エンジニア'));
-    expect(applicationId('Яндекс', 'Engineer')).not.toBe(applicationId('شركة', 'Engineer'));
+    expect(applicationId('\u534E\u4E3A', 'Engineer')).not.toBe(applicationId('\u817E\u8BAF', 'Engineer'));
+    expect(applicationId('Acme', '\u5DE5\u7A0B\u5E2B')).not.toBe(applicationId('Acme', '\u30A8\u30F3\u30B8\u30CB\u30A2'));
+    expect(applicationId('\u042F\u043D\u0434\u0435\u043A\u0441', 'Engineer')).not.toBe(applicationId('\u0634\u0631\u0643\u0629', 'Engineer'));
     // Accents still fold, so one company is not two rows.
     expect(applicationId('Café Systems', 'Engineer')).toBe(applicationId('Cafe Systems', 'Engineer'));
   });
 
   it('tracks two non-Latin companies as two rows', async () => {
-    const a = payload(await call('create_application', { company: '华为', role: 'Engineer' }, TOKEN));
-    const b = payload(await call('create_application', { company: '腾讯', role: 'Engineer' }, TOKEN));
+    const a = payload(await call('create_application', { company: '\u534E\u4E3A', role: 'Engineer' }, TOKEN));
+    const b = payload(await call('create_application', { company: '\u817E\u8BAF', role: 'Engineer' }, TOKEN));
     expect(b.created).toBe(true);
     expect(b.id).not.toBe(a.id);
     expect(payload(await call('list_applications', {}, TOKEN)).count).toBe(2);

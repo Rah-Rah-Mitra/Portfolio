@@ -181,10 +181,11 @@ const httpUrl = z.string().max(2048).refine((value) => {
   try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
 }, 'must be an http(s) URL');
 
-// Unicode-aware on purpose. Folding to [a-z0-9] emptied any wholly non-Latin
-// name, so "华为" and "腾讯" both normalized to "" and hashed to the same id: the
-// second company was silently handed the first one's row. \p{L}\p{N} keeps the
-// letters and drops punctuation, and NFKD still strips the accents off "café".
+// Unicode-aware on purpose. Folding to [a-z0-9] emptied any name written wholly
+// in a non-Latin script: two different CJK company names both normalized to ""
+// and hashed to the same id, so the second was silently handed the first one's
+// row. \p{L}\p{N} keeps the letters and drops the punctuation, and NFKD still
+// strips the accents off "cafe".
 const norm = (value) => String(value ?? '').normalize('NFKD').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 const sha16 = (value) => createHash('sha256').update(value, 'utf8').digest('hex').slice(0, 16);
 

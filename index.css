@@ -291,9 +291,17 @@ button { font-family: var(--font-body); color: inherit; }
   font-family: var(--font-heading); font-weight: 600; font-size: 15px; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--color-accent-700); margin: 0 0 6px;
 }
-.wb-thesis {
-  font-family: var(--font-heading); font-weight: 600; font-size: 11px; letter-spacing: 0.18em;
+.wb-thesis, .wb-degree {
+  font-family: var(--font-heading); font-weight: 600; font-size: 11px;
   text-transform: uppercase; color: var(--color-neutral-700); margin: 0 0 12px;
+}
+.wb-thesis { letter-spacing: 0.18em; }
+/* Availability line: the graduation date is the one scheduling fact a
+   recruiter reads first, so it sits on its own rule above the bio rather than
+   in the stat tiles (those are snapshot.profile.stats). The degree itself is
+   already in the role line and again in the bio — this line carries the date. */
+.wb-degree {
+  letter-spacing: 0.12em; padding-left: 9px; border-left: 1px solid var(--color-accent);
 }
 .wb-bio { font-size: 14px; line-height: 1.6; max-width: 54ch; color: var(--color-neutral-800); margin: 0 0 18px; }
 .wb-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -522,7 +530,8 @@ button { font-family: var(--font-body); color: inherit; }
 .fi-hero { margin-bottom: 18px; }
 .fi-hero .wb-rule { margin: 6px 0 10px; }
 .fi-hero .wb-h1 { font-size: 38px; margin-bottom: 4px; }
-.fi-hero .wb-role { font-size: 12.5px; margin-bottom: 10px; }
+.fi-hero .wb-role { font-size: 12.5px; margin-bottom: 8px; }
+.fi-hero .wb-degree { font-size: 10px; letter-spacing: 0.1em; margin-bottom: 10px; }
 .fi-hero .wb-bio { font-size: 12.5px; line-height: 1.55; margin-bottom: 12px; }
 .fi-hero .btn { font-size: 12px; }
 

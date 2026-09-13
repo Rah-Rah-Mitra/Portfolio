@@ -6,6 +6,12 @@ export const SITE_CONFIG = {
   description: 'Rahul Mitra is a multidisciplinary engineer working across software systems, AI engineering, operations research, 3D computer vision, solution architecture, and cybersecurity.',
   email: 'mitrarahul2002@gmail.com',
   location: 'Singapore',
+  // Attested in scripts/resume/content/education.json ("Aug 2023 – Jul 2027")
+  // and as server/jobSearch.mjs DEFAULT_PREFERENCES.graduation_date. Kept here
+  // so the two rendered surfaces (Home dossier, mobile hero) read one copy
+  // instead of each hardcoding the date. buildPortfolioSnapshot projects
+  // SITE_CONFIG key by key, so this is invisible to the committed snapshot.
+  graduation: 'Jul 2027',
   social: {
     linkedin: 'https://www.linkedin.com/in/rahulmitra-dev',
     github: 'https://github.com/Rah-Rah-Mitra',

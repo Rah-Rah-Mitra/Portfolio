@@ -41,6 +41,28 @@ test.describe('field workbench — desktop', () => {
     await expect(experience).toBeHidden();
   });
 
+  test('a hash deep link opens the archive AND brings the row into view', async ({ page }) => {
+    await page.goto('/#project-kaogenie');
+    const archive = page.getByRole('dialog', { name: 'Project Archive' });
+    await expect(archive).toBeVisible();
+    // Opening the window is only half of it: the row has to be inside the
+    // sheet's own scroller, not 280px below its bottom edge.
+    await expect.poll(() => page.evaluate(() => {
+      const row = document.getElementById('project-kaogenie');
+      const scroller = row?.closest('.wb-scroll');
+      if (!row || !scroller) return false;
+      const rowBox = row.getBoundingClientRect();
+      const scrollerBox = scroller.getBoundingClientRect();
+      return rowBox.top >= scrollerBox.top - 1 && rowBox.bottom <= scrollerBox.bottom + 1;
+    })).toBe(true);
+  });
+
+  test('states the graduation date in the dossier', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('dialog', { name: 'Home / Dossier' }))
+      .toContainText('Graduating Jul 2027');
+  });
+
   test('serves eight résumés and the contact handoff', async ({ page }) => {
     await page.goto('/?app=resumes-contact');
     const resumes = page.getByRole('dialog', { name: 'Resumes & Contact' });
@@ -100,6 +122,19 @@ test.describe('field index — mobile', () => {
     // Expanding a row reveals its detail card.
     await row.click();
     await expect(page.getByRole('button', { name: /Churp/, expanded: true }).first()).toBeVisible();
+  });
+
+  test('honours the ?app= link it prints on its own builder row', async ({ page }) => {
+    // The registry is the only surface that emits ?app=; tapping its own
+    // "OPEN ON DESKTOP" href on a phone used to reload to an untouched index.
+    await page.goto('/?app=resume-builder');
+    await expect(page.getByRole('button', { name: 'RESUMES' })).toHaveAttribute('data-active', 'true');
+    await expect(page.getByRole('button', { name: /Resume Builder/, expanded: true })).toBeVisible();
+  });
+
+  test('states the graduation date in the mobile hero', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.fi-hero')).toContainText('Graduating Jul 2027');
   });
 
   test('keeps direct handoff pinned to the tab bar', async ({ page }) => {

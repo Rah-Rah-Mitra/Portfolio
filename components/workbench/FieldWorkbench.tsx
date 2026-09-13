@@ -70,6 +70,9 @@ const FieldWorkbench: React.FC = () => {
   const rootRef = React.useRef<HTMLDivElement>(null);
   const [open, setOpen] = React.useState<Record<DesktopAppId, boolean>>(INITIAL_OPEN);
   const [focused, setFocused] = React.useState<DesktopAppId | null>('home');
+  // Deep-link request awaiting the commit that gives its window a layout box.
+  // A fresh object per request, so repeating the same link re-fires it.
+  const [pendingTarget, setPendingTarget] = React.useState<{ app: DesktopAppId; anchor: string } | null>(null);
   const engineRef = React.useRef<Engine>({
     bounds: { ...DEFAULT_BOUNDS }, maxed: {}, rigDone: {}, rigGeo: {}, scroll: {}, wt: {}, rot: {},
     hoists: [], focused: 'home', z: 60, dragCtx: null, dragVel: 0, motion: true,
@@ -147,17 +150,36 @@ const FieldWorkbench: React.FC = () => {
 
   const openApp = React.useCallback((id: DesktopAppId, targetId?: string) => {
     setOpen((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+    if (targetId) setPendingTarget({ app: id, anchor: targetId });
     requestAnimationFrame(() => {
       applyBounds(id);
       layoutRig(id);
       focusWin(id);
-      if (targetId) {
-        requestAnimationFrame(() => {
-          document.getElementById(targetId)?.scrollIntoView({ behavior: engineRef.current.motion ? 'smooth' : 'auto', block: 'nearest' });
-        });
-      }
     });
   }, [applyBounds, focusWin, layoutRig]);
+
+  // A deep link (/#project-kaogenie, or the assistant) has to scroll a row that
+  // only gets a layout box once React commits `display: flex` on its window.
+  // React schedules that commit itself, so counting animation frames races it:
+  // the old two-rAF guess fired while the section was still `display: none`,
+  // where scrollIntoView is a no-op on a box that does not exist, and nothing
+  // retried — the archive opened with the row 280px below the fold. Holding the
+  // request in state instead lets a layout effect run it right after the DOM
+  // mutation that opens the window, and an unmet request simply stands until
+  // the commit that can satisfy it. Instant, not smooth: a deep link competes
+  // with hydration (App prunes the other surface a beat later), and an animated
+  // scroll is an interruptible promise where this is an arrival.
+  React.useLayoutEffect(() => {
+    if (!pendingTarget) return;
+    const win = winEl(pendingTarget.app);
+    const row = document.getElementById(pendingTarget.anchor);
+    if (!win || win.style.display === 'none' || !row) return;
+    // Size the sheet before measuring: the scroller's height decides how far
+    // `nearest` has to travel, and bounds are otherwise applied a frame later.
+    applyBounds(pendingTarget.app);
+    row.scrollIntoView({ block: 'nearest' });
+    setPendingTarget(null);
+  }, [applyBounds, open, pendingTarget]);
 
   const closeApp = React.useCallback((id: DesktopAppId) => {
     const engine = engineRef.current;

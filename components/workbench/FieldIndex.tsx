@@ -3,6 +3,7 @@ import type { DesktopAppId } from '../../types';
 import { archiveRows, CONTACT, featuredCards, generalResume, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../../lib/workbench';
 import { allProjects, coreCompetencies, experienceRecords, resumeProfiles, unifiedPortfolioData } from '../../portfolioData';
 import { SITE_CONFIG } from '../../siteConfig';
+import { desktopAppFromSearch } from '../../lib/workstation';
 import { clamp, pathSampler, routePath, spring, type PathSampler } from '../../lib/rig';
 import { Corners } from './bits';
 import { track } from '../../lib/analytics';
@@ -100,6 +101,14 @@ const APP_TO_KIND: Partial<Record<DesktopAppId, Kind>> = {
   'proof-vault': 'PROOF',
   'resumes-contact': 'RESUMES',
   'resume-builder': 'RESUMES',
+};
+
+// This file is the only mounted producer of ?app= (the builder row's
+// "OPEN ON DESKTOP" href), so it has to be able to read it back: a phone user
+// who taps its own link must land somewhere. Windows with no row of their own
+// (the labs, the 3D world) get their filter chip and nothing more.
+const APP_TO_ROW: Partial<Record<DesktopAppId, string>> = {
+  'resume-builder': 'resume:builder',
 };
 
 interface Rig {
@@ -245,7 +254,11 @@ const FieldIndex: React.FC = () => {
     };
     window.addEventListener(WORKBENCH_OPEN_EVENT, onOpenEvent);
     window.addEventListener('hashchange', onHash);
-    if (window.location.hash) onHash();
+    // ?app= is honoured with the same tested helper the workbench uses
+    // (lib/workstation.ts), so ?mode=scan keeps opting out on both surfaces.
+    const requested = desktopAppFromSearch(window.location.search);
+    if (requested) applyTarget(APP_TO_KIND[requested] ?? 'ALL', APP_TO_ROW[requested]);
+    else if (window.location.hash) onHash();
     return () => {
       window.removeEventListener(WORKBENCH_OPEN_EVENT, onOpenEvent);
       window.removeEventListener('hashchange', onHash);
@@ -468,6 +481,7 @@ const FieldIndex: React.FC = () => {
             <hr className="wb-rule" />
             <h1 className="wb-h1">Rahul Mitra</h1>
             <p className="wb-role">Systems Architect &amp; AI Engineer — ISE × CS × Math</p>
+            <p className="wb-degree">Graduating {SITE_CONFIG.graduation}</p>
             <p className="wb-bio">
               One searchable registry — every project, role, credential, and résumé on this bench is reachable from
               the bar above. Swipe the priority line, scroll to work the crane.

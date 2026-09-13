@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/industry-5c40abba-869b-4cce-8540-83067e53772c/styles.css">
+<script src="_ds/industry-5c40abba-869b-4cce-8540-83067e53772c/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--color-bg)}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent)}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="width:1856px;padding:44px 40px 56px;box-sizing:border-box;font-family:Barlow, sans-serif;color:var(--color-text)">
+
+  <div style="display:flex;gap:34px;align-items:flex-start;margin-bottom:30px">
+    <div style="flex:1.15">
+      <span style="font-size:10.5px;letter-spacing:0.14em;color:var(--color-accent-700)">SHEET 03 — PGA MECHANISM LIBRARY · PLANAR P(R*2,0,1) · REV 2026-09</span>
+      <hr style="height:1px;border:0;background:var(--color-divider);margin:8px 0 16px">
+      <h1 style="margin:0 0 12px;font-family:'Barlow Condensed',sans-serif;font-size:58px;line-height:0.96;letter-spacing:0.01em;text-transform:uppercase">Mechanism<br>asset library</h1>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.6;max-width:66ch;color:var(--color-neutral-800)">Every cell below is a working mechanism, not a picture of one. One algebra file carries the library — points, lines, join, meet, rotors, translators, motors — and the sandwich product M p M&#771; does all placement. Nothing is keyframed: each part is placed by a motor and its dependents are solved from constraints every frame (circle &#8745; circle, line &#8745; circle, foot of a perpendicular, mesh phase).</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;max-width:66ch;color:var(--color-neutral-700)">Drive method is printed beside each asset. Nothing is wired into the desktop or phone environments yet — this is the parts bin.</p>
+    </div>
+    <div class="blueprint" style="flex:1;padding:16px 18px;background:color-mix(in srgb, var(--color-bg) 55%, white)">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h3 style="margin:0 0 10px;font-family:'Barlow Condensed',sans-serif;font-size:17px;letter-spacing:0.06em;text-transform:uppercase">Build checklist</h3>
+      <div style="display:grid;grid-template-columns:auto 1fr auto auto;gap:0 14px;font-size:12px;align-items:baseline">
+        <sc-for list="{{ fams }}" as="fm" hint-placeholder-count="9">
+          <div style="color:var(--color-accent);font-size:10px">&#9632;</div>
+          <div style="padding:3.5px 0;border-bottom:1px solid var(--color-divider)">{{ fm.name }}</div>
+          <div style="padding:3.5px 0;border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600);font-variant-numeric:tabular-nums">{{ fm.n }}</div>
+          <div style="padding:3.5px 0;border-bottom:1px solid var(--color-divider);color:var(--color-neutral-600);font-size:10.5px;letter-spacing:0.05em">{{ fm.drives }}</div>
+        </sc-for>
+        <div style="color:var(--color-accent);font-size:10px">&#9632;</div>
+        <div style="padding:6px 0;font-weight:600;letter-spacing:0.04em">TOTAL BUILT</div>
+        <div style="padding:6px 0;font-weight:600;font-variant-numeric:tabular-nums">{{ total }}</div>
+        <div style="padding:6px 0;font-size:10.5px;color:var(--color-accent-700)">{{ err }}</div>
+      </div>
+      <p style="margin:12px 0 0;font-size:11.5px;line-height:1.55;color:var(--color-neutral-700)"><strong style="letter-spacing:0.06em">QUEUED —</strong> cycloidal and harmonic (strain-wave) reducers · bevel and hypoid pairs · Hart inversor · Hoeken and Klann legs · barrel and globoidal cams · Stirling and beam engines · 6-axis arm with IK · delta robot · MacPherson strut · CV joint · Euler's disk · Foucault pendulum · Miura-ori · theatre fly system · palletiser line · Archimedes screw · Pelton wheel · peristaltic pump · tail rotor · control-moment gyro · Antikythera train · difference engine · planimeter · marble run.</p>
+      <p style="margin:10px 0 0;font-size:11.5px;line-height:1.55;color:var(--color-neutral-700)"><strong style="letter-spacing:0.06em">NOT DONE HERE —</strong> no asset is bound to a scroll, window or route yet; the desktop and phone rigs still run the older verlet core. Swapping them onto this algebra is the next job, on your word.</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(5, 336px);gap:26px 24px">
+    <sc-for list="{{ assets }}" as="a" hint-placeholder-count="15">
+      <div class="blueprint" style="padding:8px 8px 12px;background:color-mix(in srgb, var(--color-bg) 55%, white)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 2px 6px">
+          <span style="font-size:10px;letter-spacing:0.1em;font-weight:600;color:var(--color-accent-700)">{{ a.id }}</span>
+          <span style="font-size:9.5px;letter-spacing:0.09em;color:var(--color-neutral-600);text-transform:uppercase">{{ a.f }}</span>
+        </div>
+        <canvas data-aid="{{ a.id }}" width="320" height="230" style="display:block;width:320px;height:230px;background:color-mix(in srgb, var(--color-bg) 30%, white);border:1px solid var(--color-divider)"></canvas>
+        <div style="padding:8px 3px 0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+            <h4 style="margin:0;font-family:'Barlow Condensed',sans-serif;font-size:19px;line-height:1.05;letter-spacing:0.03em;text-transform:uppercase">{{ a.n }}</h4>
+            <span style="flex:none;font-size:8.5px;letter-spacing:0.1em;padding:2px 5px;background:var(--color-accent-900);color:var(--color-bg)">{{ a.drive }}</span>
+          </div>
+          <div style="display:{{ showLabels }}">
+            <p style="margin:6px 0 0;font-size:10.5px;line-height:1.5;color:var(--color-neutral-600)">{{ a.pga }}</p>
+            <p style="margin:5px 0 0;font-size:11.5px;line-height:1.5;color:var(--color-neutral-800)">{{ a.i }}</p>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <p style="margin:34px 0 0;font-size:12px;letter-spacing:0.03em;color:var(--color-neutral-700)">Say the word to: build the queued families · bind a chosen asset to the desktop scroll rig · pull any cell out as a standalone component · or turn the whole sheet into a printable mechanism catalogue.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;speed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0.15,&quot;max&quot;:2,&quot;step&quot;:0.05,&quot;unit&quot;:&quot;x&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Motion&quot;},&quot;showConstruction&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Motion&quot;},&quot;traces&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Motion&quot;},&quot;labels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Sheet&quot;}}">
+class Component extends DCLogic {
+  state = { assets: [], err: '' };
+
+  async componentDidMount() {
+    const draw = await import('./pga-draw.js');
+    this.kit = draw.kit;
+    const mods = await Promise.allSettled([1, 2, 3].map((i) => import('./pga-assets-' + i + '.js')));
+    const assets = [];
+    const bad = [];
+    mods.forEach((m, i) => {
+      if (m.status === 'fulfilled') assets.push(...(m.value.ASSETS || []));
+      else { bad.push('assets-' + (i + 1)); console.warn('[pga] failed', m.reason); }
+    });
+    this.att = new Map();
+    this.frames = 0;
+    this.obs = new IntersectionObserver(
+      (es) => es.forEach((e) => { const a = this.att.get(e.target.dataset.aid); if (a) a.vis = e.isIntersecting; }),
+      { rootMargin: '400px' }
+    );
+    this.setState({ assets, err: bad.length ? 'MISSING ' + bad.join(', ') : '' });
+    this.scan();
+    this.start();
+  }
+
+  start() { if (!this.raf) this.raf = requestAnimationFrame(this.loop); }
+  componentDidUpdate() { this.scan(); this.start(); }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); if (this.obs) this.obs.disconnect(); }
+
+  colors() {
+    const s = getComputedStyle(document.documentElement);
+    const v = (n, f) => (s.getPropertyValue(n) || '').trim() || f;
+    return {
+      ink: v('--color-text', '#1d1f20'),
+      accent: v('--color-accent', '#5980a6'),
+      deep: v('--color-accent-700', '#3d5c7d'),
+      ghost: v('--color-neutral-500', '#8b9096'),
+      faint: v('--color-neutral-300', '#c2c6ca'),
+      paper: v('--color-bg', '#f2f2f3'),
+    };
+  }
+
+  scan() {
+    if (!this.root || !this.att) return;
+    for (const el of this.root.querySelectorAll('canvas[data-aid]')) {
+      const id = el.dataset.aid;
+      if (!id || this.att.has(id)) continue;
+      const asset = this.state.assets.find((a) => a.id === id);
+      if (!asset) continue;
+      this.att.set(id, this.attach(el, asset));
+      this.obs.observe(el);
+    }
+  }
+
+  attach(el, asset) {
+    const g = this.kit(el, 320, 230, this.colors());
+    const io = { u: asset.u0 ?? 0, t: 0, dt: 1 / 60, mx: 168, my: 104, hover: false, down: false, on: !!asset.on0, tgl: asset.on0 ? 1 : 0, ghost: true, traces: true, u0: 0, x0: 0 };
+    const rec = { el, g, io, st: {}, asset, vis: true, err: 0 };
+    el.style.touchAction = 'none';
+    el.style.cursor = asset.d === 'point' ? 'crosshair' : asset.d === 'toggle' ? 'pointer' : asset.d === 'grab' ? 'grab' : 'ew-resize';
+    const at = (e) => { const r = el.getBoundingClientRect(); io.mx = ((e.clientX - r.left) * 320) / r.width; io.my = ((e.clientY - r.top) * 230) / r.height; };
+    el.addEventListener('pointerenter', (e) => { io.hover = true; at(e); });
+    el.addEventListener('pointerleave', () => { io.hover = false; io.down = false; });
+    el.addEventListener('pointermove', (e) => {
+      at(e);
+      if (io.down && (asset.d === 'crank' || asset.d === 'drag')) io.u = io.u0 + (io.mx - io.x0) * 0.03;
+    });
+    el.addEventListener('pointerdown', (e) => {
+      at(e); io.down = true; io.u0 = io.u; io.x0 = io.mx;
+      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      if (asset.d === 'toggle') io.on = !io.on;
+      e.preventDefault();
+    });
+    el.addEventListener('pointerup', () => { io.down = false; });
+    el.addEventListener('pointercancel', () => { io.down = false; });
+    return rec;
+  }
+
+  loop = () => {
+    this.raf = 0;
+    try { this.frame(); }
+    catch (e) { if (!this.loopErr) { this.loopErr = 1; console.warn('[pga] loop', e); } }
+    finally { this.raf = requestAnimationFrame(this.loop); }
+  };
+
+  frame() {
+    if (!this.att) return;
+    const now = performance.now();
+    let dt = (now - (this.last || now)) / 1000;
+    this.last = now;
+    if (!(dt > 0) || dt > 0.06) dt = 1 / 60;
+    const sp = this.props.speed ?? 1;
+    const ghost = this.props.showConstruction ?? true;
+    const traces = this.props.traces ?? true;
+    for (const rec of this.att.values()) {
+      if (!rec.vis) continue;
+      const io = rec.io, asset = rec.asset;
+      io.dt = dt * sp;
+      io.t += io.dt;
+      io.ghost = ghost; io.traces = traces;
+      if (!io.down && (asset.d === 'crank' || asset.d === 'drag')) io.u += io.dt * (asset.rate ?? 1);
+      if (asset.d === 'point' && !io.hover) { io.mx = 160 + 96 * Math.sin(io.t * 0.62); io.my = 108 + 58 * Math.sin(io.t * 0.97 + 1.2); }
+      io.tgl += ((io.on ? 1 : 0) - io.tgl) * Math.min(1, io.dt * 4.5);
+      rec.g.reset();
+      try { asset.draw(rec.g, io, rec.st); }
+      catch (e) { if (!rec.err) { rec.err = 1; console.warn('[pga] draw ' + asset.id, e); } }
+    }
+    if (++this.frames % 30 === 0) this.scan();
+  }
+
+  renderVals() {
+    const A = this.state.assets;
+    const order = [];
+    const by = new Map();
+    for (const a of A) { if (!by.has(a.f)) { by.set(a.f, []); order.push(a.f); } by.get(a.f).push(a); }
+    const DR = { crank: 'DRAG-SCRUB', drag: 'DRAG-SCRUB', point: 'POINTER', toggle: 'CLICK', grab: 'GRAB' };
+    return {
+      rootRef: (el) => { this.root = el; },
+      total: A.length,
+      err: this.state.err,
+      fams: order.map((name) => {
+        const list = by.get(name);
+        return { name, n: list.length, drives: [...new Set(list.map((a) => DR[a.d] || 'AUTO'))].join(' / ') };
+      }),
+      assets: A.map((a) => ({ id: a.id, n: a.n, f: a.f, pga: a.pga, i: a.i, drive: DR[a.d] || 'AUTO' })),
+      showLabels: (this.props.labels ?? true) ? 'block' : 'none',
+    };
+  }
+}
+</script>
+</body>
+</html>

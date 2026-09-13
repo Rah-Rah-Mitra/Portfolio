@@ -1,5 +1,6 @@
 import React from 'react';
 import { Corners, Hoist, Kicker } from './bits';
+import { MechanismBench } from './MechanismBench';
 import {
   archiveRows,
   CONTACT,
@@ -235,6 +236,9 @@ export const SystemsWindow: React.FC = () => (
         </div>
         <figcaption>FIG. 05b — Five years of previously unseen, unclean changeover data processed without errors; every repair state exposed, never silently mutated.</figcaption>
       </figure>
+    </Hoist>
+    <Hoist>
+      <MechanismBench />
     </Hoist>
   </div>
 );

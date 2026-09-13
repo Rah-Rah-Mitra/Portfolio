@@ -402,6 +402,20 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-figure-head h3 { font-size: 17px; letter-spacing: 0.03em; text-transform: uppercase; }
 .wb-figure-head span { font-size: 9.5px; letter-spacing: 0.1em; color: var(--color-neutral-700); white-space: nowrap; }
 .wb-figure-svg { width: 100%; display: block; }
+
+/* Mechanism bench (lib/pgaMechanisms.ts). Canvases are authored in a fixed
+   320x230 frame and only ever scale DOWN, so the 2x backing store stays sharp. */
+.wb-mechs { display: grid; grid-template-columns: repeat(auto-fit, minmax(248px, 1fr)); gap: 20px 16px; margin: 0; padding: 0; list-style: none; }
+.wb-mech { display: flex; flex-direction: column; min-width: 0; }
+.wb-mech-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.wb-mech-id { font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; color: var(--color-accent-700); }
+.wb-mech-fam { font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-neutral-700); }
+.wb-mech-canvas { display: block; width: 100%; max-width: 320px; aspect-ratio: 320 / 230; background: var(--paper-75); border: 1px solid var(--color-divider); touch-action: none; }
+.wb-mech-canvas[data-drive='crank'] { cursor: ew-resize; }
+.wb-mech-canvas[data-drive='point'] { cursor: crosshair; }
+.wb-mech-name { margin: 8px 0 0; font-size: 15px; letter-spacing: 0.03em; text-transform: uppercase; }
+.wb-mech-pga { margin: 4px 0 0; font-size: 10px; line-height: 1.5; color: var(--color-neutral-700); }
+.wb-mech-why { margin: 5px 0 0; font-size: 11.5px; line-height: 1.5; }
 .wb-stages { display: flex; gap: 3px; }
 .wb-stages div {
   flex: 1; border: 1px solid var(--color-divider); padding: 6px 0 5px; text-align: center;

@@ -35,6 +35,20 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   registry with traverse/crane rigs. SSR renders both surfaces (CSS hides
   one); after hydration `App.tsx` prunes to the active one. Keep `App`
   render-pass free of `window` access — the build prerenders it.
+- **Mechanism bench** (`components/workbench/MechanismBench.tsx`, inside the
+  Systems Lab window — no new app id, no new anchor). Six live mechanisms drawn
+  from a planar projective geometric algebra: `lib/pga.ts` (core), `lib/pgaDraw.ts`
+  (blueprint kit), `lib/pgaMechanisms.ts` (the six). Ported from the 83-asset
+  library in `design/mockups/pga*.js`; `tests/pga-port.test.ts` replays each one
+  against its original and compares every canvas call, so the port cannot drift.
+  Three host rules the file exists to keep: canvas work happens only in an effect
+  (`kit()` reads `devicePixelRatio`, and `App.tsx` is prerendered), canvases are
+  found by DOM scan rather than refs (the workbench re-renders every window on
+  open/close, which detaches refs and blanked all six), and the kit's caption
+  colour is `--color-neutral-700`, not the mockup's `--color-neutral-500` — axe
+  cannot see into a canvas, so that would have broken the contrast rule while
+  passing CI. Mechanisms are authored in a fixed 320×230 frame and only ever
+  scale **down**; upscaling goes soft because the backing store caps at 2×.
 - Retained layers: `AskThePage` (AI) and `EffectsLabPanel` (FX) plus their
   providers (`ExperienceModeProvider`, `EffectsProvider`). They reach the
   workbench via the `portfolio:workbench-open` CustomEvent

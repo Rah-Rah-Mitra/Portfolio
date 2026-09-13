@@ -277,8 +277,12 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
 ## Gotchas
 
 - vitest picks up ANY `tests/**/*.test.ts` on disk, tracked or not.
-- `tests/project-showcase.dom.test.tsx` can flake under full-suite load
-  (waitFor timeout); passes in isolation.
+- `tests/project-showcase.dom.test.tsx` used to flake under full-suite load
+  (waitFor timeout) while passing in isolation. Fixed by raising that file's
+  async budget (`configure({ asyncUtilTimeout })`), not by weakening an
+  assertion — the carousel reveals cards via IntersectionObserver + rAF, so the
+  default 1s was a race. If you add DOM test files, re-run the full suite a few
+  times: load is what tips this class of test over.
 - `tests/e2e/quality.spec.ts` pins the workbench boot state (Home + Selected
   Work open), the 7/28 no-JS evidence counts, and zero serious axe violations
   on both surfaces.

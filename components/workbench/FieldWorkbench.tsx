@@ -1,7 +1,7 @@
 import React from 'react';
 import type { DesktopAppId } from '../../types';
 import { appForAnchor, workbenchApps, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../../lib/workbench';
-import { isDesktopAppId } from '../../lib/workstation';
+import { desktopAppFromSearch, isDesktopAppId } from '../../lib/workstation';
 import { routePath, spring } from '../../lib/rig';
 import { SITE_CONFIG } from '../../siteConfig';
 import { AppIcon } from './bits';
@@ -292,9 +292,10 @@ const FieldWorkbench: React.FC = () => {
     window.addEventListener(WORKBENCH_OPEN_EVENT, onOpenEvent);
     window.addEventListener('hashchange', onHash);
 
-    const params = new URLSearchParams(window.location.search);
-    const requested = params.get('app');
-    if (requested && isDesktopAppId(requested)) openApp(requested);
+    // Use the tested helper, not a second parser: it also honours ?mode=scan,
+    // which this inline copy used to ignore (tests/workstation.dom.test.tsx).
+    const requested = desktopAppFromSearch(window.location.search);
+    if (requested) openApp(requested);
     else if (window.location.hash) onHash();
 
     return () => {

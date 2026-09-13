@@ -108,12 +108,21 @@ const rephrasingsFor = (spec, bullets, typography) => {
  * Rahul's own attested technologies, taken from the skills lines rather than a
  * dictionary: the checker imports nothing, so the vocabulary is passed in, and
  * this keeps it to terms he has already claimed somewhere.
+ *
+ * Exported because jobSearch.mjs matches postings against it too: it is the
+ * larger half of the alphabet a posting may choose from (the other half is the
+ * 46 unique keyword entries on snapshot.resumes[], which alone were too few to
+ * match a posting with).
  */
-const skillTerms = (() => {
+export const skillTerms = (() => {
   const terms = new Set();
   for (const line of pools.skills.lines) {
-    for (const chunk of line.items.split(/[,;]/)) {
-      const cleaned = chunk.replace(/\([^)]*\)/g, ' ').trim();
+    // Parentheses are separators, not wrappers. Splitting on [,;] first tore
+    // every comma-bearing parenthetical into unbalanced fragments -- "deep RL
+    // (PPO", "DQN)", "Route 53)", "Flask)" -- which could never match anything
+    // and were dead weight in every alphabet built from this list.
+    for (const chunk of line.items.replace(/[()]/g, ',').split(/[,;]/)) {
+      const cleaned = chunk.trim();
       for (const part of cleaned.split(/\s*\/\s*|\s+&\s+/)) {
         const term = part.trim();
         if (term.length > 2) terms.add(term);

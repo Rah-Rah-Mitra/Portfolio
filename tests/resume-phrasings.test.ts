@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { attestPhrasing } from '../server/resumeCheck.mjs';
 import { assemble, measureBulletLines, resolveBulletText, specSchema } from '../server/resumeRender.mjs';
 import { checkSpec, decoratedBlocks, resumeConfigs } from '../server/portfolioMcp.mjs';
-import { pools } from '../server/resumeContent.mjs';
+import { pools, resumeBlocks } from '../server/resumeContent.mjs';
 import ownershipTable from '../scripts/resume/content/ownership.json';
 
 // server/resumeCheck.mjs is plain JS, so its JSDoc types the option as null.
@@ -148,7 +148,7 @@ describe('phrasing selection', () => {
   });
 
   it('never accepts prose from a caller', () => {
-    const base = { sections: [{ type: 'skills', title: 'SKILLS', lines: ['se-skills'] }] };
+    const base = { sections: [{ type: 'skills', title: 'SKILLS AND CERTIFICATIONS', lines: ['se-skills'] }] };
     expect(specSchema.safeParse({ ...base, phrasings: { 'waaah.main': 'landmarks-first' } }).success).toBe(true);
     expect(specSchema.safeParse({ ...base, phrasings: { 'waaah.main': { text: 'I wrote this' } } }).success).toBe(false);
     expect(specSchema.safeParse({ ...base, phrasings: { 'not a ref': 'landmarks-first' } }).success).toBe(false);
@@ -184,6 +184,24 @@ describe('the checker offers a rephrase where it used to offer nothing', () => {
     expect(before.counts.warnings).toBe(6);
     expect(after.counts.warnings).toBe(0);
     expect(after.counts.errors).toBe(0);
+  });
+
+  it('carries the alternatives on the raw block list too, not only the decorated one', () => {
+    // resumeBlocks() reduced every bullet to {id, variants} and dropped the
+    // sibling phrasings map. decoratedBlocks() went back to the pools for them,
+    // so the MCP menu looked complete while everything else built on
+    // resumeBlocks() — the builder window, and the tailored path's own
+    // validation — had no way to know a second wording existed.
+    const blocks = resumeBlocks() as { sections: Array<{ type: string; entries: Array<{ id: string; bullets: Array<{ id: string; phrasings?: Record<string, { text: string }> }> }> }> };
+    const bullets = blocks.sections.flatMap((section) => section.entries.flatMap((entry) => entry.bullets));
+    const waaah = blocks.sections.find((item) => item.type === 'projects')?.entries.find((item) => item.id === 'waaah');
+    expect(waaah?.bullets[0].phrasings?.['landmarks-first'].text).toMatch(/^Turned MediaPipe/);
+    // Additive: absent exactly where the bullet has none, so the shape existing
+    // consumers read is unchanged.
+    expect(bullets.some((bullet) => bullet.phrasings === undefined)).toBe(true);
+    for (const bullet of bullets) {
+      if (bullet.phrasings) expect(Object.keys(bullet.phrasings).length).toBeGreaterThan(0);
+    }
   });
 
   it('puts the alternatives on the menu, so an agent can avoid the repeat first', () => {

@@ -4,8 +4,16 @@ import { pools, profile } from '../server/resumeContent.mjs';
 // https://rahul-mitra.com/api/resume?spec=<base64url deflated JSON>&format=pdf|docx|md
 //
 // Stateless: the spec in the URL is the whole résumé, so a built document is
-// reproducible from its link with no storage behind it. Only pool ids are
-// accepted, so there is no way to inject text through this endpoint.
+// reproducible from its link with no storage behind it.
+//
+// This endpoint is unauthenticated, so every field of a spec is something a
+// stranger can put on a document served under Rahul's name. Nothing here is
+// free text: content is pool ids, and the two fields that are prose — the
+// printed section headings and the `subject` that becomes the document title —
+// are closed enums in specSchema. A caller chooses among Rahul's words; it
+// cannot write one. (This comment used to claim as much while `title` was an
+// 80-character free string on every section — which is exactly how eight
+// sections of arbitrary prose could be printed through here.)
 const TYPES = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

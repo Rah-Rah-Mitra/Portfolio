@@ -50,6 +50,13 @@ export const resumeBlocks = () => ({
       bullets: (entry.bullets ?? []).map((bullet) => ({
         id: bullet.id,
         variants: Object.fromEntries(Object.entries(bullet.text)),
+        // The sibling map of approved alternative wordings, carried rather than
+        // dropped. It was dropped here, so everything downstream of the menu —
+        // the builder window, specFromBlockIds, blockIndex's validation — had no
+        // way to know a bullet even had a second wording, and only
+        // decoratedBlocks() saw them, by going back to the pools itself.
+        // Additive: absent exactly where the bullet has none.
+        ...(bullet.phrasings ? { phrasings: bullet.phrasings } : {}),
       })),
     })),
   })),

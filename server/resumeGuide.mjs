@@ -109,11 +109,19 @@ SKILLS AND CERTIFICATIONS.
 Certifications are not a separate section: they are skills lines whose label is
 "Certifications" (ids beginning \`certs-\`).
 
+Those headings are the exact strings, and the only ones: a section's \`title\` is
+chosen from that list (\`general\`'s projects section may also say "PROJECTS AND
+COMPETITIONS"), not written. \`subject\` is chosen too — any of the eight
+ready-made subjects, or "Resume", "Custom Resume", "Tailored résumé" — because it
+becomes the document's title in the PDF and DOCX metadata. Both print on a file
+served under Rahul's name, so neither is a place to put your own words, not even
+the company you are aiming at.
+
 ## Spec shape
 
 \`\`\`json
 {
-  "subject": "Software Engineer, Acme",
+  "subject": "Software Engineer Resume",
   "pages": 1,
   "detail": "standard",
   "sections": [

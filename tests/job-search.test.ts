@@ -7,12 +7,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '../api/mcp.mjs';
 import { applicationId, BLOCKED_SITE_IDS, blockedSiteProjectIds, isBlockedProject, normalizeJdUrl, toYaml, trackerTable } from '../server/jobSearch.mjs';
 import snapshot from '../server/portfolio-snapshot.json';
+import { skillTerms } from '../server/portfolioMcp.mjs';
 import { decodeSpec } from '../server/resumeRender.mjs';
 import { configBySlug, pools, resumeBlocks, resumeConfigs } from '../server/resumeContent.mjs';
 import { RESUME_GUIDE } from '../server/resumeGuide.mjs';
 
 const TOKEN = 'a'.repeat(32);
 const UPSTASH = 'https://fake-db.upstash.io';
+// Every word Rahul has attested, rebuilt here from the two sources rather than
+// imported, so the coverage report's alphabet is checked against them and not
+// against itself.
+const ATTESTED = new Set<string>([
+  ...snapshot.resumes.flatMap((resume) => resume.keywords),
+  ...(skillTerms as string[]),
+]);
 
 type ToolResult = { content: Array<{ text: string }>; isError?: boolean };
 
@@ -390,6 +398,61 @@ describe('build_tailored_resume', () => {
     expect(nothing.matched.slug).toBe('highlights');
   });
 
+  it('matches a posting against the whole attested vocabulary, not the résumé cards', async () => {
+    // The snapshot keyword rows are 41 entries across the six candidates — a label
+    // for a card, not a vocabulary. Each posting below names technologies that are
+    // Rahul's, printed on one of his résumés, and absent from every keyword row.
+    const or = payload(await call('build_tailored_resume', {
+      jd_text: 'Python engineer for CP-SAT models, SciPy, SimPy discrete-event work and robust optimization.',
+    }));
+    // `Python` (a software-engineer keyword) used to be the only hit here, so a
+    // constraint-programming posting was answered with the generalist résumé.
+    expect(or.matched.slug).toBe('operations-research-engineer');
+    expect(or.matched.keywords).toEqual(expect.arrayContaining(['CP-SAT', 'SimPy']));
+
+    const vision = payload(await call('build_tailored_resume', {
+      jd_text: 'Camera ISP tuning, super-resolution and image restoration research with PyTorch and CUDA.',
+    }));
+    expect(vision.matched.slug).toBe('ai-engineer');      // scored 0 before, so: highlights
+    expect(vision.matched.keywords).toContain('PyTorch');
+
+    const platform = payload(await call('build_tailored_resume', {
+      jd_text: 'Platform engineer: Terraform, Kafka, Redis and AWS Fargate.',
+    }));
+    // Both architecture résumés carry this stack; which of the two wins is a
+    // judgement. That it is no longer the fallback is the point.
+    expect(['solution-architect', 'civic-tech-solution-architect']).toContain(platform.matched.slug);
+    expect(platform.matched.keywords).toEqual(expect.arrayContaining(['Terraform', 'Kafka']));
+
+    // The families that already resolved still resolve, to the same résumé.
+    const civic = payload(await call('build_tailored_resume', {
+      jd_text: 'Govtech delivery: Singpass Login and Myinfo, GIS mapping, accessibility, rapid prototyping.',
+    }));
+    expect(civic.matched.slug).toBe('civic-tech-solution-architect');
+    const fullstack = payload(await call('build_tailored_resume', {
+      jd_text: 'Full-stack engineer: TypeScript, React, Next.js, FastAPI, Docker.',
+    }));
+    expect(fullstack.matched.slug).toBe('software-engineer');
+  });
+
+  it('reports coverage in Rahul\'s words only, and never echoes the posting', async () => {
+    const built = payload(await call('build_tailored_resume', {
+      // Qzzytech and the rest are the posting's, not his: they must not come back.
+      jd_text: 'Qzzytech needs Terraform, Kafka and Rust for its Blorptech platform. Python too.',
+      block_ids: ['pa.infra', 'se-skills'],
+    }));
+    expect(built.coverage.covered).toEqual(expect.arrayContaining(['Terraform', 'Kafka']));
+    expect(built.coverage.missing).toContain('Rust');   // his, attested, not on this page
+    expect(built.coverage.asked).toBe(built.coverage.covered.length + built.coverage.missing.length);
+    for (const term of [...built.coverage.covered, ...built.coverage.missing]) {
+      expect(ATTESTED.has(term), term).toBe(true);
+    }
+    const reported = JSON.stringify(built.coverage);
+    for (const word of ['Qzzytech', 'Blorptech', 'needs', 'platform']) expect(reported).not.toContain(word);
+    // No posting, nothing to report against: the key still exists.
+    expect(payload(await call('build_tailored_resume', { block_ids: ['se-skills'] })).coverage).toBeNull();
+  });
+
   it('matches keywords on whole words, not substrings', async () => {
     // "storage" contains "RAG" and "trusted" contains "Rust", so a substring
     // match scored solution-architect and cyber-security on a posting that
@@ -412,6 +475,53 @@ describe('build_tailored_resume', () => {
     const result = await call('build_tailored_resume', { block_ids: lines });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toMatch(/do not make a valid/);
+  });
+
+  it('can take an alternative wording, a deep variant and a two-page budget', async () => {
+    // The posting-facing tool could reach none of these: it could not apply the
+    // rephrase its own check report offers, could not ask a bullet for its long
+    // form, and hardcoded pages to 1.
+    const chosen = payload(await call('build_tailored_resume', {
+      block_ids: ['waaah.main', 'se-skills'],
+      phrasings: { 'waaah.main': 'landmarks-first' },
+    }));
+    expect(chosen.markdown).toContain('Turned MediaPipe 3D hand landmarks');
+    expect(chosen.markdown).not.toContain('Built a gesture-to-comic pipeline');
+    // The wording is one of Rahul's, and it travels in the spec as an id.
+    expect(decodeSpec(new URL(chosen.pdf_url).searchParams.get('spec') as string))
+      .toMatchObject({ phrasings: { 'waaah.main': 'landmarks-first' } });
+
+    const standard = payload(await call('build_tailored_resume', { block_ids: ['waaah.main', 'se-skills'] }));
+    expect(standard.pages).toBe(1);                       // the old default, unchanged
+    const deep = payload(await call('build_tailored_resume', {
+      block_ids: ['waaah.main', 'se-skills'], detail: 'deep', pages: 2,
+    }));
+    expect(deep.markdown).toContain('exercising several generative models');
+    expect(deep.fit.maxPages).toBe(2);
+
+    // The jd_text path reaches them too, rather than accepting and ignoring them.
+    const posting = payload(await call('build_tailored_resume', {
+      jd_text: 'Camera ISP tuning, super-resolution and image restoration with PyTorch.', detail: 'deep', pages: 2,
+    }));
+    expect(posting.fit.maxPages).toBe(2);
+    expect(posting.markdown.length).toBeGreaterThan(
+      payload(await call('build_tailored_resume', { jd_text: 'Camera ISP tuning, super-resolution and image restoration with PyTorch.' })).markdown.length,
+    );
+  });
+
+  it('refuses a phrasing that is not attested for the bullet it names', async () => {
+    // Loud, and specific about which half is wrong: an unknown wording, a wording
+    // for a bullet this résumé does not carry, and a ref that is not a block.
+    const cases: Array<[Record<string, unknown>, RegExp]> = [
+      [{ block_ids: ['waaah.main'], phrasings: { 'waaah.main': 'better-sounding' } }, /unknown phrasing "better-sounding".*landmarks-first/],
+      [{ block_ids: ['waaah.main'], phrasings: { 'arcane.main': 'tooling-first' } }, /does not select/],
+      [{ block_ids: ['waaah.main'], phrasings: { 'nope.nope': 'tooling-first' } }, /unknown block id/],
+    ];
+    for (const [args, message] of cases) {
+      const result = await call('build_tailored_resume', args);
+      expect(result.isError, JSON.stringify(args)).toBe(true);
+      expect(result.content[0].text).toMatch(message);
+    }
   });
 
   it('carries the check report the way build_resume does', async () => {

@@ -124,7 +124,13 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `server/resumeContent.mjs`; a new résumé config needs an import added there.
   MCP tools `get_resume_guide`, `list_resume_blocks` and `build_resume` expose
   it; agents may only select ids, never supply bullet text
-  (`server/resumeGuide.mjs` is the single source of those instructions). The
+  (`server/resumeGuide.mjs` is the single source of those instructions). Section
+  `title` and `subject` are **closed enums** in `specSchema`, not free strings —
+  a heading prints full width on the page and `subject` is the PDF/DOCX document
+  title, `build_resume` is open and `api/resume.mjs` is unauthenticated, so both
+  were a text channel onto a document served under Rahul's name. The enums are
+  exactly what the eight canonical résumés use (`general` alone may say "PROJECTS
+  AND COMPETITIONS"), so a spec from `get_resume` still round-trips. The
   same surface is the `resume-builder` window
   (`components/workbench/ResumeBuilder.tsx`), which loads blocks after mount and
   previews the real PDF in an iframe. Bullets carry optional `deep`/`short`
@@ -225,7 +231,24 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   Two hard invariants — this server
   **never dereferences `jd_url`**, and job-description text never reaches a
   spec, a document or storage; only its 16-hex digest and a match against
-  `snapshot.resumes[].keywords` travel back. A new MCP tool touches three
+  Rahul's own attested vocabulary travel back. That vocabulary is
+  `snapshot.resumes[].keywords` plus `skillTerms` (exported from
+  `portfolioMcp.mjs`, derived from `skills.json`): the keyword rows alone are 41
+  entries across the six candidate résumés, which labelled a card rather than
+  matching a posting. `matchSlug` scores each résumé on the terms its own
+  rendered document carries, and `build_tailored_resume` returns a `coverage`
+  report — `covered`/`missing` — drawn from that same closed alphabet, so a term
+  the posting used and Rahul has never claimed cannot come back out. Two
+  non-obvious guards hold that honest, and both cost a real bug to find: the four
+  RL algorithm names are excluded (`UNBACKED` in `jobSearch.mjs`) because
+  `docs/resume-detail-gaps.md` §1 backs them with a certification alone and no
+  bullet anywhere mentions RL — left in, an RL posting came back "covered: DDPG,
+  A2C · missing: none"; and the two halves are deduped **case-insensitively**,
+  because a card saying "Full-Stack" beside a skills line saying "full-stack"
+  scored one posting word twice and tipped close races. `skillTerms` treats
+  parentheses as separators, not wrappers — splitting on `[,;]` first tore every
+  comma-bearing parenthetical into fragments like `DQN)` and `deep RL (PPO` that
+  could never match. A new MCP tool touches three
   places: the tool, `TOOLS` in `tests/portfolio-mcp.test.ts`, and
   `public/llms.txt` — two tests pin that.
 - **Never provision a scratch Upstash database for this repo.** The vendored

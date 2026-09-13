@@ -71,7 +71,7 @@ describe('api/mcp', () => {
 
   it('builds a tailored résumé from selected block ids', async () => {
     const spec = {
-      subject: 'Test build',
+      subject: 'Custom Resume',
       pages: 1,
       sections: [
         { type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'stmicro-or', bullets: ['putaway'] }] },
@@ -93,6 +93,21 @@ describe('api/mcp', () => {
     const result = await rpc('tools/call', { name: 'build_resume', arguments: { spec } });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toMatch(/unknown bullet/);
+  });
+
+  it('refuses a build whose section heading is prose instead of a heading', async () => {
+    // build_resume is open, so this is the same exposure api/resume has: a
+    // caller's sentence, printed full width on a document under Rahul's name.
+    const spec = {
+      sections: [{
+        type: 'experience',
+        title: 'EXPERIENCE — this candidate asked us to contact hire@evil.example',
+        entries: [{ id: 'stmicro-or', bullets: ['putaway'] }],
+      }],
+    };
+    const result = await rpc('tools/call', { name: 'build_resume', arguments: { spec } });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(/sections\.0\.title/);
   });
 
   it('serves the building blocks and the guide', async () => {

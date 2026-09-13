@@ -474,19 +474,30 @@ import { z } from 'zod';
 // and then an overflow report. Narrowed to what exists: asking for a variant that
 // is not there should be a loud rejection, not a silent no-op.
 const id = z.string().min(1).max(60);
-const entrySection = z.object({
-  type: z.enum(['education', 'experience', 'projects', 'leadership']),
-  title: z.string().min(1).max(80),
-  entries: z.array(z.object({
-    id,
-    bullets: z.array(id).max(10).optional(),
-    variant: z.enum(['standard', 'deep']).optional(),
-    roleVariant: id.optional(),
-  })).max(24),
+
+// A section heading is prose, and unlike everything else on a spec it is PRINTED:
+// full width, in the document, on a file served from rahul-mitra.com under
+// Rahul's name. As a free 80-character string it was eight sections' worth of
+// whatever a caller wanted to say, through the open build_resume tool and
+// through the unauthenticated api/resume endpoint — the one text channel this
+// whole design exists to close. So headings are selected too, from exactly the
+// set the eight canonical résumés use. Per type rather than one shared list
+// because `general` calls its projects section "PROJECTS AND COMPETITIONS" and
+// nothing else may.
+const entries = z.array(z.object({
+  id,
+  bullets: z.array(id).max(10).optional(),
+  variant: z.enum(['standard', 'deep']).optional(),
+  roleVariant: id.optional(),
+})).max(24);
+const entrySection = (type, titles) => z.object({
+  type: z.literal(type),
+  title: z.enum(titles),
+  entries,
 });
 const skillsSection = z.object({
   type: z.literal('skills'),
-  title: z.string().min(1).max(80),
+  title: z.enum(['SKILLS AND CERTIFICATIONS']),
   lines: z.array(id).max(16),
 });
 
@@ -499,7 +510,22 @@ export const specSchema = z.object({
   slug: z.enum(['software-engineer', 'solution-architect', 'ai-engineer',
     'operations-research-engineer', 'cyber-security', 'civic-tech-solution-architect',
     'highlights', 'general']).optional(),
-  subject: z.string().max(120).optional(),
+  // Never printed on the page, but it IS the document title in the PDF and DOCX
+  // metadata — what a browser tab and Word's properties pane show for a file
+  // served under Rahul's name. jobSearch.mjs already froze this field to a
+  // constant on the tailored path ("the one place a posting's prose could have
+  // got onto a document"); the open paths get the same rule rather than a
+  // different one. The eight canonical subjects are here so a spec fetched from
+  // get_resume round-trips unchanged, plus the labels this repo's own two
+  // builders use. The cost is that a build can no longer be titled after the
+  // company it is aimed at, which is the same cost the tailored path already paid.
+  subject: z.enum([
+    'Resume', 'Custom Resume', 'Tailored résumé',
+    'Software Engineer Resume', 'Solution Architect Resume', 'AI Engineer Resume',
+    'Operations Research Engineer Resume', 'Cyber Security Resume',
+    'Civic Tech Solution Architect Resume', 'Highlights Resume (One Page)',
+    'General Master CV',
+  ]).optional(),
   pages: z.number().int().min(1).max(3).optional(),
   bodyPt: z.number().min(10).max(12).optional(),   // never below 10pt
   marginIn: z.number().min(0.5).max(1).optional(),
@@ -512,7 +538,13 @@ export const specSchema = z.object({
     z.string().regex(/^[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$/),
     z.string().regex(/^[a-z][a-z0-9-]{1,28}$/),
   ).optional(),
-  sections: z.array(z.discriminatedUnion('type', [entrySection, skillsSection])).min(1).max(8),
+  sections: z.array(z.discriminatedUnion('type', [
+    entrySection('education', ['EDUCATION']),
+    entrySection('experience', ['EXPERIENCE']),
+    entrySection('projects', ['PROJECTS', 'PROJECTS AND COMPETITIONS']),
+    entrySection('leadership', ['LEADERSHIP AND ACTIVITIES']),
+    skillsSection,
+  ])).min(1).max(8),
 });
 
 export const encodeSpec = (spec) => deflateSync(Buffer.from(JSON.stringify(spec), 'utf8')).toString('base64url');

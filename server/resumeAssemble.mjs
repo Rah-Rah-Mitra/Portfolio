@@ -17,7 +17,10 @@ export const resolveRole = (entry, selection) => {
   const role = entry.role;
   if (role == null || typeof role === 'string') return role ?? null;
   const key = selection?.roleVariant ?? 'default';
-  if (!role[key]) throw new Error(`unknown role option "${key}" on ${entry.id}; choose one of ${Object.keys(role).join(', ')}`);
+  // Object.hasOwn, not a plain read: `roleVariant: "toString"` is a legal id
+  // string, and inheriting Object.prototype printed "function toString() {
+  // [native code] }" as the job title on a 200 PDF.
+  if (!Object.hasOwn(role, key)) throw new Error(`unknown role option "${key}" on ${entry.id}; choose one of ${Object.keys(role).join(', ')}`);
   return role[key];
 };
 
@@ -41,7 +44,10 @@ export const resolveRole = (entry, selection) => {
 export const resolveBulletText = (bullet, spec, entryVariant, ref) => {
   const phrasingId = spec.phrasings?.[ref];
   if (phrasingId) {
-    const chosen = bullet.phrasings?.[phrasingId];
+    // Own-property again: "constructor" matches the phrasing-id pattern, and an
+    // inherited hit made `chosen.text` undefined, rendering the literal word
+    // "undefined" as a bullet instead of throwing.
+    const chosen = Object.hasOwn(bullet.phrasings ?? {}, phrasingId) ? bullet.phrasings[phrasingId] : null;
     if (!chosen) {
       const available = Object.keys(bullet.phrasings ?? {});
       throw new Error(`unknown phrasing "${phrasingId}" on ${ref}; ${available.length

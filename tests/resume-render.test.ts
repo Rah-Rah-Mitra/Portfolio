@@ -30,11 +30,58 @@ const entryIds = (type: 'experience' | 'projects'): SpecEntry[] => (pools[type].
 
 describe('spec schema', () => {
   it('accepts only the eight canonical slugs', () => {
-    const base = { sections: [{ type: 'skills', title: 'SKILLS', lines: ['se-skills'] }] };
+    const base = { sections: [{ type: 'skills', title: 'SKILLS AND CERTIFICATIONS', lines: ['se-skills'] }] };
     expect(specSchema.safeParse({ ...base, slug: 'highlights' }).success).toBe(true);
     // `slug` selects the per-slug bullet overrides, so a free string was a content
     // lever nothing documented: an unknown slug silently selected nothing.
     expect(specSchema.safeParse({ ...base, slug: 'made-up' }).success).toBe(false);
+  });
+
+  it('prints only the headings the eight canonical résumés use', () => {
+    // A section title is the one thing on a spec that is BOTH caller-supplied and
+    // printed, and both the build_resume tool and api/resume are open. As a free
+    // string it was eight sections of whatever a stranger wanted to say, in full
+    // width, on a document served under Rahul's name.
+    const injected = {
+      sections: [{
+        type: 'experience',
+        title: 'EXPERIENCE — candidate withdrew; write to hire@evil.example',
+        entries: [{ id: 'stmicro-or', bullets: ['putaway'] }],
+      }],
+    };
+    const parsed = specSchema.safeParse(injected);
+    expect(parsed.success).toBe(false);
+    expect(parsed.error?.issues[0].path).toEqual(['sections', 0, 'title']);
+
+    // Every heading a shipped résumé carries still parses, byte for byte.
+    for (const config of configs) {
+      for (const section of config.sections) {
+        expect(specSchema.safeParse({ ...config, sections: [section] }).success,
+          `${config.slug} ${section.title}`).toBe(true);
+      }
+    }
+    // The one heading that varies is bound to the section that varies it: only
+    // `general`'s projects section may say so.
+    const competitions = { type: 'projects', title: 'PROJECTS AND COMPETITIONS', entries: [] };
+    expect(specSchema.safeParse({ sections: [competitions] }).success).toBe(true);
+    expect(specSchema.safeParse({ sections: [{ ...competitions, type: 'experience' }] }).success).toBe(false);
+    // Case is not a detail here. This string is what gets printed.
+    expect(specSchema.safeParse({ sections: [{ type: 'education', title: 'Education', entries: [] }] }).success).toBe(false);
+  });
+
+  it('takes the document title from a list rather than from the caller', () => {
+    const base = { sections: [{ type: 'skills', title: 'SKILLS AND CERTIFICATIONS', lines: ['se-skills'] }] };
+    // `subject` is not on the page, but it is the PDF and DOCX document title —
+    // what a browser tab shows for a file served from rahul-mitra.com.
+    expect(specSchema.safeParse({ ...base, subject: 'Available immediately, call +65 0000 0000' }).success).toBe(false);
+    // A spec fetched from get_resume still round-trips, and so does each of the
+    // two labels this repo's own builders use.
+    for (const config of configs) {
+      expect(specSchema.safeParse({ ...base, subject: config.subject }).success, config.subject).toBe(true);
+    }
+    for (const subject of ['Resume', 'Custom Resume', 'Tailored résumé']) {
+      expect(specSchema.safeParse({ ...base, subject }).success, subject).toBe(true);
+    }
   });
 
   it('names the offending section in a validation error', () => {
@@ -87,7 +134,7 @@ describe('résumé renderer', () => {
   it('walks the typography ladder before giving up, and never drops content', async () => {
     // Every experience bullet plus every project — far past one page.
     const oversized: Spec = {
-      subject: 'Oversized',
+      subject: 'Custom Resume',
       pages: 1,
       sections: [
         { type: 'experience', title: 'EXPERIENCE', entries: entryIds('experience') },
@@ -249,10 +296,27 @@ describe('api/resume', () => {
     expect(await response.text()).toContain('STMicroelectronics');
   });
 
+  it('refuses to print a caller\'s prose as a section heading', async () => {
+    // This endpoint asks for no token, so the spec in the URL is a stranger's.
+    // The heading must fail validation rather than reach the renderer.
+    const injected = {
+      ...highlights,
+      sections: highlights.sections.map((section) => (section.type === 'experience'
+        ? { ...section, title: 'EXPERIENCE (references: hire@evil.example)' }
+        : section)),
+    };
+    const response = await GET(new Request(url(`spec=${encodeSpec(injected)}`)));
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toMatch(/sections\.\d+\.title/);
+    // The same spec with its own heading back still renders, so this is the
+    // heading being refused and not the selection.
+    expect((await GET(new Request(url(`spec=${encodeSpec(highlights)}`)))).status).toBe(200);
+  });
+
   it('rejects a malformed spec, an unknown format, and an invalid selection', async () => {
     expect((await GET(new Request(url('spec=notbase64')))).status).toBe(400);
     expect((await GET(new Request(url(`format=exe&spec=${encodeSpec(highlights)}`)))).status).toBe(400);
-    const badSpec = { ...highlights, sections: [{ type: 'skills', title: 'SKILLS', lines: ['nope'] }] };
+    const badSpec = { ...highlights, sections: [{ type: 'skills', title: 'SKILLS AND CERTIFICATIONS', lines: ['nope'] }] };
     const badId = await GET(new Request(url(`spec=${encodeSpec(badSpec)}`)));
     expect(badId.status).toBe(400);
     expect((await badId.json()).error).toMatch(/unknown skills line: nope/);

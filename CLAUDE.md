@@ -277,12 +277,17 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
 ## Gotchas
 
 - vitest picks up ANY `tests/**/*.test.ts` on disk, tracked or not.
-- `tests/project-showcase.dom.test.tsx` used to flake under full-suite load
-  (waitFor timeout) while passing in isolation. Fixed by raising that file's
-  async budget (`configure({ asyncUtilTimeout })`), not by weakening an
-  assertion — the carousel reveals cards via IntersectionObserver + rAF, so the
-  default 1s was a race. If you add DOM test files, re-run the full suite a few
-  times: load is what tips this class of test over.
+- **jsdom suites are load-sensitive, not slow.** They mount components that
+  reveal content through IntersectionObserver, rAF and layout effects, so
+  testing-library's 1s default async budget is a race rather than a deadline.
+  Four files lost it intermittently as the suite grew (project-showcase first,
+  then workstation-integration, optical-bench, workbench-deeplink) — always
+  passing in isolation. The budget is now raised once for the whole `dom`
+  project in `vitest.config.ts` via `tests/setup.dom.ts`; do not re-add
+  per-file `configure()` calls, which is whack-a-mole that only lands after
+  each new flake has already cost someone a red run. Nothing is weakened — a
+  genuinely broken assertion still fails. Adding DOM test files raises load for
+  every other file, so re-run the full suite a few times after you do.
 - `tests/e2e/quality.spec.ts` pins the workbench boot state (Home + Selected
   Work open), the 7/28 no-JS evidence counts, and zero serious axe violations
   on both surfaces.

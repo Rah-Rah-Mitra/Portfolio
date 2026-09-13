@@ -1,15 +1,7 @@
-import { cleanup, configure, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import ProjectShowcase from '../components/ProjectShowcase';
 import type { ProjectHighlight } from '../types';
-
-// The carousel reveals its cards through IntersectionObserver and a rAF pass,
-// so the default 1s waitFor budget is a race, not a deadline. It lost that race
-// under full-suite load often enough to be documented as a known flake in
-// CLAUDE.md while passing in isolation. Raise the budget rather than weaken any
-// assertion: a suite that is red by default reports nothing.
-vi.setConfig({ testTimeout: 20000 });
-configure({ asyncUtilTimeout: 5000 });
 
 const domainLabels: Record<ProjectHighlight['accent'], string> = {
   cyan: 'Software & systems',

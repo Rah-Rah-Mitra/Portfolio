@@ -508,8 +508,12 @@ const report = (rows, all, typography, maxFindings) => {
       topOpener: top ? { openers: [...top[1].openers].sort(), count: top[1].count } : null,
       leadConcentration: verbs.length && top ? round(top[1].count / verbs.length) : 0,
       metricCoverage: countable.length ? round(quantified / countable.length) : 0,
+      // `typography` stays present rather than absent, so a caller that measured
+      // at no particular typography reads an explicit null instead of a missing
+      // key. maxBulletLines falls out as null on its own when no row carries a
+      // line count -- see checkSpec, which withholds them rather than guessing.
       maxBulletLines: rows.reduce((max, row) => Math.max(max, row.lines ?? 0), 0) || null,
-      ...(typography ? { typography } : {}),
+      typography,
     },
     gate: counts.errors === 0 ? 'pass' : 'fail',
     counts,

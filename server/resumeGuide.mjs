@@ -22,9 +22,11 @@ keyword is recoverable; an inaccurate one is not.
 ## How to tailor
 
 1. \`get_resume_guide\` (this), then \`list_resume_blocks\` for the menu. Each
-   bullet there carries its opening verb, its rendered line cost and whether it
-   holds a measurement, so you can spread the verbs and the evidence as you pick
-   rather than being told afterwards that you did not.
+   bullet there carries its opening verb, its rendered line cost, whether it
+   holds a measurement, the technologies it actually names (\`terms\`) and which
+   ready-made résumés select it (\`usedBy\`, empty where none do), so you can
+   aim the selection and spread the verbs and the evidence as you pick rather
+   than being told afterwards that you did not.
 
    **The menu is larger than any ready-made résumé.** Some of the strongest
    material sits on only one of them, or on none: the People's Association AWS

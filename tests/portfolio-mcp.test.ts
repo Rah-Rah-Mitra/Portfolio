@@ -127,6 +127,40 @@ describe('api/mcp', () => {
     expect(guide.content[0].text).toContain('Never write your own bullet text');
   });
 
+  it('says which technologies a block names and which résumés select it', async () => {
+    type MenuBullet = {
+      id: string; terms: string[]; usedBy: string[];
+      phrasings?: Record<string, { lead: string; terms: string[] }>;
+    };
+    type Menu = {
+      sections: Array<{ type: string; entries: Array<{ id: string; bullets: MenuBullet[] }> }>;
+      skillLines: Array<{ id: string; usedBy: string[] }>;
+    };
+    const { content } = await rpc('tools/call', { name: 'list_resume_blocks', arguments: {} });
+    const menu = JSON.parse(content[0].text) as Menu;
+    const bullets = menu.sections.flatMap((section) => section.entries
+      .flatMap((entry) => entry.bullets.map((bullet) => ({ ref: `${entry.id}.${bullet.id}`, ...bullet }))));
+    const byRef = new Map(bullets.map((bullet) => [bullet.ref, bullet]));
+
+    // Choosing by keyword and being judged by keyword (R7) use one computation,
+    // so a bullet's `terms` are the same terms the checker scores it on.
+    expect(byRef.get('amazon-vision.isp')?.terms).toEqual(expect.arrayContaining(['super-resolution']));
+    expect(byRef.get('nus.majors')?.terms).toEqual([]);   // names no technology, and says so
+    for (const bullet of bullets) expect(Array.isArray(bullet.terms), bullet.ref).toBe(true);
+    // An alternative wording is a different sentence, so it names its own.
+    expect(byRef.get('waaah.main')?.phrasings?.['landmarks-first'].terms).toContain('konva.js');
+
+    // Which canonical résumés select the block. Empty is a fact about the block,
+    // not a missing field: these four sit on no canonical résumé at all. Update
+    // this list when a config starts or stops selecting one.
+    expect(byRef.get('nus.majors')?.usedBy).toHaveLength(resumeConfigs.length);
+    expect(bullets.filter((bullet) => bullet.usedBy.length === 0).map((bullet) => bullet.ref).sort())
+      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'abbott-contract.harness', 'ywh.network']);
+    for (const line of menu.skillLines) expect(Array.isArray(line.usedBy), line.id).toBe(true);
+    expect(menu.skillLines.find((line) => line.id === 'se-skills')?.usedBy).toContain('software-engineer');
+    expect(menu.skillLines.some((line) => line.usedBy.length === 0)).toBe(true);
+  });
+
   it('checks a ready-made résumé and refuses to be handed text', async () => {
     const { content } = await rpc('tools/call', { name: 'check_resume', arguments: { slug: 'highlights' } });
     const report = JSON.parse(content[0].text);

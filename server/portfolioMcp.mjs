@@ -7,7 +7,7 @@ import { z } from 'zod';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
 import { configBySlug, pools, profile, resumeBlocks, resumeConfigs } from './resumeContent.mjs';
 import { assemble, decodeSpec, encodeSpec, measureBulletLines, renderResume, renderResumeMarkdown, specSchema } from './resumeRender.mjs';
-import { checkResume, firstWord, framesIn, leadLemma, metricsIn } from './resumeCheck.mjs';
+import { checkResume, firstWord, framesIn, leadLemma, metricsIn, termsIn } from './resumeCheck.mjs';
 import { RESUME_GUIDE } from './resumeGuide.mjs';
 
 export { resumeConfigs };
@@ -135,8 +135,14 @@ export const skillTerms = (() => {
 export const checkSpec = (spec, fit = null) => {
   const typography = { bodyPt: fit?.bodyPt ?? undefined, marginIn: fit?.marginIn ?? undefined };
   const bullets = assemble(spec, pools).filter((item) => item.kind === 'bullet');
-  const lines = measureBulletLines(bullets.map((bullet) => bullet.text), typography);
-  return checkResume(bullets.map((bullet, index) => ({ ...bullet, lines: lines[index] })), {
+  // Without a fit there is no typography to measure at, and a count taken at the
+  // 10.5pt/0.7in default is not the one a fitted one-pager ships. Withhold the
+  // measurement rather than publishing a provisional one: R5 line-budget keys on
+  // a supplied count, so it correctly stays silent, and metrics.maxBulletLines
+  // falls out null beside metrics.typography null. An agent trimming against a
+  // number measured at the wrong size ships a thinner resume than it had room for.
+  const lines = fit ? measureBulletLines(bullets.map((bullet) => bullet.text), typography) : [];
+  return checkResume(bullets.map((bullet, index) => ({ ...bullet, ...(fit ? { lines: lines[index] } : {}) })), {
     candidates: swapCandidates(spec, bullets.map((bullet) => bullet.ref)),
     rephrasings: rephrasingsFor(spec, bullets, typography),
     skillTerms,
@@ -145,20 +151,33 @@ export const checkSpec = (spec, fit = null) => {
 };
 
 /**
+ * The findings a build reports. Errors and warnings always; a note only where the
+ * caller asked for that rule by name. build_resume asks for none — a note is the
+ * softest thing the checker says and a build report is already long — but
+ * build_tailored_resume asks for R7, which is the one rule that compares the
+ * evidence on the page against evidence sitting unused on the same entries, and
+ * that is exactly the question a posting puts.
+ */
+export const reportedFindings = (full, keepNotes = []) => ({
+  ...full,
+  findings: full.findings.filter((item) => item.severity !== 'note' || keepNotes.includes(item.rule)),
+});
+
+/**
  * Render a spec and return links, the fit report and the check report. The check
  * rides along unasked: the failure this exists to prevent is an agent building,
  * getting a URL and handing it over, and a check you have to remember to call is
- * one a hurried agent skips. Only errors and warnings travel here; check_resume
- * returns the notes too.
+ * one a hurried agent skips. Only errors and warnings travel here unless the
+ * caller names a note rule; check_resume returns the notes too.
  */
-export const buildResume = async (spec) => {
+export const buildResume = async (spec, { keepNotes = [] } = {}) => {
   const result = await renderResume(spec, pools, profile);
   const encoded = encodeSpec(spec);
   const full = checkSpec(spec, result.fit);
   return {
     pages: result.pages,
     fit: result.fit,
-    check: { ...full, findings: full.findings.filter((item) => item.severity !== 'note') },
+    check: reportedFindings(full, keepNotes),
     pdfUrl: abs(`/api/resume?spec=${encoded}`),
     docxUrl: abs(`/api/resume?format=docx&spec=${encoded}`),
     markdown: result.markdown,
@@ -173,28 +192,71 @@ export const portfolioExport = () => ({
   resumes: listResumes().map((resume) => ({ ...resume, markdown: resumeMarkdown(configBySlug(resume.slug)) })),
 });
 
+/** What a block id renders as by default — the sentence the menu is measured on. */
+const defaultText = (bullet) => bullet.variants.default ?? Object.values(bullet.variants)[0] ?? '';
+
 /**
- * resumeBlocks() plus the three derived fields that let an agent choose well
- * instead of being told afterwards that it chose badly: the opening verb, the
- * rendered line cost, and whether the bullet carries a measurement. A repetition
+ * Which of the eight canonical résumés select each bullet and each skills line.
+ *
+ * A pure function of the configs already imported, and the cheapest role signal
+ * on the menu: a bullet four of the six role résumés carry says little about a
+ * posting, and one only the cyber-security résumé carries says a great deal.
+ *
+ * An empty list is a fact, not a gap. Four selectable bullets sit on no canonical
+ * résumé at all, which is why every bullet carries the key even when it is empty:
+ * absent-vs-empty is the difference between "nothing selects this" and "the menu
+ * forgot to say", and only one of those is true.
+ */
+// Which canonical résumés select each block, resolved through assemble() rather
+// than by walking the spec shape again here. resumeAssemble.mjs says the
+// assembly rules "live here and only here", and the shape has already grown
+// selectors twice (variant, roleVariant): a private copy of the walk would keep
+// rendering correctly while quietly reporting the wrong résumés.
+const selectedBy = () => {
+  const used = new Map();
+  for (const config of resumeConfigs) {
+    for (const item of assemble(config, pools)) {
+      const id = item.kind === 'bullet' ? item.ref : item.kind === 'skill' ? item.lineId : null;
+      if (id) used.set(id, [...(used.get(id) ?? []), config.slug]);
+    }
+  }
+  return used;
+};
+
+/**
+ * resumeBlocks() plus the derived fields that let an agent choose well instead of
+ * being told afterwards that it chose badly: the opening verb, the rendered line
+ * cost, whether the bullet carries a measurement, which of Rahul's attested
+ * technologies it names, and which canonical résumés select it. A repetition
  * finding is a complaint about a decision the menu gave no way to make, so the
  * menu now carries the facts the rules are about.
+ *
+ * `terms` is the same computation R7 scores a bullet on — termsIn() against the
+ * skills-line vocabulary — so choosing by keyword and being judged by keyword use
+ * one measure rather than two. Lowercased, as the checker reports them.
  *
  * Derived here rather than in resumeContent.mjs because line measurement needs
  * pdfkit, and the builder window imports that module in the browser.
  */
 export const decoratedBlocks = () => {
   const blocks = resumeBlocks();
-  const bullets = blocks.sections.flatMap((section) => section.entries.flatMap((entry) => entry.bullets));
-  const texts = bullets.map((bullet) => bullet.variants.default ?? Object.values(bullet.variants)[0] ?? '');
+  const used = selectedBy();
+  // One traversal carrying the ref with the bullet: a second parallel walk for
+  // the ids would be a second thing to keep in the same order.
+  const items = blocks.sections.flatMap((section) => section.entries
+    .flatMap((entry) => entry.bullets.map((bullet) => ({ bullet, ref: `${entry.id}.${bullet.id}` }))));
+  const texts = items.map(({ bullet }) => defaultText(bullet));
   const lines = measureBulletLines(texts);
-  bullets.forEach((bullet, index) => {
+  items.forEach(({ bullet, ref }, index) => {
     bullet.lead = firstWord(texts[index]).replace(/[^A-Za-z-]+$/, '');
     bullet.lines = lines[index];
     bullet.hasMetric = metricsIn(texts[index]).metrics.length > 0;
+    bullet.terms = termsIn(texts[index], skillTerms);
+    bullet.usedBy = used.get(ref) ?? [];
   });
-  // Alternative wordings, with the same three derived fields, so an agent can see
-  // that a bullet opening "Built" also has one opening "Turned" before it picks.
+  for (const line of blocks.skillLines) line.usedBy = used.get(line.id) ?? [];
+  // Alternative wordings, with the same derived fields, so an agent can see that
+  // a bullet opening "Built" also has one opening "Turned" before it picks.
   const pool = new Map();
   for (const type of ['education', 'experience', 'projects', 'leadership']) {
     for (const entry of pools[type].entries) {
@@ -214,11 +276,48 @@ export const decoratedBlocks = () => {
           lead: firstWord(item.text).replace(/[^A-Za-z-]+$/, ''),
           lines: measured[index],
           hasMetric: metricsIn(item.text).metrics.length > 0,
+          // An alternative wording carries its own sentence, so it names its own
+          // technologies: a wording can be the one that says "Terraform" out loud
+          // where the default says "infrastructure as code".
+          terms: termsIn(item.text, skillTerms),
         }]));
       }
     }
   }
   return blocks;
+};
+
+/**
+ * The inverse of a block's `terms`: which selectable ids carry each term.
+ *
+ * A coverage report that names a term Rahul has and this document lacks is only
+ * half an answer, because the one move an agent may make is selecting an id. This
+ * is the other half. Built from resumeBlocks(), so a `blocked` entry is never
+ * named — the withholding has to survive being asked the question backwards.
+ *
+ * Vocabulary is passed in for the same reason the checker's is: the caller knows
+ * which alphabet it is reporting against. Bullets are indexed on the sentence
+ * selecting the id actually renders, not on every variant, so a named block is
+ * one that carries the term when you select it.
+ *
+ * Memoised on the array identity: the two call sites each pass a module constant.
+ */
+const termIndexes = new Map();
+export const blocksByTerm = (terms = skillTerms) => {
+  if (!termIndexes.has(terms)) {
+    const index = new Map();
+    const blocks = resumeBlocks();
+    const sources = [
+      ...blocks.sections.flatMap((section) => section.entries
+        .flatMap((entry) => entry.bullets.map((bullet) => [`${entry.id}.${bullet.id}`, defaultText(bullet)]))),
+      ...blocks.skillLines.map((line) => [line.id, `${line.label} ${line.items}`]),
+    ];
+    for (const [id, text] of sources) {
+      for (const term of termsIn(text, terms)) index.set(term, [...(index.get(term) ?? []), id]);
+    }
+    termIndexes.set(terms, index);
+  }
+  return termIndexes.get(terms);
 };
 
 // Compact, not pretty-printed. Every one of these payloads is read by a model
@@ -280,7 +379,7 @@ export const registerPortfolioTools = (server) => {
 
   server.registerTool('list_resume_blocks', {
     title: 'Résumé building blocks',
-    description: 'Every entry, bullet (with its depth variants) and skills line you may select, plus the ready-made résumés you can start from. These ids are the only content build_resume accepts. Each bullet also carries its opening verb, its rendered line cost and whether it holds a measurement, so you can spread the verbs and the evidence deliberately rather than being told afterwards. Optionally filter to one section type to keep the response small.',
+    description: 'Every entry, bullet (with its depth variants) and skills line you may select, plus the ready-made résumés you can start from. These ids are the only content build_resume accepts. Each bullet also carries its opening verb, its rendered line cost, whether it holds a measurement, `terms` (the technologies from Rahul\'s own skills lines that this wording actually names, lowercased) and `usedBy` (the canonical résumés that select it — an empty list means no canonical résumé does, which is a fact about the block, not a missing field). Alternative wordings carry their own verb, line cost, measurement flag and terms. Select by `terms` to answer a posting in Rahul\'s words, and read `usedBy` to tell a broadly useful bullet from one only a single role résumé wants. Optionally filter to one section type to keep the response small.',
     inputSchema: z.object({ section: z.enum(['education', 'experience', 'projects', 'leadership', 'skills']).optional() }),
   }, async ({ section }) => {
     const blocks = decoratedBlocks();

@@ -11,6 +11,9 @@ import { skillTerms } from '../server/portfolioMcp.mjs';
 import { decodeSpec } from '../server/resumeRender.mjs';
 import { configBySlug, pools, resumeBlocks, resumeConfigs } from '../server/resumeContent.mjs';
 import { RESUME_GUIDE } from '../server/resumeGuide.mjs';
+import { SITE_CONFIG } from '../siteConfig';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const TOKEN = 'a'.repeat(32);
 const UPSTASH = 'https://fake-db.upstash.io';
@@ -27,7 +30,7 @@ type ToolResult = { content: Array<{ text: string }>; isError?: boolean };
 // The résumé content JSONs import with very precise literal types (one union
 // member per config). These tests walk them structurally, so one loose shape is
 // cheaper than fighting the union at every access.
-type SpecSection = { type: string; entries?: Array<{ id: string }>; lines?: string[] };
+type SpecSection = { type: string; entries?: Array<{ id: string; bullets?: string[] }>; lines?: string[] };
 type PoolEntry = { id: string; organization: string };
 
 /**
@@ -183,6 +186,13 @@ describe('preferences', () => {
     expect(prefs.source).toBe('default');
     expect(prefs.availability_windows[0]).toMatchObject({ start: '2026-11-30', end: '2027-01-22' });
     expect(prefs.graduation_date).toBe('2027-07-31');
+    // The date now lives in three places — this literal, siteConfig (which the
+    // site prints) and education.json. Nothing else asserts they agree, so a slip
+    // would let the site say one month while every career-ops sync read another.
+    const [month, year] = SITE_CONFIG.graduation.split(' ');
+    const iso = String(MONTHS.indexOf(month) + 1).padStart(2, '0');
+    expect(MONTHS).toContain(month);
+    expect(prefs.graduation_date.startsWith(`${year}-${iso}`), SITE_CONFIG.graduation).toBe(true);
   });
 
   it('merges a partial write and keeps the window', async () => {
@@ -524,10 +534,171 @@ describe('build_tailored_resume', () => {
     }
   });
 
-  it('carries the check report the way build_resume does', async () => {
+  it('carries the check report the way build_resume does, plus the evidence note', async () => {
     const built = payload(await call('build_tailored_resume', { block_ids: ['stmicro-or.putaway', 'se-skills'] }));
     expect(built.check.version).toBe(1);
-    expect(built.check.findings.every((item: { severity: string }) => item.severity !== 'note')).toBe(true);
+    // build_resume reports no notes at all. The posting-facing tool asks for one
+    // rule by name — R7, the bullet sitting unused on an entry already on the
+    // page that names more of his technologies than the one selected — and for
+    // nothing else, so the report stays a report rather than a dump.
+    expect(built.check.findings.every((item: { severity: string; rule: string }) => item.severity !== 'note' || item.rule === 'R7')).toBe(true);
+  });
+
+  it('reaches the unused-evidence note, which is the question a posting asks', async () => {
+    // R7 is a note, and notes were filtered out one layer down in buildResume, so
+    // the one tool that faces a posting never saw the one rule that compares the
+    // evidence on the page with evidence sitting unused on the same entries.
+    const built = payload(await call('build_tailored_resume', {
+      jd_text: 'Camera ISP tuning, super-resolution and image restoration research with PyTorch and CUDA.',
+    }));
+    const r7 = built.check.findings.find((item: { rule: string }) => item.rule === 'R7');
+    expect(r7?.category).toBe('unused-evidence');
+    expect(r7.occurrences.length).toBeGreaterThan(0);
+    for (const hit of r7.occurrences) expect(hit.instead).toMatch(/\./);   // a block id to swap to
+  });
+
+  it('explains why a résumé won, and breaks a tie on a rule instead of array order', async () => {
+    // Measured: this posting ties solution-architect and civic-tech-solution-architect
+    // at 6-6, and the GENERALIST used to win it — not on merit, but because
+    // Array.sort is stable and it sits earlier in portfolio-snapshot.json.
+    const civic = payload(await call('build_tailored_resume', {
+      jd_text: 'Govtech Delivery Lead. Singpass Login and Myinfo, GIS mapping, accessibility, rapid prototyping, citizen services, public sector stakeholders.',
+      dry_run: true,
+    }));
+    expect(civic.matched.slug).toBe('civic-tech-solution-architect');
+    expect(civic.matched.margin).toBe(0);                   // a real tie, said out loud
+    expect(civic.matched.decided_by).toBe('specificity');   // and the rule that settled it
+    expect(civic.matched.ranking).toHaveLength(6);
+    expect(civic.matched.ranking[0].slug).toBe(civic.matched.slug);
+    expect(civic.matched.ranking[1].slug).toBe('solution-architect');
+    expect(civic.matched.ranking[1].score).toBe(civic.matched.score);
+    expect(civic.matched.ranking[0].specificity).toBeGreaterThan(civic.matched.ranking[1].specificity);
+
+    // The same accident decided this one, and it only ever came out right by luck
+    // of the ordering: 5-5, settled by the curated keyword row.
+    const fullstack = payload(await call('build_tailored_resume', {
+      jd_text: 'Full-stack engineer: TypeScript, React, Next.js, FastAPI, Docker.', dry_run: true,
+    }));
+    expect(fullstack.matched.slug).toBe('software-engineer');
+    expect(fullstack.matched.margin).toBe(0);
+    expect(fullstack.matched.decided_by).toBe('keyword-row');
+
+    // An outright win says so, and the fallback is not dressed up as a decision.
+    const outright = payload(await call('build_tailored_resume', {
+      jd_text: 'Python engineer for CP-SAT models, SciPy, SimPy discrete-event work and robust optimization.', dry_run: true,
+    }));
+    expect(outright.matched.decided_by).toBe('score');
+    expect(outright.matched.margin).toBeGreaterThan(0);
+    const nothing = payload(await call('build_tailored_resume', { jd_text: 'qqqq zzzz wwww', dry_run: true }));
+    expect(nothing.matched.decided_by).toBe('no-match');
+  });
+
+  it('says where a covered term sits, and which blocks would supply a missing one', async () => {
+    const built = payload(await call('build_tailored_resume', {
+      jd_text: 'Qzzytech needs Terraform, Kafka and Rust for its Blorptech platform. Python too.',
+      block_ids: ['pa.infra', 'se-skills'],
+    }));
+    // A keyword in a bullet is demonstrated; the same keyword only on the skills
+    // line is listed. The report used to say "covered" to both.
+    expect(built.coverage.covered_in.Terraform).toEqual(['bullet']);
+    expect(built.coverage.covered_in.Python).toEqual(['skills']);
+    for (const term of built.coverage.covered) expect(built.coverage.covered_in[term].length, term).toBeGreaterThan(0);
+
+    // And a missing term names the ids that carry it, because selecting an id is
+    // the only move an agent has.
+    expect(built.coverage.missing).toContain('Rust');
+    expect(built.coverage.missing_blocks.Rust).toContain('cyber-skills');
+    expect(built.coverage.missing_blocks.Rust).toContain('arcane.main');
+    // Still only his words, on the new keys too.
+    const reported = JSON.stringify(built.coverage);
+    for (const word of ['Qzzytech', 'Blorptech']) expect(reported).not.toContain(word);
+  });
+
+  it('never names a withheld entry as the block that would supply a term', async () => {
+    // `blocked` withholds a card from the résumé menu; a report that answered
+    // "which block carries this" from the pools instead of the menu would hand
+    // the same entry back through the side door.
+    const everything = [...new Set([...snapshot.resumes.flatMap((resume) => resume.keywords), ...(skillTerms as string[])])];
+    const built = payload(await call('build_tailored_resume', { jd_text: everything.join(', '), dry_run: true }));
+    const named = new Set(Object.values(built.coverage.missing_blocks as Record<string, string[]>).flat());
+    expect(named.size).toBeGreaterThan(0);
+    for (const id of named) {
+      expect(Object.keys(BLOCKED_SITE_IDS), id).not.toContain(id.split('.')[0]);
+    }
+  });
+
+  it('can analyse a selection without rendering a document or minting a URL', async () => {
+    const args = { jd_text: 'Platform engineer: Terraform, Kafka, Redis and AWS Fargate.', block_ids: ['pa.infra', 'sa-skills'] };
+    const dry = payload(await call('build_tailored_resume', { ...args, dry_run: true }));
+    expect(dry.dry_run).toBe(true);
+    // No document, and the keys a document would fill are null rather than gone.
+    expect(dry.pdf_url).toBeNull();
+    expect(dry.docx_url).toBeNull();
+    expect(dry.pages).toBeNull();     // only a render measures fit
+    expect(dry.fit).toBeNull();
+    // Everything an agent iterates on is still here.
+    expect(dry.check.version).toBe(1);
+    expect(dry.matched.slug).toBeTruthy();
+    expect(dry.coverage.covered).toContain('Terraform');
+    expect(dry.blocks_used).toContain('pa.infra');
+
+    const built = payload(await call('build_tailored_resume', args));
+    expect(built.dry_run).toBe(false);
+    expect(built.pdf_url).toMatch(/^https:\/\/rahul-mitra\.com\/api\/resume\?spec=/);
+    // The analysis is the same analysis: a dry run you cannot trust is worthless.
+    expect(dry.coverage).toEqual(built.coverage);
+    expect(dry.matched).toEqual(built.matched);
+    expect(dry.blocks_used).toEqual(built.blocks_used);
+    expect(dry.markdown).toBe(built.markdown);
+    expect(dry.resume_version).toBe(built.resume_version);
+  });
+
+  it('withholds the line counts a dry run cannot measure, and keeps the ones it can', async () => {
+    // A dry run has no fit, so it has no typography to measure at. Reporting a
+    // count taken at the 10.5pt/0.7in default would have an agent trim a bullet
+    // the fitted document has room for: measured, this selection is 4 lines at
+    // the shipped 10pt/0.5in and 5 at the default.
+    const ids: string[] = [];
+    for (const section of configBySlug('cyber-security')!.sections as SpecSection[]) {
+      if (section.type === 'skills') ids.push(...(section.lines ?? []));
+      else for (const entry of section.entries ?? []) for (const bullet of entry.bullets ?? []) ids.push(`${entry.id}.${bullet}`);
+    }
+    const args = { block_ids: ids, pages: 1, detail: 'deep' };
+    const dry = payload(await call('build_tailored_resume', { ...args, dry_run: true }));
+    const built = payload(await call('build_tailored_resume', args));
+
+    const lineBudget = (report: any) => (report.findings ?? []).filter((f: any) => f.rule === 'R5');
+    expect(dry.check.metrics.typography).toBeNull();
+    expect(dry.check.metrics.maxBulletLines).toBeNull();
+    expect(lineBudget(dry.check)).toHaveLength(0);
+
+    // The real build measured, so it says so and the rule is free to fire.
+    expect(built.check.metrics.typography).toEqual({ bodyPt: 10, marginIn: 0.5 });
+    expect(built.check.metrics.maxBulletLines).toBe(4);
+
+    // Everything that does not depend on measurement survives the dry run —
+    // R7 unused-evidence above all, since that is the finding a posting wants.
+    const notes = (report: any) => (report.findings ?? []).filter((f: any) => f.rule === 'R7').length;
+    expect(notes(dry.check)).toBe(notes(built.check));
+  });
+
+  it('stamps a reproducible version on every build, in the shape the tracker takes', async () => {
+    const one = payload(await call('build_tailored_resume', { block_ids: ['pa.infra', 'se-skills'], dry_run: true }));
+    const same = payload(await call('build_tailored_resume', { block_ids: ['se-skills', 'pa.infra'], dry_run: true }));
+    const other = payload(await call('build_tailored_resume', { block_ids: ['pa.infra', 'se-skills'], pages: 2, dry_run: true }));
+    expect(one.resume_version).toMatch(/^rv_[0-9a-f]{16}$/);
+    // The selection decides it, not the order it was typed in or the code path.
+    expect(same.resume_version).toBe(one.resume_version);
+    expect(other.resume_version).not.toBe(one.resume_version);
+    // It carries the content edition, so an edition bump moves every id.
+    expect(one.resume_version).not.toBe(`rv_${'0'.repeat(16)}`);
+
+    // create_application has always had a resume_version field and nothing told
+    // an agent what to put in it. This is what goes there.
+    const tracked = payload(await call('create_application', {
+      company: 'Acme', role: 'Platform Engineer', resume_version: one.resume_version,
+    }, TOKEN));
+    expect(tracked.application.resume_version).toBe(one.resume_version);
   });
 });
 

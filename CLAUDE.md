@@ -172,9 +172,19 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   more of the attested skills-line technologies than the one chosen; the term list
   is passed in from `skills.json` so the checker still imports nothing, and both
   sides are reported because the thinner bullet often carries the measurement.
-  `list_resume_blocks` carries `lead`, `lines` and `hasMetric` per bullet, and the
-  same three on each alternative wording, so an agent can spread verbs and
-  evidence while choosing. Where an alternative would clear a finding the remedy
+  R7 is a note, so `build_resume` filters it out; `build_tailored_resume` asks for
+  that one rule by name (`keepNotes` on `buildResume`, `POSTING_NOTES` in
+  `jobSearch.mjs`), because comparing the evidence on the page with evidence
+  sitting unused on the same entries is exactly the question a posting puts.
+  `list_resume_blocks` carries `lead`, `lines`, `hasMetric`, `terms` (the same
+  `termsIn` computation R7 scores a bullet on, so choosing by keyword and being
+  judged by keyword use one measure) and `usedBy` (which canonical résumés select
+  it — **empty is a fact, not a gap**: four bullets sit on no config, and a test
+  pins that set) per bullet, plus the first four on each alternative wording and
+  `usedBy` on each skills line, so an agent can spread verbs and evidence while
+  choosing. `blocksByTerm()` is that index inverted — which selectable ids carry a
+  term — built from `resumeBlocks()`, so a `blocked` entry is never named even when
+  the question is asked backwards. Where an alternative would clear a finding the remedy
   is `kind: "rephrase"` naming it; that is what makes a repeat answerable at all,
   since most entries carry a single bullet and there is nothing to swap to.
   `scripts/resume/extract_facets.py` is an optional offline LangExtract
@@ -237,8 +247,22 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   entries across the six candidate résumés, which labelled a card rather than
   matching a posting. `matchSlug` scores each résumé on the terms its own
   rendered document carries, and `build_tailored_resume` returns a `coverage`
-  report — `covered`/`missing` — drawn from that same closed alphabet, so a term
-  the posting used and Rahul has never claimed cannot come back out. Two
+  report — `covered`/`missing`, plus `covered_in` (bullet, skills, entry: a term
+  only on the skills line is listed, not demonstrated) and `missing_blocks` (the
+  ids that would supply it, from `blocksByTerm`) — drawn from that same closed
+  alphabet, so a term the posting used and Rahul has never claimed cannot come
+  back out. Ties in `matchSlug` are broken by rule, not by array position: hits,
+  then hits on that résumé's own curated keyword row, then specificity (hits as a
+  share of its whole vocabulary), then the slug. `matched` reports `margin`,
+  `decided_by` and the full `ranking`. This is a fixed defect, not a preference —
+  `Array.sort` is stable, so a measured Govtech posting that ties
+  solution-architect and civic-tech-solution-architect at 6-6 was handed to the
+  GENERALIST purely because it sits earlier in `portfolio-snapshot.json`;
+  `tests/job-search.test.ts` pins that posting to the civic résumé. `dry_run: true`
+  returns the same analysis with no render and no URL (prefer a new optional
+  PARAMETER to a new tool — the 17-tool count is pinned in two places), and
+  `resume_version` (`rv_` + 16 hex of the canonicalised spec plus the résumé
+  edition) is the stable id `create_application`'s field always wanted. Two
   non-obvious guards hold that honest, and both cost a real bug to find: the four
   RL algorithm names are excluded (`UNBACKED` in `jobSearch.mjs`) because
   `docs/resume-detail-gaps.md` §1 backs them with a certification alone and no

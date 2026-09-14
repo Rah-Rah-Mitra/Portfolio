@@ -143,6 +143,16 @@ export const CONTACT = {
   linkedin: unifiedPortfolioData.linkedinUrl ?? 'https://www.linkedin.com/in/rahulmitra-dev',
 } as const;
 
+/**
+ * The positioning line and the bio, read from the data rather than retyped in
+ * each surface. Both used to exist twice over: the desktop hero said
+ * "ISE × CS × Mathematics", the mobile hero "ISE × CS × Math", and the MCP
+ * tagline something else entirely, so a recruiter reading two of the three saw
+ * two different people.
+ */
+export const POSITIONING = unifiedPortfolioData.tagline;
+export const BIO = unifiedPortfolioData.bio;
+
 export const generalResume = resumeProfiles.find((profile) => profile.id === 'general') ?? resumeProfiles[0];
 
 // Event the AI assistant (and any legacy in-page link) uses to open a window /

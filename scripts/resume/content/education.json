@@ -23,12 +23,8 @@
         {
           "id": "coursework",
           "text": {
-            "default": "Relevant coursework: Software Engineering, Artificial Intelligence, 3D Computer Vision, Data Structures and Algorithms, Simulation, Statistics, Operations Research.",
-            "ai-engineer": "Relevant coursework: Artificial Intelligence, 3D Computer Vision, Software Engineering, Simulation, Statistics, Operations Research, Linear Algebra, Probability.",
-            "operations-research-engineer": "Relevant coursework: Operations Research, Simulation, Statistics for Engineering Applications, Industrial Systems Engineering, Artificial Intelligence, 3D Computer Vision.",
-            "cyber-security": "Relevant coursework: Software Engineering, Artificial Intelligence, 3D Computer Vision, Computer Systems, Statistics, Mathematics, Engineering Systems.",
-            "general": "Second Major in Computer Science; Minor in Mathematics. Coursework: Software Engineering, Artificial Intelligence, 3D Computer Vision, Simulation, Statistics, Operations Research, Probability, Computer Systems.",
-            "highlights": "Relevant coursework: Software Engineering, Data Structures and Algorithms, Artificial Intelligence, 3D Computer Vision, Computer Systems, Operations Research, Statistics."
+            "default": "Relevant coursework: Software Engineering, Data Structures and Algorithms, Artificial Intelligence, 3D Computer Vision, Operations Research, Simulation, Statistics, Linear Algebra.",
+            "ai-engineer": "Relevant coursework: Artificial Intelligence, 3D Computer Vision, Software Engineering, Simulation, Statistics, Operations Research, Linear Algebra, Probability."
           }
         },
         {
@@ -45,8 +41,16 @@
       "location": "Singapore",
       "role": "Singapore-Cambridge GCE A-Level",
       "start": "2019-02",
+      "end": "2020-12",
       "dateLabel": "Feb 2019 – Dec 2020",
-      "bullets": []
+      "bullets": [
+        {
+          "id": "award",
+          "text": {
+            "default": "Awarded the ASRJC Outstanding Contribution Award for astronomy outreach and robotics leadership."
+          }
+        }
+      ]
     }
   ]
 }

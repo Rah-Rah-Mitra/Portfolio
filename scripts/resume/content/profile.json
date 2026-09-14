@@ -1,10 +1,10 @@
 {
   "name": "RAHUL MITRA",
   "contact": [
-    { "text": "Singapore" },
+    { "text": "+65 8515 5413", "url": "tel:+6585155413" },
     { "text": "mitrarahul2002@gmail.com", "url": "mailto:mitrarahul2002@gmail.com" },
     { "text": "linkedin.com/in/rahulmitra-dev", "url": "https://www.linkedin.com/in/rahulmitra-dev" },
-    { "text": "github.com/Rah-Rah-Mitra", "url": "https://github.com/Rah-Rah-Mitra" },
-    { "text": "rahul-mitra.com", "url": "https://rahul-mitra.com/" }
+    { "text": "rahul-mitra.com", "url": "https://rahul-mitra.com/" },
+    { "text": "github.com/Rah-Rah-Mitra", "url": "https://github.com/Rah-Rah-Mitra" }
   ]
 }

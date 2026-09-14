@@ -26,6 +26,10 @@ export const poolEntries = () => SECTION_TYPES.flatMap((sectionType) => pools[se
     entryId: entry.id,
     sectionType,
     dateLabel: entry.dateLabel,
+    // P5 mixed-case-title reads these. `role` may be a variant map, so every
+    // wording it can print is checked, not just the default one.
+    organization: entry.organization,
+    role: typeof entry.role === 'object' ? Object.values(entry.role).join(' ') : entry.role,
     bullets: (entry.bullets ?? []).flatMap((bullet) => Object.entries(bullet.text)
       .map(([variant, text]) => ({ ref: `${entry.id}.${bullet.id}`, variant, text }))),
   })));

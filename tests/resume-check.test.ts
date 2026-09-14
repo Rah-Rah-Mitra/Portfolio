@@ -92,11 +92,14 @@ describe('lead verb lemmas', () => {
     expect(repeat?.where.openers).toEqual(['Build', 'Built', 'Co-built']);
   });
 
-  it('skips the three deliberate label lines', () => {
+  it('skips the deliberate label lines, and only those', () => {
     expect(isLabelLine(text('nus.coursework'))).toBe(true);
-    expect(isLabelLine(text('additional.nvidia'))).toBe(true);
-    expect(isLabelLine(text('additional.llm-cyber'))).toBe(true);
+    expect(isLabelLine(text('nus.coursework-full'))).toBe(true);
     expect(isLabelLine(text('pa.churp'))).toBe(false);
+    // A real bullet whose colon happens to land inside the character window.
+    // The word count is what keeps it out; without it this dropped silently
+    // from the quantified denominator and the lead-verb tally.
+    expect(isLabelLine(text('amazon-vision.isp'))).toBe(false);
   });
 });
 
@@ -104,9 +107,13 @@ describe('metric classifier', () => {
   // Table-driven over every digit-bearing bullet in the real corpus. A naive
   // digit match calls 16 of them quantified; only these carry a measurement.
   const METRIC = ['nus.award', 'abbott-contract.harness', 'abbott-intern.pipeline',
-    'pa.sparks', 'ywh.programs', 'brinhack.main', 'maritime.main', 'waaah.main'];
-  const NOT_METRIC = ['nus.coursework', 'pa.infra', 'ywh.network', 'portfolio.main',
-    'agewelllah.main', 'additional.nvidia', 'additional.llm-cyber', 'steminc.combined'];
+    'pa.sparks', 'ywh.programs', 'brinhack.main', 'maritime.main', 'waaah.main',
+    // The 2026-11 wordings write their measurements the way a screener can read
+    // them, so the classifier has to read them too: "4 times" not "4x", a count
+    // with one adjective before its noun, and a power/throughput rating.
+    'amazon-vision.frame-quality', 'hailo.main', 'stmicro-or.putaway', 'pa.singpass'];
+  const NOT_METRIC = ['nus.coursework', 'nus.coursework-full', 'pa.infra', 'ywh.network',
+    'portfolio.main', 'agewelllah.main', 'steminc.combined'];
 
   it.each(METRIC)('counts %s as quantified', (ref) => {
     expect(metricsIn(text(ref)).metrics.length).toBeGreaterThan(0);
@@ -331,18 +338,116 @@ describe('evidence already on the page', () => {
   });
 });
 
+// The house-style rules model one ATS screener (VMock), reverse-engineered in
+// Sep 2026. The corpus deliberately reports NOTHING from P5 - the 2026-11 pass
+// removed every instance - so these are synthetic by necessity. That silence is
+// asserted in "the real corpus" below; this block proves the rules can still
+// speak.
+describe('house style (P5)', () => {
+  const poolOf = (text: string, extra: Record<string, unknown> = {}) => checkPool([{
+    entryId: 'e', sectionType: 'experience', dateLabel: 'Jan 2020 - Jan 2021',
+    bullets: [{ ref: 'e.one', variant: 'default', text }], ...extra,
+  }]) as Report;
+  const categories = (report: Report) => report.findings.filter((item) => item.rule === 'P5')
+    .map((item) => item.category);
+
+  it('names a word the screener dictionary does not hold', () => {
+    expect(categories(poolOf('Built an air-gapped platform with a quantized model.')))
+      .toContain('banned-spelling');
+    expect(categories(poolOf('Built an offline platform with a local model.')))
+      .not.toContain('banned-spelling');
+  });
+
+  it('names an opening verb that is also a common noun', () => {
+    expect(categories(poolOf('Engineer a test harness covering regression tests.')))
+      .toContain('non-action-verb');
+    expect(categories(poolOf('Automate a test harness covering regression tests.')))
+      .not.toContain('non-action-verb');
+  });
+
+  it('names a measurement the specifics parser cannot see', () => {
+    expect(categories(poolOf('Compressed a six-month cycle into a sub-three-minute report.')))
+      .toContain('spelled-out-number');
+    expect(categories(poolOf('Compressed a 6-month cycle into a 3-minute report.')))
+      .not.toContain('spelled-out-number');
+    // A number word inside a product name is not a count.
+    expect(categories(poolOf('Built a local-first Blender-to-Three.js asset pipeline.')))
+      .not.toContain('spelled-out-number');
+  });
+
+  it('names a digit glued to a letter, and leaves product numbers alone', () => {
+    expect(categories(poolOf('Improved stages with 4x upscaling at 1.5W on 13TOPS silicon.')))
+      .toContain('glued-digit');
+    expect(categories(poolOf('Improved stages to upscale frames 4 times at 1.5 W on 13 TOPS silicon.')))
+      .not.toContain('glued-digit');
+    // 90th, 3D, GPT-4 and 109M all carry a glued digit and none is the defect.
+    expect(categories(poolOf('Solved 3D challenges on GPT-4, finishing 90th with a 109M-parameter model.')))
+      .not.toContain('glued-digit');
+  });
+
+  it('names a second "the" in one bullet', () => {
+    expect(categories(poolOf('Provisioned the platform AWS infrastructure across the environment.')))
+      .toContain('filler-density');
+    expect(categories(poolOf('Provisioned AWS infrastructure across the environment.')))
+      .not.toContain('filler-density');
+  });
+
+  it('names an internal run of capitals in a job title, and only there', () => {
+    const title = (role: string, organization = 'Amazon') => categories(poolOf('Built vision systems.', { role, organization }));
+    expect(title('Robotics Vision Engineer (BlendED AI+X)')).toContain('mixed-case-title');
+    // Verified green in the editor and flagged by an earlier draft of this rule:
+    // plain CamelCase brands, ALL-CAPS acronyms, ampersands and parentheses.
+    expect(title('Robotics Vision Engineer')).not.toContain('mixed-case-title');
+    expect(title('Platform & Solutions Engineer (Sparks Citizen Developer)')).not.toContain('mixed-case-title');
+    expect(title('Operations Research (NUS System Design Project), Contract')).not.toContain('mixed-case-title');
+    // The Company field applies no such rule, which is why moving it there fixed it.
+    expect(title('Robotics Vision Engineer', 'Amazon (BlendED AI+X)')).not.toContain('mixed-case-title');
+  });
+});
+
+describe('verb families across one résumé (R8)', () => {
+  // R1 counts opening verbs per section. This counts the family anywhere in the
+  // sentence, which is what an ATS counts: a participle buried mid-bullet is the
+  // same word to it. The two rules disagree on purpose.
+  // Four inflections of one verb, only two of them openers. The noun
+  // "automation" is deliberately NOT one of them: leadLemma refuses derivational
+  // families on purpose, and R8 inherits that.
+  const four = ['Automated endpoint discovery.', 'Automate quality gates.',
+    'Built a loop, automating delivery.', 'Designed a job and automated its handover.']
+    .map((line, index) => bullet(`e.b${index}`, line));
+
+  it('counts inflections and mid-sentence uses, where R1 counts openers only', () => {
+    const report = checkResume(four) as Report;
+    const found = report.findings.find((item) => item.rule === 'R8');
+    expect(found?.category).toBe('verb-family-cap');
+    expect(found?.where).toMatchObject({ family: 'automat', count: 4, max: 3 });
+    expect(found?.severity).toBe('warn');
+    expect(report.findings.some((item) => item.category === 'lead-verb-repeat')).toBe(false);
+  });
+
+  it('stays quiet at the ceiling, and never fails a build', () => {
+    const report = checkResume(four.slice(0, 3)) as Report;
+    expect(report.findings.some((item) => item.rule === 'R8')).toBe(false);
+    expect(checkResume(four).counts.errors).toBe(0);
+  });
+});
+
 describe('the real corpus', () => {
   // These numbers are the point of the checker: they are what Rahul asked about.
   // A content edit that moves them should show up here rather than silently.
   it('reports the block pool the checker was built to describe', () => {
     const report = checkPool(poolEntries()) as Report;
-    expect(report.metrics.bullets).toBe(42);
-    expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 12 });
-    expect(report.metrics.metricCoverage).toBe(0.24);
-    // The headline finding: seven of eleven project bullets open with "Built".
+    expect(report.metrics.bullets).toBe(39);
+    expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 3 });
+    expect(report.metrics.metricCoverage).toBe(0.51);
+    // Was the headline finding: seven of ten project bullets opened "Built", and
+    // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
+    // and wrote the measurements in digits, so this rule now finds nothing in
+    // PROJECTS at all. Asserted as absent rather than deleted: if it comes back,
+    // the pool has drifted back to one verb.
     const projects = report.findings.find((item) => item.category === 'pool-lead-concentration'
       && item.where.sectionType === 'projects');
-    expect(projects?.where).toMatchObject({ openers: ['Built'], count: 7, of: 10 });
+    expect(projects).toBeUndefined();
     // Tense fires on exactly one entry, the bug-bounty role that is still open.
     const tense = report.findings.filter((item) => item.category === 'tense-vs-dates');
     expect(tense).toHaveLength(1);
@@ -370,14 +475,17 @@ describe('the real corpus', () => {
       }];
     }));
     expect(digest).toEqual({
-      'software-engineer': { bullets: 15, top: 6, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,unquantified,unused-evidence' },
-      'solution-architect': { bullets: 15, top: 5, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified' },
-      'ai-engineer': { bullets: 14, top: 5, codes: 'adjacent-repeat,adjacent-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
-      'operations-research-engineer': { bullets: 14, top: 4, codes: 'adjacent-repeat,hedge,unquantified,unused-evidence' },
-      'cyber-security': { bullets: 15, top: 4, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,unquantified,unused-evidence' },
-      'civic-tech-solution-architect': { bullets: 15, top: 5, codes: 'adjacent-repeat,adjacent-repeat,frame-repeat,hedge,lead-verb-repeat,unquantified,unused-evidence' },
-      highlights: { bullets: 14, top: 4, codes: 'adjacent-repeat,frame-repeat,lead-verb-repeat,unquantified,unused-evidence' },
-      general: { bullets: 32, top: 10, codes: 'adjacent-repeat,adjacent-repeat,adjacent-repeat,frame-repeat,lead-verb-repeat,lead-verb-repeat,unquantified,unused-evidence' },
+      'software-engineer': { bullets: 15, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
+      'solution-architect': { bullets: 15, top: 2, codes: 'frame-repeat,unquantified' },
+      'ai-engineer': { bullets: 14, top: 2, codes: 'hedge,unquantified,unused-evidence' },
+      'operations-research-engineer': { bullets: 14, top: 1, codes: 'unquantified,unused-evidence' },
+      'cyber-security': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
+      'civic-tech-solution-architect': { bullets: 15, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
+      highlights: { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
+      // R8 counts a verb family anywhere in the sentence, not just as an opener:
+      // "Built", "Build", "building" and "hackathon build" are four uses of one
+      // family that R1's per-section opener tally cannot see.
+      general: { bullets: 30, top: 3, codes: 'unquantified,unused-evidence,verb-family-cap' },
     });
   });
 

@@ -2,7 +2,7 @@
   "slug": "highlights",
   "subject": "Highlights Resume (One Page)",
   "pages": 1,
-  "bodyPt": 10,
+  "bodyPt": 9.5,
   "marginIn": 0.5,
   "sections": [
     {
@@ -20,7 +20,7 @@
     },
     {
       "type": "experience",
-      "title": "EXPERIENCE",
+      "title": "WORK EXPERIENCE",
       "entries": [
         {
           "id": "stmicro-or",
@@ -55,12 +55,6 @@
             "singpass",
             "sparks"
           ]
-        },
-        {
-          "id": "ywh",
-          "bullets": [
-            "programs"
-          ]
         }
       ]
     },
@@ -84,6 +78,12 @@
           "id": "ntuc",
           "bullets": [
             "main"
+          ]
+        },
+        {
+          "id": "ywh",
+          "bullets": [
+            "programs"
           ]
         }
       ]

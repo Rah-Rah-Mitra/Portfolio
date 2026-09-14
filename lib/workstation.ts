@@ -10,7 +10,7 @@ import type {
 
 export const workstationApps: readonly DesktopAppDefinition[] = [
   { id: 'home', label: 'Home / Dossier', shortLabel: 'Home', compactLabel: 'Home', description: 'Positioning, current proof, and primary actions.', kind: 'dossier', fallbackAnchor: '#home', iconAsset: '/workstation/icons/home.webp', loadStrategy: 'eager' },
-  { id: 'selected-work', label: 'Selected Work', shortLabel: 'Work', compactLabel: 'Work', description: 'Five evidence-rich engineering systems.', kind: 'evidence', fallbackAnchor: '#work', iconAsset: '/workstation/icons/selected-work.webp', loadStrategy: 'eager' },
+  { id: 'selected-work', label: 'Selected Work', shortLabel: 'Work', compactLabel: 'Work', description: 'Six evidence-rich engineering systems.', kind: 'evidence', fallbackAnchor: '#work', iconAsset: '/workstation/icons/selected-work.webp', loadStrategy: 'eager' },
   { id: 'experience', label: 'Experience', shortLabel: 'Experience', compactLabel: 'Exp', description: 'Complete chronological professional record.', kind: 'evidence', fallbackAnchor: '#experience', iconAsset: '/workstation/icons/experience.webp', loadStrategy: 'eager' },
   { id: 'project-archive', label: 'Project Archive', shortLabel: 'Archive', compactLabel: 'Arc', description: 'All projects with search and domain filters.', kind: 'evidence', fallbackAnchor: '#all-work', iconAsset: '/workstation/icons/project-archive.webp', loadStrategy: 'eager' },
   { id: 'systems-lab', label: 'Systems Lab', shortLabel: 'Systems', compactLabel: 'Sys', description: 'Deterministic scheduling and spatial exhibits.', kind: 'lab', fallbackAnchor: '#systems-lab', iconAsset: '/workstation/icons/systems-lab.webp', loadStrategy: 'lazy' },

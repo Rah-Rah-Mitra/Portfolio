@@ -1,33 +1,93 @@
 {
   "entries": [
     {
+      "id": "ywh",
+      "organization": "YesWeHack",
+      "location": "Remote",
+      "role": "Independent Bug Bounty Researcher",
+      "start": "2024-05",
+      "dateLabel": "May 2024 – Present",
+      "bullets": [
+        {
+          "id": "programs",
+          "text": {
+            "default": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and access-control weaknesses."
+          }
+        },
+        {
+          "id": "automation",
+          "text": {
+            "default": "Automated endpoint discovery, payload delivery, and evidence collection for responsible-disclosure reports with Burp Suite, Wireshark, Python, Bash, and custom fuzzing scripts."
+          }
+        },
+        {
+          "id": "network",
+          "text": {
+            "default": "Applied Burp Suite for MitM HTTP interception and Wireshark for OSI Layer 3-4 deep packet inspection and TLS handshake analysis."
+          }
+        }
+      ]
+    },
+    {
       "id": "ntuc",
       "organization": "NTUC Health Active Ageing Centre",
       "location": "Singapore",
       "role": "Elderly Care Volunteer",
       "start": "2025-09",
-      "dateLabel": "Sep 2025 – Present",
+      "end": "2026-09",
+      "dateLabel": "Sep 2025 – Sep 2026",
       "bullets": [
         {
           "id": "main",
           "text": {
-            "default": "Support weekly senior-engagement activities, deepening empathy for healthcare, accessibility, and human-centered community product design."
+            "default": "Coordinate weekly senior-engagement activities, building empathy for healthcare, accessibility, and community-focused product design."
+          },
+          "phrasings": {
+            "activities-first": {
+              "text": "Coordinate weekly senior-engagement activities for healthcare, accessibility, and community-focused product design.",
+              "note": "drops the trailing participle; shorter, and says what the activities serve"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "navy",
+      "organization": "Republic of Singapore Navy",
+      "location": "Singapore",
+      "role": "Base Support Assistant",
+      "start": "2022-01",
+      "end": "2023-01",
+      "dateLabel": "Jan 2022 – Jan 2023",
+      "bullets": [
+        {
+          "id": "vba",
+          "text": {
+            "default": "Compressed a 6-month food-waste analysis cycle into a 3-minute reporting process with an Excel VBA automation workflow inside a security-constrained environment.",
+            "deep": "Mapped the food-waste reporting process end to end, then automated its calculations and reporting steps with an Excel VBA workflow that compressed a 6-month manual cycle into a repeatable 3-minute process inside a security-constrained environment."
+          }
+        },
+        {
+          "id": "data",
+          "text": {
+            "default": "Managed sensitive operational data under SAF confidentiality expectations while improving reliability, traceability, and analyst capacity."
           }
         }
       ]
     },
     {
       "id": "steminc",
-      "organization": "STEM Inc. (ASRJC)",
+      "organization": "STEM Inc. (Anderson Serangoon Junior College)",
       "location": "Singapore",
       "role": "Astronomy Head & Robotics Member",
       "start": "2019-03",
+      "end": "2020-08",
       "dateLabel": "Mar 2019 – Aug 2020",
       "bullets": [
         {
           "id": "combined",
           "text": {
-            "default": "Led astronomy outreach, competed in the 7th Singapore Astronomical Olympiad, engineered an autonomous robot for the National Robotics Challenge, and received the ASRJC Outstanding Contribution Award."
+            "default": "Led astronomy outreach, competed in Singapore's 7th Astronomical Olympiad, and engineered an autonomous robot for the National Robotics Challenge."
           }
         }
       ]

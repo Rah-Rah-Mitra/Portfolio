@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DesktopAppId } from '../../types';
-import { archiveRows, CONTACT, featuredCards, generalResume, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../../lib/workbench';
+import { archiveRows, CONTACT, featuredCards, generalResume, POSITIONING, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../../lib/workbench';
 import { allProjects, coreCompetencies, experienceRecords, resumeProfiles, unifiedPortfolioData } from '../../portfolioData';
 import { SITE_CONFIG } from '../../siteConfig';
 import { desktopAppFromSearch } from '../../lib/workstation';
@@ -71,8 +71,8 @@ const INDEX_ROWS: IndexRow[] = [
     date: 'BUILD',
     title: 'Resume Builder',
     sub: 'Compose a targeted resume from the evidence record',
-    detail: 'Pick the experience, projects and skills a role calls for and the Harvard-style PDF rebuilds as you go. Needs a wider screen — open it on a desktop browser.',
-    tags: ['Custom', 'PDF · DOCX', 'Harvard'],
+    detail: 'Pick the experience, projects and skills a role calls for and the PDF rebuilds as you go. Needs a wider screen — open it on a desktop browser.',
+    tags: ['Custom', 'PDF · DOCX', 'NUS CDE'],
     link: { label: 'OPEN ON DESKTOP', href: '/?app=resume-builder' },
   },
   ...resumeProfiles.map((profile): IndexRow => ({
@@ -480,7 +480,7 @@ const FieldIndex: React.FC = () => {
             <span className="wb-kicker">W / ORIGIN — DOSSIER</span>
             <hr className="wb-rule" />
             <h1 className="wb-h1">Rahul Mitra</h1>
-            <p className="wb-role">Systems Architect &amp; AI Engineer — ISE × CS × Math</p>
+            <p className="wb-role">{POSITIONING}</p>
             <p className="wb-degree">Graduating {SITE_CONFIG.graduation}</p>
             <p className="wb-bio">
               One searchable registry — every project, role, credential, and résumé on this bench is reachable from

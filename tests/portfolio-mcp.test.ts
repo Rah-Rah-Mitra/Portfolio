@@ -46,12 +46,18 @@ describe('résumé data', () => {
     }
   });
 
-  it('renders the highlights résumé with the slug overrides applied', () => {
+  it('renders a résumé end to end, with its slug override applied', () => {
     const markdown = resumeMarkdown(resumeConfigs.find((config) => config.slug === 'highlights'));
     expect(markdown.startsWith('# RAHUL MITRA')).toBe(true);
+    expect(markdown).toContain('+65 8515 5413');
     expect(markdown).toContain('put-away');
-    expect(markdown).toContain('custom fuzzing scripts');
+    // ywh now sits under Leadership rather than Experience.
+    expect(markdown).toContain('## LEADERSHIP AND ACTIVITIES');
     expect(markdown).toContain('**Languages:**');
+    // highlights carries no slug override of its own any more - both of the ones
+    // it had became the default - so the override path is checked where one lives.
+    const ai = resumeMarkdown(resumeConfigs.find((config) => config.slug === 'ai-engineer'));
+    expect(ai).toContain('Relevant coursework: Artificial Intelligence, 3D Computer Vision');
   });
 });
 
@@ -117,7 +123,9 @@ describe('api/mcp', () => {
     const projects = await rpc('tools/call', { name: 'list_resume_blocks', arguments: { section: 'projects' } });
     const bullets = JSON.parse(projects.content[0].text).sections
       .flatMap((section: { entries: Array<{ bullets: unknown[] }> }) => section.entries.flatMap((entry) => entry.bullets));
-    expect(bullets.length).toBeGreaterThan(8);
+    // Exactly the eight projects the 2026-11 pass leaves selectable: arcane and
+    // ethoslens are withheld, and the "Additional Projects" entry retired.
+    expect(bullets.length).toBe(8);
     for (const bullet of bullets as Array<{ lead: string; lines: number; hasMetric: boolean }>) {
       expect(bullet.lead).toMatch(/^[A-Za-z][A-Za-z-]*$/);
       expect(bullet.lines).toBeGreaterThan(0);
@@ -148,14 +156,20 @@ describe('api/mcp', () => {
     expect(byRef.get('nus.majors')?.terms).toEqual([]);   // names no technology, and says so
     for (const bullet of bullets) expect(Array.isArray(bullet.terms), bullet.ref).toBe(true);
     // An alternative wording is a different sentence, so it names its own.
-    expect(byRef.get('waaah.main')?.phrasings?.['landmarks-first'].terms).toContain('konva.js');
+    expect(byRef.get('waaah.main')?.phrasings?.['build-first'].terms).toContain('konva.js');
 
     // Which canonical résumés select the block. Empty is a fact about the block,
     // not a missing field: these four sit on no canonical résumé at all. Update
     // this list when a config starts or stops selecting one.
     expect(byRef.get('nus.majors')?.usedBy).toHaveLength(resumeConfigs.length);
+    // harness and network left this list in the 2026-11 pass: harness was the
+    // only bullet on that entry carrying a measurement and sat on nothing, and
+    // network is the packet-analysis evidence the security résumé wanted.
+    // asrjc.award joined it when the NUS style landed: the master CV drops the
+    // A-Level entry, so nothing selects it. The block stays in the pool and
+    // stays selectable — withholding a card is not withholding a fact.
     expect(bullets.filter((bullet) => bullet.usedBy.length === 0).map((bullet) => bullet.ref).sort())
-      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'abbott-contract.harness', 'ywh.network']);
+      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'asrjc.award']);
     for (const line of menu.skillLines) expect(Array.isArray(line.usedBy), line.id).toBe(true);
     expect(menu.skillLines.find((line) => line.id === 'se-skills')?.usedBy).toContain('software-engineer');
     expect(menu.skillLines.some((line) => line.usedBy.length === 0)).toBe(true);
@@ -166,7 +180,9 @@ describe('api/mcp', () => {
     const report = JSON.parse(content[0].text);
     expect(report.version).toBe(1);
     expect(report.metrics.bullets).toBe(14);
-    expect(report.metrics.topOpener.openers).toContain('Built');
+    // The 2026-11 pass spread the openers; "Built" is no longer the top one on
+    // any résumé. What matters here is that the field is still reported.
+    expect(report.metrics.topOpener.openers.length).toBeGreaterThan(0);
     expect(report.gate).toBe('pass');
     // Every finding points at block ids, which are the only thing an agent may act on.
     for (const item of report.findings) for (const hit of item.occurrences) expect(hit.ref).toBeTruthy();

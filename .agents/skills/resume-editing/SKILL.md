@@ -1,40 +1,61 @@
 ---
 name: resume-editing
-description: Use for ANY change to Rahul's resumes/CVs — adding roles, editing bullets, regenerating editions, restyling, or fixing resume links on the site. Covers the Harvard-style DOCX/PDF pipeline in scripts/resume, the content JSONs, edition bumps, verification, and the site wiring (siteConfig resumeEdition, pageAgent, resume cards).
+description: Use for ANY change to Rahul's resumes/CVs — adding roles, editing bullets, regenerating editions, restyling, or fixing resume links on the site. Covers the NUS-CDE-style DOCX/PDF pipeline in scripts/resume, the content JSONs, edition bumps, verification, and the site wiring (siteConfig resumeEdition, pageAgent, resume cards).
 version: 1.0.0
 ---
 
 # Resume editing
 
-All resumes are generated, Harvard-style (Harvard OCS conventions), from
-in-repo content. Eight outputs: 6 one-page role resumes, the 1-page
-`highlights` best-of (10pt body, 0.5" side margins), and the 2-page
-`general` master CV. Most one-pagers now declare `bodyPt: 10` to carry the
-denser Abbott contract bullets — read each config rather than assuming 10.5.
+All resumes are generated from in-repo content in the **NUS CDE style**
+(`scripts/resume/nus_style.py`, default since edition 2026-11; Harvard is still
+selectable with `--style harvard`). Eight outputs: 6 one-page role resumes, the
+1-page `highlights` best-of, and the 2-page `general` master CV. Every config
+declares its own `bodyPt` — 8.5 to 10 in this edition — and `marginIn: 0.5`.
+Read each config rather than assuming a size.
 
 ## Hard bans
 
 - **Never hand-edit `public/resume/generated/*`** — regenerate from content.
-- **Never change the font.** Times New Roman only (Harvard convention,
-  universally available). Any font change needs explicit user approval.
+- **Never change the font or the style of an existing résumé on your own.**
+  Each style owns its own: `nus` is Arial, `harvard` is Times New Roman, both
+  universally available. Adding a style, or switching which one is the default,
+  needs explicit user approval — this one got it in Sep 2026, when Rahul made
+  his NUS-CDE master CV the ground truth.
 - **Never mutate old DOCX files with string replacement** (the pre-2026-09
   approach — its scripts were deleted). Edit the content JSONs instead.
-- **Never reorder by "relevance".** Experience/education/leadership are
-  strictly reverse-chronological by start date; projects by most recent
-  activity, ongoing first, "Additional Projects" pinned last.
+- **Never reorder by "relevance".** Experience/education/leadership sort by
+  **end date first**: entries still running come first, ordered by `start`
+  descending, then ended entries by `end` descending. An entry is still running
+  exactly when it carries no `end` key. Projects sort by most recent activity,
+  ongoing first. (Revised 2026-09, replacing a strict `start` sort: under that
+  rule People's Association, which ran to Sep 2026, fell below the Abbott
+  internship, which ended in June, and that reads as a gap. `entry_order` in
+  build_resumes.py and `entryOrder` in server/resumeAssemble.mjs are the same
+  rule twice and must agree.)
 - **Never invent facts** — new bullets only rephrase what the user supplied.
 
-## Layout invariants (scripts/resume/harvard_style.py)
+## Layout invariants
 
-A4, 0.7" side margins; centered 16pt bold name; one centered 9.5pt contact
-line (5 items, 4 live hyperlinks — must stay on ONE line); uppercase
-letterspaced section headers with full-width bottom rule; entries are two
-lines (bold org + right-aligned location, italic role + right-aligned dates
-via a right tab at content width); 1–3 bullets per entry and 4 where the
+Shared by both styles: A4; one contact line (5 items, 5 live hyperlinks
+including `tel:` — must stay on ONE line); 1–3 bullets per entry and 4 where the
 material earns it (People's Association on the two architecture résumés — buy
 the room by dropping a project, not by cutting a bullet), action verb first,
-past tense except current roles; literal "• " bullets with hanging indent
-(ATS-safe, deliberate).
+past tense except current roles; literal "• " bullets with a hanging indent
+(ATS-safe, deliberate, and the one place both styles depart from their source).
+
+`nus_style.py` (default): Arial; 0.5" sides, 0.667" top and bottom; a
+right-aligned 19.5pt caps name over an 8.5pt right-aligned contact line joined
+by NBSP pipes; 9.5pt caps section headers under a full-width
+`thinThickSmallGap` rule; one bold line per entry with right-flush dates —
+`Role, Organization` in experience and projects, `Organization, Role` in
+leadership (the source document really does flip it), education taking a second
+bold line for the degree; a blank body-size line between entries and before each
+section header; skills lines are unlabelled prose, also as the source has them.
+
+`harvard_style.py`: Times New Roman; 0.7" sides; a centered 16pt bold name over
+a centered 9.5pt contact line; uppercase letterspaced section headers with a
+full-width rule; two-line entries (bold org + right-aligned location, italic
+role + right-aligned dates via a right tab at content width), projects on one.
 
 ## Pipeline
 
@@ -47,9 +68,11 @@ python scripts/resume/verify_resumes.py --edition <YYYY-MM>  # must exit 0
 Content: pools in `scripts/resume/content/{education,experience,projects,leadership,skills}.json`
 (bullet text supports per-slug overrides via the `text` map); per-resume
 selection in `content/resumes/<slug>.json` (`pages`, optional `bodyPt`,
-optional `marginIn` side margin in inches — only `highlights` uses it).
-Reference template: `public/resume/template/harvard-template-2026.docx`
-(rebuild with `--sample`).
+`marginIn` side margin in inches — 0.5 on all eight in this edition).
+Reference templates: `public/resume/template/{nus,harvard}-template-2026.docx`
+(rebuild with `--sample`, plus `--style` for the other one). The NUS source
+documents live beside them: `NUS Resume - Y3-Y4.docx`, `NUS Guidelines.pdf`,
+two CDE examples and the action-verb list.
 
 After verifying, render PDFs to PNG (pdftoppm, 130 dpi) into
 `.impeccable/resume-qa/` and LOOK at every page: dates flush right at one x,
@@ -117,7 +140,15 @@ sentence can pass every rule and still be wrong. Read them.
 ## Fit
 
 Overflow trim ladder, in order: drop coursework bullet → reduce 3-bullet
-entries to 2 → drop least-relevant project → body 10.5→10pt (general already
-runs 10pt) → margins toward 0.5" (per-config `marginIn`; `highlights` is at
-0.5" and `general` at 0.6", the rest at the 0.7" default). Never below 10pt.
-Fit truth is the pypdf page count of the exported PDF, never an estimate.
+entries to 2 → drop least-relevant project → then typography, which belongs to
+the style. `nus` holds its 0.5" margins and steps the body 10.5/10/9.5/9/**8.5pt**
+(8.5 is what the two-page master CV needs, and `software-engineer` lands there
+too); `harvard` steps 10.5→10pt and then margins 0.7→0.6→0.5". Never below the
+style's own floor.
+
+Fit truth is the pypdf page count of the exported PDF, never an estimate. The JS
+renderer models Word closely enough to pick the right rung — its numbers come
+from the font's own hhea table and from glyph positions measured out of Word
+output — but it is a model. Two one-pagers were a rung optimistic until the
+section-header rule's 3.75pt band was measured and put in. **Always export and
+count.**

@@ -59,21 +59,24 @@ implementation projects".
 Until these are answered, an RL bullet can honestly say the certification was
 completed and name the algorithms it covered. It cannot claim applied RL work.
 
-## 2. Amazon — no detail exists beyond the two current bullets
+## 2. Amazon — answered 2026-09-14
 
-The site's experience record for the Amazon role is **word-for-word identical** to
-the résumé bullets. Every other employer has richer prose somewhere; this one has
-none, so no deep variant could be written for it.
+**Answered (Rahul, VMock alignment pass).** The work covers **three imaging
+workstreams**, and the measured outcome is **4x upscaling evaluated on PSNR and
+SSIM**, which lets a **low-cost camera reach frame quality on par with premium
+sensors**. Rahul confirmed this is publishable. Now in `amazon-vision.isp` and
+`amazon-vision.frame-quality` (both with deep variants) and in the site's
+experience record.
 
-**Questions:** what did the ISP enhancement, super-resolution and image restoration
-work actually involve — architectures, datasets, evaluation metrics, deployment
-target? What can be said publicly without breaching confidentiality?
+Still absent, and still unusable: architectures, datasets, the deployment target,
+and any figure beyond the 4x factor.
 
 ## 3. STMicroelectronics — ongoing, so no outcome yet
 
-The put-away recommendation bullet describes intent ("targets replacing
-experience-based slotting"). There is no measured result yet. Worth revisiting once
-the System Design Project produces one.
+The put-away recommendation bullet describes intent ("replacing experience-based
+slotting"). There is no measured result yet. The bullet now names **3 live
+inputs** — a count of the three the sentence already lists, not a new claim.
+Worth revisiting once the System Design Project produces a measured result.
 
 ## 4. Abbott contract role — answered in full
 
@@ -95,18 +98,21 @@ still suit a non-technical reader — but no résumé leads with them any more.
 - Terraform, Redis and Kafka are attested through the Churp deployment.
 - **PyTorch, ONNX, Chroma, SciPy, pandas and quantization** are attested through
   the Abbott contract work (§4), along with HiGHS, Seeq, STUMPY and ruptures.
-- **3D computer vision: settled.** Rahul confirmed (2026-09-04) that the CV
-  entries already in the skills lines are correct as written — projective and
-  epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view stereo,
-  from CS4277, alongside camera ISP, super-resolution and image restoration from
-  the Amazon role. **He did not claim RANSAC, PnP, SIFT or ORB**, and they appear
-  nowhere in the recorded syllabus, so they stay off the list below only as
-  unclaimed — do not add them.
+- **3D computer vision: settled, and widened once.** Rahul confirmed
+  (2026-09-04) that the CV entries already in the skills lines are correct as
+  written — epipolar geometry, absolute pose, SfM, bundle adjustment, multi-view
+  stereo, from CS4277, alongside camera ISP, super-resolution and image
+  restoration from the Amazon role. **PnP is now claimed**: his own master CV
+  (2026-09-14) writes the 3D Vision line as "absolute pose estimation (PnP)",
+  along with camera calibration, homography estimation, single-view metrology,
+  three-view geometry and generalised camera models. **RANSAC, SIFT and ORB are
+  still not claimed** and appear nowhere in the recorded syllabus, so they stay
+  on the list below — do not add them.
 
 Still absent from every content source, and therefore still unusable:
 
 TensorFlow (except a passing reference to TensorFlow.js in a fork), Hugging Face,
-scikit-learn, Keras, NumPy, RANSAC, PnP, SIFT, ORB, Gurobi, Pyomo, Kubernetes,
+scikit-learn, Keras, NumPy, RANSAC, SIFT, ORB, Gurobi, Pyomo, Kubernetes,
 PostgreSQL, MongoDB, Pinecone, FAISS, pgvector, Weights & Biases, MLflow,
 TensorRT, distillation, Optuna.
 
@@ -119,10 +125,14 @@ and on what?
   experience. **Still open:** the narrower `AWS IMDSv2, metadata APIs` phrasing in
   `gen-security` reads as bug-bounty research rather than deployment. Confirm which
   context it should sit in, since the two tell a reader different stories.
-- `Edge AI / Hailo model deployment` — **answered** (Rahul, 2026-09-07): the Hailo
-  repository genuinely deploys OCR and object-detection models, so it is now the
-  `hailo` résumé project. `autonomous robotics (sensor integration)` is still a
-  skills-line entry with no project or outcome behind it.
+- `Edge AI / Hailo model deployment` — **answered in full** (Rahul, 2026-09-07,
+  extended 2026-09-14): the Hailo repository trains **YOLO26 through transfer
+  learning**, reshapes its architecture with the **Hailo Dataflow Compiler**, and
+  runs document detection on a **Hailo-8L rated 13 TOPS at 1.5 W** to speed up
+  large-batch scanning. All of that is now in `hailo.main` and on the site card;
+  the entry used to name no model, no toolchain, no part and no figure.
+  `autonomous robotics (sensor integration)` is still a skills-line entry with no
+  project or outcome behind it.
 
 ## 7. Work on the site with no résumé entry at all
 
@@ -133,10 +143,15 @@ Still unused by any résumé: `kalidokit-fork` (MediaPipe/TensorFlow.js kinemati
 
 **Question:** should any of these become selectable résumé project entries too?
 
-## 9. Projects Rahul has blocked from résumés — 2026-09-07
+## 9. Projects Rahul has blocked from résumés — 2026-09-07, extended 2026-09-14
 
-`asyncddgs`, `portfolio`, `utopia`, `flowshop` and `ie2110` carry a `blocked`
-reason in `projects.json`. They are withheld from `list_resume_blocks` and refused
+`asyncddgs`, `portfolio`, `utopia`, `flowshop`, `ie2110`, and as of the VMock
+alignment pass `arcane` and `ethoslens`, carry a `blocked`
+reason in `projects.json`. Blocking `arcane` and `ethoslens` cost two project
+entries on `cyber-security` and `general`; both configs were edited in the same
+change, because `build_resumes.py` raises rather than skipping a blocked
+selection. Their site cards are untouched — `blocked` withholds a résumé entry,
+never a fact. They are withheld from `list_resume_blocks` and refused
 by both renderers, so neither an agent nor a canonical config can put them on a
 document. Do not "helpfully" restore one; ask Rahul first.
 
@@ -243,3 +258,23 @@ open another way. Only Rahul does.
 No evidence supports claiming professional SLAM, localization, Gaussian splatting,
 or probabilistic robotics delivery. The unpublished OpenCV/SLAM study mentioned in
 the README stays out of résumés.
+
+## 13. Answered by the VMock alignment pass — 2026-09-14
+
+Three more facts Rahul supplied while working the SMART Editor, now recorded in
+the pools and on the site rather than living only in that conversation:
+
+- **OnTheSpectrum** is a **game of AI-driven infinite levels**, built in **7 hours**
+  at **AI Engineer Hackathon 2026**. The entry used to describe only the
+  Blender-to-Three.js toolchain, which is the least interesting sentence about it.
+- **Churp** kept garden-plot balloting fair for **150 residents signed up at
+  release**. Worth flagging honestly: that is a launch-traction number doing duty
+  as a fairness metric. If the platform runs a real cycle, the applicant or plot
+  count is the better figure and should replace it.
+- **SmartExam** turns a student's **own notes** into **adaptive-difficulty** papers,
+  replacing **hundreds of dollars of past-year paper purchases**.
+
+Also recorded: `+65 8515 5413` is now the first item of the résumé contact line,
+replacing `Singapore`. It is deliberately **not** on the site, in the snapshot, or
+in `/api/portfolio` — `server/jobSearch.mjs` still names `candidate.phone` as a
+gap, which stays correct for every consumer except the résumé header itself.

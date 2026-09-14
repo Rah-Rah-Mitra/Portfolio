@@ -493,13 +493,13 @@ describe('build_tailored_resume', () => {
     // form, and hardcoded pages to 1.
     const chosen = payload(await call('build_tailored_resume', {
       block_ids: ['waaah.main', 'se-skills'],
-      phrasings: { 'waaah.main': 'landmarks-first' },
+      phrasings: { 'waaah.main': 'build-first' },
     }));
-    expect(chosen.markdown).toContain('Turned MediaPipe 3D hand landmarks');
-    expect(chosen.markdown).not.toContain('Built a gesture-to-comic pipeline');
+    expect(chosen.markdown).toContain('Built a 24-hour gesture-to-comic pipeline');
+    expect(chosen.markdown).not.toContain('Turned MediaPipe 3D hand landmarks');
     // The wording is one of Rahul's, and it travels in the spec as an id.
     expect(decodeSpec(new URL(chosen.pdf_url).searchParams.get('spec') as string))
-      .toMatchObject({ phrasings: { 'waaah.main': 'landmarks-first' } });
+      .toMatchObject({ phrasings: { 'waaah.main': 'build-first' } });
 
     const standard = payload(await call('build_tailored_resume', { block_ids: ['waaah.main', 'se-skills'] }));
     expect(standard.pages).toBe(1);                       // the old default, unchanged
@@ -523,8 +523,8 @@ describe('build_tailored_resume', () => {
     // Loud, and specific about which half is wrong: an unknown wording, a wording
     // for a bullet this résumé does not carry, and a ref that is not a block.
     const cases: Array<[Record<string, unknown>, RegExp]> = [
-      [{ block_ids: ['waaah.main'], phrasings: { 'waaah.main': 'better-sounding' } }, /unknown phrasing "better-sounding".*landmarks-first/],
-      [{ block_ids: ['waaah.main'], phrasings: { 'arcane.main': 'tooling-first' } }, /does not select/],
+      [{ block_ids: ['waaah.main'], phrasings: { 'waaah.main': 'better-sounding' } }, /unknown phrasing "better-sounding".*build-first/],
+      [{ block_ids: ['waaah.main'], phrasings: { 'maritime.main': 'tooling-first' } }, /does not select/],
       [{ block_ids: ['waaah.main'], phrasings: { 'nope.nope': 'tooling-first' } }, /unknown block id/],
     ];
     for (const [args, message] of cases) {
@@ -608,7 +608,10 @@ describe('build_tailored_resume', () => {
     // the only move an agent has.
     expect(built.coverage.missing).toContain('Rust');
     expect(built.coverage.missing_blocks.Rust).toContain('cyber-skills');
-    expect(built.coverage.missing_blocks.Rust).toContain('arcane.main');
+    // arcane.main was the only BULLET carrying Rust and is blocked as of the
+    // 2026-11 pass, so the skills line is now the whole answer - and the
+    // withheld entry must not be offered even though it would supply the term.
+    expect(built.coverage.missing_blocks.Rust).not.toContain('arcane.main');
     // Still only his words, on the new keys too.
     const reported = JSON.stringify(built.coverage);
     for (const word of ['Qzzytech', 'Blorptech']) expect(reported).not.toContain(word);
@@ -673,7 +676,7 @@ describe('build_tailored_resume', () => {
     expect(lineBudget(dry.check)).toHaveLength(0);
 
     // The real build measured, so it says so and the rule is free to fire.
-    expect(built.check.metrics.typography).toEqual({ bodyPt: 10, marginIn: 0.5 });
+    expect(built.check.metrics.typography).toEqual({ bodyPt: 8.5, marginIn: 0.5 });
     expect(built.check.metrics.maxBulletLines).toBe(4);
 
     // Everything that does not depend on measurement survives the dry run —
@@ -742,7 +745,7 @@ describe('export_profile', () => {
     const exported = payload(await call('export_profile'));
     const blocked = (pools as unknown as { projects: { entries: Array<{ id: string; blocked?: string }> } })
       .projects.entries.filter((entry) => entry.blocked);
-    expect(blocked.length).toBe(5);
+    expect(blocked.length).toBe(7);
 
     // Every blocked pool entry must be accounted for by name. Blocking a sixth
     // project fails here until someone says which site project it maps to — the
@@ -764,7 +767,7 @@ describe('export_profile', () => {
     }
     const withheld = snapshot.projects.filter((item) => item.spotlight && isBlockedProject(item.id));
     expect(withheld.map((item) => item.id).sort())
-      .toEqual(['asyncddgs', 'hybrid-flow-shop-digital-twin', 'project-utopia']);
+      .toEqual(['arcane', 'asyncddgs', 'hybrid-flow-shop-digital-twin', 'project-utopia']);
     for (const project of withheld) {
       expect(exported.article_digest_md, project.title).not.toContain(`## ${project.title} — `);
     }

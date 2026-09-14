@@ -9,11 +9,11 @@
       "github": "https://github.com/Rah-Rah-Mitra",
       "instagram": "https://www.instagram.com/rah.rah.mitra/"
     },
-    "resumeEdition": "2026-10"
+    "resumeEdition": "2026-11"
   },
   "profile": {
-    "tagline": "Intelligent Systems Engineer · AI, Optimization, Software & 3D Perception",
-    "bio": "NUS Industrial Systems Engineering student with a Second Major in Computer Science and a Mathematics Minor. I turn ambiguous operational problems into evidence-led systems across applied AI, mathematical optimization, software architecture, 3D perception, and responsible security.",
+    "tagline": "Systems Architect & AI Engineer · ISE × CS × Mathematics",
+    "bio": "NUS Industrial Systems Engineering (Second Major in Computer Science, Minor in Mathematics). I build intelligent systems at the intersection of agentic AI, operations research, 3D perception, and open-source engineering, from a fine-tuned 109M-parameter transformer to async Python libraries with global PyPI adoption.",
     "skills": [
       "Python (asyncio, FastAPI, Flask)",
       "Deep Learning & Transformers (BERT, GPT-4, RAG)",
@@ -78,7 +78,7 @@
       {
         "id": "ai-engineering",
         "title": "AI Engineering",
-        "summary": "Ships applied AI across NLP, RAG, vector search, agents, computer vision, and high-performance training without losing sight of evaluation and deployment constraints.",
+        "summary": "Ships applied AI across NLP, RAG, vector search, agents, multi-view geometry, and high-performance training, on classical AI foundations — search, constraint satisfaction and probabilistic reasoning — and without losing sight of evaluation and deployment constraints.",
         "tools": [
           "BERT",
           "RAG",
@@ -87,7 +87,12 @@
           "Gemini",
           "Vector Search",
           "ASPIRE 2A",
-          "SEALION"
+          "SEALION",
+          "Camera Calibration",
+          "Absolute Pose (PnP)",
+          "Structure-from-Motion",
+          "Bayesian Networks",
+          "Constraint Satisfaction"
         ],
         "proof": [
           "Maritime BERT/DNN",
@@ -99,14 +104,19 @@
       {
         "id": "operations-research",
         "title": "Operations Research",
-        "summary": "Connects ISE modeling with practical optimization: scheduling, discrete-event simulation, graph algorithms, robust-optimization research, and automation inside real operating constraints.",
+        "summary": "Connects ISE modeling with practical optimization: scheduling, discrete-event simulation with input modelling and output analysis, graph algorithms, inferential statistics, robust-optimization research, and automation inside real operating constraints.",
         "tools": [
           "CP-SAT",
+          "HiGHS",
           "Hybrid Flow Shop",
           "SimPy",
+          "Discrete-Event Simulation",
+          "Queuing Systems",
           "Robust Optimization",
           "Dijkstra",
-          "Statistics",
+          "Hypothesis Testing",
+          "Maximum Likelihood",
+          "ANOVA",
           "Excel VBA"
         ],
         "proof": [
@@ -195,10 +205,10 @@
       "location": "Singapore",
       "scope": "AI-driven put-away recommendation for semiconductor warehouse logistics.",
       "responsibilities": [
-        "Build an AI-driven put-away recommendation system for the Singapore warehouse, combining picking history, demand forecasts, and live capacity."
+        "Design an AI-driven put-away recommendation system for the Singapore warehouse, drawing on three live inputs: picking history, demand forecasts, and available capacity."
       ],
       "outcomes": [
-        "Targets replacing experience-based slotting decisions with systematic, capacity-aware storage recommendations."
+        "Targets replacing experience-based slotting decisions with systematic, capacity-aware storage recommendations. The System Design Project is still running, so there is no measured result yet."
       ]
     },
     {
@@ -212,40 +222,74 @@
         "Camera ISP",
         "Image Restoration",
         "Super-Resolution",
-        "Low-Light Imaging"
+        "Low-Light Imaging",
+        "PSNR",
+        "SSIM"
       ],
       "linkedProjectIds": [],
       "kind": "professional",
-      "role": "Robotics Vision Engineer (BlendED AI+X)",
-      "organization": "Amazon",
+      "role": "Robotics Vision Engineer",
+      "organization": "Amazon (BlendED AI+X)",
       "location": "Singapore",
       "scope": "Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.",
       "responsibilities": [
-        "Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light."
+        "Build vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.",
+        "Improve processing and evaluation stages to upscale frames four times, measuring the gain on PSNR and SSIM."
       ],
       "outcomes": [
-        "Delivers perception-ready frame quality for downstream robotics vision."
+        "A low-cost camera reaches frame quality on par with premium sensors before its frames reach downstream robotics perception."
       ]
     },
     {
-      "id": "abbott-internship",
-      "dateLabel": "Jan 2026 - Present",
-      "sortDate": "2026-01-01",
+      "id": "career-abbott-contract",
+      "dateLabel": "Jun 2026-Present",
+      "sortDate": "2026-06-01",
       "tags": [
-        "Air-Gapped RAG",
+        "Abbott",
+        "Offline RAG",
         "PyTorch",
         "ONNX",
         "Chroma",
         "LangChain",
-        "llama.cpp",
         "Seeq",
         "HiGHS",
         "SciPy",
         "STUMPY",
-        "Data Quality",
+        "Manufacturing AI"
+      ],
+      "linkedProjectIds": [
+        "changeover-data-quality-pipeline"
+      ],
+      "kind": "professional",
+      "role": "Operational AI Systems & Data Engineer (Contract)",
+      "organization": "Abbott Laboratories",
+      "location": "Singapore",
+      "scope": "Offline process intelligence, multi-site historian analytics, setpoint optimization, and manufacturing decision support.",
+      "responsibilities": [
+        "Assemble a five-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, bge-small ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted Gemma model.",
+        "Convert four plants’ Advanced Process Control models from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.",
+        "Build a live multi-site data layer over read-only Seeq historian pulls, mapping each site through configuration rather than forks, with Kalman smoothing, Welch PSD, change-point detection, and matrix-profile motifs in SciPy and pandas.",
+        "Design a tool loop where the model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log with no write path to plant control.",
+        "Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference."
+      ],
+      "outcomes": [
+        "Replaced four site-specific vendor optimizers with one solver-backed engine carrying no commercial licence, back-tested against the production system’s own historical targets.",
+        "Built 20+ regression tests, a headless notebook runner, a deterministic model stand-in for GPU-free CI, and committed golden snapshots for reproducible runs."
+      ]
+    },
+    {
+      "id": "career-abbott-intern",
+      "dateLabel": "Jan 2026-Jun 2026",
+      "sortDate": "2026-01-01",
+      "tags": [
+        "Abbott",
+        "SimPy",
         "CP-SAT",
+        "Digital Twin",
         "Robust Optimization",
-        "Cloud Operations",
+        "Data Quality",
+        "Azure",
+        "Docker",
         "AI Upskilling"
       ],
       "linkedProjectIds": [
@@ -254,23 +298,54 @@
         "azure-apc-web-simulator"
       ],
       "kind": "professional",
-      "role": "Operational AI Systems & Data Engineer",
-      "organization": "Abbott",
+      "role": "Data Analytics & Product Management Intern",
+      "organization": "Abbott Laboratories",
       "location": "Singapore",
-      "scope": "Air-gapped process intelligence, multi-site historian analytics, setpoint optimization, manufacturing decision support, and regional AI enablement.",
+      "scope": "Production scheduling under uncertainty, changeover data quality, internal simulator operations, and regional AI enablement.",
       "responsibilities": [
-        "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, bge-small ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted quantized Gemma model.",
-        "Reverse-engineered four plants’ APC steady-state optimizers from their Excel master files into one HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.",
-        "Build a live multi-site data layer over read-only Seeq historian pulls, canonicalizing each site by configuration rather than forks, with Kalman smoothing, Welch PSD, change-point detection, and matrix-profile motifs in SciPy and pandas.",
-        "Designed a hallucination-resistant tool loop: the model emits schema-constrained JSON, the solver computes every number, and an automated numeric-fidelity gate and per-call audit log sit in front of a system with no write path to plant control.",
-        "Built a hybrid flow-shop digital twin using SimPy and OR-Tools CP-SAT and researched robust optimization for operational uncertainty.",
-        "Designed a non-destructive 15-stage transformation and audit workflow for complex historical changeover matrices.",
-        "Productionized, supported, and documented an internal APC simulator on Docker and Azure App Service; delivered practical AI upskilling."
+        "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling, then compared three approaches (heuristic, MIP, and genetic algorithm) to turn production objectives and constraints into decision-ready schedules.",
+        "Validated a non-destructive, 15-stage changeover-data pipeline that exposes every intermediate state instead of mutating source data.",
+        "Productionized a team-built APC simulator for live internal users on Azure App Service with Docker packaging, access restrictions, and runtime and session hardening.",
+        "Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use."
       ],
       "outcomes": [
-        "Replaced four site-specific vendor optimizers with one solver-backed engine carrying no commercial licence, back-tested against the production optimizer’s own historical targets.",
-        "Processed five years of previously unseen, unclean operational data without errors.",
+        "Processed five years of previously unseen, unclean operational data with zero execution failures.",
         "Supported an actively used manufacturing and engineer-training simulator while preserving the originating team’s authorship."
+      ]
+    },
+    {
+      "id": "career-pa-churp",
+      "dateLabel": "Sep 2025-Sep 2026",
+      "sortDate": "2025-09-01",
+      "tags": [
+        "People's Association",
+        "Civic Tech",
+        "Singpass",
+        "Myinfo",
+        "GIS",
+        "AWS Fargate",
+        "Terraform",
+        "Redis",
+        "Kafka",
+        "Cloud Security"
+      ],
+      "linkedProjectIds": [
+        "churp"
+      ],
+      "kind": "professional",
+      "role": "Platform & Solutions Engineer (Sparks Citizen Developer)",
+      "organization": "People’s Association",
+      "location": "Singapore",
+      "scope": "End-to-end civic platform delivery: admin and public frontends, backend, GIS allocation, national digital identity, and AWS deployment.",
+      "responsibilities": [
+        "Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment.",
+        "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address, so eligibility checks run without manual review.",
+        "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations.",
+        "Provisioned AWS infrastructure with Terraform across Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, and applied cloud security controls environment-wide."
+      ],
+      "outcomes": [
+        "Kept garden-plot balloting fair for 150 residents signed up at release, and left the platform production-ready for national rollout across Singapore.",
+        "Won the S$20,000 Sparks Community Innovation Fund."
       ]
     },
     {
@@ -391,14 +466,16 @@
     {
       "id": "on-the-spectrum",
       "title": "OnTheSpectrum",
-      "category": "3D Asset Pipeline",
-      "description": "A local-first Blender-to-Three.js asset and world prototyping pipeline with generated GLBs, metadata, previews, and playable world QA.",
+      "category": "Hackathon Build",
+      "description": "A game of AI-driven infinite levels built in 7 hours at AI Engineer Hackathon 2026, wiring Codex and Blender MCP into a local-first Blender-to-Three.js pipeline.",
       "tags": [
         "Python",
         "Three.js",
         "Blender MCP",
+        "Codex",
         "GLB",
-        "World Builder"
+        "Game",
+        "7-Hour Build"
       ],
       "repoUrl": "https://github.com/Rah-Rah-Mitra/OnTheSpectrum",
       "dateLabel": "May 2026",
@@ -411,10 +488,10 @@
       "npcRole": "3D world architect",
       "featuredPriority": 2,
       "spotlight": {
-        "context": "A local-first pipeline for moving authored 3D assets from Blender into a browser-based interactive world.",
-        "contribution": "Built the asset, metadata, preview, and playable-world workflow around generated GLBs.",
-        "approach": "Python orchestration, Blender MCP, Three.js runtime integration, asset previews, and world QA.",
-        "outcome": "A reusable prototyping pipeline and the existing spatial portfolio asset library."
+        "context": "AI Engineer Hackathon 2026, with 7 hours on the clock: could a game generate its own levels end to end rather than shipping authored ones?",
+        "contribution": "Created the game and the pipeline under it, wiring Codex and Blender MCP into a local-first Blender-to-Three.js workflow.",
+        "approach": "Python orchestration, Blender MCP, Three.js runtime integration, GLB assets with metadata, previews, playable-world QA, and Remotion video workflows.",
+        "outcome": "A playable game of AI-driven infinite levels inside the 7-hour window, and the reusable pipeline that still supplies this site’s spatial asset library."
       }
     },
     {
@@ -528,15 +605,17 @@
     },
     {
       "id": "hailo-training",
-      "title": "Hailo Training",
+      "title": "Hailo Edge AI Training and Deployment",
       "category": "Edge AI Training",
-      "description": "Training and experimentation workflows for edge AI, deploying OCR and object-detection models to Hailo accelerators for on-device inference.",
+      "description": "YOLO26 trained through transfer learning and reshaped with the Hailo Dataflow Compiler, running document detection on a Hailo-8L rated 13 TOPS at 1.5 W to speed up large-batch scanning.",
       "tags": [
         "Edge AI",
+        "YOLO26",
+        "Transfer Learning",
+        "Hailo Dataflow Compiler",
+        "Hailo-8L",
         "OCR",
-        "Object Detection",
-        "Model Training",
-        "Acceleration"
+        "Object Detection"
       ],
       "repoUrl": "https://github.com/Rah-Rah-Mitra/Hailo-Training",
       "dateLabel": "Mar 2026",
@@ -579,7 +658,7 @@
       "id": "volt-pulse-sg",
       "title": "Volt Pulse SG",
       "category": "Agentic AI & Sustainability",
-      "description": "Top 8 finalist at SMU Hack For Cities 2026: an agentic AI system for household energy-cost tracking, multilingual retrieval, and recommendation routing.",
+      "description": "Top 8 finalist of 50+ teams at SMU Hack For Cities 2026: an autonomous loop managing electricity and utility savings across multiple HDB households at once.",
       "tags": [
         "Agentic AI",
         "SEALION",
@@ -598,8 +677,8 @@
       "featuredPriority": 6,
       "spotlight": {
         "context": "Household energy information is fragmented and difficult to translate into timely action.",
-        "contribution": "Co-built an agentic AI platform for HDB energy-cost tracking and recommendation routing.",
-        "approach": "SEALION embeddings, Supabase vector search, reciprocal-rank fusion, and scheduler-agent planning.",
+        "contribution": "Built an autonomous loop managing electricity and utility savings across multiple HDB households at once.",
+        "approach": "SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing.",
         "outcome": "Top 8 finalist of 50+ teams at SMU Hack For Cities 2026."
       }
     },
@@ -785,12 +864,14 @@
       "id": "smart-exam",
       "title": "SmartExam",
       "category": "AI Agents & RAG",
-      "description": "A multi-agent autonomous exam-generation system from varied source material, built for the GovTech x NTUPC Product Hackathon.",
+      "description": "Exam practice from a student’s own notes at adaptive difficulty, replacing hundreds of dollars of past-year paper purchases. Built for the GovTech x NTUPC Product Hackathon.",
       "tags": [
         "Next.js",
         "RAG",
         "AI Agents",
-        "System Design"
+        "System Design",
+        "Adaptive Difficulty",
+        "Education"
       ],
       "repoUrl": "https://github.com/Rah-Rah-Mitra/SmartExam",
       "dateLabel": "2025",
@@ -907,9 +988,9 @@
       "featuredPriority": 4,
       "spotlight": {
         "context": "Community garden-plot allocation needed a complete civic workflow rather than another isolated form.",
-        "contribution": "Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it.",
+        "contribution": "Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it. Singpass secures the sign-in; Myinfo is what keeps the ballot fair.",
         "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and cloud security controls), with stakeholder coordination and rollout planning.",
-        "outcome": "Production-ready for national rollout and awarded the S$20,000 Sparks Community Innovation Fund."
+        "outcome": "Fair balloting for 150 residents signed up at release, production-ready for national rollout, and the S$20,000 Sparks Community Innovation Fund."
       }
     },
     {
@@ -1026,7 +1107,7 @@
       "id": "on-the-spectrum",
       "date": "2026-05",
       "title": "OnTheSpectrum",
-      "category": "3D Asset Pipeline",
+      "category": "Hackathon Build",
       "stack": "Python · Three.js · Blender MCP",
       "domain": "3D / Vision",
       "href": "https://github.com/Rah-Rah-Mitra/OnTheSpectrum"
@@ -1069,9 +1150,9 @@
     {
       "id": "hailo-training",
       "date": "2026-03",
-      "title": "Hailo Training",
+      "title": "Hailo Edge AI Training and Deployment",
       "category": "Edge AI Training",
-      "stack": "Edge AI · OCR · Object Detection",
+      "stack": "Edge AI · YOLO26 · Transfer Learning",
       "domain": "AI",
       "href": "https://github.com/Rah-Rah-Mitra/Hailo-Training"
     },
@@ -1290,8 +1371,8 @@
         "CI/CD",
         "System Design"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-software-engineer-2026-10.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-software-engineer-2026-10.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-software-engineer-2026-11.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-software-engineer-2026-11.docx"
     },
     {
       "id": "solution-architect",
@@ -1306,8 +1387,8 @@
         "Singpass",
         "Stakeholders"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-solution-architect-2026-10.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-solution-architect-2026-10.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-solution-architect-2026-11.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-solution-architect-2026-11.docx"
     },
     {
       "id": "ai-engineer",
@@ -1322,8 +1403,8 @@
         "HPC",
         "Model Evaluation"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-10.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-10.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-11.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-11.docx"
     },
     {
       "id": "operations-research-engineer",
@@ -1337,8 +1418,8 @@
         "Statistics",
         "Excel VBA"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-10.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-10.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-11.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-11.docx"
     },
     {
       "id": "cyber-security",
@@ -1353,8 +1434,8 @@
         "OAuth2/JWT",
         "Rust"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-cyber-security-2026-10.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-cyber-security-2026-10.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-cyber-security-2026-11.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-cyber-security-2026-11.docx"
     },
     {
       "id": "civic-tech-solution-architect",
@@ -1369,8 +1450,8 @@
         "GIS",
         "Accessibility"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-10.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-10.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-11.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-11.docx"
     },
     {
       "id": "highlights",
@@ -1384,8 +1465,8 @@
         "Security",
         "Open Source"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-highlights-2026-10.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-highlights-2026-10.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-highlights-2026-11.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-highlights-2026-11.docx"
     },
     {
       "id": "general",
@@ -1399,8 +1480,8 @@
         "Security",
         "Two Pages"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-general-2026-10.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-general-2026-10.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-general-2026-11.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-general-2026-11.docx"
     }
   ]
 }

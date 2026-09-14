@@ -32,11 +32,16 @@ const committed = () => {
   return rows;
 };
 
-// specSchema lets a caller pin bodyPt 10-12 and marginIn 0.5-1.0, so the four-rung
-// auto-fit ladder is a sample of what a phrasing can be rendered at, not the whole
+// specSchema lets a caller pin bodyPt 8.5-12 and marginIn 0.5-1.0, so a style's
+// own fit ladder is a sample of what a phrasing can be rendered at, not the whole
 // of it. A wording that fits at 10pt can overflow at 12.
+//
+// The floor moved 10 -> 8.5 when the NUS style landed, and the measurement moved
+// with it in the other direction too: line counts here are Helvetica now, which
+// is wider than Times at the same size, so a phrasing attested under the old
+// default is not automatically attested under this one.
 const GRID: Array<{ bodyPt: number; marginIn: number }> = [];
-for (let bodyPt = 10; bodyPt <= 12; bodyPt += 0.5) {
+for (let bodyPt = 8.5; bodyPt <= 12; bodyPt += 0.5) {
   for (let margin = 0.5; margin <= 1.0001; margin += 0.1) {
     GRID.push({ bodyPt, marginIn: Math.round(margin * 10) / 10 });
   }
@@ -139,37 +144,36 @@ describe('phrasing selection', () => {
   it('records the choice on the assembled item', () => {
     const spec = {
       sections: [{ type: 'projects', title: 'PROJECTS', entries: [{ id: 'waaah', bullets: ['main'] }] }],
-      phrasings: { 'waaah.main': 'landmarks-first' },
+      phrasings: { 'waaah.main': 'build-first' },
     };
     const item = (assemble(spec, pools) as Array<{ kind: string; phrasing?: string; text: string }>)
       .find((row) => row.kind === 'bullet');
-    expect(item?.phrasing).toBe('landmarks-first');
-    expect(item?.text.startsWith('Turned')).toBe(true);
+    expect(item?.phrasing).toBe('build-first');
+    expect(item?.text.startsWith('Built')).toBe(true);
   });
 
   it('never accepts prose from a caller', () => {
     const base = { sections: [{ type: 'skills', title: 'SKILLS AND CERTIFICATIONS', lines: ['se-skills'] }] };
-    expect(specSchema.safeParse({ ...base, phrasings: { 'waaah.main': 'landmarks-first' } }).success).toBe(true);
+    expect(specSchema.safeParse({ ...base, phrasings: { 'waaah.main': 'build-first' } }).success).toBe(true);
     expect(specSchema.safeParse({ ...base, phrasings: { 'waaah.main': { text: 'I wrote this' } } }).success).toBe(false);
-    expect(specSchema.safeParse({ ...base, phrasings: { 'not a ref': 'landmarks-first' } }).success).toBe(false);
+    expect(specSchema.safeParse({ ...base, phrasings: { 'not a ref': 'build-first' } }).success).toBe(false);
   });
 });
 
 describe('the checker offers a rephrase where it used to offer nothing', () => {
-  it('names a fix for the repeated project openers', () => {
+  it('names a fix for the repeated sentence shape', () => {
     const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'software-engineer');
     const report = checkSpec(config, { bodyPt: 10, marginIn: 0.7 } as never) as Report;
-    const projects = report.findings.find((item) => item.category === 'lead-verb-repeat'
-      && item.remedy?.candidates?.some((row) => row.ref === 'waaah.main'));
-    expect(projects?.remedy?.kind).toBe('rephrase');
-    expect(projects?.remedy?.candidates?.map((row) => `${row.ref}@${row.phrasing}`))
-      .toContain('waaah.main@landmarks-first');
+    const frame = report.findings.find((item) => item.category === 'frame-repeat');
+    expect(frame?.remedy?.kind).toBe('rephrase');
+    expect(frame?.remedy?.candidates?.map((row) => `${row.ref}@${row.phrasing}`))
+      .toContain('hailo.main@target-first');
   });
 
   it('clears the findings when the offered wordings are taken', () => {
     // The acceptance test for the whole feature: every fix the checker names is
     // one an agent may apply, and applying them removes the finding.
-    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'general') as Spec;
+    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'software-engineer') as Spec;
     const fit = { bodyPt: 10, marginIn: 0.7 };
     const before = checkSpec(config, fit as never) as Report;
     const chosen: Record<string, string> = {};
@@ -181,7 +185,7 @@ describe('the checker offers a rephrase where it used to offer nothing', () => {
       for (const row of fresh) chosen[row.ref] ??= row.phrasing as string;
     }
     const after = checkSpec({ ...config, phrasings: chosen }, fit as never) as Report;
-    expect(before.counts.warnings).toBe(6);
+    expect(before.counts.warnings).toBe(1);
     expect(after.counts.warnings).toBe(0);
     expect(after.counts.errors).toBe(0);
   });
@@ -195,7 +199,7 @@ describe('the checker offers a rephrase where it used to offer nothing', () => {
     const blocks = resumeBlocks() as { sections: Array<{ type: string; entries: Array<{ id: string; bullets: Array<{ id: string; phrasings?: Record<string, { text: string }> }> }> }> };
     const bullets = blocks.sections.flatMap((section) => section.entries.flatMap((entry) => entry.bullets));
     const waaah = blocks.sections.find((item) => item.type === 'projects')?.entries.find((item) => item.id === 'waaah');
-    expect(waaah?.bullets[0].phrasings?.['landmarks-first'].text).toMatch(/^Turned MediaPipe/);
+    expect(waaah?.bullets[0].phrasings?.['build-first'].text).toMatch(/^Built a 24-hour gesture-to-comic/);
     // Additive: absent exactly where the bullet has none, so the shape existing
     // consumers read is unchanged.
     expect(bullets.some((bullet) => bullet.phrasings === undefined)).toBe(true);
@@ -207,8 +211,8 @@ describe('the checker offers a rephrase where it used to offer nothing', () => {
   it('puts the alternatives on the menu, so an agent can avoid the repeat first', () => {
     const blocks = decoratedBlocks() as { sections: Array<{ type: string; entries: Array<{ id: string; bullets: Array<{ id: string; lead: string; phrasings?: Record<string, { lead: string; lines: number }> }> }> }> };
     const waaah = blocks.sections.find((item) => item.type === 'projects')?.entries.find((item) => item.id === 'waaah');
-    expect(waaah?.bullets[0].lead).toBe('Built');
-    expect(waaah?.bullets[0].phrasings?.['landmarks-first'].lead).toBe('Turned');
-    expect(waaah?.bullets[0].phrasings?.['landmarks-first'].lines).toBeGreaterThan(0);
+    expect(waaah?.bullets[0].lead).toBe('Turned');
+    expect(waaah?.bullets[0].phrasings?.['build-first'].lead).toBe('Built');
+    expect(waaah?.bullets[0].phrasings?.['build-first'].lines).toBeGreaterThan(0);
   });
 });

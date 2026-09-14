@@ -47,3 +47,4 @@ assets/optical-courier/production/
 public/models/optical-courier-production.glb
 .vercel
 .env*
+__pycache__/

@@ -11,6 +11,18 @@
 // sort policy, bullet selection order, and one-line vs two-line entries, so the
 // PDF, DOCX, Markdown and check outputs can never drift apart.
 
+/**
+ * Sort key for a dated entry, ordering by END date first: entries still running
+ * come above ended ones, running ordered by `start` descending and ended by
+ * `end` descending. An entry is still running exactly when it has no `end`.
+ *
+ * The "1"/"0" prefix is what puts running entries on top under one descending
+ * string compare, so this stays a single sort rather than a partition.
+ * build_resumes.py:entry_order is the same rule for the Word pipeline; the two
+ * have to agree or the canonical PDFs and every custom build disagree on order.
+ */
+const entryOrder = (entry) => (entry.end ? `0${entry.end}` : `1${entry.start}`);
+
 // text[variant] ?? text[slug] ?? text.default, mirroring build_resumes.py:33-35
 // with the reserved depth keys layered on top.
 export const resolveRole = (entry, selection) => {
@@ -87,13 +99,14 @@ export const assemble = (spec, pools) => {
       continue;
     }
     const pool = new Map(pools[section.type].entries.map((entry) => [entry.id, entry]));
-    const key = section.type === 'projects' ? 'sort' : 'start';
     const chosen = section.entries.map((selection) => {
       const entry = pool.get(selection.id);
       if (!entry) throw new Error(`unknown ${section.type} entry: ${selection.id}`);
       if (entry.blocked) throw new Error(`${selection.id} is not available for résumés: ${entry.blocked}`);
       return { entry, bullets: selection.bullets ?? [], variant: selection.variant, role: resolveRole(entry, selection) };
-    }).sort((a, b) => b.entry[key].localeCompare(a.entry[key]));
+    }).sort((a, b) => (section.type === 'projects'
+      ? b.entry.sort.localeCompare(a.entry.sort)
+      : entryOrder(b.entry).localeCompare(entryOrder(a.entry))));
 
     for (const { entry, bullets, variant, role } of chosen) {
       items.push({

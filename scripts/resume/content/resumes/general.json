@@ -2,8 +2,8 @@
   "slug": "general",
   "subject": "General Master CV",
   "pages": 2,
-  "marginIn": 0.6,
-  "bodyPt": 10,
+  "bodyPt": 9.5,
+  "marginIn": 0.5,
   "sections": [
     {
       "type": "education",
@@ -16,16 +16,12 @@
             "award",
             "coursework-full"
           ]
-        },
-        {
-          "id": "asrjc",
-          "bullets": []
         }
       ]
     },
     {
       "type": "experience",
-      "title": "EXPERIENCE",
+      "title": "WORK EXPERIENCE",
       "entries": [
         {
           "id": "stmicro-or",
@@ -44,7 +40,8 @@
           "id": "abbott-contract",
           "bullets": [
             "platform",
-            "setpoint"
+            "setpoint",
+            "harness"
           ]
         },
         {
@@ -62,20 +59,6 @@
             "singpass",
             "sparks"
           ]
-        },
-        {
-          "id": "ywh",
-          "bullets": [
-            "programs",
-            "automation"
-          ]
-        },
-        {
-          "id": "navy",
-          "bullets": [
-            "vba",
-            "data"
-          ]
         }
       ]
     },
@@ -83,12 +66,6 @@
       "type": "projects",
       "title": "PROJECTS AND COMPETITIONS",
       "entries": [
-        {
-          "id": "waaah",
-          "bullets": [
-            "main"
-          ]
-        },
         {
           "id": "onthespectrum",
           "bullets": [
@@ -102,13 +79,13 @@
           ]
         },
         {
-          "id": "arcane",
+          "id": "voltpulse",
           "bullets": [
             "main"
           ]
         },
         {
-          "id": "voltpulse",
+          "id": "waaah",
           "bullets": [
             "main"
           ]
@@ -132,22 +109,9 @@
           ]
         },
         {
-          "id": "ethoslens",
-          "bullets": [
-            "main"
-          ]
-        },
-        {
           "id": "brinhack",
           "bullets": [
             "main"
-          ]
-        },
-        {
-          "id": "additional",
-          "bullets": [
-            "nvidia",
-            "llm-cyber"
           ]
         }
       ]
@@ -167,6 +131,21 @@
           "bullets": [
             "combined"
           ]
+        },
+        {
+          "id": "ywh",
+          "bullets": [
+            "programs",
+            "automation",
+            "network"
+          ]
+        },
+        {
+          "id": "navy",
+          "bullets": [
+            "vba",
+            "data"
+          ]
         }
       ]
     },
@@ -174,14 +153,14 @@
       "type": "skills",
       "title": "SKILLS AND CERTIFICATIONS",
       "lines": [
-        "gen-languages",
-        "gen-ai",
-        "gen-or",
-        "gen-cloud",
-        "gen-security",
-        "gen-web",
-        "gen-arch",
-        "gen-hardware",
+        "hl-languages",
+        "hl-web-cloud",
+        "hl-ai-data",
+        "ai-foundations",
+        "cv-skills",
+        "sim-or",
+        "statistics",
+        "hl-security",
         "certs-general"
       ]
     }

@@ -2,7 +2,8 @@
   "slug": "operations-research-engineer",
   "subject": "Operations Research Engineer Resume",
   "pages": 1,
-  "bodyPt": 10,
+  "bodyPt": 9,
+  "marginIn": 0.5,
   "sections": [
     {
       "type": "education",
@@ -20,7 +21,7 @@
     },
     {
       "type": "experience",
-      "title": "EXPERIENCE",
+      "title": "WORK EXPERIENCE",
       "entries": [
         {
           "id": "stmicro-or",
@@ -51,12 +52,6 @@
           "id": "pa",
           "bullets": [
             "churp"
-          ]
-        },
-        {
-          "id": "navy",
-          "bullets": [
-            "vba"
           ]
         }
       ]
@@ -93,6 +88,12 @@
           "id": "ntuc",
           "bullets": [
             "main"
+          ]
+        },
+        {
+          "id": "navy",
+          "bullets": [
+            "vba"
           ]
         }
       ]

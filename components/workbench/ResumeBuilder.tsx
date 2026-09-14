@@ -20,7 +20,8 @@ type SkillLine = { id: string; label: string; items: string };
 type SpecSection =
   | { type: SectionType; title: string; entries: Array<{ id: string; bullets: string[] }> }
   | { type: 'skills'; title: string; lines: string[] };
-type Spec = { subject: string; pages: number; detail?: 'standard' | 'deep'; sections: SpecSection[] };
+type Style = 'nus' | 'harvard';
+type Spec = { subject: string; pages: number; detail?: 'standard' | 'deep'; style?: Style; sections: SpecSection[] };
 type Config = { slug: string; subject: string; pages: number; sections: SpecSection[] };
 type SectionType = 'education' | 'experience' | 'projects' | 'leadership';
 
@@ -50,7 +51,7 @@ const picksFromConfig = (config: Config) => {
   return { picks, lines };
 };
 
-const buildSpec = (content: Content, picks: Picks, lines: string[], detail: 'standard' | 'deep', pages: number): Spec => {
+const buildSpec = (content: Content, picks: Picks, lines: string[], detail: 'standard' | 'deep', pages: number, style: Style): Spec => {
   const sections: SpecSection[] = [];
   for (const { type, title } of SECTIONS) {
     const entries = (content.pools[type].entries ?? [])
@@ -59,7 +60,7 @@ const buildSpec = (content: Content, picks: Picks, lines: string[], detail: 'sta
     if (entries.length) sections.push({ type, title, entries });
   }
   if (lines.length) sections.push({ type: 'skills', title: SKILLS_TITLE, lines });
-  return { subject: 'Custom Resume', pages, detail, sections };
+  return { subject: 'Custom Resume', pages, detail, style, sections };
 };
 
 export const ResumeBuilder: React.FC = () => {
@@ -68,6 +69,7 @@ export const ResumeBuilder: React.FC = () => {
   const [lines, setLines] = React.useState<string[]>([]);
   const [detail, setDetail] = React.useState<'standard' | 'deep'>('standard');
   const [pages, setPages] = React.useState(1);
+  const [style, setStyle] = React.useState<Style>('nus');
   const [preview, setPreview] = React.useState<string | null>(null);
   const [status, setStatus] = React.useState<{ pages: number; fit: string } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -93,8 +95,8 @@ export const ResumeBuilder: React.FC = () => {
   }, []);
 
   const spec = React.useMemo(
-    () => (content ? buildSpec(content, picks, lines, detail, pages) : null),
-    [content, picks, lines, detail, pages],
+    () => (content ? buildSpec(content, picks, lines, detail, pages, style) : null),
+    [content, picks, lines, detail, pages, style],
   );
   const specKey = spec ? JSON.stringify(spec) : '';
 
@@ -208,6 +210,14 @@ export const ResumeBuilder: React.FC = () => {
           {(['standard', 'deep'] as const).map((mode) => (
             <button key={mode} type="button" data-active={detail === mode || undefined} onClick={() => setDetail(mode)}>
               {mode === 'standard' ? 'STANDARD' : 'DEEP'}
+            </button>
+          ))}
+        </div>
+
+        <div className="wb-domainseg" role="group" aria-label="Résumé style">
+          {(['nus', 'harvard'] as const).map((option) => (
+            <button key={option} type="button" data-active={style === option || undefined} onClick={() => setStyle(option)}>
+              {option === 'nus' ? 'NUS CDE' : 'HARVARD'}
             </button>
           ))}
         </div>

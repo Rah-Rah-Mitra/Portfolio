@@ -11,36 +11,37 @@
         {
           "id": "putaway",
           "text": {
-            "default": "Build an AI-driven put-away recommendation system for STMicroelectronics' Singapore warehouse, combining picking history, demand forecasts, and live capacity to replace experience-based slotting decisions.",
-            "deep": "Build an AI-driven put-away recommendation system for STMicroelectronics' Singapore semiconductor warehouse, combining picking history, demand forecasts, and live capacity to replace experience-based slotting with systematic, capacity-aware storage recommendations."
+            "default": "Design an AI-driven put-away recommendation system for STMicroelectronics' Singapore warehouse, replacing experience-based slotting with capacity-aware decisions drawn from 3 live inputs: picking history, demand forecasts, and available capacity.",
+            "deep": "Design an AI-driven put-away recommendation system for STMicroelectronics' Singapore semiconductor warehouse, replacing experience-based slotting with systematic, capacity-aware storage recommendations drawn from 3 live inputs: picking history, demand forecasts, and available capacity."
+          },
+          "phrasings": {
+            "inputs-first": {
+              "text": "Design an AI-driven put-away recommendation system for STMicroelectronics' Singapore warehouse from 3 live inputs: picking history, demand forecasts, and available capacity, in place of experience-based slotting.",
+              "note": "leads on the inputs and closes on a noun phrase rather than a trailing participle"
+            }
           }
         }
       ]
     },
     {
       "id": "amazon-vision",
-      "organization": "Amazon",
+      "organization": "Amazon (BlendED AI+X)",
       "location": "Singapore",
-      "role": "Robotics Vision Engineer (BlendED AI+X)",
+      "role": "Robotics Vision Engineer",
       "start": "2026-07",
       "dateLabel": "Jul 2026 – Present",
       "bullets": [
         {
           "id": "isp",
           "text": {
-            "default": "Build vision systems for camera ISP enhancement, super-resolution, and image restoration under motion and low light."
-          },
-          "phrasings": {
-            "capability-first": {
-              "text": "Advance camera ISP enhancement, super-resolution, and image restoration under motion and low light.",
-              "note": "leads on the imaging capability rather than the system"
-            }
+            "default": "Build vision systems for 3 imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light."
           }
         },
         {
           "id": "frame-quality",
           "text": {
-            "default": "Engineer processing and evaluation stages that deliver perception-ready frame quality for downstream robotics vision."
+            "default": "Improve processing and evaluation stages to upscale frames 4 times, lifting PSNR and SSIM so a low-cost camera reaches frame quality on par with premium sensors.",
+            "deep": "Improve processing and evaluation stages to upscale frames 4 times, measuring the gain on PSNR and SSIM so a low-cost camera reaches frame quality on par with premium sensors before those frames reach downstream robotics perception."
           }
         }
       ]
@@ -56,58 +57,58 @@
         {
           "id": "ai-systems",
           "text": {
-            "default": "Build AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation."
+            "default": "Deliver AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation."
           }
         },
         {
           "id": "supply-chain",
           "text": {
-            "default": "Strengthen monitoring and process structure across healthcare supply chains with AI, helping ensure reliable product availability for vulnerable patient groups."
+            "default": "Strengthen monitoring and process structure across healthcare supply chains with AI, protecting product availability for vulnerable patient groups."
           }
         },
         {
           "id": "platform",
           "text": {
-            "default": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants, spanning GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted quantized Gemma model.",
-            "deep": "Build an air-gapped process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain over a locally hosted quantized Gemma 4 E4B served through llama.cpp GGUF."
+            "default": "Assemble a 5-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted Gemma model.",
+            "deep": "Assemble a 5-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain over a locally hosted Gemma 4 E4B served through llama.cpp GGUF."
           },
           "phrasings": {
-            "stack-first": {
-              "text": "Assemble an air-gapped process-intelligence platform for globally distributed spray-drying plants from GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted quantized Gemma model.",
-              "note": "leads on assembling the stack; no trailing participle"
+            "build-first": {
+              "text": "Build a 5-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted Gemma model.",
+              "note": "leads on building the platform rather than on assembling the stack"
             }
           }
         },
         {
           "id": "setpoint",
           "text": {
-            "default": "Reverse-engineer four plants' APC steady-state optimizers from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency without a commercial solver license.",
-            "deep": "Reverse-engineer four site-specific vendor formulations' APC steady-state optimizers from their Excel master files into a single HiGHS linear program (scipy.optimize.linprog) with a tracking QP and PLC predictor covering every site, returning setpoints, binding constraints, shadow prices, and trust-region warnings at millisecond latency with no commercial solver license, back-tested against the production optimizer's own historical targets."
+            "default": "Convert 4 plants' Advanced Process Control models from Excel master files into a single HiGHS linear program returning setpoints, binding constraints, and shadow prices at millisecond latency.",
+            "deep": "Convert 4 site-specific vendor formulations' Advanced Process Control steady-state models from their Excel master files into a single HiGHS linear program (scipy.optimize.linprog) with a tracking QP and PLC predictor covering every site, returning setpoints, binding constraints, shadow prices, and trust-region warnings at millisecond latency with no commercial solver license, back-tested against the production system's own historical targets."
           }
         },
         {
           "id": "datalayer",
           "text": {
-            "default": "Build a live multi-site data layer over read-only Seeq historian pulls, with per-site canonicalization driven by configuration rather than forks and automated operating-window qualification that excludes downtime.",
-            "deep": "Build a live multi-site data layer over read-only Seeq (SPy) historian pulls, canonicalizing each site through configuration rather than forks (status predicates, production thresholds, time zones, tag mapping, unit overrides), with automated operating-window qualification excluding downtime, then Kalman smoothing, Welch PSD, lag and coherence, change-point detection (ruptures), and matrix-profile motifs (STUMPY) in SciPy and pandas."
+            "default": "Build a live multi-site data layer over read-only Seeq historian pulls, with per-site mapping driven by configuration rather than forks and automated operating-window qualification excluding downtime.",
+            "deep": "Build a live multi-site data layer over read-only Seeq (SPy) historian pulls, mapping each site through configuration rather than forks (status predicates, production thresholds, time zones, tag mapping, unit overrides), with automated operating-window qualification excluding downtime, then Kalman smoothing, Welch PSD, lag and coherence, change-point detection (ruptures), and matrix-profile motifs (STUMPY) in SciPy and pandas."
           }
         },
         {
           "id": "guardrails",
           "text": {
-            "default": "Design a hallucination-resistant tool loop in which the model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log, with no write path to plant control."
+            "default": "Design a tool loop where a model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log with no write path to plant control."
           }
         },
         {
           "id": "harness",
           "text": {
-            "default": "Build the engine's test harness: 20+ assert-based regression tests, a headless notebook runner, a deterministic LLM stand-in for GPU-free CI, and committed golden snapshots for credential-free reproducible runs."
+            "default": "Built 20+ regression tests, a headless notebook runner, a deterministic model stand-in for GPU-free CI, and committed golden snapshots for reproducible runs."
           }
         },
         {
           "id": "hardening",
           "text": {
-            "default": "Harden global deployment with lock-pinned CUDA and CPU builds for commodity CPU-only plant hardware, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference."
+            "default": "Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference."
           }
         }
       ]
@@ -116,38 +117,30 @@
       "id": "abbott-intern",
       "organization": "Abbott Laboratories",
       "location": "Singapore",
-      "role": "Data Analytics and Project/Product Management Intern",
+      "role": "Data Analytics & Product Management Intern",
       "start": "2026-01",
+      "end": "2026-06",
       "dateLabel": "Jan 2026 – Jun 2026",
       "bullets": [
         {
           "id": "digital-twin",
           "text": {
-            "default": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling, translating production objectives and constraints into decision-ready schedules.",
-            "operations-research-engineer": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling; compared heuristic, MIP, and genetic-algorithm approaches and researched robust optimization.",
-            "deep": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer for hybrid flow-shop scheduling over interval and precedence constraints, compared heuristic, MIP, and genetic-algorithm approaches against heuristic baselines, and researched robust optimization for operational uncertainty."
-          },
-          "phrasings": {
-            "methods-first": {
-              "text": "Modeled hybrid flow-shop scheduling as a SimPy discrete-event digital twin and OR-Tools CP-SAT optimizer, comparing heuristic, MIP, and genetic-algorithm approaches against heuristic baselines.",
-              "note": "surfaces the optimisation methods the default leaves in the deep variant"
-            }
+            "default": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling, then compared 3 approaches (heuristic, MIP, and genetic algorithm) to turn production objectives and constraints into decision-ready schedules.",
+            "deep": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling over interval and precedence constraints, then compared 3 approaches (heuristic, MIP, and genetic algorithm) against heuristic baselines and researched robust optimization for operational uncertainty."
           }
         },
         {
           "id": "pipeline",
           "text": {
-            "default": "Validated a non-destructive, 15-stage changeover-data pipeline against five years of unseen raw data with zero execution failures, normalizing operator- and machine-generated anomalies.",
-            "deep": "Engineered a non-destructive, 15-stage changeover-data pipeline over operational matrices that encoded meaning in values, labels, colours, merged regions, and blanks, using controlled staging sheets, normalization and repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling to expose every intermediate state instead of mutating source data, and validated against five years of unseen raw data with zero execution failures."
+            "default": "Validated a non-destructive, 15-stage changeover-data pipeline against 5 years of unseen raw data with zero execution failures across operator- and machine-generated anomalies.",
+            "deep": "Validated a non-destructive, 15-stage changeover-data pipeline over operational matrices that encoded meaning in values, labels, colours, merged regions, and blanks, using controlled staging sheets, repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling to expose every intermediate state instead of mutating source data, against 5 years of unseen raw data with zero execution failures."
           }
         },
         {
           "id": "apc",
           "text": {
-            "default": "Productionized a team-built APC simulator for live manufacturing and engineer training, packaging it in Docker and deploying it to Azure App Service.",
-            "cyber-security": "Productionized a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime and session hardening, and Docker packaging.",
+            "default": "Productionized a team-built APC simulator for live internal users on Azure App Service with Docker packaging, access restrictions, and runtime and session hardening.",
             "solution-architect": "Owned cloud deployment and production support for a team-built APC simulator used in manufacturing and engineer training, with Docker packaging, Azure App Service hosting, and documented handover.",
-            "highlights": "Productionized a team-built APC simulator for live internal users on Azure App Service, applying access restrictions, runtime and session hardening, and Docker packaging.",
             "deep": "Productionized a team-built Advanced Process Control simulator for live internal users on Azure App Service, handling Flask and JavaScript debugging, Docker packaging, session and request tracking, access restrictions, and documented deployment handover, with the originating team retaining authorship."
           }
         },
@@ -168,84 +161,40 @@
         "software": "Software Engineer (Citizen Developer)"
       },
       "start": "2025-09",
+      "end": "2026-09",
       "dateLabel": "Sep 2025 – Sep 2026",
       "bullets": [
         {
           "id": "churp",
           "text": {
-            "default": "Delivered a digital garden-plot balloting platform from admin and public frontends through backend, GIS mapping, and deployment, now production-ready for national rollout across Singapore.",
-            "deep": "Built an end-to-end digital garden-plot balloting platform spanning admin and public frontends, backend, GIS-based plot allocation, and deployment, coordinating stakeholders and rollout planning across product, engineering, and operations; now production-ready for national rollout across Singapore."
+            "default": "Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment, now production-ready for national rollout across Singapore.",
+            "deep": "Delivered an end-to-end digital garden-plot balloting platform across admin and public frontends, backend, GIS-based plot allocation, and deployment, coordinating stakeholders and rollout planning across product, engineering, and operations, now production-ready for national rollout across Singapore."
           }
         },
         {
           "id": "singpass",
           "text": {
-            "default": "Integrated Singpass Login (OIDC) and Myinfo for passwordless authentication and consent-based retrieval of verified identity and registered address, automating resident eligibility checks."
+            "default": "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address, keeping garden-plot balloting fair for 150 residents signed up at release.",
+            "deep": "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to retrieve verified identity and registered address under resident consent, automating eligibility checks so garden-plot balloting stayed fair for 150 residents signed up at release."
+          },
+          "phrasings": {
+            "fairness-first": {
+              "text": "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address for fair garden-plot balloting across 150 residents signed up at release.",
+              "note": "closes on the fairness outcome as a noun phrase rather than a trailing participle"
+            }
           }
         },
         {
           "id": "sparks",
           "text": {
-            "default": "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations; awarded the S$20,000 Sparks Community Innovation Fund."
+            "default": "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations, winning the S$20,000 Sparks Community Innovation Fund."
           }
         },
         {
           "id": "infra",
           "text": {
-            "default": "Provisioned and deployed the platform's AWS infrastructure with Terraform (Fargate services, Route 53 DNS, Redis caching, and Kafka messaging), applying cloud security controls across the environment.",
-            "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure spanning Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, with cloud security controls applied across the environment alongside multi-repo coordination and rollout planning."
-          }
-        }
-      ]
-    },
-    {
-      "id": "ywh",
-      "organization": "YesWeHack",
-      "location": "Remote",
-      "role": "Independent Bug Bounty Researcher",
-      "start": "2024-05",
-      "dateLabel": "May 2024 – Present",
-      "bullets": [
-        {
-          "id": "programs",
-          "text": {
-            "default": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and authorization weaknesses.",
-            "highlights": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and authorization weaknesses, automating endpoint discovery, payload delivery, and evidence collection with Burp Suite and custom fuzzing scripts."
-          }
-        },
-        {
-          "id": "automation",
-          "text": {
-            "default": "Automated endpoint discovery, payload delivery, and evidence collection for responsible-disclosure reports using Burp Suite, Wireshark, Python, Bash, and custom fuzzing scripts."
-          }
-        },
-        {
-          "id": "network",
-          "text": {
-            "default": "Applied Burp Suite for MitM HTTP interception and Wireshark for OSI Layer 3–4 deep packet inspection and TLS handshake analysis."
-          }
-        }
-      ]
-    },
-    {
-      "id": "navy",
-      "organization": "Republic of Singapore Navy",
-      "location": "Singapore",
-      "role": "Base Support Assistant",
-      "start": "2022-01",
-      "dateLabel": "Jan 2022 – Jan 2023",
-      "bullets": [
-        {
-          "id": "vba",
-          "text": {
-            "default": "Compressed a six-month food-waste analysis cycle into a sub-three-minute reporting process with an Excel VBA automation workflow inside a security-constrained environment.",
-            "deep": "Mapped the food-waste reporting process end to end, then automated its calculations and reporting steps with an Excel VBA workflow that compressed a six-month manual cycle into a sub-three-minute repeatable process inside a security-constrained environment."
-          }
-        },
-        {
-          "id": "data",
-          "text": {
-            "default": "Managed sensitive operational data under SAF confidentiality expectations while improving reliability, traceability, and analyst capacity."
+            "default": "Provisioned AWS infrastructure with Terraform across Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, and applied cloud security controls environment-wide.",
+            "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure across Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, with cloud security controls applied environment-wide alongside multi-repo coordination and rollout planning."
           }
         }
       ]

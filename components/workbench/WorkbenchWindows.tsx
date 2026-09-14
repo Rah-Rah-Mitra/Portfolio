@@ -3,11 +3,13 @@ import { Corners, Hoist, Kicker } from './bits';
 import { MechanismBench } from './MechanismBench';
 import {
   archiveRows,
+  BIO,
   CONTACT,
   dispatchWorkbenchOpen,
   dossierStats,
   featuredCards,
   filterArchiveRows,
+  POSITIONING,
   WORKBENCH_DOMAINS,
   type WorkbenchDomain,
 } from '../../lib/workbench';
@@ -23,14 +25,10 @@ export const HomeWindow: React.FC = () => (
     <div className="wb-home-main">
       <Kicker>W / ORIGIN — POSITIONING</Kicker>
       <h1 className="wb-h1">Rahul Mitra</h1>
-      <p className="wb-role">Systems Architect &amp; AI Engineer — ISE × CS × Mathematics</p>
+      <p className="wb-role">{POSITIONING}</p>
       <p className="wb-thesis">Intelligent systems, made operational.</p>
       <p className="wb-degree">Graduating {SITE_CONFIG.graduation}</p>
-      <p className="wb-bio">
-        NUS Industrial Systems Engineering (Second Major CS, Minor Math). I build intelligent systems at the
-        intersection of agentic AI, operations research, 3D perception, and open-source engineering — from a
-        fine-tuned 109M-parameter transformer to async Python libraries with global PyPI adoption.
-      </p>
+      <p className="wb-bio">{BIO}</p>
       <div className="wb-actions">
         <button type="button" className="btn btn-primary" onClick={() => { track('cta_clicked', { label: 'open_selected_work' }); dispatchWorkbenchOpen({ appId: 'selected-work' }); }}>
           Open Selected Work

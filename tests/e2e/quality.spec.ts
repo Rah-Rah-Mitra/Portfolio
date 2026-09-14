@@ -34,7 +34,7 @@ test.describe('field workbench — desktop', () => {
     await rail.getByRole('button', { name: 'Open Experience' }).click();
     const experience = page.getByRole('dialog', { name: 'Experience' });
     await expect(experience).toBeVisible();
-    await expect(experience.locator('[id^="experience-"]')).toHaveCount(7);
+    await expect(experience.locator('[id^="experience-"]')).toHaveCount(9);
     await expect(experience.getByRole('heading', { name: /STMicroelectronics/ })).toBeVisible();
 
     await page.keyboard.press('Escape');
@@ -95,7 +95,7 @@ test.describe('field workbench — desktop', () => {
     const page = await context.newPage();
     await page.goto('/');
     await expect(page.locator('.wb-root').getByRole('heading', { level: 1, name: 'Rahul Mitra' })).toBeVisible();
-    expect(await page.locator('[id^="experience-"]').count()).toBe(7);
+    expect(await page.locator('[id^="experience-"]').count()).toBe(9);
     expect(await page.locator('#all-work [id^="project-"]').count()).toBe(28);
     await context.close();
   });

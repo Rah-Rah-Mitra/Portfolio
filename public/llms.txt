@@ -7,7 +7,7 @@
   Tools (open, no auth): get_profile, list_experience, list_projects, get_project, list_resumes, get_resume, get_resume_guide, list_resume_blocks, build_resume, check_resume, export_profile, build_tailored_resume
   Tools (Rahul only, Authorization: Bearer): get_job_preferences, set_job_preferences, create_application, update_application, list_applications
 - JSON export of the same data, résumés included as Markdown: https://rahul-mitra.com/api/portfolio
-- Résumé builder: call get_resume_guide, then list_resume_blocks, then build_resume to compose a Harvard-style résumé targeted at a specific role. Content is selected from Rahul's approved blocks; bullet text cannot be supplied, so nothing on a generated résumé is invented.
+- Résumé builder: call get_resume_guide, then list_resume_blocks, then build_resume to compose a résumé targeted at a specific role, in the NUS CDE style Rahul's own CV uses. Content is selected from Rahul's approved blocks; bullet text cannot be supplied, so nothing on a generated résumé is invented.
 - Alternative phrasings: some bullets carry more than one approved wording of the same fact, shown on list_resume_blocks with each one's opening verb, line cost, whether it holds a measurement, and the technologies it names. A build selects one by id. Nothing here lets a caller supply text: the choice is between Rahul's own sentences.
 - Choosing blocks: every bullet and skills line on list_resume_blocks carries `terms` (the technologies from Rahul's own skills lines that this wording actually names) and `usedBy` (which of the eight canonical résumés select it — an empty list means none do, which is a fact about the block rather than a missing field), so a selection can be directed at what a role asks for instead of guessed.
 - Résumé checker: build_resume returns a check report, and check_resume runs the same check on any ready-made résumé. It is deterministic and rule-based, naming repeated opening verbs, repeated sentence frames, hedging words, bullets with no measurable outcome and bullets over the line budget, each against the block ids it found them on. It reports counts rather than a score, and it never rewrites text.
@@ -15,15 +15,15 @@
 - Job search: preferences and the application tracker are Rahul's own and token-gated; an unauthenticated caller gets a refusal, not data. build_tailored_resume never fetches a job-description URL and never lets job-description text reach a document: the posting chooses among Rahul's own blocks and his attested vocabulary (the resume keyword rows plus his skills lines) and contributes no words of its own; the coverage report it returns is drawn from that same vocabulary, so it names his terms and never quotes the posting. That report says where each covered term sits — a keyword only on the skills line is listed, the same keyword in a bullet is demonstrated — and names the block ids that would supply a missing one, never a withheld entry. `matched` shows the margin over the runner-up and which rule decided a close call, so a tie is visible rather than settled by whichever résumé sits first in a file. dry_run:true returns the whole analysis with no document rendered and no URL minted, and `resume_version` is a stable id for the selection plus the content edition, which is what the tracker's resume_version field takes. The jd_hash that identifies a posting is derived from the normalized URL when one is given and from the text only otherwise, so an edited or re-scraped posting stays one row in the tracker.
 - Site: https://rahul-mitra.com/
 
-## Résumés (PDF, edition 2026-10; swap .pdf for .docx for Word)
-- Highlights, one page: best-of across every profile, for preference forms and general applications: https://rahul-mitra.com/resume/generated/rahul-mitra-highlights-2026-10.pdf
-- General / Master CV, two pages: cross-disciplinary CV unifying every profile: https://rahul-mitra.com/resume/generated/rahul-mitra-general-2026-10.pdf
-- Software Engineer: Python, TypeScript, React, CI/CD, open-source systems: https://rahul-mitra.com/resume/generated/rahul-mitra-software-engineer-2026-10.pdf
-- Solution Architect: cloud, product, and stakeholder architecture: https://rahul-mitra.com/resume/generated/rahul-mitra-solution-architect-2026-10.pdf
-- AI Engineer: BERT, RAG, vector search, agents, HPC, model deployment: https://rahul-mitra.com/resume/generated/rahul-mitra-ai-engineer-2026-10.pdf
-- Operations Research Engineer: scheduling, simulation, graph optimization, decision support: https://rahul-mitra.com/resume/generated/rahul-mitra-operations-research-engineer-2026-10.pdf
-- Cyber Security: bug bounty, web application security, secure system design: https://rahul-mitra.com/resume/generated/rahul-mitra-cyber-security-2026-10.pdf
-- Solution Architect · Civic Tech: Singpass-integrated civic platforms and AI for social good: https://rahul-mitra.com/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-10.pdf
+## Résumés (PDF, edition 2026-11; swap .pdf for .docx for Word)
+- Highlights, one page: best-of across every profile, for preference forms and general applications: https://rahul-mitra.com/resume/generated/rahul-mitra-highlights-2026-11.pdf
+- General / Master CV, two pages: cross-disciplinary CV unifying every profile: https://rahul-mitra.com/resume/generated/rahul-mitra-general-2026-11.pdf
+- Software Engineer: Python, TypeScript, React, CI/CD, open-source systems: https://rahul-mitra.com/resume/generated/rahul-mitra-software-engineer-2026-11.pdf
+- Solution Architect: cloud, product, and stakeholder architecture: https://rahul-mitra.com/resume/generated/rahul-mitra-solution-architect-2026-11.pdf
+- AI Engineer: BERT, RAG, vector search, agents, HPC, model deployment: https://rahul-mitra.com/resume/generated/rahul-mitra-ai-engineer-2026-11.pdf
+- Operations Research Engineer: scheduling, simulation, graph optimization, decision support: https://rahul-mitra.com/resume/generated/rahul-mitra-operations-research-engineer-2026-11.pdf
+- Cyber Security: bug bounty, web application security, secure system design: https://rahul-mitra.com/resume/generated/rahul-mitra-cyber-security-2026-11.pdf
+- Solution Architect · Civic Tech: Singpass-integrated civic platforms and AI for social good: https://rahul-mitra.com/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-11.pdf
 
 ## Contact
 - Email: mitrarahul2002@gmail.com

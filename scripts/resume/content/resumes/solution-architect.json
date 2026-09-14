@@ -2,7 +2,8 @@
   "slug": "solution-architect",
   "subject": "Solution Architect Resume",
   "pages": 1,
-  "bodyPt": 10,
+  "bodyPt": 9.5,
+  "marginIn": 0.5,
   "sections": [
     {
       "type": "education",
@@ -20,7 +21,7 @@
     },
     {
       "type": "experience",
-      "title": "EXPERIENCE",
+      "title": "WORK EXPERIENCE",
       "entries": [
         {
           "id": "stmicro-or",

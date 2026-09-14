@@ -53,14 +53,14 @@ describe('the shipped documents are a function of the content pool', () => {
   // means those files no longer say what this repo says.
   it('pins every canonical résumé to the words Word would render', () => {
     expect(Object.fromEntries(configs.map((config) => [config.slug, documentDigest(config)]))).toEqual({
-      'software-engineer': '2ba1ae08db2b1de7',
-      'solution-architect': '3eece3f9d71bc723',
-      'ai-engineer': 'c53efa12f43ba41b',
-      'operations-research-engineer': 'be75a5ae726ceb35',
-      'cyber-security': '4428fa7571183786',
-      'civic-tech-solution-architect': '6819b108ac9cf595',
-      highlights: '1f35f69edec213c9',
-      general: '288a38662814c84c',
+      'software-engineer': '3cf217f035e12eaf',
+      'solution-architect': 'e91f840b56e18498',
+      'ai-engineer': 'a9c62699deea255a',
+      'operations-research-engineer': '2ffb88452429eac6',
+      'cyber-security': '8c4e16660869c058',
+      'civic-tech-solution-architect': 'd161819193fcd077',
+      highlights: '18540dfd1cdb3e5e',
+      general: '963bd55ca772182c',
     });
   });
 
@@ -78,17 +78,15 @@ describe('the shipped documents are a function of the content pool', () => {
         }
       }
     }
+    // Six overrides retired in the 2026-11 pass, and each for the same reason:
+    // the new default already says what the override said. apc's cyber-security
+    // and highlights wordings became the default; digital-twin's OR wording is
+    // now the default's own "compared 3 approaches"; coursework's general and
+    // highlights rows matched the new default; and ywh.programs:highlights was
+    // the two bullets welded together, which rendered at four lines.
     expect(overrides.sort()).toEqual([
-      'abbott-intern.apc:cyber-security',
-      'abbott-intern.apc:highlights',
       'abbott-intern.apc:solution-architect',
-      'abbott-intern.digital-twin:operations-research-engineer',
       'nus.coursework:ai-engineer',
-      'nus.coursework:cyber-security',
-      'nus.coursework:general',
-      'nus.coursework:highlights',
-      'nus.coursework:operations-research-engineer',
-      'ywh.programs:highlights',
     ]);
   });
 

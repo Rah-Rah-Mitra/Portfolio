@@ -43,6 +43,59 @@ const EVIDENCE_GAP = 2;         // extra named technologies before a stronger al
 // Frozen and exported so the word lists are reviewable in one place, and so a
 // test can prove the checker never emits a string it did not read from input.
 
+// House style, reverse-engineered from the VMock SMART Editor in Sep 2026 and
+// recorded in docs/vmock-house-style.md. Every entry below was observed
+// directly: typed into the editor, with the per-bullet indicator watched.
+//
+// Two of these are notation rules rather than word choices, and they are the
+// ones worth knowing. A bullet can be fully quantified and still score zero on
+// specifics because it wrote "4x" instead of "4 times" (the parser wants a digit
+// with whitespace or a hyphen after it), and "the" is on the filler list, so two
+// of them in one sentence is a deduction on a sentence that reads perfectly well.
+//
+// This is one screener's dictionary, not English. `air-gapped`, `quantized` and
+// `optimizer` are the correct technical terms and are only wrong here; the list
+// exists so the cost of using them is visible when choosing, not so they are
+// banned. That is why every category below is a warn or a note and none of them
+// can fail a build.
+// Verified red in the screener's dictionary. It leans British: the -ize/-ization
+// half of each pair is the casualty, and the -ise spelling passes. `projective`
+// and `queueing` were the two that cost the most to find — `projective` has no
+// British variant at all, so the fix is to name the thing another way, and
+// `queueing` differs from the passing `queuing` by one letter.
+const BANNED_SPELLING = [
+  'air-gapped', 'quantized', 'optimizer', 'optimizers', 'normalizing', 'authorization',
+  'passwordless', 'human-centered', 'aiohttp', 'asyncio', 'benchmarked', 'quartile',
+  'waitlisted', 'projective', 'generalized', 'queueing',
+];
+
+// A deny-list, deliberately, not a whitelist. VMock does not publish its verb
+// list, so a whitelist would flag every verb nobody has tested rather than the
+// three that were. The observed pattern: it rejects verbs that are also common
+// nouns (an engineer, an advance).
+const NON_ACTION_LEAD = ['engineer', 'reverse-engineer', 'advance'];
+
+// Spelled-out quantities the specifics parser cannot see. Only words that are
+// doing the work of a number: "one" and "a" are excluded because they are
+// articles far more often than counts.
+const SPELLED_NUMBER = /\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|fifty|hundred|thousand)\b|\b(?:sub-)?(?:two|three|four|five|six|seven|eight|nine|ten)-(?:minute|hour|day|week|month|year|stage|step|fold)\b/gi;
+
+// A digit glued to a letter: 4x, 1.5W, 13TOPS. The parser reads these as words.
+// A magnitude suffix is excluded: "109M-parameter" is conventional notation and
+// was read as quantified, unlike "1.5W".
+const GLUED_DIGIT = /\b\d+(?:\.\d+)?(?=[A-Za-z])(?![KMB]\b)/g;
+
+const FILLER_WORD = /\bthe\b/gi;
+const FILLER_MAX = 1;           // two "the"s in one bullet trips the avoided-words check
+
+// A lowercase letter followed by a RUN of capitals inside one token: BlendED.
+// Not plain CamelCase - GovTech, YesWeHack, HealthHack and STMicroelectronics
+// were all verified green, and an earlier draft of this rule flagged every one
+// of them. What breaks is the internal ALL-CAPS run, so that is what it matches.
+const MIXED_CASE_TOKEN = /[a-z][A-Z]{2,}/;
+
+const VERB_FAMILY_MAX = 3;      // uses of one verb family across a single résumé
+
 const IRREGULAR_LEAD = {
   built: 'build', led: 'lead', ran: 'run', wrote: 'write', made: 'make',
   held: 'hold', drove: 'drive', won: 'win', taught: 'teach', brought: 'bring',
@@ -72,7 +125,7 @@ const NON_METRIC = [
   /\b[A-Z][A-Za-z]*\d{2,}(?:\/\d+)*\b/g,                    // CS4277, GBBP12/13
   /\b\d+(?:\.\d+)+\b/g,                                     // 2.0
   /\b\d\s?[Dd]\b(?![a-z])/g,                                // 3D
-  /\b(?:GPT|Veo|Gemini|Gemma|Llama|Mistral|BERT|Route|Layer|OSI|OAuth|RTX|CUDA|ASPIRE|IPv|HTTP)[- ]?\d+[A-Za-z]?\b/g,
+  /\b(?:GPT|Veo|Gemini|Gemma|Llama|Mistral|BERT|Route|Layer|OSI|OAuth|RTX|CUDA|ASPIRE|IPv|HTTP|Hailo)[- ]?\d+[A-Za-z]?\b/g,
   /\b\d+(?:st|nd|rd|th)\b/g,                                // 7th Singapore Astronomical Olympiad
 ];
 
@@ -82,12 +135,19 @@ const METRIC = [
   { kind: 'currency', re: /(?:S\$|US\$|\$|€|£)\s?\d[\d,.]*/g },
   { kind: 'plus', re: /\b\d[\d,.]*\+/g },
   { kind: 'multiplier', re: /\b\d+(?:\.\d+)?\s?[xX]\b/g },
+  // "4 times" is the same measurement as "4x" written the way a screener can
+  // read it (a digit glued to a letter scores as unquantified), so the checker
+  // has to see both or it contradicts its own glued-digit rule.
+  { kind: 'multiplier', re: /\b\d+(?:\.\d+)?\s?times\b/gi },
   { kind: 'magnitude', re: /\b\d+(?:\.\d+)?[KMB]\b/g },
+  { kind: 'rate', re: /\b\d+(?:\.\d+)?\s?(?:W|kW|mW|TOPS|FPS|GB|MB|TB|GHz|MHz)\b/g },
   { kind: 'unit', re: /\b\d+-(?:stage|hour|day|week|month|year|person|team|node|step|fold|page|minute|second)\b/gi },
   { kind: 'duration', re: /\b(?:sub-)?\d+\s?(?:ms|sec|seconds?|minutes?|hours?|days?|weeks?|months?|years?)\b/g },
   { kind: 'bound', re: /\bsub-(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)-(?:minute|second|hour|day|ms)\b/gi },
   { kind: 'word-count', re: /\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|zero)[- ](?:month|week|day|year|hour|plant|plants|site|sites|team|teams|model|models|failure|failures|line|lines|stage|stages)\b/gi },
-  { kind: 'population', re: /\b\d[\d,]*\s+(?:teams?|students?|candidates?|programs?|users?|sites?|models?|services?|plants?|tests?|assertions?)\b/gi },
+  // One optional adjective between the count and the noun: "3 live inputs" and
+  // "3 imaging workstreams" are counts of things the same sentence then lists.
+  { kind: 'population', re: /\b\d[\d,]*\s+(?:[a-z]+\s+)?(?:teams?|students?|candidates?|programs?|users?|sites?|models?|services?|plants?|tests?|assertions?|residents?|inputs?|approaches|workstreams?)\b/gi },
   { kind: 'of-n', re: /\b(?:class|cohort|field|group)\s+of\s+\d+/gi },
   { kind: 'rank', re: /\btop\s+(?:\d+|quartile|quarter|half)\b/gi },
 ];
@@ -123,13 +183,21 @@ export const leadLemma = (word) => {
 };
 
 /**
- * True for a bullet that opens with a label rather than a verb. Three exist and
- * all three are deliberate ("Relevant coursework:", "NVIDIA Disaster Risk
- * Monitoring with Satellite Imagery:"), so every verb rule shares this one
- * predicate rather than each defining its own. The window is 60 characters
- * because the longest of the three carries its colon at 54.
+ * True for a bullet that opens with a label rather than a verb ("Relevant
+ * coursework:"), so every verb rule shares one predicate rather than each
+ * defining its own.
+ *
+ * Both halves are load-bearing. The character window alone matched
+ * "Build vision systems for 3 imaging workstreams: camera ISP enhancement, ..."
+ * - a real bullet, with a real opening verb, whose colon happens to land at 45 -
+ * and silently dropped it from the quantified denominator and the lead-verb
+ * tally. A label is a short noun phrase, so the word count is what separates the
+ * two: four words before the colon, not seven.
  */
-export const isLabelLine = (text) => /^[^.]{0,60}:/.test(String(text ?? ''));
+export const isLabelLine = (text) => {
+  const match = /^([^.]{0,60}):/.exec(String(text ?? ''));
+  return Boolean(match) && match[1].trim().split(/\s+/).length <= 4;
+};
 
 export const firstWord = (text) => (String(text ?? '').trim().split(/\s+/)[0] ?? '');
 
@@ -420,7 +488,7 @@ const bySection = (rows) => {
 const round = (value) => Math.round(value * 100) / 100;
 
 const SEVERITY_ORDER = { error: 0, warn: 1, note: 2 };
-const RULE_ORDER = { R1: 0, R2: 1, R3: 2, R4: 3, R5: 4, R6: 5, R7: 6, P1: 7, P2: 8, P3: 9, P4: 10 };
+const RULE_ORDER = { R1: 0, R2: 1, R3: 2, R4: 3, R5: 4, R6: 5, R7: 6, R8: 7, P1: 8, P2: 9, P3: 10, P4: 11, P5: 12 };
 
 /**
  * Sort findings into a total order that does not depend on input order, cap them
@@ -770,6 +838,51 @@ export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillT
       { kind: 'pool-edit', note: 'This character is outside the encoding the PDF fonts use.' }));
   }
 
+  // R8 verb-family concentration across the WHOLE résumé, counting every
+  // occurrence rather than only the opening one.
+  //
+  // R1 counts lead verbs per section, which is the repetition a reader sees.
+  // This counts the family anywhere in the sentence, which is what an ATS-style
+  // screener counts: "Automated" opening one bullet and "automating" buried in
+  // the middle of another are one word to it. Measured on the 2026-09 corpus,
+  // the Automate family at 5 and the Develop family at 4 both tripped it, and
+  // cutting them to 2 and 3 cleared it, so the ceiling sits at 3.
+  //
+  // Lane A rather than lane B because a résumé is the unit being counted: the
+  // same pool produces a document that trips this and one that does not, so
+  // swapping or rephrasing a bullet is a real fix an agent can apply.
+  //
+  // The family key drops a trailing "e" from the lemma, which leadLemma does not:
+  // it strips -ed and -ing, so "automated" and "automating" both give "automat"
+  // while the base form "automate" stays whole, and the three would not group.
+  // ownership.json carries both "assembl" and "assemble" for the same reason.
+  const verbFamily = (word) => leadLemma(word).replace(/e$/, '');
+  const familyCounts = new Map();
+  for (const row of rows) {
+    if (row.isLabel) continue;
+    const seen = new Set();
+    for (const word of String(row.text).split(/[^A-Za-z-]+/)) {
+      const lemma = verbFamily(word);
+      if (!lemma || lemma.length < 4) continue;
+      if (seen.has(lemma)) continue;   // one bullet using a word twice is one bullet
+      seen.add(lemma);
+      familyCounts.set(lemma, [...(familyCounts.get(lemma) ?? []), { ref: row.ref, surface: word }]);
+    }
+  }
+  for (const [lemma, hits] of [...familyCounts]
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))) {
+    if (hits.length <= VERB_FAMILY_MAX) continue;
+    if (!rows.some((row) => verbFamily(firstWord(row.text)) === lemma)) continue;  // not a verb family in use
+    const rephrase = rephraseFor(hits.map((item) => item.ref),
+      (option) => !new RegExp(`\\b${lemma}`, 'i').test(option.text));
+    findings.push(finding('R8', 'warn', 'verb-family-cap',
+      { family: lemma, count: hits.length, max: VERB_FAMILY_MAX, of: rows.length },
+      hits.sort(byRef),
+      rephrase.length
+        ? { kind: 'rephrase', candidates: rephrase }
+        : { kind: 'none', note: 'No alternative wording on these entries avoids this word family. Accept it rather than dropping a bullet: a repeated verb costs less than missing evidence.' }));
+  }
+
   return report(rows, findings, typography, maxFindings);
 };
 
@@ -779,7 +892,10 @@ export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillT
  * concentration is the root of the repetition every résumé inherits, and because
  * most entries carry a single bullet, no selection can undo it.
  *
- * `entries` are { entryId, sectionType, dateLabel, bullets: [{ ref, variant, text }] }.
+ * `entries` are { entryId, sectionType, dateLabel, role?, organization?,
+ * bullets: [{ ref, variant, text }] }. `role` and `organization` are the entry
+ * header strings, needed by P5 mixed-case-title: that field is scored as a set,
+ * so the defect lives on the entry rather than on any bullet.
  */
 export const checkPool = (entries, { today = '2026-09' } = {}) => {
   const findings = [];
@@ -862,6 +978,68 @@ export const checkPool = (entries, { today = '2026-09' } = {}) => {
       missing.map((row) => ({ ref: row.ref })).sort(byRef),
       { kind: 'pool-edit', note: 'Asking for detail "deep" falls back to the default on these, with no warning at build time.' }));
   }
+
+  // P5 house style: what an ATS-style screener penalises that reads perfectly
+  // well to a person. Six categories, one pass, all of them fixable only by
+  // editing prose - which is why they sit in this lane and never reach an agent.
+  //
+  // Notes and warns only. These are one screener's rules, not correctness:
+  // `air-gapped` and `optimizer` are the right technical words and the list
+  // exists to make the cost of using them visible, not to forbid them. Nothing
+  // here may fail a build, so R6 keeps sole ownership of `error`.
+  const style = (category, severity, hits, note) => {
+    if (!hits.length) return;
+    findings.push(finding('P5', severity, category, { count: hits.length, of: defaults.length },
+      hits.sort(byRef), { kind: 'pool-edit', note }));
+  };
+  const scan = (pattern, text) => [...new Set(String(text).match(pattern) ?? [])];
+
+  style('banned-spelling', 'warn', defaults.flatMap((row) => {
+    const hits = BANNED_SPELLING.filter((word) => new RegExp(`\\b${word}\\b`, 'i').test(row.text));
+    return hits.length ? [{ ref: row.ref, surface: hits.join(', ') }] : [];
+  }), 'Not misspelled - absent from the screener dictionary, which deducts for it. Reword only if the screener matters more than the precise term.');
+
+  style('non-action-verb', 'warn', defaults.flatMap((row) => {
+    const lead = firstWord(row.text).toLowerCase().replace(/[^a-z-]+$/, '');
+    return NON_ACTION_LEAD.includes(lead) ? [{ ref: row.ref, surface: firstWord(row.text) }] : [];
+  }), 'This opening verb is also a common noun, and the screener reads it as one. Open on a verb it recognises.');
+
+  // "Three" inside "Blender-to-Three.js" is not a count. A number word bounded by
+  // a hyphen before or a dot after is part of a name, so it is skipped.
+  style('spelled-out-number', 'note', defaults.flatMap((row) => {
+    const text = String(row.text);
+    const hits = [...new Set([...text.matchAll(new RegExp(SPELLED_NUMBER.source, SPELLED_NUMBER.flags))]
+      .filter((match) => text[match.index - 1] !== '-' && text[match.index + match[0].length] !== '.')
+      .map((match) => match[0]))];
+    return hits.length ? [{ ref: row.ref, surface: hits.join(', ') }] : [];
+  }), 'A real measurement the specifics parser cannot see, because it is spelled out. Digits are not a new claim here, only a different notation for the same one.');
+
+  // Filtered against metricsIn's SUPPRESSED list only - years, ordinals, 3D and
+  // product numbers, none of which is a notation defect. Deliberately not
+  // filtered against the accepted metrics: "1.5W" is a real measurement to this
+  // checker and an unquantified bullet to the screener, and saying so is the
+  // entire point of the rule.
+  style('glued-digit', 'note', defaults.flatMap((row) => {
+    const known = metricsIn(row.text).suppressed.map((item) => item.surface);
+    const hits = scan(GLUED_DIGIT, row.text)
+      .filter((digits) => !known.some((surface) => surface.includes(digits)));
+    return hits.length ? [{ ref: row.ref, surface: hits.join(', ') }] : [];
+  }), 'A digit glued to a letter reads as a word, so the bullet scores as unquantified while carrying a number. Put a space in: "1.5 W", not "1.5W".');
+
+  style('filler-density', 'note', defaults.flatMap((row) => {
+    const count = (String(row.text).match(FILLER_WORD) ?? []).length;
+    return count > FILLER_MAX ? [{ ref: row.ref, surface: `"the" x${count}` }] : [];
+  }), 'Repeated "the" in one bullet trips the avoided-words check. Usually a possessive or an article that can simply go.');
+
+  // Scored as a SET: one internally mixed-case token marks every entry in the
+  // field, so this fires on the token and names the entry it came from.
+  // Job Position only. Company Name was verified to apply no such rule, which is
+  // why the fix for BlendED was to move it there rather than to delete it.
+  style('mixed-case-title', 'warn', entries.flatMap((entry) => {
+    if (typeof entry.role !== 'string') return [];
+    const bad = entry.role.split(/[\s(),/&]+/).filter((token) => MIXED_CASE_TOKEN.test(token));
+    return bad.length ? [{ ref: entry.entryId, surface: [...new Set(bad)].join(', ') }] : [];
+  }), 'An internal run of capitals marks the whole Job Position field as inconsistently styled - every entry in it, not just this one. Move the token to the Company field, where no such rule applies.');
 
   const rows = defaults.map((row) => annotate(row));
   return report(rows, findings, null, 40);

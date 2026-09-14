@@ -8,7 +8,11 @@ describe('deterministic semantic prerender', () => {
 
     expect(markup).toContain('Rahul Mitra');
     expect(markup).toContain('Intelligent systems, made operational.');
-    expect(experienceRecords).toHaveLength(7);
+    // Nine, not seven: People's Association was missing from the site entirely
+    // (it existed only as a project card and an event note, and events are
+    // filtered out of experienceNotes), and the two Abbott roles were one merged
+    // record where the résumés carry two.
+    expect(experienceRecords).toHaveLength(9);
     experienceRecords.forEach((record) => expect(markup).toContain(`experience-${record.id}`));
     expect(allProjects).toHaveLength(28);
     allProjects.forEach((project) => expect(markup).toContain(`project-${project.id}`));

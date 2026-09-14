@@ -24,7 +24,7 @@ const CONTACT_URIS = [
 
 const configs = resumeConfigs as Spec[];
 const highlights = configBySlug('highlights') as Spec;
-const entryIds = (type: 'experience' | 'projects'): SpecEntry[] => (pools[type].entries as unknown as PoolEntry[])
+const entryIds = (type: 'experience' | 'projects' | 'leadership'): SpecEntry[] => (pools[type].entries as unknown as PoolEntry[])
   .filter((entry) => !entry.blocked)
   .map((entry) => ({ id: entry.id, bullets: (entry.bullets ?? []).map((bullet) => bullet.id) }));
 
@@ -99,7 +99,7 @@ describe('résumé renderer', () => {
       const { pages, fit } = await renderResumePdf(config, pools, profile) as { pages: number; fit: Fit };
       expect(pages, `${config.slug} page count`).toBe(config.pages);
       expect(fit.fitted, `${config.slug} fitted`).toBe(true);
-      expect(fit.bodyPt, `${config.slug} never below 10pt`).toBeGreaterThanOrEqual(10);
+      expect(fit.bodyPt, `${config.slug} never below the nus floor`).toBeGreaterThanOrEqual(8.5);
     }
   });
 
@@ -139,15 +139,22 @@ describe('résumé renderer', () => {
       sections: [
         { type: 'experience', title: 'EXPERIENCE', entries: entryIds('experience') },
         { type: 'projects', title: 'PROJECTS', entries: entryIds('projects') },
+        { type: 'leadership', title: 'LEADERSHIP AND ACTIVITIES', entries: entryIds('leadership') },
       ],
     };
     const { pages, fit } = await renderResumePdf(oversized, pools, profile) as { pages: number; fit: Fit };
     expect(fit.fitted).toBe(false);
     expect(pages).toBeGreaterThan(1);
     expect(fit.overflow).toMatch(/Remove content/);
-    // It tried the whole ladder, in order, and stopped at 10pt.
-    expect(fit.attempts.map((attempt) => attempt.marginIn)).toEqual([0.7, 0.7, 0.6, 0.5]);
-    expect(Math.min(...fit.attempts.map((attempt) => attempt.bodyPt))).toBe(10);
+    // It tried the whole ladder, in order, and stopped at the style's floor.
+    // `nus` has one fixed margin and walks type instead; `harvard` is the other
+    // shape — two sizes, then three margins — and both are pinned here so a
+    // ladder edit shows up as a diff rather than as a quietly denser résumé.
+    expect(fit.attempts.map((attempt) => attempt.bodyPt)).toEqual([10.5, 10, 9.5, 9, 8.5]);
+    expect(new Set(fit.attempts.map((attempt) => attempt.marginIn))).toEqual(new Set([0.5]));
+    const harvard = await renderResumePdf({ ...oversized, style: 'harvard' }, pools, profile) as { fit: Fit };
+    expect(harvard.fit.attempts.map((attempt) => attempt.marginIn)).toEqual([0.7, 0.7, 0.6, 0.5]);
+    expect(Math.min(...harvard.fit.attempts.map((attempt) => attempt.bodyPt))).toBe(10);
     // Content survived: nothing the caller selected was dropped to make it fit.
     const markdown = renderResumeMarkdown(oversized, pools, profile) as string;
     expect(markdown).toContain('put-away');
@@ -163,14 +170,23 @@ describe('résumé renderer', () => {
     expect(deep).toContain('From-To edge-list');
     expect(deep.length).toBeGreaterThan(standard.length);
     // A bullet with no deep variant still falls back to its usual text.
-    expect(deep).toContain('Support weekly senior-engagement activities');
+    expect(deep).toContain('Coordinate weekly senior-engagement activities');
   });
 
-  it('reports overflow rather than trimming when deep detail outgrows the page budget', async () => {
+  it('holds deep detail on the master CV inside its two pages, in both styles', async () => {
+    // Deep detail used to overflow and get reported. It fits now: this edition
+    // dropped the A-Level entry, narrowed the skills lines to the nine the
+    // master CV carries, and opened the margins to 0.5in. Pinned because it is
+    // the one spec that exercises the bottom of a ladder — nus reaches 8.5pt
+    // for it, and a content edit that pushes it back over should be a red run
+    // rather than a silent 3-page CV.
     const general = configBySlug('general') as Spec;
-    const { fit } = await renderResumePdf({ ...general, detail: 'deep' }, pools, profile) as { fit: Fit };
-    expect(fit.fitted).toBe(false);
-    expect(fit.overflow).toMatch(/Remove content/);
+    for (const style of ['nus', 'harvard'] as const) {
+      const { fit, pages } = await renderResumePdf({ ...general, detail: 'deep', style }, pools, profile) as { fit: Fit; pages: number };
+      expect(fit.fitted, style).toBe(true);
+      expect(pages, style).toBe(2);
+    }
+    // Overflow reporting itself is pinned by the ladder test above.
   });
 
   it('refuses a project Rahul has blocked, even when a spec names it directly', async () => {
@@ -219,9 +235,13 @@ describe('résumé spec', () => {
     expect(decodeSpec(encoded)).toEqual(highlights);
   });
 
-  it('accepts every canonical config and refuses type below 10pt', () => {
+  it('accepts every canonical config and refuses type below the floor', () => {
     for (const config of configs) expect(specSchema.safeParse(config).success, config.slug).toBe(true);
     expect(specSchema.safeParse({ ...highlights, bodyPt: 8 }).success).toBe(false);
+    expect(specSchema.safeParse({ ...highlights, bodyPt: 8.5 }).success).toBe(true);
+    expect(specSchema.safeParse({ ...highlights, style: 'harvard' }).success).toBe(true);
+    expect(specSchema.safeParse({ ...highlights, style: 'nus' }).success).toBe(true);
+    expect(specSchema.safeParse({ ...highlights, style: 'europass' }).success).toBe(false);
   });
 
   it('exposes every pool bullet and skills line, so nothing is hidden from a model', () => {

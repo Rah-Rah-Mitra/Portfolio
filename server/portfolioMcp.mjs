@@ -373,7 +373,7 @@ export const registerPortfolioTools = (server) => {
   // ── résumé builder ──────────────────────────────────────────────────────
   server.registerTool('get_resume_guide', {
     title: 'How to build a résumé',
-    description: 'Read this before build_resume. The Harvard layout rules, the spec schema, the ordering policy, how auto-fit works, and the rule that you may only select from list_resume_blocks and must never write your own bullet text.',
+    description: 'Read this before build_resume. The two layout styles, the spec schema, the ordering policy, how auto-fit works, and the rule that you may only select from list_resume_blocks and must never write your own bullet text.',
     inputSchema: z.object({}),
   }, async () => text(RESUME_GUIDE));
 
@@ -390,7 +390,7 @@ export const registerPortfolioTools = (server) => {
 
   server.registerTool('build_resume', {
     title: 'Build a résumé',
-    description: 'Render a Harvard-style résumé from selected block ids and return PDF, DOCX and Markdown. Content comes only from list_resume_blocks; bullet text cannot be supplied. Auto-fit adjusts typography within sanctioned limits and never drops what you chose; if it still overflows you get an overflow report to act on. The response also carries a check report naming repeated opening verbs, repeated sentence frames and over-long bullets, with the block ids to swap where a swap exists.',
+    description: 'Render a résumé from selected block ids and return PDF, DOCX and Markdown. It comes out in the NUS CDE style Rahul’s own CV uses unless you set style:"harvard". Content comes only from list_resume_blocks; bullet text cannot be supplied. Auto-fit adjusts typography within sanctioned limits and never drops what you chose; if it still overflows you get an overflow report to act on. The response also carries a check report naming repeated opening verbs, repeated sentence frames and over-long bullets, with the block ids to swap where a swap exists.',
     inputSchema: z.object({ spec: specSchema }),
   }, async ({ spec }) => {
     try {

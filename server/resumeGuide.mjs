@@ -3,7 +3,7 @@
 // restating it, so the rules an agent reads are the rules in the repo.
 export const RESUME_GUIDE = `# Building a résumé for Rahul Mitra
 
-You are composing a Harvard-style résumé from Rahul's verified work, usually
+You are composing a résumé from Rahul's verified work, usually
 targeted at a specific job. Read this before calling \`build_resume\`.
 
 ## The one rule that matters
@@ -52,7 +52,7 @@ keyword is recoverable; an inaccurate one is not.
    for it by dropping a weaker project rather than by cutting one of the four.
 5. Choose depth. Bullets can carry a \`deep\` variant alongside the default; set
    \`detail: "deep"\` on the spec, or \`variant\` on a single entry. Deep variants
-   are longer, so they usually need \`pages: 2\`. Only 16 of the 42 selectable
+   are longer, so they usually need \`pages: 2\`. Only 20 of the 39 selectable
    bullets have one, and the rest fall back to their default silently, so do not
    treat depth as a way to change every bullet at once.
 6. Check whether the entry offers more than one job title. An entry with
@@ -67,7 +67,7 @@ keyword is recoverable; an inaccurate one is not.
    verb, its line cost and whether it holds a measurement. Pick one with a
    spec-level map keyed on the same \`entryId.bulletId\` the check report uses:
 
-   \`"phrasings": { "waaah.main": "landmarks-first" }\`
+   \`"phrasings": { "waaah.main": "build-first" }\`
 
    You are choosing between Rahul's sentences, never editing one. The builder
    accepts a phrasing id and rejects text, and an id that does not exist is an
@@ -76,26 +76,39 @@ keyword is recoverable; an inaccurate one is not.
 
 ## Layout, which you do not control
 
-A4, Times New Roman, 0.7in side margins, centred 16pt name over a 9.5pt contact
-line with four live links. Uppercase letterspaced section headers with a
-full-width rule. Entries are two lines: bold organisation with right-flush
-location, italic role with right-flush dates. Projects render as one line.
-Bullets are literal "• " with a hanging indent, which keeps them ATS-safe.
+Two styles, and \`style\` is the only part of it you may set.
 
-The renderer enforces all of it. You choose content, not typography.
+\`nus\` (the default, and what the eight ready-made résumés ship in) is the NUS
+Centre for Future-ready Graduates format: A4, Arial, 0.5in side margins, a
+right-aligned 19.5pt name over an 8.5pt contact line. Caps section headers under
+a full-width double rule. One bold line per entry with right-flush dates —
+\`Role, Organisation\` in experience and projects, \`Organisation, Role\` in
+leadership, and education takes a second line for the degree. A blank line
+between entries.
+
+\`harvard\` is the older option: Times New Roman, 0.7in margins, a centred 16pt
+name, and two-line entries (bold organisation with right-flush location, italic
+role with right-flush dates) with projects on one line.
+
+Both use literal "• " bullets with a hanging indent, which keeps them ATS-safe,
+and both carry five live contact links. The renderer enforces the rest. You
+choose content, not typography.
 
 ## Ordering, which is also not yours to choose
 
-Experience, education and leadership sort strictly reverse-chronologically by
-start date. Projects sort by most recent activity. This is Rahul's explicit
+Experience, education and leadership sort by END date: entries still running
+come first, ordered by start date descending, then ended entries by end date
+descending. Projects sort by most recent activity. This is Rahul's explicit
 instruction and the renderer applies it regardless of the order you list
 entries in, so do not try to lead with a "most relevant" role.
 
 ## Fitting one page
 
-\`autoFit\` walks the sanctioned ladder for you: body 10.5pt to 10pt, then
-margins 0.7in to 0.6in to 0.5in. It never drops content you chose, and never
-goes below 10pt.
+\`autoFit\` walks that style's sanctioned ladder for you. \`nus\` holds its 0.5in
+margins and steps the body 10.5 / 10 / 9.5 / 9 / 8.5pt; \`harvard\` steps 10.5 to
+10pt and then margins 0.7 / 0.6 / 0.5in. Neither ever drops content you chose,
+and neither goes below its own floor — 8.5pt is the size the two-page master CV
+needs, and 10pt is as low as \`harvard\` goes.
 
 If it still overflows you get an overflow report instead of a silent trim.
 Remove something and rebuild. Rough costs: a project entry is about three

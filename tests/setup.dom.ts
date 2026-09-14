@@ -11,4 +11,10 @@ import { configure } from '@testing-library/react';
 // a per-file fix is whack-a-mole that only lands after each new flake has
 // already cost someone a red run. Nothing is weakened — a genuinely broken
 // assertion still fails, it just gets long enough to be measured fairly.
-configure({ asyncUtilTimeout: 5000 });
+//
+// 5000 → 10000 in the 2026-11 content pass. project-showcase started failing
+// under full-suite load again while passing alone, at ~5.9s against the 5s
+// budget: the pass added two experience records and lengthened a lot of card
+// prose, so every jsdom file does more work. testTimeout is 20000, so this
+// still fails long before the runner gives up.
+configure({ asyncUtilTimeout: 10000 });

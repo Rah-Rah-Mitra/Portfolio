@@ -2,7 +2,8 @@
   "slug": "cyber-security",
   "subject": "Cyber Security Resume",
   "pages": 1,
-  "bodyPt": 10,
+  "bodyPt": 9.5,
+  "marginIn": 0.5,
   "sections": [
     {
       "type": "education",
@@ -19,7 +20,7 @@
     },
     {
       "type": "experience",
-      "title": "EXPERIENCE",
+      "title": "WORK EXPERIENCE",
       "entries": [
         {
           "id": "stmicro-or",
@@ -46,19 +47,6 @@
             "pipeline",
             "apc"
           ]
-        },
-        {
-          "id": "ywh",
-          "bullets": [
-            "programs",
-            "automation"
-          ]
-        },
-        {
-          "id": "navy",
-          "bullets": [
-            "vba"
-          ]
         }
       ]
     },
@@ -66,12 +54,6 @@
       "type": "projects",
       "title": "PROJECTS",
       "entries": [
-        {
-          "id": "arcane",
-          "bullets": [
-            "main"
-          ]
-        },
         {
           "id": "brinhack",
           "bullets": [
@@ -94,6 +76,20 @@
           "id": "ntuc",
           "bullets": [
             "main"
+          ]
+        },
+        {
+          "id": "ywh",
+          "bullets": [
+            "programs",
+            "automation",
+            "network"
+          ]
+        },
+        {
+          "id": "navy",
+          "bullets": [
+            "vba"
           ]
         }
       ]

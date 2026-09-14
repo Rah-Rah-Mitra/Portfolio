@@ -58,19 +58,26 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   **unmounted but still on disk** with its unit tests passing — pending
   deletion sweep. Don't remount it and don't build on it.
 
-## Resume system (Harvard style, edition-based)
+## Resume system (NUS CDE style, edition-based)
 
 - `public/resume/generated/*` are **build artifacts — never hand-edit them.**
   Source of truth is `scripts/resume/content/*.json` (entry/bullet pools +
-  per-role configs in `content/resumes/`). Styling lives in
-  `scripts/resume/harvard_style.py` (Times New Roman, A4, Harvard OCS layout —
-  all deliberate; change nothing there without explicit approval).
-- Current edition: **2026-10**. `generated/` keeps the current + previous
+  per-role configs in `content/resumes/`). Styling lives in two interchangeable
+  modules exposing the same nine names: `scripts/resume/nus_style.py` (Arial,
+  A4, the NUS CDE layout — **the default since 2026-11**, measured out of
+  Rahul's own master CV) and `scripts/resume/harvard_style.py` (Times New Roman,
+  Harvard OCS layout — still an option, `--style harvard`). `docx_base.py` holds
+  the python-docx plumbing both share. All of it is deliberate; change nothing
+  there without explicit approval. `server/resumeStyles.mjs` is the JS mirror
+  and has to agree with it.
+- Current edition: **2026-11**. `generated/` keeps the current + previous
   edition; older sets live in `public/resume/archive/`.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
-  across all profiles; `bodyPt: 10` + `marginIn: 0.5`), and the two-page
-  `general` master CV. Several one-pagers now carry `bodyPt: 10` to hold the
-  denser Abbott bullets — each config declares its own; do not assume 10.5.
+  across all profiles), and the two-page `general` master CV, which is the
+  document `rahul-mitra-master-cv.docx` is the ground truth for. Every config
+  declares its own `bodyPt` (8.5–10 in this edition) and `marginIn: 0.5` —
+  do not assume a size. The pins are what the JS auto-fit landed on in `nus`;
+  `--style harvard` reuses them best-effort and ships nothing.
 - Edition bump checklist:
   1. Edit content JSONs, then `npm run resume:lint`.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`
@@ -87,14 +94,18 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      constant).
   8. Update the edition-stamped URLs in `public/llms.txt`, then `npm run
      snapshot` and commit `server/portfolio-snapshot.json`.
-- Ordering policy (user-mandated): experience/education/leadership sort
-  strictly reverse-chronologically by start date — never "relevance-first".
-  Projects sort by most recent activity; ongoing entries first; the general
-  CV's "Additional Projects" is pinned last (`sort: "0000-00"`).
+- Ordering policy (user-mandated, revised 2026-09): experience/education/
+  leadership sort by END date first - entries still running first by start date
+  descending, then ended entries by end date descending; an entry is still
+  running exactly when it has no `end` key. This replaced a strict start-date
+  sort, which put People's Association (ended Sep 2026) below the Abbott
+  internship (ended Jun 2026). Never "relevance-first".
 - One-page fit trim ladder (in order): drop coursework bullet → reduce
-  3-bullet entries to 2 → drop least-relevant project → body 10.5→10pt →
-  margins toward 0.5" (per-config `marginIn`, inches). Never below 10pt. Fit
-  truth = pypdf page count.
+  3-bullet entries to 2 → drop least-relevant project → then typography, which
+  is the style's own ladder: `nus` holds 0.5" margins and steps the body
+  10.5/10/9.5/9/**8.5pt**; `harvard` steps 10.5→10pt then margins 0.7→0.6→0.5".
+  Never below the style's floor. Fit truth = pypdf page count — the JS model
+  agrees with Word to within a line, but only Word is authoritative.
 
 ## Machine access (MCP + llms.txt)
 

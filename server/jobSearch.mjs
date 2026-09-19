@@ -353,6 +353,14 @@ export const BLOCKED_SITE_IDS = {
   // selected-evidence surfaces, never the fact.
   arcane: 'arcane',
   ethoslens: 'ethos-lens',
+  // Blocked in the 2026-11 master CV pass, because work experience now carries
+  // the same evidence: MCP servers ship as abbott-contract.harness, and the RAG
+  // and vector-search work as abbott-contract.platform. on-the-spectrum is the
+  // only one of the three that is a spotlight project, so it is the only one
+  // that leaves the digest and proof-points; all three keep their site cards.
+  onthespectrum: 'on-the-spectrum',
+  agewelllah: 'agewelllah-ai',
+  smartexam: 'smart-exam',
 };
 
 export const blockedSiteProjectIds = () => new Set(Object.values(BLOCKED_SITE_IDS).filter(Boolean));

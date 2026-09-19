@@ -146,6 +146,9 @@ export const checkSpec = (spec, fit = null) => {
     candidates: swapCandidates(spec, bullets.map((bullet) => bullet.ref)),
     rephrasings: rephrasingsFor(spec, bullets, typography),
     skillTerms,
+    // The four-bullet ceiling is what a single page can carry, not a house rule
+    // about entries. A two-page spec has the room, and the master CV uses it.
+    maxBullets: spec.pages >= 2 ? 8 : 4,
     typography: fit ? { bodyPt: fit.bodyPt, marginIn: fit.marginIn } : null,
   });
 };

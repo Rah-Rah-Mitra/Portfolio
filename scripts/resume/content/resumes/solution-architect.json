@@ -53,7 +53,7 @@
           "bullets": [
             "churp",
             "singpass",
-            "sparks",
+            "cicd",
             "infra"
           ]
         }
@@ -65,12 +65,6 @@
       "entries": [
         {
           "id": "voltpulse",
-          "bullets": [
-            "main"
-          ]
-        },
-        {
-          "id": "smartexam",
           "bullets": [
             "main"
           ]

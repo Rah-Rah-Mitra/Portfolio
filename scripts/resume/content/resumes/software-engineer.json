@@ -2,7 +2,7 @@
   "slug": "software-engineer",
   "subject": "Software Engineer Resume",
   "pages": 1,
-  "bodyPt": 8.5,
+  "bodyPt": 9,
   "marginIn": 0.5,
   "sections": [
     {
@@ -61,12 +61,6 @@
       "type": "projects",
       "title": "PROJECTS",
       "entries": [
-        {
-          "id": "onthespectrum",
-          "bullets": [
-            "main"
-          ]
-        },
         {
           "id": "hailo",
           "bullets": [

@@ -141,7 +141,7 @@ edits and all three need the rebuild.
 genetic algorithms and CP-SAT are all attested; Gurobi is not. If Rahul used it,
 add the fact to the pools first.
 
-The same rule flags `pa.infra` (Terraform, Redis, Kafka) as unused on five
+The same rule flags `pa.infra` (Terraform, ECS Fargate, RDS, WAFv2) as unused on five
 résumés, which matches what `resumeGuide.mjs` has always said about that bullet.
 
 ### 4. Optionally promote a phrasing into `text.default`

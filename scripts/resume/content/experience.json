@@ -40,8 +40,8 @@
         {
           "id": "frame-quality",
           "text": {
-            "default": "Improve processing and evaluation stages to upscale frames 4 times, lifting PSNR and SSIM so a low-cost camera reaches frame quality on par with premium sensors.",
-            "deep": "Improve processing and evaluation stages to upscale frames 4 times, measuring the gain on PSNR and SSIM so a low-cost camera reaches frame quality on par with premium sensors before those frames reach downstream robotics perception."
+            "default": "Train UNet and other CNN architectures for single-image super-resolution, upscaling frames 4 times and lifting PSNR and SSIM so a low-cost camera reaches frame quality on par with premium sensors.",
+            "deep": "Train UNet and other CNN architectures for single-image super-resolution, upscaling frames 4 times and measuring the gain on PSNR and SSIM so a low-cost camera reaches frame quality on par with premium sensors before those frames reach downstream robotics perception."
           }
         }
       ]
@@ -102,7 +102,7 @@
         {
           "id": "harness",
           "text": {
-            "default": "Built 20+ regression tests, a headless notebook runner, a deterministic model stand-in for GPU-free CI, and committed golden snapshots for reproducible runs."
+            "default": "Build MCP servers, 20+ regression tests, a headless notebook runner, and a deterministic model stand-in for GPU-free CI, with golden snapshots committed for reproducible runs."
           }
         },
         {
@@ -147,7 +147,19 @@
         {
           "id": "upskilling",
           "text": {
-            "default": "Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use."
+            "default": "Trained regional engineering teams across Asia and Europe on repeatable AI workflows spanning 7 areas: prompting, model selection, benchmarks, cost awareness, agents, validation, and safeguards."
+          }
+        },
+        {
+          "id": "safeguards",
+          "text": {
+            "default": "Strengthened Excel, VBA, Python, master-data, and scheduling workflows with 3 safeguards: validation rules, correction tables, and reproducible intermediate stages, leaving every transformation auditable."
+          }
+        },
+        {
+          "id": "handover",
+          "text": {
+            "default": "Documented deployment, access provisioning, and technical handover across 3 procedures, so internal manufacturing and engineer-training users stayed supported after transfer to owning teams."
           }
         }
       ]
@@ -187,14 +199,32 @@
         {
           "id": "sparks",
           "text": {
-            "default": "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations, winning the S$20,000 Sparks Community Innovation Fund."
+            "default": "Won a S$20,000 Sparks Community Innovation Fund award for public good initiatives, then led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations."
           }
         },
         {
           "id": "infra",
           "text": {
-            "default": "Provisioned AWS infrastructure with Terraform across Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, and applied cloud security controls environment-wide.",
-            "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure across Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, with cloud security controls applied environment-wide alongside multi-repo coordination and rollout planning."
+            "default": "Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager.",
+            "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure across 8 services (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager), with cloud security controls applied environment-wide alongside multi-repo coordination and rollout planning."
+          }
+        },
+        {
+          "id": "cicd",
+          "text": {
+            "default": "Engineered keyless GitHub Actions CI/CD on IAM OIDC federation across 5 pinned service repos, with gated Fargate migrations, mandatory RDS snapshots, and circuit-breaker auto-rollback."
+          }
+        },
+        {
+          "id": "survey",
+          "text": {
+            "default": "Conducted field surveys of garden sites and structured physical plot records into geospatial datasets driving 3 platform workflows: mapping, plot allocation, and site planning."
+          }
+        },
+        {
+          "id": "rules",
+          "text": {
+            "default": "Designed rules-based balloting workflows across 4 control points: eligibility checks, conflict resolution, exception handling, and administrative oversight, keeping allocation transparent and auditable."
           }
         }
       ]

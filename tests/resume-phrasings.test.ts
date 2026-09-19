@@ -161,19 +161,24 @@ describe('phrasing selection', () => {
 });
 
 describe('the checker offers a rephrase where it used to offer nothing', () => {
+  // These two rode on software-engineer until the 2026-11 master CV pass, which
+  // dropped OnTheSpectrum from it and took its trailing-participle bullet with it,
+  // leaving that résumé with no frame-repeat to fix. civic-tech-solution-architect
+  // is the config that carries one now. The subject is incidental; what these
+  // pin is that a frame-repeat names a rephrase and that taking it clears.
   it('names a fix for the repeated sentence shape', () => {
-    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'software-engineer');
+    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'civic-tech-solution-architect');
     const report = checkSpec(config, { bodyPt: 10, marginIn: 0.7 } as never) as Report;
     const frame = report.findings.find((item) => item.category === 'frame-repeat');
     expect(frame?.remedy?.kind).toBe('rephrase');
     expect(frame?.remedy?.candidates?.map((row) => `${row.ref}@${row.phrasing}`))
-      .toContain('hailo.main@target-first');
+      .toContain('pa.singpass@fairness-first');
   });
 
   it('clears the findings when the offered wordings are taken', () => {
     // The acceptance test for the whole feature: every fix the checker names is
     // one an agent may apply, and applying them removes the finding.
-    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'software-engineer') as Spec;
+    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'civic-tech-solution-architect') as Spec;
     const fit = { bodyPt: 10, marginIn: 0.7 };
     const before = checkSpec(config, fit as never) as Report;
     const chosen: Record<string, string> = {};

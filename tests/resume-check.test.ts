@@ -111,8 +111,11 @@ describe('metric classifier', () => {
     // The 2026-11 wordings write their measurements the way a screener can read
     // them, so the classifier has to read them too: "4 times" not "4x", a count
     // with one adjective before its noun, and a power/throughput rating.
-    'amazon-vision.frame-quality', 'hailo.main', 'stmicro-or.putaway', 'pa.singpass'];
-  const NOT_METRIC = ['nus.coursework', 'nus.coursework-full', 'pa.infra', 'ywh.network',
+    'amazon-vision.frame-quality', 'hailo.main', 'stmicro-or.putaway', 'pa.singpass',
+    // The 2026-11 master CV pass replaced pa.infra's Redis/Kafka wording with a
+    // count of the AWS services actually used, so it crossed from the other list.
+    'pa.infra'];
+  const NOT_METRIC = ['nus.coursework', 'nus.coursework-full', 'ywh.network',
     'portfolio.main', 'agewelllah.main', 'steminc.combined'];
 
   it.each(METRIC)('counts %s as quantified', (ref) => {
@@ -437,8 +440,8 @@ describe('the real corpus', () => {
   // A content edit that moves them should show up here rather than silently.
   it('reports the block pool the checker was built to describe', () => {
     const report = checkPool(poolEntries()) as Report;
-    expect(report.metrics.bullets).toBe(39);
-    expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 3 });
+    expect(report.metrics.bullets).toBe(41);
+    expect(report.metrics.topOpener).toEqual({ openers: ['Build'], count: 3 });
     expect(report.metrics.metricCoverage).toBe(0.51);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
@@ -475,17 +478,23 @@ describe('the real corpus', () => {
       }];
     }));
     expect(digest).toEqual({
-      'software-engineer': { bullets: 15, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
-      'solution-architect': { bullets: 15, top: 2, codes: 'frame-repeat,unquantified' },
-      'ai-engineer': { bullets: 14, top: 2, codes: 'hedge,unquantified,unused-evidence' },
-      'operations-research-engineer': { bullets: 14, top: 1, codes: 'unquantified,unused-evidence' },
+      // Moved by the 2026-11 master CV pass. Each one-pager lost a project, so the
+      // bullet counts drop; software-engineer and solution-architect lost their
+      // frame-repeat with OnTheSpectrum and SmartExam, and ai-engineer lost its
+      // hedge when abbott-intern.upskilling was rewritten off "day-to-day".
+      'software-engineer': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
+      'solution-architect': { bullets: 14, top: 2, codes: 'unquantified' },
+      'ai-engineer': { bullets: 13, top: 2, codes: 'unquantified,unused-evidence' },
+      'operations-research-engineer': { bullets: 13, top: 1, codes: 'unquantified,unused-evidence' },
       'cyber-security': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
-      'civic-tech-solution-architect': { bullets: 15, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
+      'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
       highlights: { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
       // "Built", "Build", "building" and "hackathon build" are four uses of one
-      // family that R1's per-section opener tally cannot see.
-      general: { bullets: 30, top: 3, codes: 'unquantified,unused-evidence,verb-family-cap' },
+      // family that R1's per-section opener tally cannot see. The master CV now
+      // trips it twice — "engineer" and "train" — and the seven People's
+      // Association bullets are why its count jumped from 30 to 33.
+      general: { bullets: 33, top: 3, codes: 'unquantified,verb-family-cap,verb-family-cap' },
     });
   });
 

@@ -15,8 +15,12 @@ Answer a question by adding the fact to `scripts/resume/content/*.json` (or to
 **Answered 2026-09-04** (Rahul, in conversation) and now in the data:
 
 - The **Churp deployment at People's Association ran on AWS**: Terraform-provisioned
-  infrastructure, Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and
-  the cloud security work that went with it. Added as the selectable `pa.infra` bullet,
+  infrastructure across eight services — ECS Fargate, Multi-AZ RDS Postgres with
+  PostGIS, an ALB fronted by WAFv2, Route 53, ACM, KMS and Secrets Manager — and
+  the cloud security work that went with it. **Corrected 2026-11:** this record
+  originally said "Redis caching, Kafka messaging". Neither was used. Rahul caught
+  it in the master CV pass, and it had by then reached two shipped résumés, three
+  skills lines, `resumeGuide.mjs`, the Churp card on the site and the snapshot. Added as the selectable `pa.infra` bullet,
   to the `sa-skills` / `civic-skills` / `gen-cloud` / `hl-web-cloud` skills lines, and to
   the Churp project's tags and spotlight on the site.
 - **Waaah Comics** is now a selectable résumé project (`waaah`) and has a spotlight on
@@ -34,9 +38,13 @@ attests almost nothing.
 
 **What exists:** `PPO, A2C, DDPG, DQN` appears in exactly two authored places, and
 both are skills labels — `skills.json` (`gen-ai`, as "deep RL (PPO, A2C, DDPG,
-DQN)") and `portfolioData.ts` (a skill chip). The only backing evidence is a Packt
-certification, described as covering "reinforcement learning theory and Python
-implementation projects".
+DQN)") and `portfolioData.ts` (a skill chip). The only backing evidence is two Packt
+certifications — "Reinforcement Learning and Deep RL Python (Theory and Projects)"
+and "Practical Reinforcement Learning - Agents and Environments", both completed in
+March 2023 and both now listed in the site's certification register
+(`lib/certifications.ts`). Neither reaches the `ATTESTED` vocabulary in
+`server/jobSearch.mjs`, so `build_tailored_resume` still reports RL as uncovered.
+That is deliberate: a completed course is not applied work.
 
 **What does not exist anywhere:**
 
@@ -68,8 +76,12 @@ sensors**. Rahul confirmed this is publishable. Now in `amazon-vision.isp` and
 `amazon-vision.frame-quality` (both with deep variants) and in the site's
 experience record.
 
-Still absent, and still unusable: architectures, datasets, the deployment target,
-and any figure beyond the 4x factor.
+**Extended 2026-11** (Rahul, master CV pass): the architectures are **UNet and
+other CNN architectures**, trained for **single-image super-resolution**. Now in
+`amazon-vision.frame-quality` and its deep variant.
+
+Still absent, and still unusable: datasets, the deployment target, specific UNet
+variants or depths, and any figure beyond the 4x factor.
 
 ## 3. STMicroelectronics — ongoing, so no outcome yet
 
@@ -95,7 +107,9 @@ still suit a non-technical reader — but no résumé leads with them any more.
 
 *Partly answered.*
 
-- Terraform, Redis and Kafka are attested through the Churp deployment.
+- Terraform and the eight AWS services in `pa.infra` are attested through the
+  Churp deployment. Redis and Kafka are **not** — see the correction in the
+  2026-09-04 record above, and do not reintroduce them.
 - **PyTorch, ONNX, Chroma, SciPy, pandas and quantization** are attested through
   the Abbott contract work (§4), along with HiGHS, Seeq, STUMPY and ruptures.
 - **3D computer vision: settled, and widened once.** Rahul confirmed
@@ -143,7 +157,7 @@ Still unused by any résumé: `kalidokit-fork` (MediaPipe/TensorFlow.js kinemati
 
 **Question:** should any of these become selectable résumé project entries too?
 
-## 9. Projects Rahul has blocked from résumés — 2026-09-07, extended 2026-09-14
+## 9. Projects Rahul has blocked from résumés — 2026-09-07, extended 2026-09-14 and 2026-11
 
 `asyncddgs`, `portfolio`, `utopia`, `flowshop`, `ie2110`, and as of the VMock
 alignment pass `arcane` and `ethoslens`, carry a `blocked`
@@ -159,6 +173,36 @@ Blocking `flowshop` cost nothing: the same SimPy digital twin and CP-SAT
 optimizer is already an Abbott internship bullet (`abbott-intern.digital-twin`), so
 the operations-research résumé had been carrying that work twice. It now appears
 once, as experience, which is the stronger placement.
+
+**2026-11 master CV pass.** Rahul blocked `onthespectrum`, `agewelllah` and
+`smartexam` on the same reasoning as `flowshop`: work experience now carries the
+evidence they were there to supply. MCP servers ship as `abbott-contract.harness`;
+the RAG and vector-search work as `abbott-contract.platform`. That took the usable
+pool from eight projects to five — `hailo`, `voltpulse`, `waaah`, `maritime`,
+`brinhack` — and cost a project entry on five configs, all edited in the same
+change for the reason above. `solution-architect` and
+`civic-tech-solution-architect` were each left with one project, and Rahul chose to
+spend the freed room on People's Association rather than backfill a project:
+"experience outweighs projects in résumé screenings". They swap rather than add,
+because a one-page spec still caps an entry at four bullets.
+
+Of the three, only `on-the-spectrum` is a spotlight project, so it is the only one
+that also leaves `article_digest_md` and `proof_points`. All three keep their site
+cards and stay open on `list_projects`, `get_project` and `/api/portfolio`.
+
+`ethoslens`'s block reason originally turned on AgeWellLah also being on the page.
+It was reworded, not lifted, when AgeWellLah was blocked.
+
+### Why `pa.infra` says "8 services" and lists seven items
+
+The sentence reads "across 8 services: ECS Fargate, Multi-AZ RDS Postgres with
+PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager." Counting
+the commas gives seven. The count is of AWS **service names**, and there are eight:
+WAFv2 is the eighth, inside "ALB fronted by WAFv2". PostGIS is a Postgres
+extension, not an AWS service, so it does not count. Rahul confirmed the wording on
+2026-11 and it ships verbatim. **Do not "fix" it to seven.** Every other counted
+bullet in the pool does match its own list length, so this one looks like a typo
+and is not.
 
 ## 8. Where the `pa.infra` bullet goes — answered
 

@@ -59,18 +59,19 @@ def examples(lx):
     return [
         lx.data.ExampleData(
             text=(
-                "Provisioned the platform's AWS deployment with Terraform (Fargate services, "
-                "Route 53 DNS, Redis caching, and Kafka messaging), applying cloud security "
-                "practices across the environment."
+                "Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, "
+                "Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, "
+                "and Secrets Manager."
             ),
             extractions=[
-                lx.data.Extraction(extraction_class="artifact", extraction_text="the platform's AWS deployment"),
+                lx.data.Extraction(extraction_class="artifact", extraction_text="AWS infrastructure"),
                 lx.data.Extraction(extraction_class="technology", extraction_text="Terraform"),
-                lx.data.Extraction(extraction_class="technology", extraction_text="Fargate"),
+                lx.data.Extraction(extraction_class="technology", extraction_text="ECS Fargate"),
+                lx.data.Extraction(extraction_class="technology", extraction_text="Multi-AZ RDS Postgres"),
+                lx.data.Extraction(extraction_class="technology", extraction_text="WAFv2"),
                 lx.data.Extraction(extraction_class="technology", extraction_text="Route 53"),
-                lx.data.Extraction(extraction_class="technology", extraction_text="Redis"),
-                lx.data.Extraction(extraction_class="technology", extraction_text="Kafka"),
-                lx.data.Extraction(extraction_class="outcome", extraction_text="applying cloud security practices across the environment"),
+                lx.data.Extraction(extraction_class="technology", extraction_text="Secrets Manager"),
+                lx.data.Extraction(extraction_class="scope", extraction_text="8 services"),
             ],
         ),
         lx.data.ExampleData(

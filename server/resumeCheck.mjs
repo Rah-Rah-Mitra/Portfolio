@@ -610,8 +610,14 @@ const annotate = (bullet) => {
  * `candidates` are the unselected bullets available on entries already in the
  * résumé: swapping one in is the only remedy an agent is allowed to apply, so a
  * finding that has none says so rather than implying a fix that does not exist.
+ *
+ * `maxBullets` is a one-pager rule, so the caller sets it rather than the rule.
+ * Four on an entry is right when a page is all you have; the two-page master CV
+ * carries seven on People's Association because Rahul's own CV does, and judging
+ * that document by the one-pager ceiling made R6 — the only rule that emits
+ * `error` — fail the gate on the very document it is copied from.
  */
-export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillTerms = [], maxLines = 3, typography = null, maxFindings = 12 } = {}) => {
+export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillTerms = [], maxLines = 3, maxBullets = 4, typography = null, maxFindings = 12 } = {}) => {
   const rows = bullets.map(annotate);
   // Alternative wordings Rahul has already approved for the bullets on this page,
   // keyed by ref. These are what turn a finding that could only be reported into
@@ -800,11 +806,11 @@ export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillT
   // All three are silent today, which is what makes gate "pass" mean something.
   const perEntry = new Map();
   for (const row of rows) perEntry.set(row.entryId, [...(perEntry.get(row.entryId) ?? []), row]);
-  const crowded = [...perEntry].filter(([, list]) => list.length > 4);
+  const crowded = [...perEntry].filter(([, list]) => list.length > maxBullets);
   if (crowded.length) {
-    findings.push(finding('R6', 'error', 'too-many-bullets', { limit: 4 },
+    findings.push(finding('R6', 'error', 'too-many-bullets', { limit: maxBullets },
       crowded.map(([entryId, list]) => ({ ref: entryId, count: list.length })).sort(byRef),
-      { kind: 'drop', note: 'Four bullets on one entry is the ceiling. Drop one.' }));
+      { kind: 'drop', note: `${maxBullets} bullets on one entry is the ceiling here. Drop one.` }));
   }
   const duplicates = [...new Set(rows.map((row) => row.ref).filter((ref, index, all) => all.indexOf(ref) !== index))];
   if (duplicates.length) {

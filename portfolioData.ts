@@ -3,6 +3,7 @@ import React from 'react';
 import { CompetencyCluster, EventHighlight, ExperienceRecord, FieldNote, FieldNoteLink, PortfolioData, ProjectHighlight, ResumeProfile } from './types';
 import { CodeBracketIcon, AcademicCapIcon, CommandLineIcon, DevicePhoneMobileIcon, ServerStackIcon } from './components/icons/TechIcons';
 import * as assets from './assets';
+import { certificationById, certificationDateLabel } from './lib/certifications';
 import { resumeAssetUrl, SITE_CONFIG } from './siteConfig';
 
 /**
@@ -80,6 +81,11 @@ export const softwareEngineerData: PortfolioData = {
       date: "2023 Dec",
       imageUrl: assets.SE_ACHIEVEMENT_NVIDIA_DIL_DRM,
       category: "AI & Geospatial",
+      // The certificate itself, so this row carries its own proof. It is the reason
+      // the same course is marked `excluded` in lib/certifications.ts — it would
+      // otherwise render twice inside this one window.
+      proofUrl: "/certificates/courses/nvidia-dli-disaster-risk-monitoring-using-satellite-imagery.pdf",
+      proofLabel: "View NVIDIA certificate",
       tags: ["NVIDIA", "Deep Learning", "U-Net", "Satellite Imagery", "HPC", "ASPIRE 2A"]
     }
   ],
@@ -554,7 +560,7 @@ export const projectHighlights: ProjectHighlight[] = [
     title: 'Churp',
     category: 'Citizen Developer Platform',
     description: 'An end-to-end digital garden-plot balloting platform for People\'s Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.',
-    tags: ['Civic Tech', 'Singpass', 'AWS Fargate', 'Terraform', 'GIS', 'Redis', 'Kafka', 'Route 53', 'Cloud Security', 'Balloting', 'Smart Nation'],
+    tags: ['Civic Tech', 'Singpass', 'AWS Fargate', 'Terraform', 'GIS', 'RDS', 'WAFv2', 'Route 53', 'Cloud Security', 'Balloting', 'Smart Nation'],
     dateLabel: '2025 - 2026',
     sortDate: '2025-01-01',
     imageUrl: '/images/generated/churp-community.webp',
@@ -565,7 +571,7 @@ export const projectHighlights: ProjectHighlight[] = [
     spotlight: {
       context: 'Community garden-plot allocation needed a complete civic workflow rather than another isolated form.',
       contribution: 'Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it. Singpass secures the sign-in; Myinfo is what keeps the ballot fair.',
-      approach: 'Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and cloud security controls), with stakeholder coordination and rollout planning.',
+      approach: 'Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager), with stakeholder coordination and rollout planning.',
       outcome: 'Fair balloting for 150 residents signed up at release, production-ready for national rollout, and the S$20,000 Sparks Community Innovation Fund.',
     },
   },
@@ -1002,7 +1008,7 @@ const careerAndEducationNotes: FieldNote[] = [
     sortDate: '2025-09-01',
     source: 'LinkedIn',
     summary: 'Delivered Churp, a digital garden-plot balloting platform, across admin and public frontends, backend, GIS mapping, and AWS deployment - keeping balloting fair for 150 residents signed up at release and winning the S$20,000 Sparks Community Innovation Fund.',
-    tags: ['People\'s Association', 'Civic Tech', 'Singpass', 'Myinfo', 'GIS', 'AWS Fargate', 'Terraform', 'Redis', 'Kafka', 'Cloud Security'],
+    tags: ['People\'s Association', 'Civic Tech', 'Singpass', 'Myinfo', 'GIS', 'AWS Fargate', 'Terraform', 'RDS', 'WAFv2', 'Cloud Security'],
     linkedProjectIds: ['churp'],
   },
   {
@@ -1055,16 +1061,22 @@ const careerAndEducationNotes: FieldNote[] = [
   },
 ];
 
-const certificationNotes: FieldNote[] = [
+// Dates are derived from the certificates themselves (lib/certifications.ts),
+// never written here: six of these seven were hand-entered and wrong — Docker
+// was recorded as Aug 2024 against a Jul 2023 certificate, Excel as Jul 2023
+// against a Jan 2023 one. `source` stays 'LinkedIn' because it records where a
+// note is surfaced, not who issued it; the issuer lives on the Certification.
+type CertificationNoteSeed = Omit<FieldNote, 'dateLabel' | 'sortDate'> & { certId: string };
+
+const certificationNoteSeeds: CertificationNoteSeed[] = [
   {
     id: 'cert-docker-absolute-beginner',
     title: 'Docker for the Absolute Beginner - Hands-On',
     kind: 'certification',
     kinds: ['certification'],
-    dateLabel: '2024',
-    sortDate: '2024-08-01',
+    certId: 'packt-docker-for-the-absolute-beginner-hands-on',
     source: 'LinkedIn',
-    summary: 'Stone River eLearning certification covering Docker fundamentals and hands-on container workflows.',
+    summary: 'Packt certification covering Docker fundamentals and hands-on container workflows.',
     tags: ['Docker', 'Containers', 'DevOps'],
     linkedProjectIds: ['portfolio-repo'],
   },
@@ -1073,8 +1085,7 @@ const certificationNotes: FieldNote[] = [
     title: 'Reverse Engineering Windows Executables',
     kind: 'certification',
     kinds: ['certification'],
-    dateLabel: '2024',
-    sortDate: '2024-07-01',
+    certId: 'stone-river-reverse-engineering-windows-executables-digital-forensics-for-cyber-professionals',
     source: 'LinkedIn',
     summary: 'Digital forensics certification for cyber professionals focused on Windows executable reverse engineering.',
     tags: ['Reverse Engineering', 'Digital Forensics', 'Windows', 'Cybersecurity'],
@@ -1085,8 +1096,7 @@ const certificationNotes: FieldNote[] = [
     title: 'Deep Learning CNN with Python',
     kind: 'certification',
     kinds: ['certification'],
-    dateLabel: '2023',
-    sortDate: '2023-10-01',
+    certId: 'packt-deep-learning-cnn-convolutional-neural-networks-with-python',
     source: 'LinkedIn',
     summary: 'Packt certification covering convolutional neural networks, deep learning foundations, and Python model workflows.',
     tags: ['CNN', 'Deep Learning', 'Python'],
@@ -1097,8 +1107,7 @@ const certificationNotes: FieldNote[] = [
     title: 'Deep Learning RNN with Python',
     kind: 'certification',
     kinds: ['certification'],
-    dateLabel: '2023',
-    sortDate: '2023-09-01',
+    certId: 'packt-deep-learning-recurrent-neural-networks-with-python',
     source: 'LinkedIn',
     summary: 'Packt certification covering recurrent neural networks and sequence-modeling foundations.',
     tags: ['RNN', 'Deep Learning', 'Python'],
@@ -1109,8 +1118,7 @@ const certificationNotes: FieldNote[] = [
     title: 'Learning C# by Developing Games with Unity',
     kind: 'certification',
     kinds: ['certification'],
-    dateLabel: '2023',
-    sortDate: '2023-08-01',
+    certId: 'packt-learning-csharp-by-developing-games-with-unity',
     source: 'LinkedIn',
     summary: 'Packt certification connecting C# fundamentals with Unity game-development workflows.',
     tags: ['Unity', 'C#', 'Game Development'],
@@ -1121,8 +1129,7 @@ const certificationNotes: FieldNote[] = [
     title: 'Excel 2019 Advanced',
     kind: 'certification',
     kinds: ['certification'],
-    dateLabel: '2023',
-    sortDate: '2023-07-01',
+    certId: 'intellezy-excel-2019-advanced',
     source: 'LinkedIn',
     summary: 'Intellezy certification supporting the Excel and VBA automation work used in operations reporting.',
     tags: ['Excel', 'Analytics', 'Automation'],
@@ -1133,14 +1140,19 @@ const certificationNotes: FieldNote[] = [
     title: 'Reinforcement Learning and Deep RL Python',
     kind: 'certification',
     kinds: ['certification'],
-    dateLabel: '2023',
-    sortDate: '2023-06-01',
+    certId: 'packt-reinforcement-learning-and-deep-rl-python-theory-and-projects',
     source: 'LinkedIn',
     summary: 'Packt certification covering reinforcement learning theory and Python implementation projects.',
     tags: ['Reinforcement Learning', 'Deep RL', 'Python'],
     linkedProjectIds: ['on-the-spectrum'],
   },
 ];
+
+const certificationNotes: FieldNote[] = certificationNoteSeeds.map((seed) => {
+  const certification = certificationById.get(seed.certId);
+  if (!certification) throw new Error(`Unknown certification id: ${seed.certId}`);
+  return { ...seed, dateLabel: certificationDateLabel(certification), sortDate: certification.date };
+});
 
 const fieldNoteMergeKeyById: Record<string, string> = {
   'project-maritime-deficiency-severity': 'project:maritime-deficiency-severity',
@@ -1328,7 +1340,7 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
       'Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment.',
       'Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address, so eligibility checks run without manual review.',
       'Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations.',
-      'Provisioned AWS infrastructure with Terraform across Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, and applied cloud security controls environment-wide.',
+      'Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager.',
     ],
     outcomes: [
       'Kept garden-plot balloting fair for 150 residents signed up at release, and left the platform production-ready for national rollout across Singapore.',

@@ -53,14 +53,17 @@ describe('the shipped documents are a function of the content pool', () => {
   // means those files no longer say what this repo says.
   it('pins every canonical résumé to the words Word would render', () => {
     expect(Object.fromEntries(configs.map((config) => [config.slug, documentDigest(config)]))).toEqual({
-      'software-engineer': '3cf217f035e12eaf',
-      'solution-architect': 'e91f840b56e18498',
-      'ai-engineer': 'a9c62699deea255a',
-      'operations-research-engineer': '2ffb88452429eac6',
+      // Moved by the 2026-11 master CV pass and rebuilt with Word in the same
+      // change. cyber-security is the only slug that did not move: it selects no
+      // People's Association entry and none of the corrected bullets.
+      'software-engineer': '993e76e2a9027859',
+      'solution-architect': '00b8252d054dfe3d',
+      'ai-engineer': 'e723060abf071bbd',
+      'operations-research-engineer': 'eaa467639841f8ea',
       'cyber-security': '8c4e16660869c058',
-      'civic-tech-solution-architect': 'd161819193fcd077',
-      highlights: '18540dfd1cdb3e5e',
-      general: '963bd55ca772182c',
+      'civic-tech-solution-architect': 'cb4084181e6a6e25',
+      highlights: '68a9fb2da6b6ef60',
+      general: '0aa9b7b58396d10b',
     });
   });
 

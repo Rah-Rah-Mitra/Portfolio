@@ -427,12 +427,14 @@ describe('build_tailored_resume', () => {
     expect(vision.matched.keywords).toContain('PyTorch');
 
     const platform = payload(await call('build_tailored_resume', {
-      jd_text: 'Platform engineer: Terraform, Kafka, Redis and AWS Fargate.',
+      jd_text: 'Platform engineer: Terraform, ECS Fargate, WAFv2 and Secrets Manager.',
     }));
     // Both architecture résumés carry this stack; which of the two wins is a
-    // judgement. That it is no longer the fallback is the point.
+    // judgement. That it is no longer the fallback is the point. The posting
+    // used to say "Kafka, Redis": neither is attested any more (the 2026-11
+    // pass corrected pa.infra), so a posting naming them would match nothing.
     expect(['solution-architect', 'civic-tech-solution-architect']).toContain(platform.matched.slug);
-    expect(platform.matched.keywords).toEqual(expect.arrayContaining(['Terraform', 'Kafka']));
+    expect(platform.matched.keywords).toEqual(expect.arrayContaining(['Terraform', 'ECS Fargate']));
 
     // The families that already resolved still resolve, to the same résumé.
     const civic = payload(await call('build_tailored_resume', {
@@ -448,10 +450,10 @@ describe('build_tailored_resume', () => {
   it('reports coverage in Rahul\'s words only, and never echoes the posting', async () => {
     const built = payload(await call('build_tailored_resume', {
       // Qzzytech and the rest are the posting's, not his: they must not come back.
-      jd_text: 'Qzzytech needs Terraform, Kafka and Rust for its Blorptech platform. Python too.',
+      jd_text: 'Qzzytech needs Terraform, WAFv2 and Rust for its Blorptech platform. Python too.',
       block_ids: ['pa.infra', 'se-skills'],
     }));
-    expect(built.coverage.covered).toEqual(expect.arrayContaining(['Terraform', 'Kafka']));
+    expect(built.coverage.covered).toEqual(expect.arrayContaining(['Terraform', 'WAFv2']));
     expect(built.coverage.missing).toContain('Rust');   // his, attested, not on this page
     expect(built.coverage.asked).toBe(built.coverage.covered.length + built.coverage.missing.length);
     for (const term of [...built.coverage.covered, ...built.coverage.missing]) {
@@ -595,7 +597,7 @@ describe('build_tailored_resume', () => {
 
   it('says where a covered term sits, and which blocks would supply a missing one', async () => {
     const built = payload(await call('build_tailored_resume', {
-      jd_text: 'Qzzytech needs Terraform, Kafka and Rust for its Blorptech platform. Python too.',
+      jd_text: 'Qzzytech needs Terraform, WAFv2 and Rust for its Blorptech platform. Python too.',
       block_ids: ['pa.infra', 'se-skills'],
     }));
     // A keyword in a bullet is demonstrated; the same keyword only on the skills
@@ -631,7 +633,7 @@ describe('build_tailored_resume', () => {
   });
 
   it('can analyse a selection without rendering a document or minting a URL', async () => {
-    const args = { jd_text: 'Platform engineer: Terraform, Kafka, Redis and AWS Fargate.', block_ids: ['pa.infra', 'sa-skills'] };
+    const args = { jd_text: 'Platform engineer: Terraform, ECS Fargate, WAFv2 and Secrets Manager.', block_ids: ['pa.infra', 'sa-skills'] };
     const dry = payload(await call('build_tailored_resume', { ...args, dry_run: true }));
     expect(dry.dry_run).toBe(true);
     // No document, and the keys a document would fill are null rather than gone.
@@ -745,7 +747,7 @@ describe('export_profile', () => {
     const exported = payload(await call('export_profile'));
     const blocked = (pools as unknown as { projects: { entries: Array<{ id: string; blocked?: string }> } })
       .projects.entries.filter((entry) => entry.blocked);
-    expect(blocked.length).toBe(7);
+    expect(blocked.length).toBe(10);
 
     // Every blocked pool entry must be accounted for by name. Blocking a sixth
     // project fails here until someone says which site project it maps to — the
@@ -766,8 +768,12 @@ describe('export_profile', () => {
       expect(snapshot.projects.some((project) => project.id === siteId), `${poolId} -> ${siteId}`).toBe(true);
     }
     const withheld = snapshot.projects.filter((item) => item.spotlight && isBlockedProject(item.id));
+    // on-the-spectrum joined in the 2026-11 pass. It is the only one of the three
+    // projects blocked then that is spotlighted, so it is the only one that also
+    // leaves the digest; agewelllah-ai and smart-exam were never spotlighted and
+    // lose nothing here. All five keep their cards on list_projects.
     expect(withheld.map((item) => item.id).sort())
-      .toEqual(['arcane', 'asyncddgs', 'hybrid-flow-shop-digital-twin', 'project-utopia']);
+      .toEqual(['arcane', 'asyncddgs', 'hybrid-flow-shop-digital-twin', 'on-the-spectrum', 'project-utopia']);
     for (const project of withheld) {
       expect(exported.article_digest_md, project.title).not.toContain(`## ${project.title} — `);
     }

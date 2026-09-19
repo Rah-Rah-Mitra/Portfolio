@@ -30,8 +30,9 @@ keyword is recoverable; an inaccurate one is not.
 
    **The menu is larger than any ready-made résumé.** Some of the strongest
    material sits on only one of them, or on none: the People's Association AWS
-   deployment bullet (\`pa.infra\`: Terraform, Fargate, Route 53, Redis, Kafka,
-   cloud security) is one such. Read the menu; never treat a ready-made résumé
+   deployment bullet (\`pa.infra\`: Terraform over ECS Fargate, Multi-AZ RDS
+   Postgres with PostGIS, ALB and WAFv2, Route 53, ACM, KMS and Secrets Manager)
+   is one such. Read the menu; never treat a ready-made résumé
    as the full inventory. It is also not everything he has built: material he
    has asked to keep off résumés is withheld from the menu and refused by the
    builder, so if you know of a project and cannot find it, that is deliberate.
@@ -46,13 +47,17 @@ keyword is recoverable; an inaccurate one is not.
    résumés at Rahul's instruction. It was a Top 8 finalist of 50+ teams and he
    rates it among his strongest work, so keep it unless the posting makes it
    genuinely irrelevant.
-4. Three bullets per entry is typical and four is the practical ceiling. When
-   an entry genuinely earns a fourth (People's Association carries platform,
-   Singpass, Sparks fund and AWS deployment on the architecture résumés), pay
-   for it by dropping a weaker project rather than by cutting one of the four.
+4. Three bullets per entry is typical, and on a one-page spec four is the
+   ceiling — the checker reports a fifth as a structural error. When an entry
+   genuinely earns a fourth (People's Association carries platform, Singpass,
+   AWS deployment and either the Sparks fund or keyless CI/CD on the
+   architecture résumés), pay for it by dropping a weaker project rather than
+   by cutting one of the four. A two-page spec has room for more and the
+   ceiling rises to eight: the master CV carries seven on People's Association
+   and six on the Abbott internship, because Rahul's own CV does.
 5. Choose depth. Bullets can carry a \`deep\` variant alongside the default; set
    \`detail: "deep"\` on the spec, or \`variant\` on a single entry. Deep variants
-   are longer, so they usually need \`pages: 2\`. Only 20 of the 39 selectable
+   are longer, so they usually need \`pages: 2\`. Only 17 of the 41 selectable
    bullets have one, and the rest fall back to their default silently, so do not
    treat depth as a way to change every bullet at once.
 6. Check whether the entry offers more than one job title. An entry with

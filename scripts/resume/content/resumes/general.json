@@ -14,7 +14,7 @@
           "bullets": [
             "majors",
             "award",
-            "coursework-full"
+            "coursework"
           ]
         }
       ]
@@ -49,7 +49,10 @@
           "bullets": [
             "digital-twin",
             "pipeline",
-            "apc"
+            "apc",
+            "upskilling",
+            "safeguards",
+            "handover"
           ]
         },
         {
@@ -57,21 +60,19 @@
           "bullets": [
             "churp",
             "singpass",
-            "sparks"
+            "sparks",
+            "infra",
+            "cicd",
+            "survey",
+            "rules"
           ]
         }
       ]
     },
     {
       "type": "projects",
-      "title": "PROJECTS AND COMPETITIONS",
+      "title": "PROJECTS",
       "entries": [
-        {
-          "id": "onthespectrum",
-          "bullets": [
-            "main"
-          ]
-        },
         {
           "id": "hailo",
           "bullets": [
@@ -92,18 +93,6 @@
         },
         {
           "id": "maritime",
-          "bullets": [
-            "main"
-          ]
-        },
-        {
-          "id": "agewelllah",
-          "bullets": [
-            "main"
-          ]
-        },
-        {
-          "id": "smartexam",
           "bullets": [
             "main"
           ]
@@ -143,8 +132,7 @@
         {
           "id": "navy",
           "bullets": [
-            "vba",
-            "data"
+            "vba"
           ]
         }
       ]

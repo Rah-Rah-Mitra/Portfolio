@@ -36,6 +36,7 @@
     "train": "agent",
     "turn": "agent",
     "validat": "agent",
+    "win": "agent",
     "appli": "equal",
     "assess": "equal",
     "serv": "equal",

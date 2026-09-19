@@ -123,9 +123,11 @@ describe('api/mcp', () => {
     const projects = await rpc('tools/call', { name: 'list_resume_blocks', arguments: { section: 'projects' } });
     const bullets = JSON.parse(projects.content[0].text).sections
       .flatMap((section: { entries: Array<{ bullets: unknown[] }> }) => section.entries.flatMap((entry) => entry.bullets));
-    // Exactly the eight projects the 2026-11 pass leaves selectable: arcane and
-    // ethoslens are withheld, and the "Additional Projects" entry retired.
-    expect(bullets.length).toBe(8);
+    // Exactly the five projects the 2026-11 master CV pass leaves selectable.
+    // arcane and ethoslens were withheld in the VMock pass; onthespectrum,
+    // agewelllah and smartexam followed once work experience carried the same
+    // evidence, and the "Additional Projects" entry retired earlier.
+    expect(bullets.length).toBe(5);
     for (const bullet of bullets as Array<{ lead: string; lines: number; hasMetric: boolean }>) {
       expect(bullet.lead).toMatch(/^[A-Za-z][A-Za-z-]*$/);
       expect(bullet.lines).toBeGreaterThan(0);
@@ -168,8 +170,11 @@ describe('api/mcp', () => {
     // asrjc.award joined it when the NUS style landed: the master CV drops the
     // A-Level entry, so nothing selects it. The block stays in the pool and
     // stays selectable — withholding a card is not withholding a fact.
+    // navy.data joined it in the 2026-11 pass: general was its only consumer and
+    // the master CV drops it. Same reading as asrjc.award — still true, still
+    // selectable, just not on a canonical résumé.
     expect(bullets.filter((bullet) => bullet.usedBy.length === 0).map((bullet) => bullet.ref).sort())
-      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'asrjc.award']);
+      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'asrjc.award', 'navy.data']);
     for (const line of menu.skillLines) expect(Array.isArray(line.usedBy), line.id).toBe(true);
     expect(menu.skillLines.find((line) => line.id === 'se-skills')?.usedBy).toContain('software-engineer');
     expect(menu.skillLines.some((line) => line.usedBy.length === 0)).toBe(true);

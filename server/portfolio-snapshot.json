@@ -325,8 +325,8 @@
         "GIS",
         "AWS Fargate",
         "Terraform",
-        "Redis",
-        "Kafka",
+        "RDS",
+        "WAFv2",
         "Cloud Security"
       ],
       "linkedProjectIds": [
@@ -341,7 +341,7 @@
         "Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment.",
         "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address, so eligibility checks run without manual review.",
         "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations.",
-        "Provisioned AWS infrastructure with Terraform across Fargate services, Route 53 DNS, Redis caching, and Kafka messaging, and applied cloud security controls environment-wide."
+        "Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager."
       ],
       "outcomes": [
         "Kept garden-plot balloting fair for 150 residents signed up at release, and left the platform production-ready for national rollout across Singapore.",
@@ -970,8 +970,8 @@
         "AWS Fargate",
         "Terraform",
         "GIS",
-        "Redis",
-        "Kafka",
+        "RDS",
+        "WAFv2",
         "Route 53",
         "Cloud Security",
         "Balloting",
@@ -989,7 +989,7 @@
       "spotlight": {
         "context": "Community garden-plot allocation needed a complete civic workflow rather than another isolated form.",
         "contribution": "Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it. Singpass secures the sign-in; Myinfo is what keeps the ballot fair.",
-        "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (Fargate services, Route 53 DNS, Redis caching, Kafka messaging, and cloud security controls), with stakeholder coordination and rollout planning.",
+        "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager), with stakeholder coordination and rollout planning.",
         "outcome": "Fair balloting for 150 residents signed up at release, production-ready for national rollout, and the S$20,000 Sparks Community Innovation Fund."
       }
     },

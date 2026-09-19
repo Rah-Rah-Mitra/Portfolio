@@ -78,7 +78,12 @@ export interface FieldNote {
   aliases?: string[];
   dateLabel: string;
   sortDate: string;
+  /** Where the note is surfaced — not the issuer. A certification's issuer lives
+   *  on its Certification record in lib/certifications.ts. */
   source: 'LinkedIn' | 'GitHub' | 'Portfolio' | 'Education';
+  /** Certification notes only: the lib/certifications.ts id this note describes.
+   *  dateLabel and sortDate are derived from it, so the two cannot drift. */
+  certId?: string;
   summary: string;
   tags: string[];
   people?: string[];

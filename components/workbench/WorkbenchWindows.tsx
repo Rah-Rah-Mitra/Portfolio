@@ -13,6 +13,15 @@ import {
   WORKBENCH_DOMAINS,
   type WorkbenchDomain,
 } from '../../lib/workbench';
+import {
+  CERT_GROUPS,
+  certificationCounts,
+  certificationDateLabel,
+  certificationSpan,
+  filterCertifications,
+  listedCertifications,
+  type CertGroup,
+} from '../../lib/certifications';
 import { coreCompetencies, experienceRecords, resumeProfiles, unifiedPortfolioData } from '../../portfolioData';
 import { ResumeBuilder } from './ResumeBuilder';
 import type { DesktopAppId } from '../../types';
@@ -336,6 +345,80 @@ export const CapabilitiesWindow: React.FC = () => (
   </div>
 );
 
+const CertificateRegister: React.FC = () => {
+  const [query, setQuery] = React.useState('');
+  const [group, setGroup] = React.useState<CertGroup | 'ALL'>('ALL');
+  const rows = filterCertifications(query, group);
+  return (
+    <details
+      className="wb-register"
+      onToggle={(event) => {
+        // The crane rig recomputes its scroll extent only inside onScroll
+        // (FieldWorkbench), and opening this changes scrollHeight without one —
+        // so the counterweight would park off-position until the next scroll.
+        event.currentTarget.closest<HTMLElement>('[data-scroll]')?.dispatchEvent(new Event('scroll'));
+      }}
+    >
+      <summary className="btn btn-secondary">
+        {listedCertifications.length} CERTIFICATIONS
+        {certificationCounts.map((item) => ` · ${item.label} ${item.count}`).join('')}
+      </summary>
+      <div className="wb-archbar">
+        <input
+          className="input wb-archsearch"
+          type="search"
+          value={query}
+          placeholder="SEARCH THE REGISTER…"
+          aria-label="Search certifications"
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <div className="wb-domainseg" role="group" aria-label="Filter certifications by focus">
+          {CERT_GROUPS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              data-active={item.id === group || undefined}
+              onClick={() => setGroup(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <span className="wb-archcount" role="status">{String(rows.length).padStart(2, '0')} / {listedCertifications.length} SHOWN</span>
+      </div>
+      <div className="wb-archhead" aria-hidden="true">
+        <span>DATE</span><span>COURSE</span><span>ISSUER</span><span>FOCUS</span><span>GROUP</span>
+      </div>
+      {rows.map((row) => (
+        <article className="wb-archrow" key={row.id}>
+          <span className="wb-archrow-date">{certificationDateLabel(row)}</span>
+          <span className="wb-archrow-title">
+            <a
+              href={row.file}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`${row.title} — ${row.ext.toUpperCase()} certificate from ${row.issuer}`}
+              onClick={() => track('achievement_proof_opened', { title: row.title })}
+            >
+              {row.title}
+            </a>
+          </span>
+          <span className="wb-archrow-cat">{row.issuer}</span>
+          <span className="wb-archrow-stack">{row.tags.join(' · ')}</span>
+          <span className="tag tag-outline">{CERT_GROUPS.find((item) => item.id === row.group)?.label}</span>
+        </article>
+      ))}
+      {rows.length === 0 && (
+        <div className="blueprint wb-empty">
+          <Corners />
+          <p>NO CERTIFICATIONS MATCH “{query}”</p>
+          <button type="button" className="btn btn-secondary" onClick={() => { setQuery(''); setGroup('ALL'); }}>Clear search &amp; filters</button>
+        </div>
+      )}
+    </details>
+  );
+};
+
 export const ProofWindow: React.FC = () => (
   <div id="proof">
     <Kicker>C6 / VERIFY — DISTINCTIONS &amp; CREDENTIALS</Kicker>
@@ -361,6 +444,10 @@ export const ProofWindow: React.FC = () => (
         </div>
       </article>
     ))}
+    <Kicker>
+      C6.2 / REGISTER — COURSE CERTIFICATIONS · {certificationSpan.from}–{certificationSpan.to}
+    </Kicker>
+    <CertificateRegister />
   </div>
 );
 

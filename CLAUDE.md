@@ -299,6 +299,32 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `POST /api/page-agent`). `npm test` drives the real handlers; after deploy:
   `npx @modelcontextprotocol/inspector --cli https://rahul-mitra.com/api/mcp --transport http --method tools/list`.
 
+## Certification register
+
+- `lib/certifications.ts` holds 48 course certificates; the files live in
+  `public/certificates/courses/` (the two award PDFs at `certificates/` root are
+  separate and referenced from `portfolioData.ts`). Every field — issuer, title,
+  ISO date, credential id — is read off the certificate itself. **Never take a
+  date from a file's mtime**: nine of these were downloaded in the same minute,
+  and two Kaggle PNGs had mtimes a day earlier than the date printed on them.
+- `excluded` withholds a ROW, never a file: all 48 ship and stay reachable at
+  their URLs. Five are withheld — three non-technical, one whose title reads as
+  account-attack tooling out of context, and the NVIDIA DLI course, which is
+  already an achievement `proofUrl` and would otherwise render twice in `#proof`.
+  It is deliberately not called `blocked`; that word is load-bearing for résumé
+  emitters and has a different contract.
+- Desktop renders inside `ProofWindow` (`#proof`) as a closed `<details>` — no new
+  app id, no new anchor — reusing `.wb-arch*` verbatim. Mobile adds a `CERTS` kind
+  to `FieldIndex`, held **out of the default ALL view** (`scopeOf`) so 43 rows
+  cannot double the registry's scroll depth; it arrives on the chip or on search.
+  The `.fi-hits` denominator is computed from the same scope as the numerator, or
+  it reads "62/105" with no filter set.
+- Nothing here reaches `server/portfolio-snapshot.json`, so nothing reaches
+  `ATTESTED` in `jobSearch.mjs`. The two RL certificates stay uncovered by
+  `build_tailored_resume` on purpose — a completed course is not applied work.
+- `tests/certifications.test.ts` is the only place in the repo that checks a
+  `/public` reference resolves on disk.
+
 ## Experience data (site)
 
 Career history renders from `experienceRecords` in `portfolioData.ts` (shown

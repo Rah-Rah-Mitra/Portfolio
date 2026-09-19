@@ -372,6 +372,15 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-archrow .tag { justify-self: start; }
 .wb-empty { padding: 22px 16px; text-align: center; margin-top: 8px; }
 
+/* — Certifications register (inside WIN-09): a <details> so it works with no JS.
+     Everything below it reuses .wb-arch* verbatim; only the disclosure control
+     needs dressing, because the native marker is the one thing in this window
+     that is not square. +/− matches .fi-row-chev on the mobile surface. — */
+.wb-register > summary { list-style: none; cursor: pointer; margin: 2px 0 12px; }
+.wb-register > summary::-webkit-details-marker { display: none; }
+.wb-register > summary::after { content: '+'; margin-left: 8px; }
+.wb-register[open] > summary::after { content: '−'; }
+
 /* — Resume Builder (WIN-11): pick blocks left, real PDF preview right — */
 .wb-builder-field { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.11em; color: var(--color-neutral-700); }
 .wb-builder-field .input { width: 210px; min-height: 30px; font-size: 12px; }

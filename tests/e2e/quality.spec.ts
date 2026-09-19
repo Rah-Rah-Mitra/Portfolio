@@ -90,6 +90,37 @@ test.describe('field workbench — desktop', () => {
     expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
   });
 
+  test('proof vault carries the certification register behind one disclosure', async ({ page }) => {
+    await page.goto('/?app=proof-vault');
+    const vault = page.getByRole('dialog', { name: 'Proof Vault' });
+    await expect(vault).toBeVisible();
+    // Home boots on top of it, so bring the sheet forward before touching it.
+    await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Proof Vault' }).click();
+    // Collapsed on arrival, and costing no scroll depth while it is. A closed
+    // <details> keeps its children in the DOM with a layout box, so count and
+    // visibility both lie here — the sheet's own scrollHeight is the honest measure.
+    const register = vault.locator('details.wb-register');
+    const sheetDepth = () => vault.locator('[data-scroll]').evaluate((node) => node.scrollHeight);
+    expect(await register.evaluate((node: HTMLDetailsElement) => node.open)).toBe(false);
+    const collapsed = await sheetDepth();
+
+    await vault.getByText(/43 CERTIFICATIONS/).click();
+    expect(await register.evaluate((node: HTMLDetailsElement) => node.open)).toBe(true);
+    expect(await sheetDepth()).toBeGreaterThan(collapsed);
+    await expect(vault.locator('.wb-archrow')).toHaveCount(43);
+
+    // A chip narrows it, and the counter follows.
+    await register.getByRole('button', { name: 'SECURITY', exact: true }).click();
+    await expect(vault.locator('.wb-archrow')).toHaveCount(7);
+    await expect(register.getByRole('status')).toContainText('07 / 43 SHOWN');
+
+    // The register must not reuse the anchors the no-JS evidence count relies on.
+    expect(await vault.locator('[id^="experience-"]').count()).toBe(0);
+    // Second-largest interactive surface in the app, and the only axe scan of this window.
+    const results = await new AxeBuilder({ page }).include('[data-win="proof-vault"]').analyze();
+    expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
+  });
+
   test('prerendered document keeps the semantic evidence without JavaScript', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();

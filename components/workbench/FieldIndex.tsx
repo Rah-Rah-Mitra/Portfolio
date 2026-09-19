@@ -2,13 +2,14 @@ import React from 'react';
 import type { DesktopAppId } from '../../types';
 import { archiveRows, CONTACT, featuredCards, generalResume, POSITIONING, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../../lib/workbench';
 import { allProjects, coreCompetencies, experienceRecords, resumeProfiles, unifiedPortfolioData } from '../../portfolioData';
+import { certificationDateLabel, listedCertifications } from '../../lib/certifications';
 import { SITE_CONFIG } from '../../siteConfig';
 import { desktopAppFromSearch } from '../../lib/workstation';
 import { clamp, pathSampler, routePath, spring, type PathSampler } from '../../lib/rig';
 import { Corners } from './bits';
 import { track } from '../../lib/analytics';
 
-const KINDS = ['ALL', 'PROJECTS', 'EXPERIENCE', 'METHODS', 'PROOF', 'RESUMES'] as const;
+const KINDS = ['ALL', 'PROJECTS', 'EXPERIENCE', 'METHODS', 'PROOF', 'RESUMES', 'CERTS'] as const;
 type Kind = (typeof KINDS)[number];
 
 interface IndexRow {
@@ -85,9 +86,36 @@ const INDEX_ROWS: IndexRow[] = [
     tags: profile.keywords.slice(0, 3),
     link: { label: 'DOWNLOAD PDF', href: profile.pdfUrl },
   })),
+  ...listedCertifications.map((certification): IndexRow => ({
+    id: `cert:${certification.id}`,
+    kind: 'CERTS',
+    date: certificationDateLabel(certification),
+    title: certification.title,
+    sub: certification.issuer,
+    detail: `${certification.group} · ${certification.tags.join(' · ')}.${certification.credentialId ? ` Certificate ID ${certification.credentialId}.` : ''}`,
+    tags: certification.tags,
+    link: { label: `OPEN ${certification.ext.toUpperCase()}`, href: certification.file },
+  })),
 ];
 
-const GROUP_ORDER: Array<Exclude<Kind, 'ALL'>> = ['PROJECTS', 'EXPERIENCE', 'METHODS', 'PROOF', 'RESUMES'];
+const GROUP_ORDER: Array<Exclude<Kind, 'ALL'>> = ['PROJECTS', 'EXPERIENCE', 'METHODS', 'PROOF', 'RESUMES', 'CERTS'];
+
+// The register is 43 rows against a 62-row index, so it stays out of the default
+// ALL view — otherwise adding it would nearly double how far the page scrolls
+// before anything else is reached. It arrives on the CERTS chip, or on any search
+// that matches it.
+const scopeOf = (kindValue: Kind, needle: string) => (row: IndexRow) =>
+  kindValue === 'ALL' ? row.kind !== 'CERTS' || !!needle : row.kind === kindValue;
+
+const rowsFor = (kindValue: Kind, queryValue: string): IndexRow[] => {
+  const needle = queryValue.trim().toLowerCase();
+  const inScope = scopeOf(kindValue, needle);
+  return INDEX_ROWS.filter(
+    (row) =>
+      inScope(row) &&
+      (!needle || `${row.title} ${row.sub} ${row.detail} ${row.tags.join(' ')}`.toLowerCase().includes(needle)),
+  );
+};
 
 const APP_TO_KIND: Partial<Record<DesktopAppId, Kind>> = {
   'home': 'ALL',
@@ -143,9 +171,10 @@ const FieldIndex: React.FC = () => {
   const rowRefs = React.useRef(new Map<string, HTMLElement>());
 
   const q = query.trim().toLowerCase();
-  const hits = INDEX_ROWS.filter((row) =>
-    (kind === 'ALL' || row.kind === kind) &&
-    (!q || `${row.title} ${row.sub} ${row.detail} ${row.tags.join(' ')}`.toLowerCase().includes(q)));
+  const hits = rowsFor(kind, query);
+  // Denominator has to be the same universe the numerator is drawn from, or the
+  // counter reads "62/105" at rest — filtered-looking with no filter set.
+  const universe = INDEX_ROWS.filter(scopeOf(kind, q));
   const groups = GROUP_ORDER
     .map((label) => ({ label, rows: hits.filter((row) => row.kind === label) }))
     .filter((group) => group.rows.length > 0);
@@ -456,10 +485,13 @@ const FieldIndex: React.FC = () => {
             aria-label="Search the field index"
             onChange={(event) => {
               setQuery(event.target.value);
-              track('archive_search_changed', { query_length: event.target.value.length, result_count: hits.length });
+              track('archive_search_changed', {
+                query_length: event.target.value.length,
+                result_count: rowsFor(kind, event.target.value).length,
+              });
             }}
           />
-          <span className="fi-hits" role="status">{String(hits.length).padStart(2, '0')}/{INDEX_ROWS.length}</span>
+          <span className="fi-hits" role="status">{String(hits.length).padStart(2, '0')}/{universe.length}</span>
         </div>
         <div className="fi-chips" role="group" aria-label="Filter the registry">
           {KINDS.map((item) => (

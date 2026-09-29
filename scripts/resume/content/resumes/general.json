@@ -13,8 +13,7 @@
           "id": "nus",
           "bullets": [
             "majors",
-            "award",
-            "coursework"
+            "award"
           ]
         }
       ]
@@ -74,6 +73,12 @@
       "title": "PROJECTS",
       "entries": [
         {
+          "id": "swarmline",
+          "bullets": [
+            "main"
+          ]
+        },
+        {
           "id": "hailo",
           "bullets": [
             "main"
@@ -125,8 +130,7 @@
           "id": "ywh",
           "bullets": [
             "programs",
-            "automation",
-            "network"
+            "automation"
           ]
         },
         {

@@ -6,7 +6,7 @@ export const DEFAULT_GEMINI_MODEL = 'gemma-4-26b-a4b-it';
 const labModes = new Set(['intrinsics', 'extrinsics', 'optics', 'stereo']);
 const sceneIds = new Set(['calibration', 'systems-in-motion', 'spatial-systems', 'selected-work', 'camera-laboratory', 'departure']);
 const canonicalProjectIds = new Set([
-  'on-the-spectrum', 'geometry', 'information-lab', 'arcane', 'hailo-training', 'hybrid-flow-shop-digital-twin',
+  'swarmline', 'on-the-spectrum', 'geometry', 'information-lab', 'arcane', 'hailo-training', 'hybrid-flow-shop-digital-twin',
   'azure-apc-web-simulator', 'changeover-data-quality-pipeline', 'project-utopia', 'volt-pulse-sg', 'smart-exam',
   'waaah-comics', 'ethos-lens', 'agewelllah-ai', 'maritime-deficiency-severity', 'churp', 'kaogenie', 'asyncddgs',
   'portfolio-repo', 'github-profile-repo', 'kalidokit-fork', 'tp-java', 'ip-java', 'crawl4ai-deepseek-example',

@@ -30,17 +30,17 @@ describe('recruiter project evidence', () => {
 
   it('keeps every project visible after hydration in Quick Scan', async () => {
     const { container } = render(<AllProjectsSection showAllByDefault />);
-    await waitFor(() => expect(container.querySelectorAll('.project-index-list article')).toHaveLength(28));
+    await waitFor(() => expect(container.querySelectorAll('.project-index-list article')).toHaveLength(29));
     expect(screen.queryByRole('button', { name: /Load .* more projects/ })).toBeNull();
   });
 
-  it('searches all 28 records, including projects outside the first batch', async () => {
+  it('searches all 29 records, including projects outside the first batch', async () => {
     const hiddenProject = allProjects[20];
     const { container } = render(<AllProjectsSection />);
     await waitFor(() => expect(container.querySelectorAll('.project-index-list article')).toHaveLength(8));
     fireEvent.change(screen.getByRole('searchbox', { name: /Search by project/ }), { target: { value: hiddenProject.title } });
     expect(screen.getByRole('heading', { name: hiddenProject.title })).not.toBeNull();
-    expect(screen.getByRole('status').textContent).toContain('Showing 1 of 28 projects');
+    expect(screen.getByRole('status').textContent).toContain('Showing 1 of 29 projects');
   });
 
   it('reveals the batch containing a matching project hash', async () => {

@@ -23,6 +23,7 @@
       "SQL & NoSQL Databases",
       "Mathematical Modeling (Linear Algebra, Probability, Calculus)",
       "Rust (Systems Programming & Digital Twins)",
+      "Generative AI Tools (Claude Code, ChatGPT, Codex, Gemini, ComfyUI)",
       "Web App Penetration Testing (Burp Suite)",
       "Network Analysis (Wireshark, TCP/UDP, TLS)",
       "Vuln Research (SSRF, CSRF, SQLi, Auth Bypass)",
@@ -83,8 +84,12 @@
           "BERT",
           "RAG",
           "AI Agents",
+          "Claude Code",
           "OpenAI GPT-4",
+          "ChatGPT",
           "Gemini",
+          "Codex",
+          "ComfyUI",
           "Vector Search",
           "ASPIRE 2A",
           "SEALION",
@@ -95,6 +100,7 @@
           "Constraint Satisfaction"
         ],
         "proof": [
+          "Swarmline",
           "Maritime BERT/DNN",
           "AgeWellLah.AI",
           "SmartExam",
@@ -173,7 +179,7 @@
         "label": "ENGINEERING DOMAINS"
       },
       {
-        "value": "28",
+        "value": "29",
         "label": "PUBLIC PROJECTS INDEXED"
       },
       {
@@ -463,6 +469,35 @@
     }
   ],
   "projects": [
+    {
+      "id": "swarmline",
+      "title": "Swarmline",
+      "category": "Swarm Robotics & Defence Tech",
+      "description": "Finalist at the Singapore Defence Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in all 10 runs, against 2.1 on average for an operator-in-the-loop baseline.",
+      "tags": [
+        "C++",
+        "Unreal Engine 5.8",
+        "Swarm Robotics",
+        "Decentralised Coordination",
+        "Gossip Protocols",
+        "Claude Code",
+        "Simulation"
+      ],
+      "liveUrl": "https://lnkd.in/g9SNkSVS",
+      "dateLabel": "Sep 2026",
+      "sortDate": "2026-09-27",
+      "accent": "blue",
+      "linkedEventIds": [
+        "singapore-defence-tech-hackathon-2026"
+      ],
+      "npcRole": "swarm coordination guide",
+      "spotlight": {
+        "context": "Singapore Defence Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
+        "contribution": "Chose the swarm-robotics approach and directed the Claude Code agents that wrote and reviewed the core swarm algorithm and simulation; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline. One member of a five-person team.",
+        "approach": "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow spacing, delay-tolerant gossip, cross-inhibition consensus, response-threshold allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
+        "outcome": "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist."
+      }
+    },
     {
       "id": "on-the-spectrum",
       "title": "OnTheSpectrum",
@@ -1103,6 +1138,15 @@
     }
   ],
   "archive": [
+    {
+      "id": "swarmline",
+      "date": "2026-09",
+      "title": "Swarmline",
+      "category": "Swarm Robotics & Defence Tech",
+      "stack": "C++ · Unreal Engine 5.8 · Swarm Robotics",
+      "domain": "AI",
+      "href": "https://lnkd.in/g9SNkSVS"
+    },
     {
       "id": "on-the-spectrum",
       "date": "2026-05",

@@ -1,6 +1,21 @@
 {
   "entries": [
     {
+      "id": "swarmline",
+      "organization": "Swarmline: Singapore Defence Tech Hackathon 2026 (1,000+ applicants)",
+      "role": "Finalist",
+      "sort": "2026-09",
+      "dateLabel": "Sep 2026",
+      "bullets": [
+        {
+          "id": "main",
+          "text": {
+            "default": "Developed decentralised swarm coordination in Unreal Engine 5.8 C++ with Claude Code, so under a ground-link jam, 30 simulated drones confirmed all 8 walking targets in all 10 runs, against 2.1 for an operator-run fleet."
+          }
+        }
+      ]
+    },
+    {
       "id": "asyncddgs",
       "organization": "AsyncDDGS: Open-Source Async Search Client (PyPI)",
       "sort": "9999-12",

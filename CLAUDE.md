@@ -82,7 +82,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   1. Edit content JSONs, then `npm run resume:lint`.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`
   3. `powershell -File scripts/resume/export-pdf.ps1 -Edition <YYYY-MM>`
-     (MS Word COM; `-UseLibreOffice` fallback shifts pagination — re-verify)
+     (MS Word COM; `-UseLibreOffice` fallback shifts pagination — re-verify;
+     no Windows: the skill's "No Windows?" note, which needs the real Arial)
   4. `python scripts/resume/verify_resumes.py --edition <YYYY-MM>` must pass
      (page counts: `general` = 2 pages, all others = 1; contact links in DOCX
      rels and PDF annotations; content assertions).
@@ -240,7 +241,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   enforcement site is a résumé emitter. It withholds a Projects-section ENTRY —
   nothing anywhere blocks a string. `article_digest_md` and `proof_points` honour
   the same list because they are a selected-evidence surface too; the full
-  28-project catalogue stays open on `list_projects`, `get_project` and
+  29-project catalogue stays open on `list_projects`, `get_project` and
   `/api/portfolio`, so withholding costs prominence, not availability. **Where a
   blocked project's work is also attested as employment, that bullet ships
   deliberately** — `flowshop` was blocked precisely because the same work is
@@ -318,7 +319,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   to `FieldIndex`, held **out of the default ALL view** (`scopeOf`) so 43 rows
   cannot double the registry's scroll depth; it arrives on the chip or on search.
   The `.fi-hits` denominator is computed from the same scope as the numerator, or
-  it reads "62/105" with no filter set.
+  it reads "64/107" with no filter set.
 - Nothing here reaches `server/portfolio-snapshot.json`, so nothing reaches
   `ATTESTED` in `jobSearch.mjs`. The two RL certificates stay uncovered by
   `build_tailored_resume` on purpose — a completed course is not applied work.
@@ -350,7 +351,7 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   genuinely broken assertion still fails. Adding DOM test files raises load for
   every other file, so re-run the full suite a few times after you do.
 - `tests/e2e/quality.spec.ts` pins the workbench boot state (Home + Selected
-  Work open), the 7/28 no-JS evidence counts, and zero serious axe violations
+  Work open), the 9/29 no-JS evidence counts, and zero serious axe violations
   on both surfaces.
 - All public asset paths (`/images`, `/resume`, ...) must exist on disk under
   `public/` — no speculative references.

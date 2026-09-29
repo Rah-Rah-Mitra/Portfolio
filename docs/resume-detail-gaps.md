@@ -179,7 +179,8 @@ once, as experience, which is the stronger placement.
 evidence they were there to supply. MCP servers ship as `abbott-contract.harness`;
 the RAG and vector-search work as `abbott-contract.platform`. That took the usable
 pool from eight projects to five — `hailo`, `voltpulse`, `waaah`, `maritime`,
-`brinhack` — and cost a project entry on five configs, all edited in the same
+`brinhack` (six since `swarmline` joined on 2026-09-29, §14) — and cost a project
+entry on five configs, all edited in the same
 change for the reason above. `solution-architect` and
 `civic-tech-solution-architect` were each left with one project, and Rahul chose to
 spend the freed room on People's Association rather than backfill a project:
@@ -322,3 +323,94 @@ Also recorded: `+65 8515 5413` is now the first item of the résumé contact lin
 replacing `Singapore`. It is deliberately **not** on the site, in the snapshot, or
 in `/api/portfolio` — `server/jobSearch.mjs` still names `candidate.phone` as a
 gap, which stays correct for every consumer except the résumé header itself.
+
+## 14. Swarmline, Singapore Defence Tech Hackathon 2026 — answered 2026-09-29
+
+**Supplied by Rahul:** his LinkedIn post (finalist; "out of 1,000+ applicants, we
+made it to the finals as one of just 17 teams in our track"; presented to the
+Chief Defence Scientist; teammates Zulfaqar Hafez, Kevan Soon, Jeric Toh and Guo
+Anxiang; demo at `https://lnkd.in/g9SNkSVS`) and the OPFORGE repository, which is
+the Swarmline codebase. Now the selectable `swarmline` project block (on `general`
+only), a project card, an event note and a Proof row on the site.
+
+Every number comes from OPFORGE `docs/SDTH-2026/evidence/opf0067_comparison_metrics.md`:
+Swarm Field A, 30 simulated drones, 8 walking targets, ground link jammed at 15 s,
+10 seeds. Swarmline confirmed 8 of 8 in 10 of 10 runs (105.0 s on average); the
+operator-in-the-loop baseline confirmed 2.1 and had 29 of its 30 drones landed by
+41.2 s. The ownership wording follows OPFORGE's own record: Rahul opened SWARMLINE,
+chose the algorithms and the in-engine design, and the core (OPF-0049..0059) was
+written by Claude Code agents in his sessions, one authoring and a second reviewing
+and gating (`IMPLEMENTATION_PLAN.md`); he designed the moving-target capture rule and
+built the jammed-link comparison (OPF-0067) that produced those numbers.
+
+**Deliberately not claimed**, each for a reason recorded in OPFORGE:
+
+- "Faster" than anything. With the link up, a 5 s operator finishes in 60.8 s and
+  a perfect-link planner in 28.7 s; the claim is survival under a jam, not speed.
+- Intercepting, engaging or firing. No swarm drone carries an effector: the swarm
+  finds and confirms. "Interceptor" names the challenge and the platform only.
+- Real aircraft. It is a simulation (`README.md`: "a proof of concept for the
+  algorithm, not a claim about real aircraft").
+- A 48-hour build. The core was committed on 2026-09-19..20, before the 25-27 Sep
+  event.
+- Teammates' work: the Marina Barrage and other geospatial fields are Zulfaqar's
+  (OPF-0039); the nest demo, capture ring and strike handoff are Kevan's.
+- A prize. The post claims finalist only.
+
+**Still open:**
+
+- **"One of just 17 teams in our track."** Either 17 finalist teams, or 17 teams in
+  the track overall; and "track" may mean the 2-day format or Challenge 03. The
+  organisers' deck counts 34 two-day teams and plans 20 finalists from 40, which
+  fits the first reading, but nothing here says "17" until Rahul confirms it: not
+  the résumé, and not the site, whose event note stops at "from 1,000+ applicants".
+- **"1,000+ applicants"** is the event-wide sign-up count (both tracks), which is
+  how the résumé header uses it.
+- **Spelling.** The organisers brand it "Singapore Defense Tech Hackathon"; Rahul's
+  post, MINDEF and the NUS-instance VMock screener all use British "Defence", so
+  everything here says "Defence". Swap it back if an employer's form asks for the
+  official name.
+- Whether Rahul spoke in the final pitch. The post says "we", so everything says
+  the team presented.
+
+**Fit.** `general` could not take the new entry at 9.5pt (three pages), so it
+walked the trim ladder in order. Rung 1: the `nus.coursework` line comes off
+`general`; it also repeated the AI Foundations, 3D Vision, Simulation and
+Statistics skills lines on the same page. It is still in the pool and still on
+the three configs that select it (`ai-engineer`,
+`civic-tech-solution-architect`, `solution-architect`). Rung 2: `ywh.network`
+comes off `general` too. The Word-built document already fitted after rung 1, but
+the master CV built with `detail: "deep"` in the Harvard style did not
+(`tests/resume-render.test.ts` pins that it fits both styles): Harvard's floor is
+10pt, so it cannot shrink, and before this change it had about 3pt to spare. That
+bullet was also the third place "Burp Suite" and "Wireshark" appeared on the page.
+It stays on `cyber-security`. For the same reason `swarmline.main` carries no
+`deep` variant: even a three-line one pushed the Harvard deep build to three pages,
+so deep builds use its default wording.
+
+## 15. AI tools on the skills lines — answered 2026-09-29
+
+**Rahul's instruction:** add Claude, ChatGPT, Gemini, ComfyUI "etc." to the skill
+sets, because résumé filters look for experience with these tools. What backs each
+one in this repo or OPFORGE:
+
+- **Claude Code**: both repositories are built with it (this `CLAUDE.md`;
+  OPFORGE's integrator sessions and commit trailers), and it names the Swarmline
+  bullet's method. Written "Claude Code" rather than "Claude" because that is the
+  tool; a filter searching "Claude" still matches it.
+- **Codex**: OnTheSpectrum (blocked, but a fact), OPFORGE's cross-vendor reviews
+  and authoring, and already on the `gen-cloud` line.
+- **Gemini**: Waaah Comics (Gemini 2.0 Flash) and this site's assistant (Google
+  GenAI SDK, `server/pageAgent.mjs`).
+- **ComfyUI**: this repository's own media pipeline (`scripts/comfyui/`,
+  `workflows/comfyui/`, `npm run comfy:*`). OPFORGE records that it was
+  deliberately NOT used for Swarmline, so nothing ties the two.
+- **ChatGPT**: Rahul's own statement; OPFORGE also records Codex run on a ChatGPT
+  account.
+
+All five went onto every canonical résumé's technical line except
+`cyber-security`, which is within 8pt of its page end and takes only "Claude
+Code, ChatGPT" (the two that fit on its last line without a reflow). `gen-ai`
+omits Codex because `gen-cloud` already carries it. **Not added:** GitHub Copilot
+(OPFORGE shows it only in Zulfaqar's lane) and ElevenLabs (attested in OPFORGE's
+Swarmline pitch video, but not asked for; add it if Rahul wants it).

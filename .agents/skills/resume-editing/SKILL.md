@@ -79,6 +79,20 @@ After verifying, render PDFs to PNG (pdftoppm, 130 dpi) into
 no orphaned entry headers, page counts 1 for every one-pager (incl.
 `highlights`) and 2 for general.
 
+**No Windows?** LibreOffice is a faithful stand-in only with the real Arial
+installed. Measured on the eight Word-exported 2026-11 PDFs (Sep 2026):
+`soffice --headless --convert-to pdf` with Microsoft's core-fonts Arial
+(`arial32.exe`, unpacked with `cabextract`; SHA-256
+`85297a4d146e9c87ac6f74822734bdee5f4b2a722d7eaa584b7f2cbf76f478f6`) gave
+the same page count, the same number of lines and the identical text on every
+line for all eight, with the last line of each page within about 1.5pt of
+Word's, and embedded `ArialMT`. Without it, fontconfig substitutes Liberation
+Sans: metric-compatible, but it is what the PDF then embeds. Headless
+`soffice` also needs the `libreoffice-writer` package, not just the core, or
+every DOCX fails with "source file could not be loaded". Word remains the
+reference, so a document that lands within a line of its page end is worth
+one Word export before it ships.
+
 Full edition-bump checklist (archiving, siteConfig, pageAgent): see
 [CLAUDE.md](../../../CLAUDE.md).
 

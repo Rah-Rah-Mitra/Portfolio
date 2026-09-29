@@ -20,6 +20,16 @@ export const softwareEngineerData: PortfolioData = {
   instagramUrl: SITE_CONFIG.social.instagram,
   achievements: [
     {
+      id: 8,
+      title: "Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)",
+      description: "Our five-person team reached the finals from 1,000+ applicants with Swarmline, decentralised coordination software for interceptor drones, and presented it to Singapore's Chief Defence Scientist. I developed the core swarm algorithm with Claude Code agents and built the jammed-link comparison: in a simulated search task, 30 drones confirmed all 8 walking targets in every run, where an operator-in-the-loop baseline confirmed 2.1 on average.",
+      date: "2026 Sep",
+      category: "Defence Tech & Swarm Robotics",
+      tags: ["Finalist", "Defence Tech", "Swarm Robotics", "C++", "Unreal Engine 5.8", "Claude Code"],
+      proofUrl: "https://lnkd.in/g9SNkSVS",
+      proofLabel: "View the project demo",
+    },
+    {
       id: 7,
       title: "Top Student: 3D Computer Vision @ NUS School of Computing",
       description: "Awarded the NUS School of Computing Certificate of Outstanding Performance in 3D Computer Vision (CS4277), placed as the top student in a class of 24 for AY2025/26 Semester 2. The course covers projective geometry, camera models, fundamental and essential matrices, absolute pose estimation, three-view geometry, structure-from-motion with bundle adjustment, two-view and multi-view stereo, and generalized cameras.",
@@ -98,6 +108,7 @@ export const softwareEngineerData: PortfolioData = {
     { id: 6, name: "SQL & NoSQL Databases", icon: React.createElement(ServerStackIcon, { className: "w-6 h-6" }) },
     { id: 7, name: "Mathematical Modeling (Linear Algebra, Probability, Calculus)", icon: React.createElement(AcademicCapIcon, { className: "w-6 h-6" }) },
     { id: 8, name: "Rust (Systems Programming & Digital Twins)", icon: React.createElement(CodeBracketIcon, { className: "w-6 h-6" }) },
+    { id: 9, name: "Generative AI Tools (Claude Code, ChatGPT, Codex, Gemini, ComfyUI)", icon: React.createElement(CommandLineIcon, { className: "w-6 h-6" }) },
   ],
 };
 
@@ -258,8 +269,10 @@ export const coreCompetencies: CompetencyCluster[] = [
     id: 'ai-engineering',
     title: 'AI Engineering',
     summary: 'Ships applied AI across NLP, RAG, vector search, agents, multi-view geometry, and high-performance training, on classical AI foundations — search, constraint satisfaction and probabilistic reasoning — and without losing sight of evaluation and deployment constraints.',
-    tools: ['BERT', 'RAG', 'AI Agents', 'OpenAI GPT-4', 'Gemini', 'Vector Search', 'ASPIRE 2A', 'SEALION', 'Camera Calibration', 'Absolute Pose (PnP)', 'Structure-from-Motion', 'Bayesian Networks', 'Constraint Satisfaction'],
-    proof: ['Maritime BERT/DNN', 'AgeWellLah.AI', 'SmartExam', 'EthosLens'],
+    // Claude Code sits inside the first four on purpose: the mobile registry
+    // shows only tools[0..3] and searches nothing past them.
+    tools: ['BERT', 'RAG', 'AI Agents', 'Claude Code', 'OpenAI GPT-4', 'ChatGPT', 'Gemini', 'Codex', 'ComfyUI', 'Vector Search', 'ASPIRE 2A', 'SEALION', 'Camera Calibration', 'Absolute Pose (PnP)', 'Structure-from-Motion', 'Bayesian Networks', 'Constraint Satisfaction'],
+    proof: ['Swarmline', 'Maritime BERT/DNN', 'AgeWellLah.AI', 'SmartExam', 'EthosLens'],
     accent: 'violet',
   },
   {
@@ -289,6 +302,28 @@ export const coreCompetencies: CompetencyCluster[] = [
 ];
 
 export const projectHighlights: ProjectHighlight[] = [
+  {
+    // OPFORGE, the repository behind it, is private, so the only public link is the
+    // demo from Rahul's LinkedIn post. Every number here is from OPFORGE's
+    // docs/SDTH-2026/evidence/opf0067_comparison_metrics.md (10 seeds, simulation).
+    id: 'swarmline',
+    title: 'Swarmline',
+    category: 'Swarm Robotics & Defence Tech',
+    description: 'Finalist at the Singapore Defence Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in all 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
+    tags: ['C++', 'Unreal Engine 5.8', 'Swarm Robotics', 'Decentralised Coordination', 'Gossip Protocols', 'Claude Code', 'Simulation'],
+    liveUrl: 'https://lnkd.in/g9SNkSVS',
+    dateLabel: 'Sep 2026',
+    sortDate: '2026-09-27',
+    accent: 'blue',
+    linkedEventIds: ['singapore-defence-tech-hackathon-2026'],
+    npcRole: 'swarm coordination guide',
+    spotlight: {
+      context: "Singapore Defence Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
+      contribution: 'Chose the swarm-robotics approach and directed the Claude Code agents that wrote and reviewed the core swarm algorithm and simulation; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline. One member of a five-person team.',
+      approach: "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow spacing, delay-tolerant gossip, cross-inhibition consensus, response-threshold allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
+      outcome: "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist.",
+    },
+  },
   {
     id: 'on-the-spectrum',
     title: 'OnTheSpectrum',
@@ -728,6 +763,21 @@ export const allProjects: ProjectHighlight[] = Array.from(
 
 export const eventHighlights: EventHighlight[] = [
   {
+    id: 'singapore-defence-tech-hackathon-2026',
+    title: 'Singapore Defence Tech Hackathon 2026 - Swarmline',
+    dateLabel: 'Sep 25-27, 2026',
+    exactDateRange: '2026-09-25 to 2026-09-27',
+    source: 'LinkedIn',
+    summary: "Finalist at the inaugural Singapore Defence Tech Hackathon (NUS Enterprise @ i3): out of 1,000+ applicants, the team reached the finals and presented Swarmline, decentralised coordination software for interceptor drones, to Singapore's Chief Defence Scientist. In a simulated search task with the ground link jammed, its 30 drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.",
+    tags: ['Finalist', 'Defence Tech', 'Swarm Robotics', 'Interceptors Challenge', 'Hackathon'],
+    people: ['Zulfaqar Hafez', 'Kevan Soon', 'Jeric Toh', 'Guo Anxiang'],
+    // The organisers' own spellings (event poster and deck); NUSX is from Rahul's post.
+    organizations: ['NUSX', 'NUS Enterprise', 'TUM Venture Labs', 'European Defense Tech Hub', 'NUS Defense Tech Venture Lab'],
+    linkedProjectIds: ['swarmline'],
+    linkUrl: 'https://lnkd.in/g9SNkSVS',
+    npcDialogue: 'Swarmline is the defence bench: thirty simulated drones, a jammed ground link, and a swarm that keeps sharing what it sees drone to drone until every target is confirmed.',
+  },
+  {
     id: 'nus-3d-cv-award',
     title: 'NUS 3D Computer Vision - Certificate of Outstanding Performance',
     dateLabel: 'Jul 2026',
@@ -823,6 +873,7 @@ export const eventHighlights: EventHighlight[] = [
 ];
 
 const achievementProjectLinks: Record<string, string[]> = {
+  'Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)': ['swarmline'],
   'AsyncDDGS: Open-Source PyPI Library': ['asyncddgs'],
   'Maritime Hackathon 2025: Team Lead & Model Trainer': ['maritime-deficiency-severity'],
   'SmartExam @ GovTech x NTUPC Hackathon 2025': ['smart-exam'],
@@ -835,6 +886,7 @@ const achievementProjectLinks: Record<string, string[]> = {
 };
 
 const projectSortDates: Record<string, string> = {
+  swarmline: '2026-09-27',
   'on-the-spectrum': '2026-05-12',
   geometry: '2026-05-12',
   'information-lab': '2026-04-24',
@@ -876,6 +928,7 @@ const projectToFieldNote = (project: ProjectHighlight): FieldNote => ({
 });
 
 const achievementSortDates: Record<string, string> = {
+  'Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)': '2026-09-27',
   'Top Student: 3D Computer Vision @ NUS School of Computing': '2026-07-03',
   'AsyncDDGS: Open-Source PyPI Library': '2026-05-01',
   'Maritime Hackathon 2025: Team Lead & Model Trainer': '2025-08-01',

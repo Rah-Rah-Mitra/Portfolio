@@ -34,7 +34,9 @@ const INDEX_ROWS: IndexRow[] = [
     sub: `${row.category} · ${row.domain}`,
     detail: projectById.get(row.id)?.description ?? row.category,
     tags: projectById.get(row.id)?.tags.slice(0, 3) ?? [],
-    link: row.href ? { label: 'OPEN REPO ↗', href: row.href } : undefined,
+    // Same rule as the desktop card: a project with no public repo links its live
+    // work instead, and the label has to say which one the reader is opening.
+    link: row.href ? { label: projectById.get(row.id)?.repoUrl ? 'OPEN REPO ↗' : 'OPEN LIVE ↗', href: row.href } : undefined,
   })),
   ...experienceRecords.map((record): IndexRow => ({
     id: `experience:${record.id}`,
@@ -100,7 +102,7 @@ const INDEX_ROWS: IndexRow[] = [
 
 const GROUP_ORDER: Array<Exclude<Kind, 'ALL'>> = ['PROJECTS', 'EXPERIENCE', 'METHODS', 'PROOF', 'RESUMES', 'CERTS'];
 
-// The register is 43 rows against a 62-row index, so it stays out of the default
+// The register is 43 rows against a 64-row index, so it stays out of the default
 // ALL view — otherwise adding it would nearly double how far the page scrolls
 // before anything else is reached. It arrives on the CERTS chip, or on any search
 // that matches it.
@@ -173,7 +175,7 @@ const FieldIndex: React.FC = () => {
   const q = query.trim().toLowerCase();
   const hits = rowsFor(kind, query);
   // Denominator has to be the same universe the numerator is drawn from, or the
-  // counter reads "62/105" at rest — filtered-looking with no filter set.
+  // counter reads "64/107" at rest — filtered-looking with no filter set.
   const universe = INDEX_ROWS.filter(scopeOf(kind, q));
   const groups = GROUP_ORDER
     .map((label) => ({ label, rows: hits.filter((row) => row.kind === label) }))

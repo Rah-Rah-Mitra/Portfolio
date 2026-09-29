@@ -440,9 +440,13 @@ describe('the real corpus', () => {
   // A content edit that moves them should show up here rather than silently.
   it('reports the block pool the checker was built to describe', () => {
     const report = checkPool(poolEntries()) as Report;
-    expect(report.metrics.bullets).toBe(41);
+    // 42 since swarmline.main (Sep 2026). Its figures (30 drones, all 8 targets,
+    // 2.1 for the baseline) are counts of things no METRIC kind names, so the
+    // checker reads it as unquantified and coverage moves 0.51 -> 0.5; the
+    // screener, which only wants a digit and a space, scores it as specific.
+    expect(report.metrics.bullets).toBe(42);
     expect(report.metrics.topOpener).toEqual({ openers: ['Build'], count: 3 });
-    expect(report.metrics.metricCoverage).toBe(0.51);
+    expect(report.metrics.metricCoverage).toBe(0.5);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in
@@ -493,8 +497,9 @@ describe('the real corpus', () => {
       // "Built", "Build", "building" and "hackathon build" are four uses of one
       // family that R1's per-section opener tally cannot see. The master CV now
       // trips it twice — "engineer" and "train" — and the seven People's
-      // Association bullets are why its count jumped from 30 to 33.
-      general: { bullets: 33, top: 3, codes: 'unquantified,verb-family-cap,verb-family-cap' },
+      // Association bullets are why its count jumped from 30 to 33. Swarmline in,
+      // coursework and ywh.network out (Sep 2026): 32.
+      general: { bullets: 32, top: 3, codes: 'unquantified,verb-family-cap,verb-family-cap' },
     });
   });
 

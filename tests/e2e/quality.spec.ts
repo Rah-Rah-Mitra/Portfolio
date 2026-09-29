@@ -29,7 +29,7 @@ test.describe('field workbench — desktop', () => {
     const archive = page.getByRole('dialog', { name: 'Project Archive' });
     await expect(archive).toBeVisible();
     await archive.getByRole('searchbox', { name: 'Search projects' }).fill('Churp');
-    await expect(archive.getByRole('status')).toContainText('01 / 28 SHOWN');
+    await expect(archive.getByRole('status')).toContainText('01 / 29 SHOWN');
 
     await rail.getByRole('button', { name: 'Open Experience' }).click();
     const experience = page.getByRole('dialog', { name: 'Experience' });
@@ -127,7 +127,7 @@ test.describe('field workbench — desktop', () => {
     await page.goto('/');
     await expect(page.locator('.wb-root').getByRole('heading', { level: 1, name: 'Rahul Mitra' })).toBeVisible();
     expect(await page.locator('[id^="experience-"]').count()).toBe(9);
-    expect(await page.locator('#all-work [id^="project-"]').count()).toBe(28);
+    expect(await page.locator('#all-work [id^="project-"]').count()).toBe(29);
     await context.close();
   });
 

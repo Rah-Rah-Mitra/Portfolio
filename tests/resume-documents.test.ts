@@ -63,7 +63,11 @@ describe('the shipped documents are a function of the content pool', () => {
       'cyber-security': '8c4e16660869c058',
       'civic-tech-solution-architect': 'cb4084181e6a6e25',
       highlights: '68a9fb2da6b6ef60',
-      general: '0aa9b7b58396d10b',
+      // Moved again when Swarmline joined the master CV (Sep 2026), which took
+      // the coursework line and ywh.network off it (trim ladder rungs 1 and 2).
+      // That rebuild ran through LibreOffice with the real Arial, not Word: see
+      // "No Windows?" in .agents/skills/resume-editing/SKILL.md.
+      general: '07d6444d35772c7e',
     });
   });
 

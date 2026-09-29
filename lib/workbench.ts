@@ -73,6 +73,7 @@ export const WORKBENCH_DOMAINS = ['All', 'AI', 'Operations', 'Software', 'Securi
 export type WorkbenchDomain = (typeof WORKBENCH_DOMAINS)[number];
 
 const PROJECT_DOMAINS: Record<string, WorkbenchDomain> = {
+  'swarmline': 'AI',
   'on-the-spectrum': '3D / Vision',
   'geometry': '3D / Vision',
   'information-lab': 'Software',

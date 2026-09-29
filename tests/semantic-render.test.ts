@@ -14,7 +14,7 @@ describe('deterministic semantic prerender', () => {
     // record where the résumés carry two.
     expect(experienceRecords).toHaveLength(9);
     experienceRecords.forEach((record) => expect(markup).toContain(`experience-${record.id}`));
-    expect(allProjects).toHaveLength(28);
+    expect(allProjects).toHaveLength(29);
     allProjects.forEach((project) => expect(markup).toContain(`project-${project.id}`));
     expect(markup).toContain('Download résumé');
     expect(markup).toContain(`mailto:`);

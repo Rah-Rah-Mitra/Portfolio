@@ -313,7 +313,7 @@ export const cvMarkdown = () => {
  * So what it withholds is an ENTRY — a card in the Projects section — never a
  * fact. Nothing here blocks a string. The digest honours the same list because
  * the digest is also a curated selected-evidence surface and not an index: the
- * complete 28-project catalogue is published openly by list_projects, get_project
+ * complete 29-project catalogue is published openly by list_projects, get_project
  * and /api/portfolio, so withholding here costs prominence, not availability.
  *
  * READ THIS BEFORE "FIXING" A DISAGREEMENT BETWEEN THE DIGEST AND cv_md. Where a

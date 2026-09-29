@@ -1,7 +1,7 @@
 import React, { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { SECTION_IDS } from '../constants';
 import { ASSISTANT_STARTERS } from '../siteConfig';
-import { allProjects, experienceRecords, fieldNotes, resumeProfiles } from '../portfolioData';
+import { allProjects, experienceRecords, resumeProfiles } from '../portfolioData';
 import { useEffects } from '../contexts/PhysicsContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/analytics';
@@ -11,6 +11,7 @@ import { useExperienceMode } from '../contexts/ExperienceModeContext';
 import { dispatchExploreControl } from '../lib/worldEvents';
 import { workstationApps } from '../lib/workstation';
 import { appForAnchor, dispatchWorkbenchOpen } from '../lib/workbench';
+import { allowedLinks, buildPageState } from '../lib/askPageState';
 import { useOptionalWorkstation } from '../contexts/WorkstationContext';
 
 type Reference = { label: string; href: string };
@@ -46,14 +47,6 @@ export const validatePageCommand = (value: unknown): PageCommand | null => {
   if (command.type === 'setQuickScan' && typeof command.enabled === 'boolean') return { type: 'setQuickScan', enabled: command.enabled };
   return null;
 };
-const allowedLinks = new Set([
-  ...Object.values(SECTION_IDS).map((id) => `#${id}`),
-  '#world',
-  ...allProjects.flatMap((project) => [`#project-${project.id}`, project.repoUrl, project.liveUrl, ...(project.links ?? []).map((link) => link.url)]).filter((link): link is string => Boolean(link)),
-  ...resumeProfiles.flatMap((resume) => [resume.pdfUrl, resume.docxUrl]),
-  ...fieldNotes.flatMap((note) => (note.links ?? []).map((link) => link.url)),
-]);
-
 const cleanReferences = (value: unknown): Reference[] => {
   if (!Array.isArray(value)) return [];
   return value.slice(0, 5).flatMap((item) => {
@@ -92,6 +85,10 @@ export const localAgent = (message: string): AgentResponse => {
     reply = 'AsyncDDGS is Rahul’s maintained asyncio-first DuckDuckGo client, built with aiohttp and released through a tested PyPI workflow.';
     references = [projectRef('asyncddgs', 'Inspect AsyncDDGS')];
     commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
+  } else if (text.includes('swarm') || text.includes('drone') || text.includes('defence tech') || text.includes('defense tech')) {
+    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took Rahul’s five-person team to the finals of the Singapore Defence Tech Hackathon 2026 (1,000+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
+    references = [projectRef('swarmline', 'Inspect Swarmline')];
+    commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('experience') || text.includes('timeline')) {
     reply = 'The experience timeline presents Rahul’s role, organization, location, dates, scope, responsibilities, outcomes, and related work in ordinary HTML.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
@@ -151,16 +148,7 @@ const AskThePage: React.FC = () => {
   const workstation = useOptionalWorkstation();
   useFocusTrap(open, panelRef, '[data-open-assistant], .ask-dock');
 
-  const pageState = useMemo(() => ({
-    surface: 'continuous-field-test', effects: effects.settings,
-    sections: Object.values(SECTION_IDS), allowedLinks: Array.from(allowedLinks),
-    chapters: JOURNEY_STAGES.map((stage) => stage.id),
-    apps: workstationApps.map((app) => app.id),
-    experience: experienceRecords.map(({ id, role, organization, dateLabel, scope, outcomes }) => ({ id, role, organization, dateLabel, scope, outcomes })),
-    projects: allProjects.map(({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links }) => ({ id, title, category, description, tags, spotlight, repoUrl, liveUrl, links })),
-    events: fieldNotes.map(({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links }) => ({ id, aliases, title, kind, kinds, dateLabel, summary, tags, links })),
-    resumes: resumeProfiles.map(({ id, role, headline, keywords, pdfUrl, docxUrl }) => ({ id, role, headline, keywords, pdfUrl, docxUrl })),
-  }), [effects.settings]);
+  const pageState = useMemo(() => buildPageState(effects.settings), [effects.settings]);
 
   const close = (reason: string) => {
     setOpen(false);

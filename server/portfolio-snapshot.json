@@ -472,8 +472,8 @@
     {
       "id": "swarmline",
       "title": "Swarmline",
-      "category": "Swarm Robotics & Defence Tech",
-      "description": "Finalist at the Singapore Defence Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in all 10 runs, against 2.1 on average for an operator-in-the-loop baseline.",
+      "category": "Drone Swarms & Defence Tech",
+      "description": "Finalist at the Singapore Defence Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.",
       "tags": [
         "C++",
         "Unreal Engine 5.8",
@@ -495,7 +495,7 @@
         "context": "Singapore Defence Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
         "contribution": "Chose the swarm-robotics approach and directed the Claude Code agents that wrote and reviewed the core swarm algorithm and simulation; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline. One member of a five-person team.",
         "approach": "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow spacing, delay-tolerant gossip, cross-inhibition consensus, response-threshold allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
-        "outcome": "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist."
+        "outcome": "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist."
       }
     },
     {
@@ -1142,7 +1142,7 @@
       "id": "swarmline",
       "date": "2026-09",
       "title": "Swarmline",
-      "category": "Swarm Robotics & Defence Tech",
+      "category": "Drone Swarms & Defence Tech",
       "stack": "C++ · Unreal Engine 5.8 · Swarm Robotics",
       "domain": "AI",
       "href": "https://lnkd.in/g9SNkSVS"
@@ -1444,6 +1444,7 @@
         "AI Agents",
         "Vector Search",
         "OpenAI",
+        "Claude",
         "HPC",
         "Model Evaluation"
       ],

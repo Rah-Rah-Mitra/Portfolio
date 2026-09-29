@@ -333,7 +333,7 @@ Anxiang; demo at `https://lnkd.in/g9SNkSVS`) and the OPFORGE repository, which i
 the Swarmline codebase. Now the selectable `swarmline` project block (on `general`
 only), a project card, an event note and a Proof row on the site.
 
-Every number comes from OPFORGE `docs/SDTH-2026/evidence/opf0067_comparison_metrics.md`:
+Every simulation figure comes from OPFORGE `docs/SDTH-2026/evidence/opf0067_comparison_metrics.md`:
 Swarm Field A, 30 simulated drones, 8 walking targets, ground link jammed at 15 s,
 10 seeds. Swarmline confirmed 8 of 8 in 10 of 10 runs (105.0 s on average); the
 operator-in-the-loop baseline confirmed 2.1 and had 29 of its 30 drones landed by
@@ -353,8 +353,10 @@ built the jammed-link comparison (OPF-0067) that produced those numbers.
   algorithm, not a claim about real aircraft").
 - A 48-hour build. The core was committed on 2026-09-19..20, before the 25-27 Sep
   event.
-- Teammates' work: the Marina Barrage and other geospatial fields are Zulfaqar's
-  (OPF-0039); the nest demo, capture ring and strike handoff are Kevan's.
+- Teammates' work: the Marina Barrage, Legoland and courtyard fields are
+  Zulfaqar's (OPF-0039); Marina Bay Sands (OPF-0068/0069), the nest demo, the
+  walking-target puppet, the capture ring and the strike handoff are Kevan's
+  (OPF-0061..0071). Kevan also implemented the capture rule Rahul designed.
 - A prize. The post claims finalist only.
 
 **Still open:**
@@ -366,10 +368,12 @@ built the jammed-link comparison (OPF-0067) that produced those numbers.
   the résumé, and not the site, whose event note stops at "from 1,000+ applicants".
 - **"1,000+ applicants"** is the event-wide sign-up count (both tracks), which is
   how the résumé header uses it.
-- **Spelling.** The organisers brand it "Singapore Defense Tech Hackathon"; Rahul's
-  post, MINDEF and the NUS-instance VMock screener all use British "Defence", so
-  everything here says "Defence". Swap it back if an employer's form asks for the
-  official name.
+- **Spelling.** The organisers brand it "Singapore Defense Tech Hackathon". Rahul's
+  post and MINDEF use British "Defence", and the VMock screener leans British on
+  every pair tested (`docs/vmock-house-style.md`; this word itself was not
+  tested), so every mention of the event says "Defence". The organisers' own
+  names keep their spelling (European Defense Tech Hub, NUS Defense Tech Venture
+  Lab). Swap the event name back if an employer's form asks for the official one.
 - Whether Rahul spoke in the final pitch. The post says "we", so everything says
   the team presented.
 
@@ -378,15 +382,30 @@ walked the trim ladder in order. Rung 1: the `nus.coursework` line comes off
 `general`; it also repeated the AI Foundations, 3D Vision, Simulation and
 Statistics skills lines on the same page. It is still in the pool and still on
 the three configs that select it (`ai-engineer`,
-`civic-tech-solution-architect`, `solution-architect`). Rung 2: `ywh.network`
-comes off `general` too. The Word-built document already fitted after rung 1, but
+`civic-tech-solution-architect`, `solution-architect`). What rung 1 cost: "Software
+Engineering", "Data Structures and Algorithms", "Linear Algebra" and a spelled-out
+"Artificial Intelligence" now appear nowhere on the master CV (its other courses
+survive as skills headings or in the award bullet), so Rahul may prefer to trade
+something else for them. Rung 2: `ywh.network`
+comes off `general` too. The exported document already fitted after rung 1, but
 the master CV built with `detail: "deep"` in the Harvard style did not
 (`tests/resume-render.test.ts` pins that it fits both styles): Harvard's floor is
 10pt, so it cannot shrink, and before this change it had about 3pt to spare. That
 bullet was also the third place "Burp Suite" and "Wireshark" appeared on the page.
 It stays on `cyber-security`. For the same reason `swarmline.main` carries no
 `deep` variant: even a three-line one pushed the Harvard deep build to three pages,
-so deep builds use its default wording.
+so deep builds use its default wording. The bullet says "in 10 of 10 trials" (the
+ten seeds) rather than "in all 10 runs", which doubled "all" and put a third form
+of "run" on the page beside "operator-run" and `abbott-contract.harness`.
+
+**PDFs.** Every résumé's skills line changed, so all eight 2026-11 PDFs were
+re-exported on 2026-09-29 without Word, through
+`scripts/resume/export_pdf_libreoffice.py` (LibreOffice with the real Arial and the
+section rule corrected; see the résumé skill's "No Windows?" note). A Word
+re-export with `export-pdf.ps1` is still owed. When it runs, check that page 1 of
+`general` still ends on the Swarmline bullet: it ends about 5pt above the bottom
+margin, and page 2 opens with the builder's spacer line because page 1 is full
+(dropping a spacer at a page top would be a builder change, which needs approval).
 
 ## 15. AI tools on the skills lines — answered 2026-09-29
 
@@ -397,11 +416,14 @@ one in this repo or OPFORGE:
 - **Claude Code**: both repositories are built with it (this `CLAUDE.md`;
   OPFORGE's integrator sessions and commit trailers), and it names the Swarmline
   bullet's method. Written "Claude Code" rather than "Claude" because that is the
-  tool; a filter searching "Claude" still matches it.
+  tool; an ATS token search for "Claude" matches it, and "Claude" is on
+  ai-engineer's keyword row so that `build_tailored_resume`, which matches whole
+  terms, attests it too.
 - **Codex**: OnTheSpectrum (blocked, but a fact), OPFORGE's cross-vendor reviews
   and authoring, and already on the `gen-cloud` line.
-- **Gemini**: Waaah Comics (Gemini 2.0 Flash) and this site's assistant (Google
-  GenAI SDK, `server/pageAgent.mjs`).
+- **Gemini**: Waaah Comics (Gemini 2.0 Flash). This site's assistant calls the
+  Gemini API through the Google GenAI SDK (`server/pageAgent.mjs`), but its
+  default model is Gemma, so it is not evidence of Gemini the model.
 - **ComfyUI**: this repository's own media pipeline (`scripts/comfyui/`,
   `workflows/comfyui/`, `npm run comfy:*`). OPFORGE records that it was
   deliberately NOT used for Swarmline, so nothing ties the two.
@@ -409,8 +431,23 @@ one in this repo or OPFORGE:
   account.
 
 All five went onto every canonical résumé's technical line except
-`cyber-security`, which is within 8pt of its page end and takes only "Claude
-Code, ChatGPT" (the two that fit on its last line without a reflow). `gen-ai`
-omits Codex because `gen-cloud` already carries it. **Not added:** GitHub Copilot
-(OPFORGE shows it only in Zulfaqar's lane) and ElevenLabs (attested in OPFORGE's
-Swarmline pitch video, but not asked for; add it if Rahul wants it).
+`cyber-security`, which takes Claude Code, ChatGPT, Gemini and ComfyUI on its last
+line with no reflow and leaves out only Codex: that one would wrap into a line the
+page cannot take, since it ends about 5pt above its margin. `gen-ai` omits Codex
+because `gen-cloud` already carries it. Four lines group the tools as "AI tools
+(...)", since a colon sub-label would glue its first item into a junk term, and
+`skillTerms` leaves the label itself out (`GROUP_LABELS` in
+`server/portfolioMcp.mjs`): it is printed on four of the six role résumés and not
+on ai-engineer's, and as a term it routed AI-engineer postings elsewhere.
+
+**Listed and demonstrated.** Two tools appear twice on one page, once as a skill
+and once as evidence: "Claude Code" on `general` (skills line and the Swarmline
+bullet) and "Gemini" on every résumé that also carries the Waaah Comics bullet
+("Gemini 2.0 Flash"). That is the one kind of repeat kept on purpose. If Rahul
+reads "no repeated keywords" strictly, Gemini can come off `se-skills`, but not off
+`hl-ai-data` without leaving `highlights`, which has no Waaah entry.
+
+**Not added:** GitHub Copilot (OPFORGE shows it only in Zulfaqar's lane) and
+ElevenLabs (attested in OPFORGE's Swarmline pitch video, but not asked for; add it
+if Rahul wants it). Unreal Engine is named only in the Swarmline bullet; putting it
+on a skills line or a keyword row is Rahul's call.

@@ -53,7 +53,10 @@ const INDEX_ROWS: IndexRow[] = [
     date: String(index + 1).padStart(2, '0'),
     title: cluster.title,
     sub: cluster.tools.slice(0, 4).join(' · '),
-    detail: `${cluster.summary} Proof — ${cluster.proof.join(' · ')}.`,
+    // The whole tool list, not just the four on the row line. Search reads only
+    // a row's own text, so a tool past the fourth could not be found from here,
+    // and ChatGPT and ComfyUI were on no other row at all.
+    detail: `${cluster.summary} Tools — ${cluster.tools.join(' · ')}. Proof — ${cluster.proof.join(' · ')}.`,
     tags: cluster.tools.slice(0, 3),
   })),
   ...unifiedPortfolioData.achievements.map((achievement, index): IndexRow => ({

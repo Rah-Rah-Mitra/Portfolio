@@ -22,9 +22,9 @@ export const softwareEngineerData: PortfolioData = {
     {
       id: 8,
       title: "Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)",
-      description: "Our five-person team reached the finals from 1,000+ applicants with Swarmline, decentralised coordination software for interceptor drones, and presented it to Singapore's Chief Defence Scientist. I developed the core swarm algorithm with Claude Code agents and built the jammed-link comparison: in a simulated search task, 30 drones confirmed all 8 walking targets in every run, where an operator-in-the-loop baseline confirmed 2.1 on average.",
+      description: "Our five-person team reached the finals from 1,000+ applicants with Swarmline, decentralised coordination software for interceptor drones, and presented it to Singapore's Chief Defence Scientist. I developed the core swarm algorithm with Claude Code agents and built the jammed-link comparison: with the ground link jammed in a simulated search task, 30 drones confirmed all 8 walking targets in every run, where an operator-in-the-loop baseline confirmed 2.1 on average.",
       date: "2026 Sep",
-      category: "Defence Tech & Swarm Robotics",
+      category: "Drone Swarms & Defence Tech",
       tags: ["Finalist", "Defence Tech", "Swarm Robotics", "C++", "Unreal Engine 5.8", "Claude Code"],
       proofUrl: "https://lnkd.in/g9SNkSVS",
       proofLabel: "View the project demo",
@@ -190,7 +190,7 @@ export const resumeProfiles: ResumeProfile[] = [
     id: 'ai-engineer',
     role: 'AI Engineer',
     headline: 'Applied AI profile spanning BERT, RAG, vector search, agents, HPC, and model deployment.',
-    keywords: ['BERT', 'RAG', 'AI Agents', 'Vector Search', 'OpenAI', 'HPC', 'Model Evaluation'],
+    keywords: ['BERT', 'RAG', 'AI Agents', 'Vector Search', 'OpenAI', 'Claude', 'HPC', 'Model Evaluation'],
     docxUrl: resumeAssetUrl('ai-engineer', 'docx'),
     pdfUrl: resumeAssetUrl('ai-engineer', 'pdf'),
     accent: 'violet',
@@ -269,8 +269,8 @@ export const coreCompetencies: CompetencyCluster[] = [
     id: 'ai-engineering',
     title: 'AI Engineering',
     summary: 'Ships applied AI across NLP, RAG, vector search, agents, multi-view geometry, and high-performance training, on classical AI foundations — search, constraint satisfaction and probabilistic reasoning — and without losing sight of evaluation and deployment constraints.',
-    // Claude Code sits inside the first four on purpose: the mobile registry
-    // shows only tools[0..3] and searches nothing past them.
+    // Claude Code sits inside the first four on purpose: the mobile registry's
+    // row line shows only tools[0..3]; the rest appear once the row is opened.
     tools: ['BERT', 'RAG', 'AI Agents', 'Claude Code', 'OpenAI GPT-4', 'ChatGPT', 'Gemini', 'Codex', 'ComfyUI', 'Vector Search', 'ASPIRE 2A', 'SEALION', 'Camera Calibration', 'Absolute Pose (PnP)', 'Structure-from-Motion', 'Bayesian Networks', 'Constraint Satisfaction'],
     proof: ['Swarmline', 'Maritime BERT/DNN', 'AgeWellLah.AI', 'SmartExam', 'EthosLens'],
     accent: 'violet',
@@ -304,12 +304,14 @@ export const coreCompetencies: CompetencyCluster[] = [
 export const projectHighlights: ProjectHighlight[] = [
   {
     // OPFORGE, the repository behind it, is private, so the only public link is the
-    // demo from Rahul's LinkedIn post. Every number here is from OPFORGE's
-    // docs/SDTH-2026/evidence/opf0067_comparison_metrics.md (10 seeds, simulation).
+    // demo from Rahul's LinkedIn post. Every simulation figure here is from OPFORGE's
+    // docs/SDTH-2026/evidence/opf0067_comparison_metrics.md (10 seeds). The event
+    // facts (finalist, 1,000+ applicants, five-person team, the Chief Defence
+    // Scientist) are from the post.
     id: 'swarmline',
     title: 'Swarmline',
-    category: 'Swarm Robotics & Defence Tech',
-    description: 'Finalist at the Singapore Defence Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in all 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
+    category: 'Drone Swarms & Defence Tech',
+    description: 'Finalist at the Singapore Defence Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
     tags: ['C++', 'Unreal Engine 5.8', 'Swarm Robotics', 'Decentralised Coordination', 'Gossip Protocols', 'Claude Code', 'Simulation'],
     liveUrl: 'https://lnkd.in/g9SNkSVS',
     dateLabel: 'Sep 2026',
@@ -321,7 +323,7 @@ export const projectHighlights: ProjectHighlight[] = [
       context: "Singapore Defence Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
       contribution: 'Chose the swarm-robotics approach and directed the Claude Code agents that wrote and reviewed the core swarm algorithm and simulation; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline. One member of a five-person team.',
       approach: "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow spacing, delay-tolerant gossip, cross-inhibition consensus, response-threshold allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
-      outcome: "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist.",
+      outcome: "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist.",
     },
   },
   {

@@ -649,7 +649,7 @@ const wordMatch = (keyword) => {
 /**
  * Every word Rahul has attested anywhere: the keyword rows of all eight résumés
  * plus the skills lines the checker already scores bullets against. The keyword
- * rows alone are 41 entries across the six candidates, which is a label for a
+ * rows alone are 42 entries across the six candidates, which is a label for a
  * résumé card rather than a vocabulary — a posting asking for Terraform, CP-SAT
  * or camera ISP, all of them his and all of them printed on one of these
  * résumés, scored nothing and got the fallback.

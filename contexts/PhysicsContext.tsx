@@ -80,7 +80,7 @@ interface EffectsContextType {
   registerWords: (elements: HTMLElement[]) => () => void;
 }
 
-const defaultSettings: EffectSettings = {
+export const defaultSettings: EffectSettings = {
   smash: { enabled: false, intensity: 60, radius: 42 },
   gravity: { enabled: false, strength: 45, radius: 48 },
   fluid: { enabled: false, speed: 0.7, intensity: 38, opacity: 28, splatRadius: 28, curl: 18, quality: 'balanced' },

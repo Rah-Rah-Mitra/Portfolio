@@ -71,7 +71,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   there without explicit approval. `server/resumeStyles.mjs` is the JS mirror
   and has to agree with it.
 - Current edition: **2026-11**. `generated/` keeps the current + previous
-  edition; older sets live in `public/resume/archive/`.
+  edition; older sets live in `public/resume/archive/`. Its eight PDFs were
+  re-exported with LibreOffice on 2026-09-29 (`export_pdf_libreoffice.py`, no
+  Windows to hand); a Word re-export with `export-pdf.ps1` is still owed.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
   across all profiles), and the two-page `general` master CV, which is the
   document `rahul-mitra-master-cv.docx` is the ground truth for. Every config
@@ -82,8 +84,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   1. Edit content JSONs, then `npm run resume:lint`.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`
   3. `powershell -File scripts/resume/export-pdf.ps1 -Edition <YYYY-MM>`
-     (MS Word COM; `-UseLibreOffice` fallback shifts pagination — re-verify;
-     no Windows: the skill's "No Windows?" note, which needs the real Arial)
+     (MS Word COM; the `-UseLibreOffice` fallback shifts pagination and
+     inverts the NUS section rule. No Windows: `python
+     scripts/resume/export_pdf_libreoffice.py --edition <YYYY-MM>`, which
+     requires the real fonts and corrects the rule; see the skill's "No
+     Windows?" note, and re-verify)
   4. `python scripts/resume/verify_resumes.py --edition <YYYY-MM>` must pass
      (page counts: `general` = 2 pages, all others = 1; contact links in DOCX
      rels and PDF annotations; content assertions).
@@ -132,7 +137,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   baseline 0.93x, Word takes the MAX of adjacent paragraph spacing). It measures
   before drawing, so page counts are exact. Auto-fit walks the typography ladder
   only and never drops selected content. **The eight canonical résumés stay
-  Word-built** — this renderer serves custom builds. Shared content lives in
+  Word-built** (python-docx, then a Word or corrected-LibreOffice PDF export) —
+  this renderer serves custom builds. Shared content lives in
   `server/resumeContent.mjs`; a new résumé config needs an import added there.
   MCP tools `get_resume_guide`, `list_resume_blocks` and `build_resume` expose
   it; agents may only select ids, never supply bullet text
@@ -255,7 +261,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   spec, a document or storage; only its 16-hex digest and a match against
   Rahul's own attested vocabulary travel back. That vocabulary is
   `snapshot.resumes[].keywords` plus `skillTerms` (exported from
-  `portfolioMcp.mjs`, derived from `skills.json`): the keyword rows alone are 41
+  `portfolioMcp.mjs`, derived from `skills.json`): the keyword rows alone are 42
   entries across the six candidate résumés, which labelled a card rather than
   matching a posting. `matchSlug` scores each résumé on the terms its own
   rendered document carries, and `build_tailored_resume` returns a `coverage`

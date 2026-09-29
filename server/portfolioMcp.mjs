@@ -104,6 +104,14 @@ const rephrasingsFor = (spec, bullets, typography) => {
   return byRef;
 };
 
+// Group labels printed inside an items string, "AI tools (Claude Code, ChatGPT,
+// ...)". Once the parentheses split, the label stands alone like a technology,
+// but it names a category and is printed on four of the six role résumés and
+// not on ai-engineer's, which lists the same tools bare. As a term it moved
+// AI-engineer postings to solution-architect, and told the ai-engineer build it
+// was missing "AI tools".
+const GROUP_LABELS = new Set(['AI tools']);
+
 /**
  * Rahul's own attested technologies, taken from the skills lines rather than a
  * dictionary: the checker imports nothing, so the vocabulary is passed in, and
@@ -111,7 +119,7 @@ const rephrasingsFor = (spec, bullets, typography) => {
  *
  * Exported because jobSearch.mjs matches postings against it too: it is the
  * larger half of the alphabet a posting may choose from (the other half is the
- * 46 unique keyword entries on snapshot.resumes[], which alone were too few to
+ * 47 unique keyword entries on snapshot.resumes[], which alone were too few to
  * match a posting with).
  */
 export const skillTerms = (() => {
@@ -125,7 +133,7 @@ export const skillTerms = (() => {
       const cleaned = chunk.trim();
       for (const part of cleaned.split(/\s*\/\s*|\s+&\s+/)) {
         const term = part.trim();
-        if (term.length > 2) terms.add(term);
+        if (term.length > 2 && !GROUP_LABELS.has(term)) terms.add(term);
       }
     }
   }

@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { pools, resumeConfigs } from '../server/resumeContent.mjs';
 
 // The eight canonical résumés are built by scripts/resume/build_resumes.py and MS
-// Word, on Windows, and the DOCX/PDF in public/resume/generated are the artefacts
-// that actually reach employers. Nothing in this test suite can rebuild them, so
-// the risk is a content edit that silently makes those files stale.
+// Word, on Windows (without Windows, by the corrected LibreOffice export in
+// scripts/resume/export_pdf_libreoffice.py), and the DOCX/PDF in
+// public/resume/generated are the artefacts that actually reach employers.
+// Nothing in this test suite can rebuild them, so the risk is a content edit
+// that silently makes those files stale.
 //
 // build_resumes.py resolves exactly one way (line 42-44):
 //
@@ -20,6 +22,7 @@ import { pools, resumeConfigs } from '../server/resumeContent.mjs';
 
 type PoolBullet = { id: string; text: Record<string, string> };
 type PoolEntry = { id: string; bullets?: PoolBullet[] };
+type SkillLine = { id: string; label: string; items: string };
 type Section = { type: string; entries?: Array<{ id: string; bullets?: string[] }>; lines?: string[] };
 type Config = { slug: string; pages: number; sections: Section[]; phrasings?: unknown };
 
@@ -32,7 +35,17 @@ const shippedText = (bullet: PoolBullet, slug: string) => bullet.text[slug] ?? b
 const documentDigest = (config: Config) => {
   const lines: string[] = [];
   for (const section of config.sections) {
-    if (section.type === 'skills') continue;
+    if (section.type === 'skills') {
+      // add_skill_line prints "label: items". Skipped until Sep 2026, when every
+      // skills line in the pool changed and not one pin moved.
+      const byId = new Map((pools.skills.lines as unknown as SkillLine[]).map((line) => [line.id, line]));
+      for (const id of section.lines ?? []) {
+        const line = byId.get(id);
+        expect(line, `${config.slug} selects skills line ${id}`).toBeTruthy();
+        lines.push(`${line?.label}: ${line?.items}`);
+      }
+      continue;
+    }
     const pool = new Map((pools[section.type as 'experience'].entries as unknown as PoolEntry[]).map((entry) => [entry.id, entry]));
     for (const selection of section.entries ?? []) {
       const byId = new Map((pool.get(selection.id)?.bullets ?? []).map((bullet) => [bullet.id, bullet]));
@@ -48,26 +61,26 @@ const documentDigest = (config: Config) => {
 
 describe('the shipped documents are a function of the content pool', () => {
   // Update these ONLY together with a full edition rebuild: build_resumes.py,
-  // export-pdf.ps1 (Word COM, Windows), verify_resumes.py, and the visual QA pass
-  // in CLAUDE.md. A moved digest with unchanged files in public/resume/generated
-  // means those files no longer say what this repo says.
+  // export-pdf.ps1 (Word COM, Windows; export_pdf_libreoffice.py without it),
+  // verify_resumes.py, and the visual QA pass in CLAUDE.md. A moved digest with
+  // unchanged files in public/resume/generated means those files no longer say
+  // what this repo says.
   it('pins every canonical résumé to the words Word would render', () => {
     expect(Object.fromEntries(configs.map((config) => [config.slug, documentDigest(config)]))).toEqual({
-      // Moved by the 2026-11 master CV pass and rebuilt with Word in the same
-      // change. cyber-security is the only slug that did not move: it selects no
-      // People's Association entry and none of the corrected bullets.
-      'software-engineer': '993e76e2a9027859',
-      'solution-architect': '00b8252d054dfe3d',
-      'ai-engineer': 'e723060abf071bbd',
-      'operations-research-engineer': 'eaa467639841f8ea',
-      'cyber-security': '8c4e16660869c058',
-      'civic-tech-solution-architect': 'cb4084181e6a6e25',
-      highlights: '68a9fb2da6b6ef60',
-      // Moved again when Swarmline joined the master CV (Sep 2026), which took
-      // the coursework line and ywh.network off it (trim ladder rungs 1 and 2).
-      // That rebuild ran through LibreOffice with the real Arial, not Word: see
-      // "No Windows?" in .agents/skills/resume-editing/SKILL.md.
-      general: '07d6444d35772c7e',
+      // All eight moved in Sep 2026, in one rebuild: the digest began covering
+      // skills lines (every one changed when the AI tools went on), and Swarmline
+      // joined the master CV, taking the coursework line and ywh.network off it
+      // (trim ladder rungs 1 and 2). That rebuild ran without Word, through
+      // scripts/resume/export_pdf_libreoffice.py: see "No Windows?" in
+      // .agents/skills/resume-editing/SKILL.md.
+      'software-engineer': '1097e9efab1045ee',
+      'solution-architect': '8adc0babf84b95c8',
+      'ai-engineer': 'a88cce319045742b',
+      'operations-research-engineer': 'd468ed70a337a31e',
+      'cyber-security': 'f0f63ea0e5b5a0a5',
+      'civic-tech-solution-architect': '58d4062f3c2264b5',
+      highlights: 'f0b17ca4ce2e1cf0',
+      general: 'd8bdc53a2d73367c',
     });
   });
 

@@ -440,13 +440,15 @@ describe('the real corpus', () => {
   // A content edit that moves them should show up here rather than silently.
   it('reports the block pool the checker was built to describe', () => {
     const report = checkPool(poolEntries()) as Report;
-    // 42 since swarmline.main (Sep 2026). Its figures (30 drones, all 8 targets,
-    // 2.1 for the baseline) are counts of things no METRIC kind names, so the
-    // checker reads it as unquantified and coverage moves 0.51 -> 0.5; the
-    // screener, which only wants a digit and a space, scores it as specific.
+    // 42 since swarmline.main (Sep 2026). "30 simulated drones", "8 walking
+    // targets" and "10 of 10 trials" read as measured once drones, targets and
+    // trials joined the population nouns: coverage 0.51 -> 0.53, where without
+    // them the bullet read as unquantified and it fell to 0.5. Its "2.1" (the baseline's
+    // average) still masks as a product number: NON_METRIC's version pattern
+    // takes any dotted number, as it must for "Gemini 2.0".
     expect(report.metrics.bullets).toBe(42);
     expect(report.metrics.topOpener).toEqual({ openers: ['Build'], count: 3 });
-    expect(report.metrics.metricCoverage).toBe(0.5);
+    expect(report.metrics.metricCoverage).toBe(0.53);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in

@@ -71,6 +71,10 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     reply = 'AsyncDDGS is Rahul’s maintained asyncio-first DuckDuckGo client, built with aiohttp and released through a tested PyPI workflow.';
     references = [{ label: 'Inspect AsyncDDGS', href: '#project-asyncddgs' }];
     commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
+  } else if (text.includes('swarm') || text.includes('drone') || text.includes('defence tech') || text.includes('defense tech')) {
+    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took Rahul’s five-person team to the finals of the Singapore Defence Tech Hackathon 2026 (1,000+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
+    references = [{ label: 'Inspect Swarmline', href: '#project-swarmline' }];
+    commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('experience') || text.includes('timeline')) {
     reply = 'The experience timeline keeps Rahul’s roles, responsibilities, and outcomes in conventional semantic HTML.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
@@ -115,6 +119,12 @@ export const localAgent = (message, reason = 'model_unavailable') => {
   return { reply, references, commands, modelUsed: false, reason };
 };
 
+// How much of the page state reaches the model. lib/askPageState.ts orders the
+// state so that what matters most comes first; 28,000 holds the competency
+// tools and every project with its spotlight (tests/page-agent-server.test.ts
+// fails when one no longer fits). The field notes and résumés after them are cut.
+export const PAGE_STATE_CHARS = 28_000;
+
 const buildPrompt = ({ message, pageState }) => `
 You are the private assistant for Rahul Mitra's professional portfolio.
 Answer only from CURRENT PAGE STATE. Never infer credentials, metrics, professional robotics/SLAM experience, Gaussian-splatting research, or project outcomes not explicitly present. If evidence is absent, say so plainly.
@@ -134,7 +144,7 @@ Allowed commands:
 Never return JavaScript, CSS, selectors, unlisted URLs, or arbitrary commands.
 
 CURRENT PAGE STATE:
-${JSON.stringify(pageState).slice(0, 20000)}
+${JSON.stringify(pageState).slice(0, PAGE_STATE_CHARS)}
 
 USER MESSAGE:
 ${message}

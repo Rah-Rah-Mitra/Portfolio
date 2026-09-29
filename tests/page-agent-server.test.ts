@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as serverAgent from '../server/pageAgent.mjs';
 import { localAgent as clientAgent, validatePageCommand } from '../components/AskThePage';
+import { defaultSettings } from '../contexts/PhysicsContext';
+import { buildPageState } from '../lib/askPageState';
 
 const trustedPageState = {
   allowedLinks: ['#technical-lab', '#experience', '#work', '#world', '#home'],
@@ -12,7 +14,7 @@ const trustedPageState = {
 
 const completeTrustedState = {
   ...trustedPageState,
-  projects: [{ id: 'asyncddgs' }, { id: 'hybrid-flow-shop-digital-twin' }],
+  projects: [{ id: 'asyncddgs' }, { id: 'hybrid-flow-shop-digital-twin' }, { id: 'swarmline' }],
   chapters: ['home', 'work', 'experience', 'technical-lab', 'domains', 'proof', 'resumes'],
 };
 
@@ -58,6 +60,7 @@ describe('server page-agent command parity', () => {
     ['open the technical lab in stereo mode', { type: 'openTechnicalLab', mode: 'stereo' }],
     ['show the SLAM calibration study', { type: 'openTechnicalLab' }],
     ['tell me about AsyncDDGS', { type: 'focusProject', projectId: 'asyncddgs' }],
+    ['what did the drone swarm at the defence tech hackathon do?', { type: 'focusProject', projectId: 'swarmline' }],
     ['show the experience timeline', { type: 'focusExperience' }],
     ['what does the guide do?', { type: 'focusGuideChapter', chapterId: 'work' }],
     ['show the Abbott internship', { type: 'focusProject', projectId: 'hybrid-flow-shop-digital-twin' }],
@@ -75,5 +78,20 @@ describe('server page-agent command parity', () => {
     expect(serverCommand).toEqual(expected);
     expect(validatePageCommand(clientCommand)).toEqual(expected);
     expect(serverAgent.sanitizeCommands([serverCommand], completeTrustedState)).toEqual([expected]);
+  });
+
+  it('keeps the competency tools and every project inside the prompt window', () => {
+    // The model sees only the first PAGE_STATE_CHARS characters of the page state,
+    // and is told to say evidence is absent rather than guess. At 20,000,
+    // Swarmline's record pushed seven projects past the cut, so the assistant
+    // would have denied work the site shows. When this fails, raise the cap or
+    // trim what comes before the projects; do not let a record fall off silently.
+    const state = JSON.stringify(buildPageState(defaultSettings));
+    const visible = state.slice(0, serverAgent.PAGE_STATE_CHARS);
+    const wire = JSON.parse(state);
+    expect(wire.projects.length).toBeGreaterThan(0);
+    for (const record of [...wire.competencies, ...wire.projects]) {
+      expect(visible.includes(JSON.stringify(record)), record.id ?? record.title).toBe(true);
+    }
   });
 });

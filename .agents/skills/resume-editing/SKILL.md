@@ -79,19 +79,35 @@ After verifying, render PDFs to PNG (pdftoppm, 130 dpi) into
 no orphaned entry headers, page counts 1 for every one-pager (incl.
 `highlights`) and 2 for general.
 
-**No Windows?** LibreOffice is a faithful stand-in only with the real Arial
-installed. Measured on the eight Word-exported 2026-11 PDFs (Sep 2026):
-`soffice --headless --convert-to pdf` with Microsoft's core-fonts Arial
-(`arial32.exe`, unpacked with `cabextract`; SHA-256
-`85297a4d146e9c87ac6f74822734bdee5f4b2a722d7eaa584b7f2cbf76f478f6`) gave
-the same page count, the same number of lines and the identical text on every
-line for all eight, with the last line of each page within about 1.5pt of
-Word's, and embedded `ArialMT`. Without it, fontconfig substitutes Liberation
-Sans: metric-compatible, but it is what the PDF then embeds. Headless
-`soffice` also needs the `libreoffice-writer` package, not just the core, or
-every DOCX fails with "source file could not be loaded". Word remains the
-reference, so a document that lands within a line of its page end is worth
-one Word export before it ships.
+**No Windows?** Export with `python scripts/resume/export_pdf_libreoffice.py
+--edition <YYYY-MM>`, never a bare `soffice --convert-to pdf` (nor
+`export-pdf.ps1 -UseLibreOffice`, which is one). For the nus style, LibreOffice
+matches Word once two things are fixed, and the script enforces both (Harvard
+output has not been measured against Word this way):
+
+- **The real fonts.** Measured on the eight Word-exported 2026-11 PDFs (Sep
+  2026): with Microsoft's core-fonts Arial installed (`arial32.exe`, unpacked
+  with `cabextract`; SHA-256
+  `85297a4d146e9c87ac6f74822734bdee5f4b2a722d7eaa584b7f2cbf76f478f6`),
+  LibreOffice gave the same page count, the same number of lines and the
+  identical text on every line for all eight, with the last line of each page
+  within about 1.5pt of Word's, and embedded `ArialMT`. Without it, fontconfig
+  substitutes Liberation Sans, which is metric-compatible but is what the PDF
+  then embeds. The script refuses to run unless every font the document uses
+  resolves to itself (a Harvard edition needs the real Times New Roman too).
+- **The section rule.** LibreOffice draws the NUS rule, a `thinThickSmallGap`
+  bottom border, upside down: a hairline over the bar, where Word and
+  `server/resumeStyles.mjs` draw the bar over the hairline. The script converts
+  a copy whose border reads `thickThinSmallGap`, which LibreOffice draws the
+  Word way in the same band, and every word stays where it was; the DOCX that
+  ships is never touched. What remains is a slightly heavier rule (2.25/0.75pt
+  against Word's 2.16/0.72pt) that stops at the margins, where Word's runs
+  about 1.5pt past each.
+
+Headless `soffice` also needs the `libreoffice-writer` package, not just the
+core, or every DOCX fails with "source file could not be loaded". Word remains
+the reference: re-run `export-pdf.ps1` on Windows when one is available, and
+before an employer sees any document that lands within a line of its page end.
 
 Full edition-bump checklist (archiving, siteConfig, pageAgent): see
 [CLAUDE.md](../../../CLAUDE.md).

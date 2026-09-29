@@ -43,7 +43,7 @@
     {
       "id": "cyber-skills",
       "label": "Technical",
-      "items": "Burp Suite, Wireshark, SSRF, CSRF, SQL/NoSQL injection, authentication bypass, OAuth2/JWT, OWASP Top 10, fuzzing, reverse engineering, custom exploit scripting, Python, Bash, Rust, Claude Code, ChatGPT"
+      "items": "Burp Suite, Wireshark, SSRF, CSRF, SQL/NoSQL injection, authentication bypass, OAuth2/JWT, OWASP Top 10, fuzzing, reverse engineering, custom exploit scripting, Python, Bash, Rust, Claude Code, ChatGPT, Gemini, ComfyUI"
     },
     {
       "id": "sa-skills",

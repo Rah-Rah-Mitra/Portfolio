@@ -409,7 +409,7 @@ describe('build_tailored_resume', () => {
   });
 
   it('matches a posting against the whole attested vocabulary, not the résumé cards', async () => {
-    // The snapshot keyword rows are 41 entries across the six candidates — a label
+    // The snapshot keyword rows are 42 entries across the six candidates — a label
     // for a card, not a vocabulary. Each posting below names technologies that are
     // Rahul's, printed on one of his résumés, and absent from every keyword row.
     const or = payload(await call('build_tailored_resume', {
@@ -593,6 +593,27 @@ describe('build_tailored_resume', () => {
     expect(outright.matched.margin).toBeGreaterThan(0);
     const nothing = payload(await call('build_tailored_resume', { jd_text: 'qqqq zzzz wwww', dry_run: true }));
     expect(nothing.matched.decided_by).toBe('no-match');
+  });
+
+  it('does not let a printed group label pick the résumé', async () => {
+    // "AI tools (Claude Code, ChatGPT, Codex, Gemini, ComfyUI)" is printed on four
+    // of the six role résumés, while ai-engineer lists the same tools bare. As a
+    // term, the label sent this posting to software-engineer and told the
+    // ai-engineer build it was missing "AI tools". "Claude" is on ai-engineer's
+    // keyword row because a posting says "Claude" where the skills line says
+    // "Claude Code".
+    const ai = payload(await call('build_tailored_resume', {
+      jd_text: 'We want an AI engineer with hands-on experience using generative AI tools such as Claude, ChatGPT, Gemini and ComfyUI, plus Python and RAG.',
+      dry_run: true,
+    }));
+    expect(ai.matched.slug).toBe('ai-engineer');
+    expect(ai.matched.decided_by).toBe('score');
+    expect(ai.coverage.covered).toContain('Claude');
+    expect(ai.coverage.missing).not.toContain('AI tools');
+
+    // The label alone names nothing a résumé can be chosen on.
+    const vague = payload(await call('build_tailored_resume', { jd_text: 'Looking for a developer experienced with AI tools.', dry_run: true }));
+    expect(vague.matched.decided_by).toBe('no-match');
   });
 
   it('says where a covered term sits, and which blocks would supply a missing one', async () => {

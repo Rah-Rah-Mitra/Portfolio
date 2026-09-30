@@ -124,7 +124,7 @@ describe('api/mcp', () => {
     const bullets = JSON.parse(projects.content[0].text).sections
       .flatMap((section: { entries: Array<{ bullets: unknown[] }> }) => section.entries.flatMap((entry) => entry.bullets));
     // The five projects the 2026-11 master CV pass left selectable, plus
-    // Swarmline (Singapore Defence Tech Hackathon 2026 finalist, Sep 2026).
+    // Swarmline (Singapore Defense Tech Hackathon 2026 finalist, Sep 2026).
     // arcane and ethoslens were withheld in the VMock pass; onthespectrum,
     // agewelllah and smartexam followed once work experience carried the same
     // evidence, and the "Additional Projects" entry retired earlier.

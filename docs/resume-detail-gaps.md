@@ -324,7 +324,7 @@ replacing `Singapore`. It is deliberately **not** on the site, in the snapshot, 
 in `/api/portfolio` — `server/jobSearch.mjs` still names `candidate.phone` as a
 gap, which stays correct for every consumer except the résumé header itself.
 
-## 14. Swarmline, Singapore Defence Tech Hackathon 2026 — answered 2026-09-29
+## 14. Swarmline, Singapore Defense Tech Hackathon 2026 — answered 2026-09-29
 
 **Supplied by Rahul:** his LinkedIn post (finalist; "out of 1,000+ applicants, we
 made it to the finals as one of just 17 teams in our track"; presented to the
@@ -368,14 +368,17 @@ built the jammed-link comparison (OPF-0067) that produced those numbers.
   the résumé, and not the site, whose event note stops at "from 1,000+ applicants".
 - **"1,000+ applicants"** is the event-wide sign-up count (both tracks), which is
   how the résumé header uses it.
-- **Spelling.** The organisers brand it "Singapore Defense Tech Hackathon". Rahul's
-  post and MINDEF use British "Defence", and the VMock screener leans British on
-  every pair tested (`docs/vmock-house-style.md`; this word itself was not
-  tested), so every mention of the event says "Defence". The organisers' own
-  names keep their spelling (European Defense Tech Hub, NUS Defense Tech Venture
-  Lab). Swap the event name back if an employer's form asks for the official one.
 - Whether Rahul spoke in the final pitch. The post says "we", so everything says
   the team presented.
+
+**Spelling — decided by Rahul, 2026-09-30:** the organisers' "Defense". The event
+is "Singapore Defense Tech Hackathon" everywhere, the résumé header included, and
+the category and tags say "Defense Tech", as do the organisers' own names
+(European Defense Tech Hub, NUS Defense Tech Venture Lab). MINDEF's title keeps
+MINDEF's spelling: Chief Defence Scientist. The VMock screener leans British on
+every pair tested (`docs/vmock-house-style.md`), but this is a proper noun, which
+that record says costs nothing, and it sits in an entry header, which the P5
+house-style pass does not read.
 
 **Fit.** `general` could not take the new entry at 9.5pt (three pages), so it
 walked the trim ladder in order. Rung 1: the `nus.coursework` line comes off

@@ -21,11 +21,11 @@ export const softwareEngineerData: PortfolioData = {
   achievements: [
     {
       id: 8,
-      title: "Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)",
+      title: "Finalist: Singapore Defense Tech Hackathon 2026 (Swarmline)",
       description: "Our five-person team reached the finals from 1,000+ applicants with Swarmline, decentralised coordination software for interceptor drones, and presented it to Singapore's Chief Defence Scientist. I developed the core swarm algorithm with Claude Code agents and built the jammed-link comparison: with the ground link jammed in a simulated search task, 30 drones confirmed all 8 walking targets in every run, where an operator-in-the-loop baseline confirmed 2.1 on average.",
       date: "2026 Sep",
-      category: "Drone Swarms & Defence Tech",
-      tags: ["Finalist", "Defence Tech", "Swarm Robotics", "C++", "Unreal Engine 5.8", "Claude Code"],
+      category: "Drone Swarms & Defense Tech",
+      tags: ["Finalist", "Defense Tech", "Swarm Robotics", "C++", "Unreal Engine 5.8", "Claude Code"],
       proofUrl: "https://lnkd.in/g9SNkSVS",
       proofLabel: "View the project demo",
     },
@@ -310,17 +310,17 @@ export const projectHighlights: ProjectHighlight[] = [
     // Scientist) are from the post.
     id: 'swarmline',
     title: 'Swarmline',
-    category: 'Drone Swarms & Defence Tech',
-    description: 'Finalist at the Singapore Defence Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
+    category: 'Drone Swarms & Defense Tech',
+    description: 'Finalist at the Singapore Defense Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
     tags: ['C++', 'Unreal Engine 5.8', 'Swarm Robotics', 'Decentralised Coordination', 'Gossip Protocols', 'Claude Code', 'Simulation'],
     liveUrl: 'https://lnkd.in/g9SNkSVS',
     dateLabel: 'Sep 2026',
     sortDate: '2026-09-27',
     accent: 'blue',
-    linkedEventIds: ['singapore-defence-tech-hackathon-2026'],
+    linkedEventIds: ['singapore-defense-tech-hackathon-2026'],
     npcRole: 'swarm coordination guide',
     spotlight: {
-      context: "Singapore Defence Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
+      context: "Singapore Defense Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
       contribution: 'Chose the swarm-robotics approach and directed the Claude Code agents that wrote and reviewed the core swarm algorithm and simulation; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline. One member of a five-person team.',
       approach: "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow spacing, delay-tolerant gossip, cross-inhibition consensus, response-threshold allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
       outcome: "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist.",
@@ -765,19 +765,19 @@ export const allProjects: ProjectHighlight[] = Array.from(
 
 export const eventHighlights: EventHighlight[] = [
   {
-    id: 'singapore-defence-tech-hackathon-2026',
-    title: 'Singapore Defence Tech Hackathon 2026 - Swarmline',
+    id: 'singapore-defense-tech-hackathon-2026',
+    title: 'Singapore Defense Tech Hackathon 2026 - Swarmline',
     dateLabel: 'Sep 25-27, 2026',
     exactDateRange: '2026-09-25 to 2026-09-27',
     source: 'LinkedIn',
-    summary: "Finalist at the inaugural Singapore Defence Tech Hackathon (NUS Enterprise @ i3): out of 1,000+ applicants, the team reached the finals and presented Swarmline, decentralised coordination software for interceptor drones, to Singapore's Chief Defence Scientist. In a simulated search task with the ground link jammed, its 30 drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.",
-    tags: ['Finalist', 'Defence Tech', 'Swarm Robotics', 'Interceptors Challenge', 'Hackathon'],
+    summary: "Finalist at the inaugural Singapore Defense Tech Hackathon (NUS Enterprise @ i3): out of 1,000+ applicants, the team reached the finals and presented Swarmline, decentralised coordination software for interceptor drones, to Singapore's Chief Defence Scientist. In a simulated search task with the ground link jammed, its 30 drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.",
+    tags: ['Finalist', 'Defense Tech', 'Swarm Robotics', 'Interceptors Challenge', 'Hackathon'],
     people: ['Zulfaqar Hafez', 'Kevan Soon', 'Jeric Toh', 'Guo Anxiang'],
     // The organisers' own spellings (event poster and deck); NUSX is from Rahul's post.
     organizations: ['NUSX', 'NUS Enterprise', 'TUM Venture Labs', 'European Defense Tech Hub', 'NUS Defense Tech Venture Lab'],
     linkedProjectIds: ['swarmline'],
     linkUrl: 'https://lnkd.in/g9SNkSVS',
-    npcDialogue: 'Swarmline is the defence bench: thirty simulated drones, a jammed ground link, and a swarm that keeps sharing what it sees drone to drone until every target is confirmed.',
+    npcDialogue: 'Swarmline is the defense bench: thirty simulated drones, a jammed ground link, and a swarm that keeps sharing what it sees drone to drone until every target is confirmed.',
   },
   {
     id: 'nus-3d-cv-award',
@@ -875,7 +875,7 @@ export const eventHighlights: EventHighlight[] = [
 ];
 
 const achievementProjectLinks: Record<string, string[]> = {
-  'Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)': ['swarmline'],
+  'Finalist: Singapore Defense Tech Hackathon 2026 (Swarmline)': ['swarmline'],
   'AsyncDDGS: Open-Source PyPI Library': ['asyncddgs'],
   'Maritime Hackathon 2025: Team Lead & Model Trainer': ['maritime-deficiency-severity'],
   'SmartExam @ GovTech x NTUPC Hackathon 2025': ['smart-exam'],
@@ -930,7 +930,7 @@ const projectToFieldNote = (project: ProjectHighlight): FieldNote => ({
 });
 
 const achievementSortDates: Record<string, string> = {
-  'Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)': '2026-09-27',
+  'Finalist: Singapore Defense Tech Hackathon 2026 (Swarmline)': '2026-09-27',
   'Top Student: 3D Computer Vision @ NUS School of Computing': '2026-07-03',
   'AsyncDDGS: Open-Source PyPI Library': '2026-05-01',
   'Maritime Hackathon 2025: Team Lead & Model Trainer': '2025-08-01',

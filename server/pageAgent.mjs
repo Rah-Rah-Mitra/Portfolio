@@ -72,7 +72,7 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     references = [{ label: 'Inspect AsyncDDGS', href: '#project-asyncddgs' }];
     commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
   } else if (text.includes('swarm') || text.includes('drone') || text.includes('defence tech') || text.includes('defense tech')) {
-    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took Rahul’s five-person team to the finals of the Singapore Defence Tech Hackathon 2026 (1,000+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
+    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took Rahul’s five-person team to the finals of the Singapore Defense Tech Hackathon 2026 (1,000+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
     references = [{ label: 'Inspect Swarmline', href: '#project-swarmline' }];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('experience') || text.includes('timeline')) {

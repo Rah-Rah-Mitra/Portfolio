@@ -60,7 +60,7 @@ describe('server page-agent command parity', () => {
     ['open the technical lab in stereo mode', { type: 'openTechnicalLab', mode: 'stereo' }],
     ['show the SLAM calibration study', { type: 'openTechnicalLab' }],
     ['tell me about AsyncDDGS', { type: 'focusProject', projectId: 'asyncddgs' }],
-    ['what did the drone swarm at the defence tech hackathon do?', { type: 'focusProject', projectId: 'swarmline' }],
+    ['what did the drone swarm at the defense tech hackathon do?', { type: 'focusProject', projectId: 'swarmline' }],
     ['show the experience timeline', { type: 'focusExperience' }],
     ['what does the guide do?', { type: 'focusGuideChapter', chapterId: 'work' }],
     ['show the Abbott internship', { type: 'focusProject', projectId: 'hybrid-flow-shop-digital-twin' }],

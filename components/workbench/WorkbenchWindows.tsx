@@ -242,7 +242,7 @@ export const SystemsWindow: React.FC = () => (
         <div className="wb-stages-legend" aria-hidden="true">
           <span>STAGING</span><span>NORMALIZE</span><span>REPAIR</span><span>FROM-TO EDGES</span><span>AUDIT</span>
         </div>
-        <figcaption>FIG. 05b — Five years of previously unseen, unclean changeover data processed without errors; every repair state exposed, never silently mutated.</figcaption>
+        <figcaption>FIG. 05b — Five years of previously unseen, unclean changeover data processed with zero execution failures; every repair state exposed, never silently mutated.</figcaption>
       </figure>
     </Hoist>
     <Hoist>

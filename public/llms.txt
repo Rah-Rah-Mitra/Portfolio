@@ -18,7 +18,7 @@
 ## Résumés (PDF, edition 2026-11; swap .pdf for .docx for Word)
 - Highlights, one page: best-of across every profile, for preference forms and general applications: https://rahul-mitra.com/resume/generated/rahul-mitra-highlights-2026-11.pdf
 - General / Master CV, two pages: cross-disciplinary CV unifying every profile: https://rahul-mitra.com/resume/generated/rahul-mitra-general-2026-11.pdf
-- Software Engineer: Python, TypeScript, React, CI/CD, open-source systems: https://rahul-mitra.com/resume/generated/rahul-mitra-software-engineer-2026-11.pdf
+- Software Engineer: Python, TypeScript, React, CI/CD, C++ swarm simulation: https://rahul-mitra.com/resume/generated/rahul-mitra-software-engineer-2026-11.pdf
 - Solution Architect: cloud, product, and stakeholder architecture: https://rahul-mitra.com/resume/generated/rahul-mitra-solution-architect-2026-11.pdf
 - AI Engineer: BERT, RAG, vector search, agents, HPC, model deployment: https://rahul-mitra.com/resume/generated/rahul-mitra-ai-engineer-2026-11.pdf
 - Operations Research Engineer: scheduling, simulation, graph optimization, decision support: https://rahul-mitra.com/resume/generated/rahul-mitra-operations-research-engineer-2026-11.pdf

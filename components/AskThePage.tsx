@@ -86,7 +86,7 @@ export const localAgent = (message: string): AgentResponse => {
     references = [projectRef('asyncddgs', 'Inspect AsyncDDGS')];
     commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
   } else if (text.includes('swarm') || text.includes('drone') || text.includes('defence tech') || text.includes('defense tech')) {
-    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took Rahul’s five-person team to the finals of the Singapore Defense Tech Hackathon 2026 (1,000+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
+    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took the five-person team Rahul led to the finals of the Singapore Defense Tech Hackathon 2026 (1,300+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
     references = [projectRef('swarmline', 'Inspect Swarmline')];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('experience') || text.includes('timeline')) {
@@ -98,7 +98,7 @@ export const localAgent = (message: string): AgentResponse => {
     references = [{ label: 'Return to selected work', href: '#work' }];
     commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.PROJECTS });
   } else if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
-    reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce.';
+    reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data with zero execution failures. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and trained regional engineering teams across Asia and Europe on repeatable AI workflows.';
     references = [projectRef('hybrid-flow-shop-digital-twin', 'Hybrid Flow Shop Digital Twin Optimizer'), projectRef('changeover-data-quality-pipeline', 'Manufacturing Changeover Data Pipeline'), projectRef('azure-apc-web-simulator', 'APC Simulator Cloud Operations')];
     commands.push({ type: 'focusProject', projectId: 'hybrid-flow-shop-digital-twin' });
   } else if (text.includes('optim') || text.includes('scheduling') || text.includes('operations research')) {

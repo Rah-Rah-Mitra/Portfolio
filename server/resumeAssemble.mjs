@@ -44,7 +44,7 @@ export const resolveRole = (entry, selection) => {
  *             through spec.phrasings. Wins outright: it is the most specific
  *             instruction the caller gave, and falling through to a depth
  *             variant would silently undo the choice they made.
- *   depth     text.deep, chosen per entry or per spec. Only 17 of the 42
+ *   depth     text.deep, chosen per entry or per spec. Only 17 of the 43
  *             selectable bullets carry one and the rest fall back to their
  *             default; that fallback is deliberate and documented in the guide.
  *   targeting text[slug], the per-résumé overrides the Python builder reads.

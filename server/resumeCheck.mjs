@@ -147,8 +147,8 @@ const METRIC = [
   { kind: 'word-count', re: /\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|zero)[- ](?:month|week|day|year|hour|plant|plants|site|sites|team|teams|model|models|failure|failures|line|lines|stage|stages)\b/gi },
   // One optional adjective between the count and the noun: "3 live inputs" and
   // "3 imaging workstreams" are counts of things the same sentence then lists.
-  // Drones, targets, trials and runs came with swarmline.main ("30 simulated
-  // drones ... all 8 walking targets in 10 of 10 trials"), which read as
+  // Drones, targets, trials and runs came with swarmline.main ("30 drones
+  // confirmed all 8 walking targets in 10 of 10 seeded runs"), which read as
   // unmeasured without them; no other bullet in the pool changes class.
   { kind: 'population', re: /\b\d[\d,]*\s+(?:[a-z]+\s+)?(?:teams?|students?|candidates?|programs?|users?|sites?|models?|services?|plants?|tests?|assertions?|residents?|inputs?|approaches|workstreams?|drones?|targets?|trials?|runs?)\b/gi },
   { kind: 'of-n', re: /\b(?:class|cohort|field|group)\s+of\s+\d+/gi },

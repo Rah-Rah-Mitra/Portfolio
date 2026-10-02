@@ -13,8 +13,7 @@
           "id": "nus",
           "bullets": [
             "majors",
-            "award",
-            "coursework"
+            "award"
           ]
         }
       ]
@@ -63,6 +62,13 @@
       "type": "projects",
       "title": "PROJECTS",
       "entries": [
+        {
+          "id": "swarmline",
+          "bullets": [
+            "coordination",
+            "main"
+          ]
+        },
         {
           "id": "voltpulse",
           "bullets": [

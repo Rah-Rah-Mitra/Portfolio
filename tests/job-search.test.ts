@@ -810,8 +810,9 @@ describe('export_profile', () => {
     // abbott-intern.digital-twin (ce2d754, docs/resume-detail-gaps.md §9), so the
     // gap between cv_md and the digest is deliberate, not drift. An integration
     // read it as a contradiction once; the cheapest way to "resolve" it is to
-    // delete this bullet, which would silently require rewriting seven shipped
-    // résumés. This test is here to make that cost visible instead.
+    // delete this bullet, which would silently require rewriting six shipped
+    // résumés (seven until cyber-security traded it for Swarmline in Oct 2026).
+    // This test is here to make that cost visible instead.
     const exported = payload(await call('export_profile'));
     expect(exported.cv_md).toContain('SimPy discrete-event digital twin');
     expect(exported.cv_md).toContain('hybrid flow-shop scheduling');
@@ -820,7 +821,7 @@ describe('export_profile', () => {
     const selecting = resumeConfigs.filter((config) => (config.sections as SpecSection[]).some((section) =>
       (section.entries ?? []).some((entry) => entry.id === 'abbott-intern'
         && ((entry as { bullets?: string[] }).bullets ?? []).includes('digital-twin'))));
-    expect(selecting.length).toBe(7);
+    expect(selecting.length).toBe(6);
 
     // The digest must say it is a selection rather than an index, or the next
     // consumer re-derives the same false contradiction.

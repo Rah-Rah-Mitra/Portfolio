@@ -2,15 +2,21 @@
   "entries": [
     {
       "id": "swarmline",
-      "organization": "Swarmline: Singapore Defense Tech Hackathon 2026 (1,000+ applicants)",
-      "role": "Finalist",
+      "organization": "Swarmline: SG Defense Tech Hackathon (1,300+ applicants)",
+      "role": "Team Lead & Finalist",
       "sort": "2026-09",
       "dateLabel": "Sep 2026",
       "bullets": [
         {
+          "id": "coordination",
+          "text": {
+            "default": "Directed a 5-person team to architect decentralised drone-swarm coordination on correlated random-walk search, gradient-flow dispersion, delay-tolerant gossip, cross-inhibition consensus, and response-threshold task allocation."
+          }
+        },
+        {
           "id": "main",
           "text": {
-            "default": "Developed decentralised swarm coordination in Unreal Engine 5.8 C++ with Claude Code, so under a ground-link jam, 30 simulated drones confirmed all 8 walking targets in 10 of 10 trials, against 2.1 for an operator-run fleet."
+            "default": "Implemented a deterministic Unreal Engine 5.8 C++ simulation with Claude Code; under a ground-link jam, 30 drones confirmed all 8 walking targets in 10 of 10 seeded runs, against 2.1 for an operator-run fleet."
           }
         }
       ]
@@ -238,7 +244,7 @@
     },
     {
       "id": "brinhack",
-      "organization": "DSTA BRINHACK 2025 CTF",
+      "organization": "DSTA BrainHack 2025 CTF",
       "role": "Competitor",
       "sort": "2025-02",
       "dateLabel": "Feb 2025",
@@ -247,7 +253,7 @@
           "id": "main",
           "text": {
             "default": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure, finishing around 90th of 400+ teams.",
-            "deep": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure at DSTA BRINHACK 2025, finishing around 90th of 400+ teams."
+            "deep": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure at DSTA BrainHack 2025, finishing around 90th of 400+ teams."
           }
         }
       ]

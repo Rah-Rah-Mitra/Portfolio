@@ -67,20 +67,20 @@ describe('the shipped documents are a function of the content pool', () => {
   // what this repo says.
   it('pins every canonical résumé to the words Word would render', () => {
     expect(Object.fromEntries(configs.map((config) => [config.slug, documentDigest(config)]))).toEqual({
-      // All eight moved in Sep 2026, in one rebuild: the digest began covering
-      // skills lines (every one changed when the AI tools went on), and Swarmline
-      // joined the master CV, taking the coursework line and ywh.network off it
-      // (trim ladder rungs 1 and 2). That rebuild ran without Word, through
-      // scripts/resume/export_pdf_libreoffice.py: see "No Windows?" in
-      // .agents/skills/resume-editing/SKILL.md.
-      'software-engineer': '1097e9efab1045ee',
-      'solution-architect': '8adc0babf84b95c8',
-      'ai-engineer': 'a88cce319045742b',
-      'operations-research-engineer': 'd468ed70a337a31e',
-      'cyber-security': 'f0f63ea0e5b5a0a5',
-      'civic-tech-solution-architect': '58d4062f3c2264b5',
-      highlights: 'f0b17ca4ce2e1cf0',
-      general: 'd8bdc53a2d73367c',
+      // All eight moved again in Oct 2026, rebuilt through Word: Rahul's master CV
+      // corrected Swarmline (team lead, 1,300+ applicants, two bullets) and put
+      // coursework and ywh.network back on general; Swarmline joined six more
+      // résumés down the trim ladder; the RL certificate took its certificate's
+      // title, which touches every certs line but certs-cyber; and BRINHACK became
+      // BrainHack. Every DOCX was checked to hold exactly the text these hash.
+      'software-engineer': 'd4c4a264ab97ce7a',
+      'solution-architect': '07dfdd43e7976ff9',
+      'ai-engineer': 'e6be0ce8279908fc',
+      'operations-research-engineer': '27c3fdb3bc867caf',
+      'cyber-security': 'c6418a8fa47672dd',
+      'civic-tech-solution-architect': 'ddb1723ad313b668',
+      highlights: '10029a7bd601eaa7',
+      general: 'acec5d5c03dd06e5',
     });
   });
 

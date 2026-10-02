@@ -150,7 +150,7 @@
           "GovTech GBBP12/13",
           "LTA Bug Bounty",
           "Arcane",
-          "DSTA BRINHACK"
+          "DSTA BrainHack"
         ]
       },
       {
@@ -228,6 +228,7 @@
         "Camera ISP",
         "Image Restoration",
         "Super-Resolution",
+        "UNet",
         "Low-Light Imaging",
         "PSNR",
         "SSIM"
@@ -240,7 +241,7 @@
       "scope": "Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.",
       "responsibilities": [
         "Build vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.",
-        "Improve processing and evaluation stages to upscale frames four times, measuring the gain on PSNR and SSIM."
+        "Train UNet and other CNN architectures for single-image super-resolution, upscaling frames four times and lifting PSNR and SSIM."
       ],
       "outcomes": [
         "A low-cost camera reaches frame quality on par with premium sensors before its frames reach downstream robotics perception."
@@ -276,11 +277,11 @@
         "Convert four plants’ Advanced Process Control models from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.",
         "Build a live multi-site data layer over read-only Seeq historian pulls, mapping each site through configuration rather than forks, with Kalman smoothing, Welch PSD, change-point detection, and matrix-profile motifs in SciPy and pandas.",
         "Design a tool loop where the model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log with no write path to plant control.",
-        "Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference."
+        "Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference.",
+        "Build MCP servers, 20+ regression tests, a headless notebook runner, and a deterministic model stand-in for GPU-free CI, with golden snapshots committed for reproducible runs."
       ],
       "outcomes": [
-        "Replaced four site-specific vendor optimizers with one solver-backed engine carrying no commercial licence, back-tested against the production system’s own historical targets.",
-        "Built 20+ regression tests, a headless notebook runner, a deterministic model stand-in for GPU-free CI, and committed golden snapshots for reproducible runs."
+        "Consolidates four plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets."
       ]
     },
     {
@@ -312,7 +313,9 @@
         "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling, then compared three approaches (heuristic, MIP, and genetic algorithm) to turn production objectives and constraints into decision-ready schedules.",
         "Validated a non-destructive, 15-stage changeover-data pipeline that exposes every intermediate state instead of mutating source data.",
         "Productionized a team-built APC simulator for live internal users on Azure App Service with Docker packaging, access restrictions, and runtime and session hardening.",
-        "Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use."
+        "Trained regional engineering teams across Asia and Europe on repeatable AI workflows spanning seven areas: prompting, model selection, benchmarks, cost awareness, agents, validation, and safeguards.",
+        "Strengthened Excel, VBA, Python, master-data, and scheduling workflows with three safeguards: validation rules, correction tables, and reproducible intermediate stages, leaving every transformation auditable.",
+        "Documented deployment, access provisioning, and technical handover across three procedures, so internal manufacturing and engineer-training users stayed supported after transfer to owning teams."
       ],
       "outcomes": [
         "Processed five years of previously unseen, unclean operational data with zero execution failures.",
@@ -345,9 +348,12 @@
       "scope": "End-to-end civic platform delivery: admin and public frontends, backend, GIS allocation, national digital identity, and AWS deployment.",
       "responsibilities": [
         "Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment.",
-        "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address, so eligibility checks run without manual review.",
+        "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address.",
         "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations.",
-        "Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager."
+        "Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager.",
+        "Engineered keyless GitHub Actions CI/CD on IAM OIDC federation across five pinned service repos, with gated Fargate migrations, mandatory RDS snapshots, and circuit-breaker auto-rollback.",
+        "Conducted field surveys of garden sites and structured physical plot records into geospatial datasets driving three platform workflows: mapping, plot allocation, and site planning.",
+        "Designed rules-based balloting workflows across four control points: eligibility checks, conflict resolution, exception handling, and administrative oversight, keeping allocation transparent and auditable."
       ],
       "outcomes": [
         "Kept garden-plot balloting fair for 150 residents signed up at release, and left the platform production-ready for national rollout across Singapore.",
@@ -355,39 +361,31 @@
       ]
     },
     {
-      "id": "nus-education",
-      "dateLabel": "2023-Present",
-      "sortDate": "2023-08-01",
+      "id": "career-ntuc-active-ageing",
+      "dateLabel": "Sep 2025-Sep 2026",
+      "sortDate": "2025-09-01",
       "tags": [
-        "NUS",
-        "ISE",
-        "Computer Science",
-        "Mathematics",
-        "3D Computer Vision",
-        "Multi-View Geometry",
-        "Undergraduate"
+        "NTUC Health",
+        "Volunteering",
+        "Elderly Care",
+        "Community",
+        "Accessibility"
       ],
-      "linkedProjectIds": [
-        "geometry",
-        "information-lab",
-        "project-utopia"
-      ],
-      "kind": "education",
-      "role": "BEng, Industrial Systems Engineering",
-      "organization": "National University of Singapore",
+      "linkedProjectIds": [],
+      "kind": "professional",
+      "role": "Elderly Care Volunteer",
+      "organization": "NTUC Health Active Ageing Centre",
       "location": "Singapore",
-      "scope": "Second Major in Computer Science and Minor in Mathematics, connecting systems engineering with computing and quantitative methods.",
+      "scope": "Weekly senior-engagement activities at an active ageing centre.",
       "responsibilities": [
-        "Applied optimization, simulation, software engineering, and multi-view geometry through coursework and project systems."
+        "Coordinated weekly senior-engagement activities, building empathy for healthcare, accessibility, and community-focused product design."
       ],
-      "outcomes": [
-        "Awarded the CS4277 Certificate of Outstanding Performance as top student in a class of 24 for 3D Computer Vision."
-      ]
+      "outcomes": []
     },
     {
       "id": "cyber-achievement-3",
       "dateLabel": "May 2024 – Present",
-      "sortDate": "2023-01-01",
+      "sortDate": "2024-05-01",
       "tags": [
         "Vulnerability Disclosure",
         "Bug Bounty",
@@ -413,6 +411,36 @@
       ],
       "outcomes": [
         "Submitted responsible disclosures across government, transport, and other public/private programs without publishing sensitive target details."
+      ]
+    },
+    {
+      "id": "nus-education",
+      "dateLabel": "Aug 2023-Jul 2027",
+      "sortDate": "2023-08-01",
+      "tags": [
+        "NUS",
+        "ISE",
+        "Computer Science",
+        "Mathematics",
+        "3D Computer Vision",
+        "Multi-View Geometry",
+        "Undergraduate"
+      ],
+      "linkedProjectIds": [
+        "geometry",
+        "information-lab",
+        "project-utopia"
+      ],
+      "kind": "education",
+      "role": "BEng, Industrial Systems Engineering",
+      "organization": "National University of Singapore",
+      "location": "Singapore",
+      "scope": "Second Major in Computer Science and Minor in Mathematics, connecting systems engineering with computing and quantitative methods.",
+      "responsibilities": [
+        "Applied optimization, simulation, software engineering, and multi-view geometry through coursework and project systems."
+      ],
+      "outcomes": [
+        "Awarded the CS4277 Certificate of Outstanding Performance as top student in a class of 24 for 3D Computer Vision."
       ]
     },
     {
@@ -443,8 +471,8 @@
     },
     {
       "id": "education-asrjc-stem",
-      "dateLabel": "2019-2020",
-      "sortDate": "2019-01-01",
+      "dateLabel": "Mar 2019-Aug 2020",
+      "sortDate": "2019-03-01",
       "tags": [
         "ASRJC",
         "STEM Inc.",
@@ -456,12 +484,12 @@
         "on-the-spectrum"
       ],
       "kind": "education",
-      "role": "STEM Inc. member and outreach lead",
+      "role": "Astronomy Head & Robotics Member",
       "organization": "Anderson Serangoon Junior College",
       "location": "Singapore",
       "scope": "Astronomy outreach, autonomous robotics, competition work, and technical leadership.",
       "responsibilities": [
-        "Led astronomy outreach, competed in the Singapore Astronomical Olympiad, and built autonomous robotics systems."
+        "Led astronomy outreach, competed in Singapore’s 7th Astronomical Olympiad, and engineered an autonomous robot for the National Robotics Challenge."
       ],
       "outcomes": [
         "Received the ASRJC Outstanding Contribution Award."
@@ -473,7 +501,7 @@
       "id": "swarmline",
       "title": "Swarmline",
       "category": "Drone Swarms & Defense Tech",
-      "description": "Finalist at the Singapore Defense Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.",
+      "description": "Team lead and finalist at the Singapore Defense Tech Hackathon 2026 (1,300+ applicants): decentralised drone-swarm coordination, demonstrated in a deterministic simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.",
       "tags": [
         "C++",
         "Unreal Engine 5.8",
@@ -493,9 +521,9 @@
       "npcRole": "swarm coordination guide",
       "spotlight": {
         "context": "Singapore Defense Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
-        "contribution": "Chose the swarm-robotics approach and directed the Claude Code agents that wrote and reviewed the core swarm algorithm and simulation; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline. One member of a five-person team.",
-        "approach": "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow spacing, delay-tolerant gossip, cross-inhibition consensus, response-threshold allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
-        "outcome": "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist."
+        "contribution": "Team lead of a five-person team: chose the swarm-robotics approach and directed the team’s architecture of the swarm coordination; implemented the deterministic Unreal Engine 5.8 C++ simulation with Claude Code, directing the agents that wrote and reviewed the core swarm algorithm; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline.",
+        "approach": "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow dispersion, delay-tolerant gossip, cross-inhibition consensus, response-threshold task allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
+        "outcome": "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,300+ applicants; the team presented to Singapore's Chief Defence Scientist."
       }
     },
     {
@@ -806,7 +834,7 @@
       "id": "changeover-data-quality-pipeline",
       "title": "Manufacturing Changeover Data Pipeline",
       "category": "Data Quality & Industrial Automation",
-      "description": "A non-destructive 15-stage cleaning and transformation pipeline for complex changeover matrices, handling human- and machine-generated data errors and processing five years of previously unseen, unclean data without errors.",
+      "description": "A non-destructive 15-stage cleaning and transformation pipeline for complex changeover matrices, handling human- and machine-generated data errors and processing five years of previously unseen, unclean data with zero execution failures.",
       "tags": [
         "Data Quality",
         "Excel VBA",
@@ -825,7 +853,7 @@
         "context": "Operational matrices encoded meaning through values, labels, colours, merged regions, blanks, and exception rules accumulated over years.",
         "contribution": "Designed a 15-stage, non-destructive workflow that exposes intermediate repair and transformation states instead of silently mutating source data.",
         "approach": "Controlled staging sheets, normalization, repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling.",
-        "outcome": "Processed five years of previously unseen, unclean data without errors while covering both human- and machine-generated data issues."
+        "outcome": "Processed five years of previously unseen, unclean data with zero execution failures across both human- and machine-generated data issues."
       }
     },
     {
@@ -876,6 +904,40 @@
       "accent": "violet"
     },
     {
+      "id": "churp",
+      "title": "Churp",
+      "category": "Citizen Developer Platform",
+      "description": "An end-to-end digital garden-plot balloting platform for People's Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.",
+      "tags": [
+        "Civic Tech",
+        "Singpass",
+        "AWS Fargate",
+        "Terraform",
+        "GIS",
+        "RDS",
+        "WAFv2",
+        "Route 53",
+        "Cloud Security",
+        "Balloting",
+        "Smart Nation"
+      ],
+      "dateLabel": "Sep 2025 - Sep 2026",
+      "sortDate": "2025-09-01",
+      "imageUrl": "/images/generated/churp-community.webp",
+      "accent": "green",
+      "linkedEventIds": [
+        "sparks-by-pa-churp"
+      ],
+      "npcRole": "community systems guide",
+      "featuredPriority": 4,
+      "spotlight": {
+        "context": "Community garden-plot allocation needed a complete civic workflow rather than another isolated form.",
+        "contribution": "Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it. Singpass secures the sign-in; Myinfo is what keeps the ballot fair.",
+        "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager), with stakeholder coordination and rollout planning.",
+        "outcome": "Fair balloting for 150 residents signed up at release, production-ready for national rollout, and the S$20,000 Sparks Community Innovation Fund."
+      }
+    },
+    {
       "id": "kaogenie",
       "title": "KaoGenie",
       "category": "AI Experiment",
@@ -894,6 +956,40 @@
         "january-gauntlet-2026"
       ],
       "npcRole": "rapid prototype guide"
+    },
+    {
+      "id": "maritime-deficiency-severity",
+      "title": "Maritime Deficiency Severity Forecasting",
+      "category": "AI & NLP",
+      "description": "A Maritime Hackathon 2025 predictive system using a fine-tuned 109M-parameter BERT model, DNN layers, and ASPIRE 2A supercomputing.",
+      "tags": [
+        "BERT",
+        "DNN",
+        "NLP",
+        "HPC",
+        "Maritime"
+      ],
+      "dateLabel": "Jun 2025",
+      "sortDate": "2025-06-01",
+      "links": [
+        {
+          "label": "Certificate of submission",
+          "url": "/certificates/maritime-hackathon-2025-submission.pdf"
+        }
+      ],
+      "imageUrl": "/images/se-achievement-maritime.jpg",
+      "accent": "blue",
+      "linkedEventIds": [
+        "january-gauntlet-2026"
+      ],
+      "npcRole": "maritime AI guide",
+      "featuredPriority": 5,
+      "spotlight": {
+        "context": "Forecasting the severity of maritime inspection deficiencies from complex operational logs.",
+        "contribution": "Led the multidisciplinary team and model-training work for the predictive system.",
+        "approach": "A fine-tuned 109M-parameter BERT model, DNN layers, gradient clipping, hyperparameter optimization, and ASPIRE 2A HPC.",
+        "outcome": "A completed Maritime Hackathon 2025 submission with certificate evidence."
+      }
     },
     {
       "id": "smart-exam",
@@ -959,74 +1055,6 @@
         "january-gauntlet-2026"
       ],
       "npcRole": "healthtech triage guide"
-    },
-    {
-      "id": "maritime-deficiency-severity",
-      "title": "Maritime Deficiency Severity Forecasting",
-      "category": "AI & NLP",
-      "description": "A Maritime Hackathon 2025 predictive system using a fine-tuned 109M-parameter BERT model, DNN layers, and ASPIRE 2A supercomputing.",
-      "tags": [
-        "BERT",
-        "DNN",
-        "NLP",
-        "HPC",
-        "Maritime"
-      ],
-      "dateLabel": "2025",
-      "sortDate": "2025-01-01",
-      "links": [
-        {
-          "label": "Certificate of submission",
-          "url": "/certificates/maritime-hackathon-2025-submission.pdf"
-        }
-      ],
-      "imageUrl": "/images/se-achievement-maritime.jpg",
-      "accent": "blue",
-      "linkedEventIds": [
-        "january-gauntlet-2026"
-      ],
-      "npcRole": "maritime AI guide",
-      "featuredPriority": 5,
-      "spotlight": {
-        "context": "Forecasting the severity of maritime inspection deficiencies from complex operational logs.",
-        "contribution": "Led the multidisciplinary team and model-training work for the predictive system.",
-        "approach": "A fine-tuned 109M-parameter BERT model, DNN layers, gradient clipping, hyperparameter optimization, and ASPIRE 2A HPC.",
-        "outcome": "A completed Maritime Hackathon 2025 submission with certificate evidence."
-      }
-    },
-    {
-      "id": "churp",
-      "title": "Churp",
-      "category": "Citizen Developer Platform",
-      "description": "An end-to-end digital garden-plot balloting platform for People's Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.",
-      "tags": [
-        "Civic Tech",
-        "Singpass",
-        "AWS Fargate",
-        "Terraform",
-        "GIS",
-        "RDS",
-        "WAFv2",
-        "Route 53",
-        "Cloud Security",
-        "Balloting",
-        "Smart Nation"
-      ],
-      "dateLabel": "2025 - 2026",
-      "sortDate": "2025-01-01",
-      "imageUrl": "/images/generated/churp-community.webp",
-      "accent": "green",
-      "linkedEventIds": [
-        "sparks-by-pa-churp"
-      ],
-      "npcRole": "community systems guide",
-      "featuredPriority": 4,
-      "spotlight": {
-        "context": "Community garden-plot allocation needed a complete civic workflow rather than another isolated form.",
-        "contribution": "Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it. Singpass secures the sign-in; Myinfo is what keeps the ballot fair.",
-        "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager), with stakeholder coordination and rollout planning.",
-        "outcome": "Fair balloting for 150 residents signed up at release, production-ready for national rollout, and the S$20,000 Sparks Community Innovation Fund."
-      }
     },
     {
       "id": "tp-java",
@@ -1278,6 +1306,14 @@
       "href": "https://github.com/Rah-Rah-Mitra/kalidokit"
     },
     {
+      "id": "churp",
+      "date": "2025-09",
+      "title": "Churp",
+      "category": "Citizen Developer Platform",
+      "stack": "Civic Tech · Singpass · AWS Fargate",
+      "domain": "Civic"
+    },
+    {
       "id": "kaogenie",
       "date": "2025-07",
       "title": "KaoGenie",
@@ -1285,6 +1321,14 @@
       "stack": "Python · AI · Prototype",
       "domain": "AI",
       "href": "https://github.com/Rah-Rah-Mitra/KaoGenie"
+    },
+    {
+      "id": "maritime-deficiency-severity",
+      "date": "2025-06",
+      "title": "Maritime Deficiency Severity Forecasting",
+      "category": "AI & NLP",
+      "stack": "BERT · DNN · NLP",
+      "domain": "AI"
     },
     {
       "id": "smart-exam",
@@ -1311,22 +1355,6 @@
       "stack": "RAG · HealthTech · Flask",
       "domain": "AI",
       "href": "https://github.com/ZulfaqarHafez/AgeWellLah.AI"
-    },
-    {
-      "id": "maritime-deficiency-severity",
-      "date": "2025-01",
-      "title": "Maritime Deficiency Severity Forecasting",
-      "category": "AI & NLP",
-      "stack": "BERT · DNN · NLP",
-      "domain": "AI"
-    },
-    {
-      "id": "churp",
-      "date": "2025-01",
-      "title": "Churp",
-      "category": "Citizen Developer Platform",
-      "stack": "Civic Tech · Singpass · AWS Fargate",
-      "domain": "Civic"
     },
     {
       "id": "tp-java",
@@ -1405,7 +1433,7 @@
     {
       "id": "software-engineer",
       "role": "Software Engineer",
-      "headline": "Python, TypeScript, React, CI/CD, and open-source systems for product-facing engineering roles.",
+      "headline": "Python, TypeScript, React, CI/CD, and a C++ swarm simulation for product-facing engineering roles.",
       "keywords": [
         "Python",
         "TypeScript",
@@ -1501,14 +1529,14 @@
     {
       "id": "highlights",
       "role": "Highlights (One-Page)",
-      "headline": "One-page best-of across every profile (civic platform delivery, applied AI, optimization, security research, and open source) for preference forms and general applications.",
+      "headline": "One-page best-of across every profile (civic platform delivery, applied AI, optimization, drone-swarm coordination, and security research) for preference forms and general applications.",
       "keywords": [
         "One Page",
         "Full Stack",
         "AI/ML",
         "Singpass/Myinfo",
         "Security",
-        "Open Source"
+        "Defense Tech"
       ],
       "pdfUrl": "/resume/generated/rahul-mitra-highlights-2026-11.pdf",
       "docxUrl": "/resume/generated/rahul-mitra-highlights-2026-11.docx"

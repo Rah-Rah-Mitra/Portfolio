@@ -34,7 +34,8 @@ test.describe('field workbench — desktop', () => {
     await rail.getByRole('button', { name: 'Open Experience' }).click();
     const experience = page.getByRole('dialog', { name: 'Experience' });
     await expect(experience).toBeVisible();
-    await expect(experience.locator('[id^="experience-"]')).toHaveCount(9);
+    // Ten since NTUC Health joined the record in Oct 2026; it is on every résumé.
+    await expect(experience.locator('[id^="experience-"]')).toHaveCount(10);
     await expect(experience.getByRole('heading', { name: /STMicroelectronics/ })).toBeVisible();
 
     await page.keyboard.press('Escape');
@@ -126,7 +127,7 @@ test.describe('field workbench — desktop', () => {
     const page = await context.newPage();
     await page.goto('/');
     await expect(page.locator('.wb-root').getByRole('heading', { level: 1, name: 'Rahul Mitra' })).toBeVisible();
-    expect(await page.locator('[id^="experience-"]').count()).toBe(9);
+    expect(await page.locator('[id^="experience-"]').count()).toBe(10);
     expect(await page.locator('#all-work [id^="project-"]').count()).toBe(29);
     await context.close();
   });

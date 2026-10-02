@@ -440,15 +440,16 @@ describe('the real corpus', () => {
   // A content edit that moves them should show up here rather than silently.
   it('reports the block pool the checker was built to describe', () => {
     const report = checkPool(poolEntries()) as Report;
-    // 42 since swarmline.main (Sep 2026). "30 simulated drones", "8 walking
-    // targets" and "10 of 10 trials" read as measured once drones, targets and
-    // trials joined the population nouns: coverage 0.51 -> 0.53, where without
-    // them the bullet read as unquantified and it fell to 0.5. Its "2.1" (the baseline's
-    // average) still masks as a product number: NON_METRIC's version pattern
-    // takes any dotted number, as it must for "Gemini 2.0".
-    expect(report.metrics.bullets).toBe(42);
+    // 43 since Rahul's Oct 2026 master CV split Swarmline into two bullets, and
+    // both read as measured: "5-person" is a unit, and "30 drones", "8 walking
+    // targets" and "10 seeded runs" are populations (drones, targets, trials and
+    // runs joined the population nouns with the first Swarmline bullet), so
+    // coverage 0.53 -> 0.54. Its "2.1" (the baseline's average) and "5.8" still
+    // mask as product numbers: NON_METRIC's version pattern takes any dotted
+    // number, as it must for "Gemini 2.0".
+    expect(report.metrics.bullets).toBe(43);
     expect(report.metrics.topOpener).toEqual({ openers: ['Build'], count: 3 });
-    expect(report.metrics.metricCoverage).toBe(0.53);
+    expect(report.metrics.metricCoverage).toBe(0.54);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in
@@ -488,10 +489,16 @@ describe('the real corpus', () => {
       // bullet counts drop; software-engineer and solution-architect lost their
       // frame-repeat with OnTheSpectrum and SmartExam, and ai-engineer lost its
       // hedge when abbott-intern.upskilling was rewritten off "day-to-day".
-      'software-engineer': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
-      'solution-architect': { bullets: 14, top: 2, codes: 'unquantified' },
+      // Swarmline joined seven of the eight in Oct 2026, paid for down the trim
+      // ladder: software-engineer trades Waaah for both bullets (14 -> 15),
+      // solution-architect the coursework line for both (14 -> 15), and
+      // operations-research-engineer had room for both as it stood (13 -> 15).
+      // ai-engineer, cyber-security and highlights take one bullet against one cut
+      // each, so they hold. No résumé gained a finding code.
+      'software-engineer': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
+      'solution-architect': { bullets: 15, top: 2, codes: 'unquantified' },
       'ai-engineer': { bullets: 13, top: 2, codes: 'unquantified,unused-evidence' },
-      'operations-research-engineer': { bullets: 13, top: 1, codes: 'unquantified,unused-evidence' },
+      'operations-research-engineer': { bullets: 15, top: 1, codes: 'unquantified,unused-evidence' },
       'cyber-security': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
       'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
       highlights: { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
@@ -500,8 +507,9 @@ describe('the real corpus', () => {
       // family that R1's per-section opener tally cannot see. The master CV now
       // trips it twice — "engineer" and "train" — and the seven People's
       // Association bullets are why its count jumped from 30 to 33. Swarmline in,
-      // coursework and ywh.network out (Sep 2026): 32.
-      general: { bullets: 32, top: 3, codes: 'unquantified,verb-family-cap,verb-family-cap' },
+      // coursework and ywh.network out (Sep 2026): 32. Rahul's Oct 2026 master CV
+      // puts both back and gives Swarmline a second bullet: 35.
+      general: { bullets: 35, top: 3, codes: 'unquantified,verb-family-cap,verb-family-cap' },
     });
   });
 

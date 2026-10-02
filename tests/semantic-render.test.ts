@@ -8,11 +8,12 @@ describe('deterministic semantic prerender', () => {
 
     expect(markup).toContain('Rahul Mitra');
     expect(markup).toContain('Intelligent systems, made operational.');
-    // Nine, not seven: People's Association was missing from the site entirely
+    // Ten, not seven: People's Association was missing from the site entirely
     // (it existed only as a project card and an event note, and events are
-    // filtered out of experienceNotes), and the two Abbott roles were one merged
-    // record where the résumés carry two.
-    expect(experienceRecords).toHaveLength(9);
+    // filtered out of experienceNotes), the two Abbott roles were one merged
+    // record where the résumés carry two, and NTUC Health, on every résumé, had
+    // no record until Oct 2026.
+    expect(experienceRecords).toHaveLength(10);
     experienceRecords.forEach((record) => expect(markup).toContain(`experience-${record.id}`));
     expect(allProjects).toHaveLength(29);
     allProjects.forEach((project) => expect(markup).toContain(`project-${project.id}`));

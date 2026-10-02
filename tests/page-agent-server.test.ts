@@ -3,6 +3,7 @@ import * as serverAgent from '../server/pageAgent.mjs';
 import { localAgent as clientAgent, validatePageCommand } from '../components/AskThePage';
 import { defaultSettings } from '../contexts/PhysicsContext';
 import { buildPageState } from '../lib/askPageState';
+import { experienceRecords } from '../portfolioData';
 
 const trustedPageState = {
   allowedLinks: ['#technical-lab', '#experience', '#work', '#world', '#home'],
@@ -54,6 +55,18 @@ describe('server page-agent command parity', () => {
       { type: 'openDesktopApp', appId: 'camera-lab' },
       { type: 'minimizeDesktopApp', appId: 'world-3d' },
     ]);
+  });
+
+  it('lets the assistant open every experience record the site renders', () => {
+    // The canonical list is written out by hand, and it drifted: both Abbott
+    // records, People's Association and YesWeHack (merged under its achievement's
+    // id) could not be opened. This fails the moment a role is added without it.
+    // One command per call: the sanitizer keeps at most six.
+    const experience = experienceRecords.map((record) => ({ id: record.id }));
+    for (const { id } of experience) {
+      const command = { type: 'focusExperience', experienceId: id };
+      expect(serverAgent.sanitizeCommands([command], { experience }), id).toEqual([command]);
+    }
   });
 
   it.each([

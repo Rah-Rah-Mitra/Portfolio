@@ -61,6 +61,13 @@
       "title": "PROJECTS",
       "entries": [
         {
+          "id": "swarmline",
+          "bullets": [
+            "coordination",
+            "main"
+          ]
+        },
+        {
           "id": "voltpulse",
           "bullets": [
             "main"

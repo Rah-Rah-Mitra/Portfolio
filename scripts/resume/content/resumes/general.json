@@ -2,7 +2,7 @@
   "slug": "general",
   "subject": "General Master CV",
   "pages": 2,
-  "bodyPt": 9.5,
+  "bodyPt": 9,
   "marginIn": 0.5,
   "sections": [
     {
@@ -13,7 +13,8 @@
           "id": "nus",
           "bullets": [
             "majors",
-            "award"
+            "award",
+            "coursework"
           ]
         }
       ]
@@ -75,6 +76,7 @@
         {
           "id": "swarmline",
           "bullets": [
+            "coordination",
             "main"
           ]
         },
@@ -130,7 +132,8 @@
           "id": "ywh",
           "bullets": [
             "programs",
-            "automation"
+            "automation",
+            "network"
           ]
         },
         {

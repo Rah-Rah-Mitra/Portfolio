@@ -518,7 +518,7 @@ export const exportProfile = (format, preferences) => ({
 // ── tailoring ─────────────────────────────────────────────────────────────
 const SECTION_TITLES = {
   education: 'EDUCATION',
-  experience: 'EXPERIENCE',
+  experience: 'WORK EXPERIENCE',
   projects: 'PROJECTS',
   leadership: 'LEADERSHIP AND ACTIVITIES',
 };

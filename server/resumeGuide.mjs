@@ -43,21 +43,25 @@ keyword is recoverable; an inaccurate one is not.
    entry whose evidence is closest to what the job asks for, not the one whose
    wording matches the keywords.
 
-   One standing preference: **Volt Pulse SG** is on all eight ready-made
-   résumés at Rahul's instruction. It was a Top 8 finalist of 50+ teams and he
-   rates it among his strongest work, so keep it unless the posting makes it
-   genuinely irrelevant.
+   Two standing preferences, both finalist projects Rahul rates among his
+   strongest work. **Volt Pulse SG** (Top 8 of 50+ teams) is on all eight
+   ready-made résumés at his instruction: keep it unless the posting makes it
+   genuinely irrelevant. **Swarmline** (team lead and finalist, SG Defense Tech
+   Hackathon, 1,300+ applicants) is on seven, every one but civic-tech: keep it
+   wherever the posting values autonomy, simulation, C++, distributed systems or
+   defense work. \`swarmline.coordination\` carries the team lead and the
+   algorithms, \`swarmline.main\` the simulation and the jammed-link result.
 4. Three bullets per entry is typical, and on a one-page spec four is the
    ceiling — the checker reports a fifth as a structural error. When an entry
    genuinely earns a fourth (People's Association carries platform, Singpass,
-   AWS deployment and either the Sparks fund or keyless CI/CD on the
+   AWS deployment and either keyless CI/CD or the balloting rules on the
    architecture résumés), pay for it by dropping a weaker project rather than
    by cutting one of the four. A two-page spec has room for more and the
    ceiling rises to eight: the master CV carries seven on People's Association
    and six on the Abbott internship, because Rahul's own CV does.
 5. Choose depth. Bullets can carry a \`deep\` variant alongside the default; set
    \`detail: "deep"\` on the spec, or \`variant\` on a single entry. Deep variants
-   are longer, so they usually need \`pages: 2\`. Only 17 of the 42 selectable
+   are longer, so they usually need \`pages: 2\`. Only 17 of the 43 selectable
    bullets have one, and the rest fall back to their default silently, so do not
    treat depth as a way to change every bullet at once.
 6. Check whether the entry offers more than one job title. An entry with
@@ -123,15 +127,15 @@ lines, a bullet about two, the coursework line about two.
 
 Five sections in this order, matching every existing résumé:
 
-EDUCATION, EXPERIENCE, PROJECTS, LEADERSHIP AND ACTIVITIES,
+EDUCATION, WORK EXPERIENCE, PROJECTS, LEADERSHIP AND ACTIVITIES,
 SKILLS AND CERTIFICATIONS.
 
 Certifications are not a separate section: they are skills lines whose label is
 "Certifications" (ids beginning \`certs-\`).
 
 Those headings are the exact strings, and the only ones: a section's \`title\` is
-chosen from that list (\`general\`'s projects section may also say "PROJECTS AND
-COMPETITIONS"), not written. \`subject\` is chosen too — any of the eight
+chosen from that list (the experience section may also say plain "EXPERIENCE",
+and \`general\`'s projects section "PROJECTS AND COMPETITIONS"), not written. \`subject\` is chosen too — any of the eight
 ready-made subjects, or "Resume", "Custom Resume", "Tailored résumé" — because it
 becomes the document's title in the PDF and DOCX metadata. Both print on a file
 served under Rahul's name, so neither is a place to put your own words, not even
@@ -147,7 +151,7 @@ the company you are aiming at.
   "sections": [
     { "type": "education", "title": "EDUCATION",
       "entries": [{ "id": "nus", "bullets": ["majors", "award"] }] },
-    { "type": "experience", "title": "EXPERIENCE",
+    { "type": "experience", "title": "WORK EXPERIENCE",
       "entries": [
         { "id": "stmicro-or", "bullets": ["putaway"] },
         { "id": "abbott-intern", "bullets": ["pipeline", "apc"], "variant": "deep" }

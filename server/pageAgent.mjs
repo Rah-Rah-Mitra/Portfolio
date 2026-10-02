@@ -12,7 +12,7 @@ const canonicalProjectIds = new Set([
   'portfolio-repo', 'github-profile-repo', 'kalidokit-fork', 'tp-java', 'ip-java', 'crawl4ai-deepseek-example',
   'ie2110-grp-13', 'fine-tuning-llms-cybersecurity', 'references', 'eg1311-project',
 ]);
-const canonicalExperienceIds = new Set(['career-stmicro-or', 'career-amazon-vision', 'abbott-internship', 'nus-education', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
+const canonicalExperienceIds = new Set(['career-stmicro-or', 'career-amazon-vision', 'career-abbott-contract', 'career-abbott-intern', 'abbott-internship', 'career-pa-churp', 'career-ntuc-active-ageing', 'nus-education', 'cyber-achievement-3', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
 const canonicalChapterIds = new Set(['home', 'work', 'experience', 'all-work', 'technical-lab', 'domains', 'proof', 'resumes', 'contact']);
 const canonicalDesktopAppIds = new Set(['home', 'selected-work', 'experience', 'project-archive', 'systems-lab', 'camera-lab', 'world-3d', 'capabilities', 'proof-vault', 'resumes-contact', 'resume-builder']);
 
@@ -72,7 +72,7 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     references = [{ label: 'Inspect AsyncDDGS', href: '#project-asyncddgs' }];
     commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
   } else if (text.includes('swarm') || text.includes('drone') || text.includes('defence tech') || text.includes('defense tech')) {
-    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took Rahul’s five-person team to the finals of the Singapore Defense Tech Hackathon 2026 (1,000+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
+    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took the five-person team Rahul led to the finals of the Singapore Defense Tech Hackathon 2026 (1,300+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
     references = [{ label: 'Inspect Swarmline', href: '#project-swarmline' }];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('experience') || text.includes('timeline')) {
@@ -84,7 +84,7 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     references = [{ label: 'Selected work', href: '#work' }];
     commands.push({ type: 'focusGuideChapter', chapterId: 'work' });
   } else if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
-    reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce.';
+    reply = 'At Abbott, Rahul built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data with zero execution failures. He also productionized and operated an APC simulator built by another team for live internal manufacturing and engineer-training use through Docker and Azure App Service, and trained regional engineering teams across Asia and Europe on repeatable AI workflows.';
     references = [{ label: 'Hybrid Flow Shop Digital Twin Optimizer', href: '#project-hybrid-flow-shop-digital-twin' }, { label: 'Manufacturing Changeover Data Pipeline', href: '#project-changeover-data-quality-pipeline' }, { label: 'APC Simulator Cloud Operations', href: '#project-azure-apc-web-simulator' }];
     commands.push({ type: 'focusProject', projectId: 'hybrid-flow-shop-digital-twin' });
   } else if (text.includes('optim') || text.includes('scheduling') || text.includes('operations research')) {

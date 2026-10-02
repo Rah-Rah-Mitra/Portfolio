@@ -324,14 +324,34 @@ replacing `Singapore`. It is deliberately **not** on the site, in the snapshot, 
 in `/api/portfolio` — `server/jobSearch.mjs` still names `candidate.phone` as a
 gap, which stays correct for every consumer except the résumé header itself.
 
-## 14. Swarmline, Singapore Defense Tech Hackathon 2026 — answered 2026-09-29
+## 14. Swarmline, Singapore Defense Tech Hackathon 2026 — answered 2026-09-29, corrected 2026-10-02
 
 **Supplied by Rahul:** his LinkedIn post (finalist; "out of 1,000+ applicants, we
 made it to the finals as one of just 17 teams in our track"; presented to the
 Chief Defence Scientist; teammates Zulfaqar Hafez, Kevan Soon, Jeric Toh and Guo
 Anxiang; demo at `https://lnkd.in/g9SNkSVS`) and the OPFORGE repository, which is
-the Swarmline codebase. Now the selectable `swarmline` project block (on `general`
-only), a project card, an event note and a Proof row on the site.
+the Swarmline codebase. Now the selectable `swarmline` project block (placement
+below), a project card, an event note and a Proof row on the site.
+
+**Corrected by Rahul, 2026-10-02**, in his master CV (the ground truth for
+`general`). He was **team lead**: the header reads `Team Lead & Finalist,
+Swarmline: SG Defense Tech Hackathon (1,300+ applicants)`. The entry carries two
+bullets in his words, replacing the single bullet written on 2026-09-29:
+
+- `swarmline.coordination`: "Directed a 5-person team to architect decentralised
+  drone-swarm coordination on correlated random-walk search, gradient-flow
+  dispersion, delay-tolerant gossip, cross-inhibition consensus, and
+  response-threshold task allocation."
+- `swarmline.main`: "Implemented a deterministic Unreal Engine 5.8 C++ simulation
+  with Claude Code; under a ground-link jam, 30 drones confirmed all 8 walking
+  targets in 10 of 10 seeded runs, against 2.1 for an operator-run fleet."
+
+Both ship verbatim. The semicolon in `swarmline.main` is what VMock's
+one-sentence rule flags (`docs/vmock-house-style.md`). The repo checker has no
+such rule, and his wording stands. **1,300+ applicants** supersedes the post's
+"1,000+" everywhere. The site's "one member of a five-person team" now says team
+lead, and its rule names follow his: "gradient-flow dispersion",
+"response-threshold task allocation".
 
 Every simulation figure comes from OPFORGE `docs/SDTH-2026/evidence/opf0067_comparison_metrics.md`:
 Swarm Field A, 30 simulated drones, 8 walking targets, ground link jammed at 15 s,
@@ -365,9 +385,8 @@ built the jammed-link comparison (OPF-0067) that produced those numbers.
   the track overall; and "track" may mean the 2-day format or Challenge 03. The
   organisers' deck counts 34 two-day teams and plans 20 finalists from 40, which
   fits the first reading, but nothing here says "17" until Rahul confirms it: not
-  the résumé, and not the site, whose event note stops at "from 1,000+ applicants".
-- **"1,000+ applicants"** is the event-wide sign-up count (both tracks), which is
-  how the résumé header uses it.
+  the résumé, and not the site, whose event note stops at "out of 1,300+
+  applicants".
 - Whether Rahul spoke in the final pitch. The post says "we", so everything says
   the team presented.
 
@@ -378,37 +397,37 @@ the category and tags say "Defense Tech", as do the organisers' own names
 MINDEF's spelling: Chief Defence Scientist. The VMock screener leans British on
 every pair tested (`docs/vmock-house-style.md`), but this is a proper noun, which
 that record says costs nothing, and it sits in an entry header, which the P5
-house-style pass does not read.
+house-style pass does not read. **Reaffirmed 2026-10-02:** his master CV wrote
+"SG Defence Tech Hackathon"; asked, he kept "Defense" everywhere, so the résumé
+header reads "SG Defense Tech Hackathon".
 
-**Fit.** `general` could not take the new entry at 9.5pt (three pages), so it
-walked the trim ladder in order. Rung 1: the `nus.coursework` line comes off
-`general`; it also repeated the AI Foundations, 3D Vision, Simulation and
-Statistics skills lines on the same page. It is still in the pool and still on
-the three configs that select it (`ai-engineer`,
-`civic-tech-solution-architect`, `solution-architect`). What rung 1 cost: "Software
-Engineering", "Data Structures and Algorithms", "Linear Algebra" and a spelled-out
-"Artificial Intelligence" now appear nowhere on the master CV (its other courses
-survive as skills headings or in the award bullet), so Rahul may prefer to trade
-something else for them. Rung 2: `ywh.network`
-comes off `general` too. The exported document already fitted after rung 1, but
-the master CV built with `detail: "deep"` in the Harvard style did not
-(`tests/resume-render.test.ts` pins that it fits both styles): Harvard's floor is
-10pt, so it cannot shrink, and before this change it had about 3pt to spare. That
-bullet was also the third place "Burp Suite" and "Wireshark" appeared on the page.
-It stays on `cyber-security`. For the same reason `swarmline.main` carries no
-`deep` variant: even a three-line one pushed the Harvard deep build to three pages,
-so deep builds use its default wording. The bullet says "in 10 of 10 trials" (the
-ten seeds) rather than "in all 10 runs", which doubled "all" and put a third form
-of "run" on the page beside "operator-run" and `abbott-contract.harness`.
+**Fit (2026-10-02).** `general` follows the master CV again. The coursework line
+and `ywh.network`, which came off on 2026-09-29 (rungs 1 and 2), are back, and with
+Swarmline's second bullet it fits two pages at 9pt (down from 9.5). The Harvard
+deep build still fits two pages, because its first rung is the spec's own
+typography and `general` now declares 9pt. Swarmline also went onto six
+one-pagers, each paid for down the trim ladder. Volt Pulse stays on all eight
+(Rahul's standing instruction in `server/resumeGuide.mjs`):
 
-**PDFs.** Every résumé's skills line changed, so all eight 2026-11 PDFs were
-re-exported on 2026-09-29 without Word, through
-`scripts/resume/export_pdf_libreoffice.py` (LibreOffice with the real Arial and the
-section rule corrected; see the résumé skill's "No Windows?" note). A Word
-re-export with `export-pdf.ps1` is still owed. When it runs, check that page 1 of
-`general` still ends on the Swarmline bullet: it ends about 5pt above the bottom
-margin, and page 2 opens with the builder's spacer line because page 1 is full
-(dropping a spacer at a page top would be a builder change, which needs approval).
+| résumé | Swarmline | room made by | body |
+|---|---|---|---|
+| general | both | nothing (master CV) | 9pt |
+| highlights | `main` | `abbott-intern.apc` | 9pt |
+| software-engineer | both | Waaah Comics | 9pt |
+| operations-research-engineer | both | nothing; it fitted | 9pt |
+| solution-architect | both | `nus.coursework` | 9.5pt |
+| ai-engineer | `coordination` | `nus.coursework` | 9.5pt |
+| cyber-security | `main` | `abbott-intern.digital-twin` | 9pt (from 9.5) |
+| civic-tech-solution-architect | none: the work is defense, not civic | — | 10pt |
+
+`nus.coursework` carries an `ai-engineer` override that no longer ships. It stays
+in the pool for builds that put the line back. Neither Swarmline bullet has a
+`deep` variant: the two bullets are the whole of what Rahul supplied.
+
+**PDFs.** Re-exported through Word (`export-pdf.ps1`) on 2026-10-02, which settled
+the LibreOffice-only export of 2026-09-29. Page 1 of `general` ends on
+`swarmline.coordination` and page 2 opens with `swarmline.main`, the same break
+Rahul's own PDF makes.
 
 ## 15. AI tools on the skills lines — answered 2026-09-29
 
@@ -444,11 +463,14 @@ because `gen-cloud` already carries it. Four lines group the tools as "AI tools
 on ai-engineer's, and as a term it routed AI-engineer postings elsewhere.
 
 **Listed and demonstrated.** Two tools appear twice on one page, once as a skill
-and once as evidence: "Claude Code" on `general` (skills line and the Swarmline
-bullet) and "Gemini" on every résumé that also carries the Waaah Comics bullet
-("Gemini 2.0 Flash"). That is the one kind of repeat kept on purpose. If Rahul
-reads "no repeated keywords" strictly, Gemini can come off `se-skills`, but not off
-`hl-ai-data` without leaving `highlights`, which has no Waaah entry.
+and once as evidence. "Claude Code" appears on every résumé that carries
+`swarmline.main` (general, highlights, software-engineer,
+operations-research-engineer, solution-architect, cyber-security), on the skills
+line and in that bullet. "Gemini" appears on `general`, the one résumé still
+carrying the Waaah Comics bullet ("Gemini 2.0 Flash"). ai-engineer carries
+`swarmline.coordination`, which names no tool. That is the one kind of repeat kept
+on purpose. On 2026-10-02 Rahul kept the AI tools on the skills lines, though his
+own master CV leaves them out.
 
 **Not added:** GitHub Copilot (OPFORGE shows it only in Zulfaqar's lane) and
 ElevenLabs (attested in OPFORGE's Swarmline pitch video, but not asked for; add it

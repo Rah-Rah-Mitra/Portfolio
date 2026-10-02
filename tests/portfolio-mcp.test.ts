@@ -56,8 +56,10 @@ describe('résumé data', () => {
     expect(markdown).toContain('**Languages:**');
     // highlights carries no slug override of its own any more - both of the ones
     // it had became the default - so the override path is checked where one lives.
-    const ai = resumeMarkdown(resumeConfigs.find((config) => config.slug === 'ai-engineer'));
-    expect(ai).toContain('Relevant coursework: Artificial Intelligence, 3D Computer Vision');
+    // ai-engineer's coursework override stopped shipping in Oct 2026, when that
+    // line came off for Swarmline (trim ladder rung 1); this one still ships.
+    const architect = resumeMarkdown(resumeConfigs.find((config) => config.slug === 'solution-architect'));
+    expect(architect).toContain('Owned cloud deployment and production support for a team-built APC');
   });
 });
 
@@ -124,11 +126,12 @@ describe('api/mcp', () => {
     const bullets = JSON.parse(projects.content[0].text).sections
       .flatMap((section: { entries: Array<{ bullets: unknown[] }> }) => section.entries.flatMap((entry) => entry.bullets));
     // The five projects the 2026-11 master CV pass left selectable, plus
-    // Swarmline (Singapore Defense Tech Hackathon 2026 finalist, Sep 2026).
+    // Swarmline's two (SG Defense Tech Hackathon team lead and finalist, Sep 2026:
+    // the team and its algorithms, then the simulation and its jammed-link result).
     // arcane and ethoslens were withheld in the VMock pass; onthespectrum,
     // agewelllah and smartexam followed once work experience carried the same
     // evidence, and the "Additional Projects" entry retired earlier.
-    expect(bullets.length).toBe(6);
+    expect(bullets.length).toBe(7);
     for (const bullet of bullets as Array<{ lead: string; lines: number; hasMetric: boolean }>) {
       expect(bullet.lead).toMatch(/^[A-Za-z][A-Za-z-]*$/);
       expect(bullet.lines).toBeGreaterThan(0);

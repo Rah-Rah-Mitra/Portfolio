@@ -39,7 +39,7 @@ quantified and score zero purely on notation. `R8`'s sibling rule
 `P5 glued-digit` exists for this, and the checker's own metric classifier was
 extended to read `4 times` and `13 TOPS` so the two never contradict each other.
 
-**`the` is a filler word.** ✅ Verified on the BRINHACK bullet: the red highlight
+**`the` is a filler word.** ✅ Verified on the BrainHack bullet: the red highlight
 looked like a spell-check false positive and is really *"This bullet includes
 filler words which should be avoided"*. Fires at roughly two `the`s in one bullet.
 

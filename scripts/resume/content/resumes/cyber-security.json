@@ -2,7 +2,7 @@
   "slug": "cyber-security",
   "subject": "Cyber Security Resume",
   "pages": 1,
-  "bodyPt": 9.5,
+  "bodyPt": 9,
   "marginIn": 0.5,
   "sections": [
     {
@@ -43,7 +43,6 @@
         {
           "id": "abbott-intern",
           "bullets": [
-            "digital-twin",
             "pipeline",
             "apc"
           ]
@@ -54,6 +53,12 @@
       "type": "projects",
       "title": "PROJECTS",
       "entries": [
+        {
+          "id": "swarmline",
+          "bullets": [
+            "main"
+          ]
+        },
         {
           "id": "brinhack",
           "bullets": [

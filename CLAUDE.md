@@ -72,8 +72,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   and has to agree with it.
 - Current edition: **2026-11**. `generated/` keeps the current + previous
   edition; older sets live in `public/resume/archive/`. Its eight PDFs were
-  re-exported with LibreOffice on 2026-09-29 (`export_pdf_libreoffice.py`, no
-  Windows to hand); a Word re-export with `export-pdf.ps1` is still owed.
+  last exported through Word (`export-pdf.ps1`) on 2026-10-02, which settled the
+  LibreOffice-only export of 2026-09-29.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
   across all profiles), and the two-page `general` master CV, which is the
   document `rahul-mitra-master-cv.docx` is the ground truth for. Every config
@@ -325,7 +325,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   to `FieldIndex`, held **out of the default ALL view** (`scopeOf`) so 43 rows
   cannot double the registry's scroll depth; it arrives on the chip or on search.
   The `.fi-hits` denominator is computed from the same scope as the numerator, or
-  it reads "64/107" with no filter set.
+  it reads "65/108" with no filter set.
 - Nothing here reaches `server/portfolio-snapshot.json`, so nothing reaches
   `ATTESTED` in `jobSearch.mjs`. The two RL certificates stay uncovered by
   `build_tailored_resume` on purpose — a completed course is not applied work.
@@ -357,7 +357,7 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   genuinely broken assertion still fails. Adding DOM test files raises load for
   every other file, so re-run the full suite a few times after you do.
 - `tests/e2e/quality.spec.ts` pins the workbench boot state (Home + Selected
-  Work open), the 9/29 no-JS evidence counts, and zero serious axe violations
+  Work open), the 10/29 no-JS evidence counts, and zero serious axe violations
   on both surfaces.
 - All public asset paths (`/images`, `/resume`, ...) must exist on disk under
   `public/` — no speculative references.

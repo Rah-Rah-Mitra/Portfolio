@@ -98,12 +98,12 @@
     {
       "id": "certs-core",
       "label": "Certifications",
-      "items": "NVIDIA Disaster Risk Monitoring with Satellite Imagery; Deep Reinforcement Learning Hands-On (Packt)"
+      "items": "NVIDIA Disaster Risk Monitoring with Satellite Imagery; Reinforcement Learning and Deep RL Python (Packt)"
     },
     {
       "id": "certs-or",
       "label": "Certifications",
-      "items": "Excel 2019 Advanced (Intellezy); NVIDIA Disaster Risk Monitoring with Satellite Imagery; Deep Reinforcement Learning Hands-On (Packt)"
+      "items": "Excel 2019 Advanced (Intellezy); NVIDIA Disaster Risk Monitoring with Satellite Imagery; Reinforcement Learning and Deep RL Python (Packt)"
     },
     {
       "id": "certs-cyber",
@@ -113,7 +113,7 @@
     {
       "id": "certs-general",
       "label": "Certifications",
-      "items": "NVIDIA Disaster Risk Monitoring with Satellite Imagery; Deep Reinforcement Learning Hands-On (Packt); Reverse Engineering Windows Executables; Excel 2019 Advanced (Intellezy)"
+      "items": "NVIDIA Disaster Risk Monitoring with Satellite Imagery; Reinforcement Learning and Deep RL Python (Packt); Reverse Engineering Windows Executables; Excel 2019 Advanced (Intellezy)"
     },
     {
       "id": "hl-languages",

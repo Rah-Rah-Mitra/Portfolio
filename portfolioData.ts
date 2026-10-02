@@ -22,7 +22,7 @@ export const softwareEngineerData: PortfolioData = {
     {
       id: 8,
       title: "Finalist: Singapore Defense Tech Hackathon 2026 (Swarmline)",
-      description: "Our five-person team reached the finals from 1,000+ applicants with Swarmline, decentralised coordination software for interceptor drones, and presented it to Singapore's Chief Defence Scientist. I developed the core swarm algorithm with Claude Code agents and built the jammed-link comparison: with the ground link jammed in a simulated search task, 30 drones confirmed all 8 walking targets in every run, where an operator-in-the-loop baseline confirmed 2.1 on average.",
+      description: "I led our five-person team to the finals from 1,300+ applicants with Swarmline, decentralised coordination software for interceptor drones, and we presented it to Singapore's Chief Defence Scientist. I directed the team's architecture of the swarm coordination, implemented the deterministic Unreal Engine 5.8 C++ simulation with Claude Code, and built the jammed-link comparison: with the ground link jammed in a simulated search task, 30 drones confirmed all 8 walking targets in every run, where an operator-in-the-loop baseline confirmed 2.1 on average.",
       date: "2026 Sep",
       category: "Drone Swarms & Defense Tech",
       tags: ["Finalist", "Defense Tech", "Swarm Robotics", "C++", "Unreal Engine 5.8", "Claude Code"],
@@ -118,7 +118,7 @@ export const softwareEngineerData: PortfolioData = {
 export const cybersecurityData: PortfolioData = {
   name: "Rahul Mitra",
   tagline: "Adversarial Security Researcher & Bug Bounty Hunter",
-  bio: "NUS Engineering student and active bug bounty hunter on YesWeHack. I've uncovered critical vulnerabilities (SSRF, CSRF, SQL/NoSQL Injection, and authentication bypasses) for Singapore's GovTech (GBBP12/13) and the Land Transport Authority. My adversarial mindset drives security-first design across every system I build.",
+  bio: "NUS Engineering student and active bug bounty hunter on YesWeHack. I've uncovered vulnerabilities (SSRF, CSRF, SQL/NoSQL Injection, and authentication bypasses) for Singapore's GovTech (GBBP12/13) and the Land Transport Authority. My adversarial mindset drives security-first design across every system I build.",
   profileImageUrl: assets.CS_PROFILE_IMAGE,
   contactEmail: SITE_CONFIG.email,
   linkedinUrl: SITE_CONFIG.social.linkedin,
@@ -128,7 +128,7 @@ export const cybersecurityData: PortfolioData = {
     {
       id: 3,
       title: "Active Bug Bounty Hunter: GovTech & LTA",
-      description: "Actively participating in bug bounty programs on YesWeHack. Key engagements include Singapore's Government Technology Agency (GovTech GBBP12/13) and the Land Transport Authority (LTA) Bug Bounty Program, plus 13+ other private/public programs. Discovered and responsibly disclosed high-impact vulnerabilities including SSRF, CSRF, SQL/NoSQL Injection, and authentication bypasses. Utilizes Burp Suite for MitM traffic interception and Wireshark for deep packet inspection (OSI Layers 3–4).",
+      description: "Actively participating in bug bounty programs on YesWeHack. Key engagements include Singapore's Government Technology Agency (GovTech GBBP12/13) and the Land Transport Authority (LTA) Bug Bounty Program, plus 13+ other private/public programs. Discovered and responsibly disclosed vulnerabilities including SSRF, CSRF, SQL/NoSQL Injection, and authentication bypasses. Utilizes Burp Suite for MitM traffic interception and Wireshark for deep packet inspection (OSI Layers 3–4).",
       date: "May 2024 – Present",
       imageUrl: assets.CS_ACHIEVEMENT_BUG_BOUNTY,
       category: "Vulnerability Disclosure",
@@ -136,9 +136,9 @@ export const cybersecurityData: PortfolioData = {
     },
     {
       id: 2,
-      title: "CTF @ DSTA BRINHACK 2025",
-      description: "Made my CTF debut at DSTA BRINHACK 2025. Our team secured a commendable top-quartile finish, placing ~90th among 400+ fiercely competing teams across diverse challenge categories.",
-      date: "2025",
+      title: "CTF @ DSTA BrainHack 2025",
+      description: "Made my CTF debut at DSTA BrainHack 2025. Our team secured a commendable top-quartile finish, placing ~90th among 400+ fiercely competing teams across diverse challenge categories.",
+      date: "Feb 2025",
       imageUrl: assets.CS_ACHIEVEMENT_BRAINHACK_2025,
       category: "CTF Competition",
       tags: ["CTF", "DSTA", "Teamwork", "BrainHack", "First-Time"]
@@ -169,7 +169,7 @@ export const resumeProfiles: ResumeProfile[] = [
   {
     id: 'software-engineer',
     role: 'Software Engineer',
-    headline: 'Python, TypeScript, React, CI/CD, and open-source systems for product-facing engineering roles.',
+    headline: 'Python, TypeScript, React, CI/CD, and a C++ swarm simulation for product-facing engineering roles.',
     keywords: ['Python', 'TypeScript', 'React', 'FastAPI', 'Docker', 'CI/CD', 'System Design'],
     docxUrl: resumeAssetUrl('software-engineer', 'docx'),
     pdfUrl: resumeAssetUrl('software-engineer', 'pdf'),
@@ -229,8 +229,8 @@ export const resumeProfiles: ResumeProfile[] = [
   {
     id: 'highlights',
     role: 'Highlights (One-Page)',
-    headline: 'One-page best-of across every profile (civic platform delivery, applied AI, optimization, security research, and open source) for preference forms and general applications.',
-    keywords: ['One Page', 'Full Stack', 'AI/ML', 'Singpass/Myinfo', 'Security', 'Open Source'],
+    headline: 'One-page best-of across every profile (civic platform delivery, applied AI, optimization, drone-swarm coordination, and security research) for preference forms and general applications.',
+    keywords: ['One Page', 'Full Stack', 'AI/ML', 'Singpass/Myinfo', 'Security', 'Defense Tech'],
     docxUrl: resumeAssetUrl('highlights', 'docx'),
     pdfUrl: resumeAssetUrl('highlights', 'pdf'),
     accent: 'cyan',
@@ -288,7 +288,7 @@ export const coreCompetencies: CompetencyCluster[] = [
     title: 'Cybersecurity',
     summary: 'Applies an adversarial engineering lens through bug bounty research, secure design, traffic analysis, exploit automation, and responsible disclosure reporting.',
     tools: ['Burp Suite', 'Wireshark', 'SSRF', 'CSRF', 'SQL/NoSQL Injection', 'OAuth2/JWT', 'Python', 'Bash', 'Rust'],
-    proof: ['GovTech GBBP12/13', 'LTA Bug Bounty', 'Arcane', 'DSTA BRINHACK'],
+    proof: ['GovTech GBBP12/13', 'LTA Bug Bounty', 'Arcane', 'DSTA BrainHack'],
     accent: 'red',
   },
   {
@@ -306,12 +306,13 @@ export const projectHighlights: ProjectHighlight[] = [
     // OPFORGE, the repository behind it, is private, so the only public link is the
     // demo from Rahul's LinkedIn post. Every simulation figure here is from OPFORGE's
     // docs/SDTH-2026/evidence/opf0067_comparison_metrics.md (10 seeds). The event
-    // facts (finalist, 1,000+ applicants, five-person team, the Chief Defence
-    // Scientist) are from the post.
+    // facts (finalist, five-person team, the Chief Defence Scientist) are from the
+    // post; 1,300+ applicants and Rahul's role as team lead are from his master CV
+    // of 2026-10-02, which supersedes the post's "1,000+".
     id: 'swarmline',
     title: 'Swarmline',
     category: 'Drone Swarms & Defense Tech',
-    description: 'Finalist at the Singapore Defense Tech Hackathon 2026 (1,000+ applicants): decentralised drone-swarm coordination, demonstrated in simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
+    description: 'Team lead and finalist at the Singapore Defense Tech Hackathon 2026 (1,300+ applicants): decentralised drone-swarm coordination, demonstrated in a deterministic simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
     tags: ['C++', 'Unreal Engine 5.8', 'Swarm Robotics', 'Decentralised Coordination', 'Gossip Protocols', 'Claude Code', 'Simulation'],
     liveUrl: 'https://lnkd.in/g9SNkSVS',
     dateLabel: 'Sep 2026',
@@ -321,9 +322,9 @@ export const projectHighlights: ProjectHighlight[] = [
     npcRole: 'swarm coordination guide',
     spotlight: {
       context: "Singapore Defense Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
-      contribution: 'Chose the swarm-robotics approach and directed the Claude Code agents that wrote and reviewed the core swarm algorithm and simulation; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline. One member of a five-person team.',
-      approach: "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow spacing, delay-tolerant gossip, cross-inhibition consensus, response-threshold allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
-      outcome: "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,000+ applicants; the team presented to Singapore's Chief Defence Scientist.",
+      contribution: 'Team lead of a five-person team: chose the swarm-robotics approach and directed the team’s architecture of the swarm coordination; implemented the deterministic Unreal Engine 5.8 C++ simulation with Claude Code, directing the agents that wrote and reviewed the core swarm algorithm; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline.',
+      approach: "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow dispersion, delay-tolerant gossip, cross-inhibition consensus, response-threshold task allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
+      outcome: "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,300+ applicants; the team presented to Singapore's Chief Defence Scientist.",
     },
   },
   {
@@ -453,7 +454,7 @@ export const projectHighlights: ProjectHighlight[] = [
     id: 'changeover-data-quality-pipeline',
     title: 'Manufacturing Changeover Data Pipeline',
     category: 'Data Quality & Industrial Automation',
-    description: 'A non-destructive 15-stage cleaning and transformation pipeline for complex changeover matrices, handling human- and machine-generated data errors and processing five years of previously unseen, unclean data without errors.',
+    description: 'A non-destructive 15-stage cleaning and transformation pipeline for complex changeover matrices, handling human- and machine-generated data errors and processing five years of previously unseen, unclean data with zero execution failures.',
     tags: ['Data Quality', 'Excel VBA', 'Python', 'Audit Trail', 'Manufacturing'],
     dateLabel: '2026',
     sortDate: '2026-01-01',
@@ -464,7 +465,7 @@ export const projectHighlights: ProjectHighlight[] = [
       context: 'Operational matrices encoded meaning through values, labels, colours, merged regions, blanks, and exception rules accumulated over years.',
       contribution: 'Designed a 15-stage, non-destructive workflow that exposes intermediate repair and transformation states instead of silently mutating source data.',
       approach: 'Controlled staging sheets, normalization, repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling.',
-      outcome: 'Processed five years of previously unseen, unclean data without errors while covering both human- and machine-generated data issues.',
+      outcome: 'Processed five years of previously unseen, unclean data with zero execution failures across both human- and machine-generated data issues.',
     },
   },
   {
@@ -575,8 +576,8 @@ export const projectHighlights: ProjectHighlight[] = [
     category: 'AI & NLP',
     description: 'A Maritime Hackathon 2025 predictive system using a fine-tuned 109M-parameter BERT model, DNN layers, and ASPIRE 2A supercomputing.',
     tags: ['BERT', 'DNN', 'NLP', 'HPC', 'Maritime'],
-    dateLabel: '2025',
-    sortDate: '2025-01-01',
+    dateLabel: 'Jun 2025',
+    sortDate: '2025-06-01',
     links: [
       { label: 'Certificate of submission', url: '/certificates/maritime-hackathon-2025-submission.pdf' },
     ],
@@ -598,8 +599,8 @@ export const projectHighlights: ProjectHighlight[] = [
     category: 'Citizen Developer Platform',
     description: 'An end-to-end digital garden-plot balloting platform for People\'s Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.',
     tags: ['Civic Tech', 'Singpass', 'AWS Fargate', 'Terraform', 'GIS', 'RDS', 'WAFv2', 'Route 53', 'Cloud Security', 'Balloting', 'Smart Nation'],
-    dateLabel: '2025 - 2026',
-    sortDate: '2025-01-01',
+    dateLabel: 'Sep 2025 - Sep 2026',
+    sortDate: '2025-09-01',
     imageUrl: '/images/generated/churp-community.webp',
     accent: 'green',
     linkedEventIds: ['sparks-by-pa-churp'],
@@ -770,7 +771,7 @@ export const eventHighlights: EventHighlight[] = [
     dateLabel: 'Sep 25-27, 2026',
     exactDateRange: '2026-09-25 to 2026-09-27',
     source: 'LinkedIn',
-    summary: "Finalist at the inaugural Singapore Defense Tech Hackathon (NUS Enterprise @ i3): out of 1,000+ applicants, the team reached the finals and presented Swarmline, decentralised coordination software for interceptor drones, to Singapore's Chief Defence Scientist. In a simulated search task with the ground link jammed, its 30 drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.",
+    summary: "Finalist at the inaugural Singapore Defense Tech Hackathon (NUS Enterprise @ i3): out of 1,300+ applicants, the five-person team Rahul led reached the finals and presented Swarmline, decentralised coordination software for interceptor drones, to Singapore's Chief Defence Scientist. In a simulated search task with the ground link jammed, its 30 drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.",
     tags: ['Finalist', 'Defense Tech', 'Swarm Robotics', 'Interceptors Challenge', 'Hackathon'],
     people: ['Zulfaqar Hafez', 'Kevan Soon', 'Jeric Toh', 'Guo Anxiang'],
     // The organisers' own spellings (event poster and deck); NUSX is from Rahul's post.
@@ -803,7 +804,7 @@ export const eventHighlights: EventHighlight[] = [
     people: ['Kevan Soon', 'Zulfaqar Hafez', 'Kwa Guang Hao'],
     organizations: ['SMU Smart City Society', 'SMU Institute of Innovation & Entrepreneurship', 'IBM', 'AI Singapore', 'IMDA'],
     linkedProjectIds: ['volt-pulse-sg'],
-    npcDialogue: 'Volt Pulse SG was where the agentic stack grew teeth: multilingual retrieval, RRF routing, and a plan for scheduler agents that can anticipate household energy needs before users ask.',
+    npcDialogue: 'Volt Pulse SG was where the agentic stack grew teeth: multilingual retrieval, RRF routing, and scheduler agents that anticipate household energy needs before users ask.',
   },
   {
     id: 'january-gauntlet-2026',
@@ -835,11 +836,11 @@ export const eventHighlights: EventHighlight[] = [
     dateLabel: 'Jan 2026 - Present',
     exactDateRange: '2026-01-01 to Present',
     source: 'LinkedIn',
-    summary: 'Built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data without errors. Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use through Docker and Azure App Service, and delivered practical AI upskilling to the regional engineering workforce. Now builds an air-gapped process-intelligence platform for globally distributed spray-drying plants (GPU document parsing, ONNX embeddings, a Chroma vector store, and a locally hosted quantized Gemma model), alongside a Seeq-backed multi-site data layer and a HiGHS setpoint optimizer that replaced four site-specific vendor optimizers.',
+    summary: 'Built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data with zero execution failures. Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use through Docker and Azure App Service, and trained regional engineering teams across Asia and Europe on repeatable AI workflows. Now builds an air-gapped process-intelligence platform for globally distributed spray-drying plants (GPU document parsing, ONNX embeddings, a Chroma vector store, and a locally hosted quantized Gemma model), alongside a Seeq-backed multi-site data layer and a HiGHS setpoint optimizer that converts four plants’ Advanced Process Control models into one linear program.',
     tags: ['Air-Gapped RAG', 'PyTorch', 'ONNX', 'Chroma', 'LangChain', 'llama.cpp', 'Seeq', 'HiGHS', 'SciPy', 'STUMPY', 'Data Quality', 'CP-SAT', 'Robust Optimization', 'Cloud Operations', 'AI Upskilling'],
     organizations: ['Abbott'],
     linkedProjectIds: ['hybrid-flow-shop-digital-twin', 'changeover-data-quality-pipeline', 'azure-apc-web-simulator'],
-    npcDialogue: 'The Abbott node connects operations research, reliable data engineering, cloud operations, and workforce enablement: a scheduling digital twin, a 15-stage changeover pipeline, supported APC simulator hosting, and practical AI upskilling for a regional engineering team.',
+    npcDialogue: 'The Abbott node connects operations research, reliable data engineering, cloud operations, and workforce enablement: a scheduling digital twin, a 15-stage changeover pipeline, supported APC simulator hosting, and AI-workflow training for regional engineering teams.',
   },
   {
     id: 'sparks-by-pa-churp',
@@ -883,7 +884,7 @@ const achievementProjectLinks: Record<string, string[]> = {
   'AgeWellLah.AI @ HealthHack 2025': ['agewelllah-ai'],
   'Disaster Risk Monitoring Using Satellite Imagery (NVIDIA)': ['project-utopia'],
   'Active Bug Bounty Hunter: GovTech & LTA': ['arcane'],
-  'CTF @ DSTA BRINHACK 2025': ['arcane'],
+  'CTF @ DSTA BrainHack 2025': ['arcane'],
   'Bespoke Vulnerability Automation Tooling': ['arcane'],
 };
 
@@ -903,7 +904,7 @@ const projectSortDates: Record<string, string> = {
   'smart-exam': '2025-07-01',
   'ethos-lens': '2025-06-01',
   'agewelllah-ai': '2025-05-01',
-  'maritime-deficiency-severity': '2025-04-01',
+  'maritime-deficiency-severity': '2025-06-01',
   churp: '2025-10-01',
   kaogenie: '2025-07-27',
   asyncddgs: '2026-05-01',
@@ -933,13 +934,13 @@ const achievementSortDates: Record<string, string> = {
   'Finalist: Singapore Defense Tech Hackathon 2026 (Swarmline)': '2026-09-27',
   'Top Student: 3D Computer Vision @ NUS School of Computing': '2026-07-03',
   'AsyncDDGS: Open-Source PyPI Library': '2026-05-01',
-  'Maritime Hackathon 2025: Team Lead & Model Trainer': '2025-08-01',
+  'Maritime Hackathon 2025: Team Lead & Model Trainer': '2025-06-01',
   'SmartExam @ GovTech x NTUPC Hackathon 2025': '2025-07-01',
   'EthosLens @ LifeHack 2025': '2025-06-01',
   'AgeWellLah.AI @ HealthHack 2025': '2025-05-01',
   'Disaster Risk Monitoring Using Satellite Imagery (NVIDIA)': '2023-12-01',
   'Active Bug Bounty Hunter: GovTech & LTA': '2026-03-01',
-  'CTF @ DSTA BRINHACK 2025': '2025-06-01',
+  'CTF @ DSTA BrainHack 2025': '2025-02-01',
   'Bespoke Vulnerability Automation Tooling': '2026-02-01',
 };
 
@@ -1024,7 +1025,7 @@ const careerAndEducationNotes: FieldNote[] = [
     sortDate: '2026-07-01',
     source: 'LinkedIn',
     summary: 'Building vision systems across three imaging workstreams - camera ISP enhancement, super-resolution, and image restoration under motion and low light - upscaling frames four times so a low-cost camera reaches frame quality on par with premium sensors.',
-    tags: ['Amazon', 'Computer Vision', 'Robotics', 'Camera ISP', 'Image Restoration', 'Super-Resolution', 'Low-Light Imaging', 'PSNR', 'SSIM'],
+    tags: ['Amazon', 'Computer Vision', 'Robotics', 'Camera ISP', 'Image Restoration', 'Super-Resolution', 'UNet', 'Low-Light Imaging', 'PSNR', 'SSIM'],
   },
   {
     id: 'career-abbott-contract',
@@ -1067,14 +1068,27 @@ const careerAndEducationNotes: FieldNote[] = [
     linkedProjectIds: ['churp'],
   },
   {
+    // On every résumé since edition 2026-09 but missing here until the Oct 2026
+    // master CV sync. Wording is the CV's, in the past tense: the role ended.
+    id: 'career-ntuc-active-ageing',
+    title: 'NTUC Health Active Ageing Centre - Elderly Care Volunteer',
+    kind: 'career',
+    kinds: ['career'],
+    dateLabel: 'Sep 2025-Sep 2026',
+    sortDate: '2025-09-01',
+    source: 'Portfolio',
+    summary: 'Coordinated weekly senior-engagement activities, building empathy for healthcare, accessibility, and community-focused product design.',
+    tags: ['NTUC Health', 'Volunteering', 'Elderly Care', 'Community', 'Accessibility'],
+  },
+  {
     id: 'nus-education',
     title: 'National University of Singapore',
     kind: 'education',
     kinds: ['education'],
-    dateLabel: '2023-Present',
+    dateLabel: 'Aug 2023-Jul 2027',
     sortDate: '2023-08-01',
     source: 'Education',
-    summary: 'Penultimate undergraduate in Industrial Systems Engineering with a Second Major in Computer Science and a Mathematics Minor.',
+    summary: 'Final-year undergraduate in Industrial Systems Engineering with a Second Major in Computer Science and a Mathematics Minor.',
     tags: ['NUS', 'ISE', 'Computer Science', 'Mathematics', '3D Computer Vision', 'Multi-View Geometry', 'Undergraduate'],
     linkedProjectIds: ['geometry', 'information-lab', 'project-utopia'],
   },
@@ -1083,8 +1097,8 @@ const careerAndEducationNotes: FieldNote[] = [
     title: 'Independent Bug Bounty Researcher - YesWeHack',
     kind: 'career',
     kinds: ['career'],
-    dateLabel: '2023-Present',
-    sortDate: '2023-01-01',
+    dateLabel: 'May 2024-Present',
+    sortDate: '2024-05-01',
     source: 'Portfolio',
     summary: 'Active vulnerability research across government and transport targets, with work spanning SSRF, CSRF, SQL/NoSQL injection, authentication bypass, Burp Suite, Wireshark, and custom Python/Bash automation.',
     tags: ['Bug Bounty', 'YesWeHack', 'GovTech', 'LTA', 'Security'],
@@ -1107,10 +1121,10 @@ const careerAndEducationNotes: FieldNote[] = [
     title: 'ASRJC STEM Inc. - Robotics & Astronomy',
     kind: 'education',
     kinds: ['education'],
-    dateLabel: '2019-2020',
+    dateLabel: 'Mar 2019-Aug 2020',
     sortDate: '2020-08-01',
     source: 'Education',
-    summary: 'Led astronomy outreach, competed in the Singapore Astronomical Olympiad, built autonomous robotics systems, and received the ASRJC Outstanding Contribution Award.',
+    summary: 'Led astronomy outreach, competed in Singapore’s 7th Astronomical Olympiad, engineered an autonomous robot for the National Robotics Challenge, and received the ASRJC Outstanding Contribution Award.',
     tags: ['ASRJC', 'STEM Inc.', 'Astronomy', 'Robotics', 'Leadership'],
     linkedProjectIds: ['on-the-spectrum'],
   },
@@ -1343,7 +1357,7 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     scope: 'Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.',
     responsibilities: [
       'Build vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.',
-      'Improve processing and evaluation stages to upscale frames four times, measuring the gain on PSNR and SSIM.',
+      'Train UNet and other CNN architectures for single-image super-resolution, upscaling frames four times and lifting PSNR and SSIM.',
     ],
     outcomes: ['A low-cost camera reaches frame quality on par with premium sensors before its frames reach downstream robotics perception.'],
   },
@@ -1362,10 +1376,10 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
       'Build a live multi-site data layer over read-only Seeq historian pulls, mapping each site through configuration rather than forks, with Kalman smoothing, Welch PSD, change-point detection, and matrix-profile motifs in SciPy and pandas.',
       'Design a tool loop where the model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log with no write path to plant control.',
       'Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference.',
+      'Build MCP servers, 20+ regression tests, a headless notebook runner, and a deterministic model stand-in for GPU-free CI, with golden snapshots committed for reproducible runs.',
     ],
     outcomes: [
-      'Replaced four site-specific vendor optimizers with one solver-backed engine carrying no commercial licence, back-tested against the production system’s own historical targets.',
-      'Built 20+ regression tests, a headless notebook runner, a deterministic model stand-in for GPU-free CI, and committed golden snapshots for reproducible runs.',
+      'Consolidates four plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets.',
     ],
   },
   'career-abbott-intern': {
@@ -1378,7 +1392,9 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
       'Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling, then compared three approaches (heuristic, MIP, and genetic algorithm) to turn production objectives and constraints into decision-ready schedules.',
       'Validated a non-destructive, 15-stage changeover-data pipeline that exposes every intermediate state instead of mutating source data.',
       'Productionized a team-built APC simulator for live internal users on Azure App Service with Docker packaging, access restrictions, and runtime and session hardening.',
-      'Delivered practical AI upskilling to the regional engineering workforce for day-to-day operational use.',
+      'Trained regional engineering teams across Asia and Europe on repeatable AI workflows spanning seven areas: prompting, model selection, benchmarks, cost awareness, agents, validation, and safeguards.',
+      'Strengthened Excel, VBA, Python, master-data, and scheduling workflows with three safeguards: validation rules, correction tables, and reproducible intermediate stages, leaving every transformation auditable.',
+      'Documented deployment, access provisioning, and technical handover across three procedures, so internal manufacturing and engineer-training users stayed supported after transfer to owning teams.',
     ],
     outcomes: [
       'Processed five years of previously unseen, unclean operational data with zero execution failures.',
@@ -1393,14 +1409,26 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     scope: 'End-to-end civic platform delivery: admin and public frontends, backend, GIS allocation, national digital identity, and AWS deployment.',
     responsibilities: [
       'Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment.',
-      'Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address, so eligibility checks run without manual review.',
+      'Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address.',
       'Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations.',
       'Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager.',
+      'Engineered keyless GitHub Actions CI/CD on IAM OIDC federation across five pinned service repos, with gated Fargate migrations, mandatory RDS snapshots, and circuit-breaker auto-rollback.',
+      'Conducted field surveys of garden sites and structured physical plot records into geospatial datasets driving three platform workflows: mapping, plot allocation, and site planning.',
+      'Designed rules-based balloting workflows across four control points: eligibility checks, conflict resolution, exception handling, and administrative oversight, keeping allocation transparent and auditable.',
     ],
     outcomes: [
       'Kept garden-plot balloting fair for 150 residents signed up at release, and left the platform production-ready for national rollout across Singapore.',
       'Won the S$20,000 Sparks Community Innovation Fund.',
     ],
+  },
+  'career-ntuc-active-ageing': {
+    kind: 'professional',
+    role: 'Elderly Care Volunteer',
+    organization: 'NTUC Health Active Ageing Centre',
+    location: 'Singapore',
+    scope: 'Weekly senior-engagement activities at an active ageing centre.',
+    responsibilities: ['Coordinated weekly senior-engagement activities, building empathy for healthcare, accessibility, and community-focused product design.'],
+    outcomes: [],
   },
   'career-yeswehack-independent-researcher': {
     kind: 'professional',
@@ -1434,11 +1462,11 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
   },
   'education-asrjc-stem': {
     kind: 'education',
-    role: 'STEM Inc. member and outreach lead',
+    role: 'Astronomy Head & Robotics Member',
     organization: 'Anderson Serangoon Junior College',
     location: 'Singapore',
     scope: 'Astronomy outreach, autonomous robotics, competition work, and technical leadership.',
-    responsibilities: ['Led astronomy outreach, competed in the Singapore Astronomical Olympiad, and built autonomous robotics systems.'],
+    responsibilities: ['Led astronomy outreach, competed in Singapore’s 7th Astronomical Olympiad, and engineered an autonomous robot for the National Robotics Challenge.'],
     outcomes: ['Received the ASRJC Outstanding Contribution Award.'],
   },
 };
@@ -1449,10 +1477,11 @@ const experienceStartById: Record<string, string> = {
   'career-abbott-contract': '2026-06-01',
   'career-abbott-intern': '2026-01-01',
   'career-pa-churp': '2025-09-01',
+  'career-ntuc-active-ageing': '2025-09-01',
   'nus-education': '2023-08-01',
-  'career-yeswehack-independent-researcher': '2023-01-01',
+  'career-yeswehack-independent-researcher': '2024-05-01',
   'career-singapore-navy': '2022-01-01',
-  'education-asrjc-stem': '2019-01-01',
+  'education-asrjc-stem': '2019-03-01',
 };
 
 export const experienceRecords: ExperienceRecord[] = experienceNotes.map((note) => {

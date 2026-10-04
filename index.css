@@ -419,6 +419,13 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-figure-head h3 { font-size: 17px; letter-spacing: 0.03em; text-transform: uppercase; }
 .wb-figure-head span { font-size: 9.5px; letter-spacing: 0.1em; color: var(--color-neutral-700); white-space: nowrap; }
 .wb-figure-svg { width: 100%; display: block; }
+/* FIG. 05a, the Abbott schedule figure: tokens only, no hex in the markup. */
+.wb-gantt-label { font-family: var(--font-body); font-size: 9px; letter-spacing: 1px; fill: var(--color-neutral-700); }
+.wb-gantt-grid { stroke: var(--color-neutral-300); stroke-width: 1; }
+.wb-gantt-bars { stroke: var(--color-accent-700); stroke-width: 1; fill: none; }
+.wb-gantt-bars .t100 { fill: var(--color-accent-100); }
+.wb-gantt-bars .t300 { fill: var(--color-accent-300); }
+.wb-gantt-bars .t400 { fill: var(--color-accent-400); }
 
 /* Mechanism bench (lib/pgaMechanisms.ts). Canvases are authored in a fixed
    320x230 frame and only ever scale DOWN, so the 2x backing store stays sharp. */

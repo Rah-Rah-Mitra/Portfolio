@@ -223,20 +223,20 @@ export const SystemsWindow: React.FC = () => (
           <h3>Hybrid Flow Shop — CP-SAT Schedule</h3>
           <span>ILLUSTRATIVE SEQUENCE</span>
         </div>
-        <svg viewBox="0 0 640 132" className="wb-figure-svg" role="img" aria-label="Illustrative three-machine flow shop schedule">
-          <g fontFamily="Barlow, sans-serif" fontSize="9" fill="#5d5d60" letterSpacing="1">
+        <svg viewBox="0 0 640 132" className="wb-figure-svg wb-gantt" role="img" aria-label="Illustrative three-machine flow shop schedule">
+          <g className="wb-gantt-label">
             <text x="0" y="26">M1</text><text x="0" y="66">M2</text><text x="0" y="106">M3</text>
           </g>
-          <g stroke="#d4d4d7" strokeWidth="1">
+          <g className="wb-gantt-grid">
             <line x1="26" y1="0" x2="26" y2="132" />
             <line x1="180" y1="0" x2="180" y2="132" strokeDasharray="2 4" />
             <line x1="334" y1="0" x2="334" y2="132" strokeDasharray="2 4" />
             <line x1="488" y1="0" x2="488" y2="132" strokeDasharray="2 4" />
           </g>
-          <g stroke="#416180" fill="none" strokeWidth="1">
-            <rect x="26" y="12" width="128" height="20" fill="#b5d9fd" /><rect x="168" y="12" width="96" height="20" fill="#eef6ff" /><rect x="278" y="12" width="150" height="20" fill="#94bce3" /><rect x="442" y="12" width="88" height="20" fill="#eef6ff" />
-            <rect x="60" y="52" width="110" height="20" fill="#eef6ff" /><rect x="184" y="52" width="140" height="20" fill="#b5d9fd" /><rect x="338" y="52" width="92" height="20" fill="#eef6ff" /><rect x="444" y="52" width="120" height="20" fill="#94bce3" />
-            <rect x="98" y="92" width="86" height="20" fill="#94bce3" /><rect x="198" y="92" width="118" height="20" fill="#eef6ff" /><rect x="330" y="92" width="104" height="20" fill="#b5d9fd" /><rect x="448" y="92" width="140" height="20" fill="#eef6ff" />
+          <g className="wb-gantt-bars">
+            <rect x="26" y="12" width="128" height="20" className="t300" /><rect x="168" y="12" width="96" height="20" className="t100" /><rect x="278" y="12" width="150" height="20" className="t400" /><rect x="442" y="12" width="88" height="20" className="t100" />
+            <rect x="60" y="52" width="110" height="20" className="t100" /><rect x="184" y="52" width="140" height="20" className="t300" /><rect x="338" y="52" width="92" height="20" className="t100" /><rect x="444" y="52" width="120" height="20" className="t400" />
+            <rect x="98" y="92" width="86" height="20" className="t400" /><rect x="198" y="92" width="118" height="20" className="t100" /><rect x="330" y="92" width="104" height="20" className="t300" /><rect x="448" y="92" width="140" height="20" className="t100" />
           </g>
         </svg>
         <figcaption>FIG. 05a — SimPy discrete-event model + OR-Tools CP-SAT interval variables; robust-optimization research for uncertainty. Built at Abbott; operating details abstracted.</figcaption>

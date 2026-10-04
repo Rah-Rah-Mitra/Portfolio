@@ -84,6 +84,17 @@ describe('field workbench — deep links', () => {
     expect(container.querySelector('[data-win="home"]')?.hasAttribute('data-focused')).toBe(false);
   });
 
+  it('raises Home above Selected Work on a plain visit', () => {
+    setup('/');
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
+    const { container } = render(<FieldWorkbench />);
+    act(() => { for (let i = 0; i < frames.length && i < 50; i += 1) frames[i]!(16 * i); });
+    const z = (id: string) => Number(container.querySelector<HTMLElement>(`[data-win="${id}"]`)?.style.zIndex || 0);
+    expect(container.querySelector('[data-win="home"]')?.hasAttribute('data-focused')).toBe(true);
+    expect(z('home')).toBeGreaterThan(z('selected-work'));
+  });
+
   it('leaves the boot state alone when there is no deep link', () => {
     setup('/');
     const { container } = render(<FieldWorkbench />);

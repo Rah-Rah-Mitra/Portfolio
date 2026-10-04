@@ -60,6 +60,29 @@ describe('Mechanism bench', () => {
     expect(raf).toHaveBeenCalledTimes(1);
   });
 
+  it('stops requesting frames while no mechanism is on screen, and resumes when one is', () => {
+    setup(false);
+    let report: IntersectionObserverCallback = () => {};
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) { report = callback; }
+      observe = vi.fn(); unobserve = vi.fn(); disconnect = vi.fn();
+    });
+    const frames: FrameRequestCallback[] = [];
+    raf = vi.fn((callback: FrameRequestCallback) => frames.push(callback));
+    vi.stubGlobal('requestAnimationFrame', raf);
+    const { container } = render(<MechanismBench />);
+    const canvases = [...container.querySelectorAll('canvas')];
+    const see = (visible: boolean) => report(
+      canvases.map((target) => ({ target, isIntersecting: visible }) as unknown as IntersectionObserverEntry), {} as IntersectionObserver);
+
+    see(false); // the Systems Lab is closed: every canvas is display:none
+    frames.splice(0).forEach((frame) => frame(16));
+    expect(frames).toHaveLength(0);
+
+    see(true);
+    expect(frames).toHaveLength(1);
+  });
+
   it('draws a static frame and starts no loop under prefers-reduced-motion', () => {
     setup(true);
     render(<MechanismBench />);

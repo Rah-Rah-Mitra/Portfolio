@@ -76,6 +76,8 @@ interface Engine {
 }
 
 const CABLE_SAG = 10;
+// Below this every rig spring, swing and scroll velocity counts as at rest.
+const SETTLED = 0.01;
 
 const FieldWorkbench: React.FC = () => {
   const rootRef = React.useRef<HTMLDivElement>(null);
@@ -86,8 +88,14 @@ const FieldWorkbench: React.FC = () => {
   const [pendingTarget, setPendingTarget] = React.useState<{ app: DesktopAppId; anchor: string } | null>(null);
   const engineRef = React.useRef<Engine>({
     bounds: { ...DEFAULT_BOUNDS }, maxed: {}, rigDone: {}, rigGeo: {}, scroll: {}, wt: {}, rot: {},
-    hoists: [], focused: 'home', z: 60, dragCtx: null, dragVel: 0, motion: true,
+    // focused stays null until a window is really focused (boot layout or a deep
+    // link), so the boot frame can tell a plain visit from a deep link.
+    hoists: [], focused: null, z: 60, dragCtx: null, dragVel: 0, motion: true,
   });
+  // The rig loop sleeps once everything has settled; anything that can move the
+  // rig again (scroll, a nudge, a drag, focus, layout, resize, a motion-setting
+  // change, a sheet's content changing height) wakes it through this.
+  const wakeRef = React.useRef<() => void>(() => {});
 
   const winEl = (id: DesktopAppId) => rootRef.current?.querySelector<HTMLElement>(`[data-win="${id}"]`) ?? null;
   const deskEl = () => rootRef.current?.querySelector<HTMLElement>('[data-desk]') ?? null;
@@ -113,6 +121,7 @@ const FieldWorkbench: React.FC = () => {
     if (!el) return;
     engineRef.current.hoists = Array.from(el.querySelectorAll<HTMLElement>('[data-hoist]'))
       .map((hoist) => ({ el: hoist, y: 30, v: 0, a: 0, av: 0 }));
+    wakeRef.current();
   }, []);
 
   const layoutRig = React.useCallback((id: DesktopAppId) => {
@@ -254,7 +263,7 @@ const FieldWorkbench: React.FC = () => {
     const root = rootRef.current;
     if (!root) return;
 
-    const syncMotion = () => { engine.motion = !motionHalted(); };
+    const syncMotion = () => { engine.motion = !motionHalted(); wakeRef.current(); };
     syncMotion();
     const stopMotionSync = onMotionChange(syncMotion);
 
@@ -269,6 +278,7 @@ const FieldWorkbench: React.FC = () => {
       drag.el.style.top = `${ny}px`;
       engine.bounds[drag.id][0] = nx;
       engine.bounds[drag.id][1] = ny;
+      wakeRef.current();
     };
     const onUp = (event: PointerEvent) => {
       if (engine.dragCtx && event.pointerId === engine.dragCtx.pid) engine.dragCtx = null;
@@ -281,6 +291,7 @@ const FieldWorkbench: React.FC = () => {
       if (!entry) return;
       const rect = hoist.getBoundingClientRect();
       entry.av += (event.clientX - rect.left - rect.width / 2 > 0 ? -1 : 1) * 24;
+      wakeRef.current();
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || !engine.focused) return;
@@ -365,19 +376,23 @@ const FieldWorkbench: React.FC = () => {
 
     let raf = 0;
     const tick = () => {
-      raf = requestAnimationFrame(tick);
+      raf = 0;
       engine.dragVel = (engine.dragVel || 0) * (engine.dragCtx ? 0.6 : 0.84);
+      // Nothing focused or laid out yet means nothing to move: sleep until a
+      // focus or layout wakes the loop.
       const id = engine.focused;
       if (!id) return;
       const el = winEl(id);
       if (!el || el.style.display === 'none') return;
       const geo = engine.rigGeo[id];
       if (!geo) return;
+      let settled = !engine.dragCtx && Math.abs(engine.dragVel) < SETTLED;
       const motion = engine.motion;
       const scrollState = engine.scroll[id] ?? { el: null, st: 0, prev: 0, vel: 0, max: 1 };
       const dv = (scrollState.st ?? 0) - (scrollState.prev ?? 0);
       scrollState.prev = scrollState.st ?? 0;
       scrollState.vel = (scrollState.vel || 0) * 0.86 + dv * 0.14;
+      settled &&= dv === 0 && Math.abs(scrollState.vel) < SETTLED;
       const progress = scrollState.max > 0 ? Math.min(1, Math.max(0, (scrollState.st || 0) / scrollState.max)) : 0;
       const beam = el.querySelector<SVGSVGElement>(`[data-rig="${id}"]`);
       const rail = el.querySelector<SVGSVGElement>(`[data-rail="${id}"]`);
@@ -396,6 +411,7 @@ const FieldWorkbench: React.FC = () => {
       } else {
         weight.y = target; weight.v = 0;
       }
+      settled &&= Math.abs(weight.y - target) < SETTLED && Math.abs(weight.v) < SETTLED;
       rail.querySelector('[data-weight]')?.setAttribute('transform', `translate(12,${(weight.y + 14).toFixed(1)})`);
       beam.querySelector('[data-drop]')?.setAttribute('d', `M${geo.sx + 8.5} 15 H${geo.W + 12}`);
       const readout = el.querySelector(`[data-ro="${id}"]`);
@@ -414,15 +430,31 @@ const FieldWorkbench: React.FC = () => {
             const swingTarget = Math.max(-6.5, Math.min(6.5, -(scrollState.vel * 0.14 + (engine.dragVel || 0) * 0.45)));
             const [na, nav] = spring(hoist.a, hoist.av, swingTarget, 52, 4.6, 1 / 60);
             hoist.a = Math.max(-9, Math.min(9, na)); hoist.av = nav;
+            settled &&= Math.abs(hoist.y - ty) < SETTLED && Math.abs(hoist.v) < SETTLED
+              && Math.abs(hoist.a - swingTarget) < SETTLED && Math.abs(hoist.av) < SETTLED;
           } else {
             hoist.y = ty; hoist.a = 0;
           }
           hoist.el.style.transform = `translateY(${hoist.y.toFixed(2)}px) rotate(${hoist.a.toFixed(2)}deg)`;
         }
       }
+      if (!settled) raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const wake = () => { if (!raf) raf = requestAnimationFrame(tick); };
+    wakeRef.current = wake;
+
+    // Content that changes height under a still scroll position (an image
+    // landing, a lab switching tabs, the builder loading its blocks) moves the
+    // hoists' targets without a scroll event, so sheet content wakes it too.
+    const sheets = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(wake);
+    rootRef.current?.querySelectorAll('[data-scroll] > *').forEach((child) => sheets?.observe(child));
+
+    wake();
+    return () => {
+      cancelAnimationFrame(raf);
+      sheets?.disconnect();
+      wakeRef.current = () => {};
+    };
   }, [applyBounds, focusWin, layoutRig]);
 
   const onScroll = (id: DesktopAppId) => (event: React.UIEvent<HTMLDivElement>) => {
@@ -433,6 +465,7 @@ const FieldWorkbench: React.FC = () => {
     state.st = el.scrollTop;
     state.max = el.scrollHeight - el.clientHeight;
     engine.scroll[id] = state;
+    wakeRef.current();
   };
 
   const dragStart = (id: DesktopAppId) => (event: React.PointerEvent<HTMLElement>) => {

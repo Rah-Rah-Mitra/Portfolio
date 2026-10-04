@@ -77,10 +77,13 @@ export const MechanismBench: React.FC = () => {
     };
 
     const observer = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => {
-        const rec = live.get((entry.target as HTMLElement).dataset.mechId || '');
-        if (rec && rec.el === entry.target) rec.visible = entry.isIntersecting;
-      }),
+      (entries) => {
+        entries.forEach((entry) => {
+          const rec = live.get((entry.target as HTMLElement).dataset.mechId || '');
+          if (rec && rec.el === entry.target) rec.visible = entry.isIntersecting;
+        });
+        resume();
+      },
       { rootMargin: '200px' },
     );
 
@@ -156,12 +159,25 @@ export const MechanismBench: React.FC = () => {
         const rec = attach(el, mech);
         live.set(id, rec);
         if (!running) render(rec);
+        else resume();
       }
     };
     scanRef.current = scan;
 
-    const frame = (now: number) => {
+    const anyVisible = () => {
+      for (const rec of live.values()) if (rec.visible && !rec.failed) return true;
+      return false;
+    };
+    // The bench mounts with the (usually closed) Systems Lab, so nothing on
+    // screen means no frames at all; the observer resumes the loop.
+    const resume = () => {
+      if (!running || raf || !anyVisible()) return;
+      last = 0;
       raf = requestAnimationFrame(frame);
+    };
+
+    const frame = (now: number) => {
+      raf = 0;
       let dt = (now - (last || now)) / 1000;
       last = now;
       if (!(dt > 0) || dt > 0.06) dt = 1 / 60;
@@ -178,6 +194,7 @@ export const MechanismBench: React.FC = () => {
         }
         render(rec);
       }
+      if (anyVisible()) raf = requestAnimationFrame(frame);
     };
 
     const syncMotion = () => {
@@ -186,8 +203,7 @@ export const MechanismBench: React.FC = () => {
       if (wanted === running) return;
       running = wanted;
       if (running) {
-        last = 0;
-        raf = requestAnimationFrame(frame);
+        resume();
       } else {
         cancelAnimationFrame(raf);
         raf = 0;

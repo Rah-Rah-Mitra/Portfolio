@@ -102,6 +102,12 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `onMotionChange()` re-syncs. Every animation loop stops, or draws one still
   frame, through it; no loop queries prefers-reduced-motion on its own
   (`lib/experienceMode.ts` reads it once, for the heavy-asset policy).
+  Loops also sleep when idle instead of requesting a frame every vsync: the
+  window rig in FieldWorkbench stops once springs settle and wakes through
+  `wakeRef` (scroll, nudge, drag, focus/layout, resize, motion change, sheet
+  content resizing); MechanismBench stops while no canvas is on screen. Both
+  are pinned in tests/workbench-rig-idle.dom.test.tsx and
+  tests/mechanism-bench.dom.test.tsx.
 - Retained layers: `AskThePage` (AI), `EffectsLabPanel` (FX) and
   `AudioSpriteController` (opt-in sound cues) plus their providers
   (`ExperienceModeProvider`, `EffectsProvider`). The panels reach the workbench via

@@ -1,36 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import { readFile } from 'node:fs/promises';
 import {
   detectExperienceCapabilities,
   modeFromSearch,
   resolveExperiencePolicy,
-  withExperienceMode,
 } from '../lib/experienceMode';
 
 describe('portfolio experience mode', () => {
-  it('recognizes the canonical Quick Scan query', () => {
+  it('still recognizes an explicit ?mode= in the URL', () => {
     expect(modeFromSearch('?mode=scan')).toBe('scan');
     expect(modeFromSearch('?ref=recruiter&mode=scan')).toBe('scan');
     expect(modeFromSearch('?mode=guided')).toBe('guided');
     expect(modeFromSearch('')).toBeNull();
   });
 
-  it('preserves the current hash while writing canonical mode history', () => {
-    expect(withExperienceMode('https://rahul-mitra.com/?ref=nus#project-churp', 'scan')).toBe(
-      'https://rahul-mitra.com/?ref=nus&mode=scan#project-churp',
-    );
-    expect(withExperienceMode('https://rahul-mitra.com/?ref=nus&mode=scan#project-churp', 'guided')).toBe(
-      'https://rahul-mitra.com/?ref=nus#project-churp',
-    );
-  });
-
-  it('defaults Save-Data and failed or low WebGL to Quick Scan', () => {
-    expect(resolveExperiencePolicy({ saveData: true, reducedMotion: false, webgl: 'full' })).toMatchObject({ mode: 'scan', allowHeavyAssets: false });
-    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: false, webgl: 'failed' })).toMatchObject({ mode: 'scan', allowHeavyAssets: false, hardFailure: true });
-    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: false, webgl: 'low' })).toMatchObject({ mode: 'scan', allowHeavyAssets: false });
+  it('withholds heavy assets under Save-Data', () => {
+    expect(resolveExperiencePolicy({ saveData: true, reducedMotion: false })).toMatchObject({ mode: 'scan', allowHeavyAssets: false, reason: 'save-data' });
   });
 
   it('keeps reduced-motion rendering static without forcing Quick Scan', () => {
-    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: true, webgl: 'full' })).toEqual({
+    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: true })).toEqual({
       mode: 'guided',
       allowHeavyAssets: false,
       lowMotion: true,
@@ -40,29 +29,35 @@ describe('portfolio experience mode', () => {
     });
   });
 
-  it('enables enhancements when reduced-motion is explicitly overridden for the session', () => {
-    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: true, webgl: 'full' }, 'guided')).toEqual({
+  it('lets an explicit ?mode= override the device, in both directions', () => {
+    expect(resolveExperiencePolicy({ saveData: true, reducedMotion: true }, 'guided')).toEqual({
       mode: 'guided',
       allowHeavyAssets: true,
       lowMotion: false,
       hardFailure: false,
-      reason: 'session-choice',
+      reason: 'query',
       choice: 'explicit',
     });
+    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: false }, 'scan')).toMatchObject({ mode: 'scan', allowHeavyAssets: false, lowMotion: true });
   });
 
-  it('honors a session choice except after a hard WebGL failure', () => {
-    expect(resolveExperiencePolicy({ saveData: true, reducedMotion: false, webgl: 'full' }, 'guided')).toMatchObject({ mode: 'guided', allowHeavyAssets: true });
-    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: false, webgl: 'low' }, 'guided')).toMatchObject({ mode: 'guided', allowHeavyAssets: true });
-    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: false, webgl: 'failed' }, 'guided')).toMatchObject({ mode: 'scan', allowHeavyAssets: false, hardFailure: true });
+  it('allows heavy assets by default and can never fail hard', () => {
+    expect(resolveExperiencePolicy({ saveData: false, reducedMotion: false })).toMatchObject({ mode: 'guided', allowHeavyAssets: true, hardFailure: false });
   });
 
-  it('detects Save-Data, reduced motion, and low WebGL without assuming browser globals', () => {
-    const capabilities = detectExperienceCapabilities({
-      saveData: true,
-      reducedMotion: true,
-      createWebglContext: () => ({ maxTextureSize: 2048 }),
-    });
-    expect(capabilities).toEqual({ saveData: true, reducedMotion: true, webgl: 'low' });
+  it('detects Save-Data and reduced motion without assuming browser globals', () => {
+    expect(detectExperienceCapabilities({ saveData: true, reducedMotion: true })).toEqual({ saveData: true, reducedMotion: true });
+  });
+
+  it('no longer probes WebGL or writes ?mode= into the URL', async () => {
+    // The probe guarded a WebGL world the site no longer ships; the fluid backdrop
+    // checks WebGL2 itself. Writing ?mode=scan rewrote Save-Data visitors' URLs
+    // for a Quick Scan switch that no longer exists.
+    const [library, context] = await Promise.all([
+      readFile(new URL('../lib/experienceMode.ts', import.meta.url), 'utf8'),
+      readFile(new URL('../contexts/ExperienceModeContext.tsx', import.meta.url), 'utf8'),
+    ]);
+    expect(library).not.toMatch(/getContext\(|MAX_TEXTURE_SIZE|webgl-failure|low-webgl/);
+    expect(context).not.toMatch(/history\.(?:push|replace)State|sessionStorage|signalWorldPolicyChange/);
   });
 });

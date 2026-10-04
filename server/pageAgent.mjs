@@ -4,7 +4,6 @@ import { emitServerLog } from './posthogTelemetry.mjs';
 export const DEFAULT_GEMINI_MODEL = 'gemma-4-26b-a4b-it';
 
 const labModes = new Set(['intrinsics', 'extrinsics', 'optics', 'stereo']);
-const sceneIds = new Set(['calibration', 'systems-in-motion', 'spatial-systems', 'selected-work', 'camera-laboratory', 'departure']);
 const canonicalProjectIds = new Set([
   'swarmline', 'on-the-spectrum', 'geometry', 'information-lab', 'arcane', 'hailo-training', 'hybrid-flow-shop-digital-twin',
   'azure-apc-web-simulator', 'changeover-data-quality-pipeline', 'project-utopia', 'volt-pulse-sg', 'smart-exam',
@@ -40,10 +39,8 @@ export const sanitizeCommands = (commands, pageState = {}) => {
     if (command.type === 'focusProject' && projectIds.has(command.projectId)) sanitized.push({ type: command.type, projectId: command.projectId });
     if (command.type === 'openTechnicalLab' && (command.mode === undefined || labModes.has(command.mode))) sanitized.push(command.mode ? { type: command.type, mode: command.mode } : { type: command.type });
     if (command.type === 'focusGuideChapter' && chapterIds.has(command.chapterId)) sanitized.push({ type: command.type, chapterId: command.chapterId });
-    if (command.type === 'enterExploreMode' && sceneIds.has(command.sceneId)) sanitized.push({ type: command.type, sceneId: command.sceneId });
     if (command.type === 'openDesktopApp' && desktopAppIds.has(command.appId)) sanitized.push({ type: command.type, appId: command.appId });
     if (command.type === 'minimizeDesktopApp' && desktopAppIds.has(command.appId)) sanitized.push({ type: command.type, appId: command.appId });
-    if (command.type === 'setQuickScan' && typeof command.enabled === 'boolean') sanitized.push({ type: command.type, enabled: command.enabled });
   }
   return sanitized;
 };
@@ -57,16 +54,34 @@ const sanitizeReferences = (references, allowedLinks) => {
   });
 };
 
+/**
+ * What the interactive parts of the site are, in the server's own words. The page
+ * state is client-supplied and capped at PAGE_STATE_CHARS; these lines are
+ * neither, so the model can describe the labs without the claim riding on what a
+ * browser sent. components/AskThePage.tsx words its local fallback the same way.
+ */
+export const SITE_EXHIBITS = [
+  'Camera Lab (#technical-lab, app camera-lab, command openTechnicalLab): one synthetic, deterministic camera scene with four models: intrinsics (the K matrix and lens distortion), extrinsics (pose and projection), thin-lens optics (depth of field), and rectified stereo depth, plus a Zhang calibration (FIG. 06b) of the configured camera from six seeded synthetic views: one homography per view by normalised DLT, K in closed form, then Levenberg–Marquardt refinement with ±1σ, on synthetic detections with no real camera or image data. A portfolio instrument backed by the CS4277 top-student record, separate from professional work.',
+  'Systems Lab (#systems-lab, app systems-lab): an illustrative figure of the Abbott hybrid flow-shop schedule (operating details abstracted), the 15-stage changeover pipeline figure, the Mechanism Bench of six planar mechanisms, an interactive permutation flow-shop teaching model that compares the exact optimum with Johnson’s rule and NEH on synthetic, seeded jobs (not Abbott data), and a contained matter.js drop test.',
+  'FX panel: Pause all motion, sound cues, and two desk backgrounds that stay off until switched on: an N-body gravity field computed with a fast multipole method, and a WebGL2 fluid. There is no Quick Scan switch any more: every window is plain, readable HTML, and Pause all motion halts the site’s animation. An old ?mode=scan link still opens the page without the desk backgrounds or sound cues, and without ?app= deep links.',
+  '3D World (#world, app world-3d): a CSS drawing of a bench volume that points to the spatial record. It renders no live 3D scene.',
+  'Surfaces: page state surface field-workbench is the desktop (881px and wider), where every window opens. field-index is the phone registry, which does not show the Camera Lab, the Systems Lab or the 3D World: on field-index say they are desktop windows (881px and wider) instead of offering to open them.',
+];
+
 export const localAgent = (message, reason = 'model_unavailable') => {
   const text = String(message || '').toLowerCase();
   const commands = [];
-  let reply = 'I could not find that in Rahul’s portfolio record. Ask about optimization, 3D computer vision, security, a résumé, or Explore World.';
-  let references = [];
-  if (text.includes('technical lab') || text.includes('slam') || text.includes('calibration study')) {
+  let reply = 'The offline index has no ready answer for that, which does not mean the record lacks it: Rahul’s roles are in Experience, and his email and profiles are in Contact. Try asking about optimization, 3D computer vision, security, a résumé, or the Camera and Systems Labs.';
+  let references = [{ label: 'Read the experience timeline', href: '#experience' }, { label: 'Contact', href: '#contact' }];
+  if (text.includes('camera lab') || text.includes('technical lab') || text.includes('slam') || text.includes('calibrat') || text.includes('zhang')) {
     const mode = [...labModes].find((candidate) => text.includes(candidate));
-    reply = 'The Camera Laboratory exposes grounded intrinsics, extrinsics, optics, and stereo controls as a portfolio experiment.';
-    references = [{ label: 'Open the Camera Laboratory', href: '#technical-lab' }];
+    reply = 'The Camera Lab is one synthetic, deterministic camera scene with four models: intrinsics (the K matrix and lens distortion), extrinsics (pose and projection), thin-lens optics (depth of field), and rectified stereo depth. It is a portfolio instrument backed by Rahul’s CS4277 top-student record, kept separate from professional work; the SLAM/RADIO benchmark stays unpublished until its reproducibility and evidence gates pass. It also runs a seeded Zhang calibration of that camera (homographies, closed-form K, Levenberg–Marquardt) on synthetic detections. It is a desktop window (881px and wider).';
+    references = [{ label: 'Open the Camera Lab', href: '#technical-lab' }];
     commands.push(mode ? { type: 'openTechnicalLab', mode } : { type: 'openTechnicalLab' });
+  } else if (text.includes('systems lab') || text.includes('mechanism bench') || text.includes('drop test') || text.includes('teaching model') || text.includes('permutation flow') || text.includes('johnson') || /\bneh\b/.test(text)) {
+    reply = 'The Systems Lab holds deterministic exhibits: an illustrative figure of the Abbott hybrid flow-shop schedule (operating details abstracted), the 15-stage changeover pipeline, the Mechanism Bench of six planar mechanisms, an interactive permutation flow-shop teaching model that compares the exact optimum with Johnson’s rule and NEH on synthetic, seeded jobs (not Abbott data), and a contained matter.js drop test. It is a desktop window (881px and wider).';
+    references = [{ label: 'Open the Systems Lab', href: '#systems-lab' }];
+    commands.push({ type: 'openDesktopApp', appId: 'systems-lab' });
   } else if (text.includes('asyncddgs')) {
     reply = 'AsyncDDGS is Rahul’s maintained asyncio-first DuckDuckGo client, built with aiohttp and released through a tested PyPI workflow.';
     references = [{ label: 'Inspect AsyncDDGS', href: '#project-asyncddgs' }];
@@ -75,12 +90,24 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took the five-person team Rahul led to the finals of the Singapore Defense Tech Hackathon 2026 (1,300+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
     references = [{ label: 'Inspect Swarmline', href: '#project-swarmline' }];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
+  } else if (text.includes('amazon')) {
+    reply = 'Since Jul 2026 Rahul has been a Robotics Vision Engineer with Amazon (BlendED AI+X), building vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.';
+    references = [{ label: 'Read the experience timeline', href: '#experience' }];
+    commands.push({ type: 'focusExperience', experienceId: 'career-amazon-vision' });
+  } else if (text.includes('stmicro') || text.includes('st micro')) {
+    reply = 'Since Aug 2026 Rahul has been designing an AI-driven put-away recommendation system for STMicroelectronics’ Singapore warehouse, an NUS System Design Project in operations research, with capacity-aware decisions drawn from picking history, demand forecasts, and available capacity.';
+    references = [{ label: 'Read the experience timeline', href: '#experience' }];
+    commands.push({ type: 'focusExperience', experienceId: 'career-stmicro-or' });
+  } else if (text.includes('contact') || text.includes('email') || text.includes('get in touch')) {
+    reply = 'Rahul’s email, LinkedIn, and GitHub are in the Résumés & Contact window, beside the eight résumés.';
+    references = [{ label: 'Contact', href: '#contact' }];
+    commands.push({ type: 'focusGuideChapter', chapterId: 'contact' });
   } else if (text.includes('experience') || text.includes('timeline')) {
     reply = 'The experience timeline keeps Rahul’s roles, responsibilities, and outcomes in conventional semantic HTML.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience' });
   } else if (text.includes('guide') || text.includes('chapter')) {
-    reply = 'The guide points toward evidence while the portfolio record remains stationary and readable.';
+    reply = 'Each chapter of the record is a window on the workbench: Selected Work, Experience, the project archive, the labs, Capabilities, Proof, and Résumés. The rail opens any of them, and on a phone they become one searchable registry.';
     references = [{ label: 'Selected work', href: '#work' }];
     commands.push({ type: 'focusGuideChapter', chapterId: 'work' });
   } else if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
@@ -103,14 +130,16 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     reply = 'Rahul’s security record covers responsible bug-bounty research, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';
     references = [{ label: 'Arcane security tooling', href: '#project-arcane' }, { label: 'Security experience and proof', href: '#proof' }];
     commands.push({ type: 'focusGuideChapter', chapterId: 'proof' });
+  } else if (/\bfx\b/.test(text) || text.includes('quick scan') || text.includes('pause') || text.includes('reduce motion') || text.includes('reduced motion') || text.includes('n-body') || text.includes('nbody') || text.includes('gravity field') || text.includes('fluid') || text.includes('backdrop') || text.includes('desk background') || text.includes('sound')) {
+    // No command: nothing opens the FX panel by id, and there is no switch left
+    // to flip. Quick Scan questions land here because the honest answer is what
+    // replaced it, and what an old ?mode=scan link still does
+    // (lib/experienceMode.ts keeps it on purpose).
+    reply = 'The FX panel holds Pause all motion, sound cues, and two desk backgrounds that stay off until switched on: an N-body gravity field computed with a fast multipole method, and a WebGL2 fluid. There is no Quick Scan switch any more: every window is plain, readable HTML, and Pause all motion halts the site’s animation. An old ?mode=scan link still opens the page without the desk backgrounds or sound cues, and without ?app= deep links.';
   } else if (text.includes('world') || text.includes('map')) {
-    reply = 'Explore World marks the shared optical test bench as this site’s enhancement target. Its semantic anchor is available now; the evidence document remains the shipped experience.';
+    reply = 'Explore World opens the 3D World window at #world: a CSS drawing of a bench volume, not a rendered 3D scene. It points to the spatial record: the CS4277 top-student result in 3D computer vision, the Camera Lab’s synthetic camera models, and 3D builds such as OnTheSpectrum. It is a desktop window (881px and wider).';
     references = [{ label: 'Explore World', href: '#world' }];
-    commands.push({ type: 'enterExploreMode', sceneId: 'camera-laboratory' });
-  } else if (text.includes('quick scan') || text.includes('concise')) {
-    reply = 'Quick Scan preserves the complete evidence document and omits optional world, video, and sound enhancements.';
-    references = [{ label: 'Quick Scan overview', href: '#home' }];
-    commands.push({ type: 'setQuickScan', enabled: true });
+    commands.push({ type: 'openDesktopApp', appId: 'world-3d' });
   } else if (text.includes('project') || text.includes('work')) {
     reply = 'The selected work is organized as evidence-led briefs covering context, contribution, engineering approach, and inspectable proof.';
     references = [{ label: 'Browse selected engineering work', href: '#work' }];
@@ -127,7 +156,7 @@ export const PAGE_STATE_CHARS = 28_000;
 
 const buildPrompt = ({ message, pageState }) => `
 You are the private assistant for Rahul Mitra's professional portfolio.
-Answer only from CURRENT PAGE STATE. Never infer credentials, metrics, professional robotics/SLAM experience, Gaussian-splatting research, or project outcomes not explicitly present. If evidence is absent, say so plainly.
+Answer only from SITE EXHIBITS and CURRENT PAGE STATE. Never infer credentials, metrics, professional robotics/SLAM experience, Gaussian-splatting research, or project outcomes not explicitly present. If evidence is absent, say so plainly.
 Return strict JSON only:
 {"reply":"concise grounded answer","references":[{"label":"useful label","href":"exact allowlisted link"}],"commands":[]}
 
@@ -137,11 +166,12 @@ Allowed commands:
 - {"type":"focusProject","projectId":"a project id from page state"}
 - {"type":"openTechnicalLab","mode":"optional intrinsics|extrinsics|optics|stereo"}
 - {"type":"focusGuideChapter","chapterId":"a chapter id from page state"}
-- {"type":"enterExploreMode","sceneId":"camera-laboratory"}
 - {"type":"openDesktopApp","appId":"a workstation app id from page state"}
 - {"type":"minimizeDesktopApp","appId":"a workstation app id from page state"}
-- {"type":"setQuickScan","enabled":true|false}
 Never return JavaScript, CSS, selectors, unlisted URLs, or arbitrary commands.
+
+SITE EXHIBITS (describe the site's interactive parts only this way):
+${SITE_EXHIBITS.map((line) => `- ${line}`).join('\n')}
 
 CURRENT PAGE STATE:
 ${JSON.stringify(pageState).slice(0, PAGE_STATE_CHARS)}

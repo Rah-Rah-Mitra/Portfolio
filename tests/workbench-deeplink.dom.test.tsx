@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FieldWorkbench from '../components/workbench/FieldWorkbench';
 import FieldIndex from '../components/workbench/FieldIndex';
@@ -70,6 +70,18 @@ describe('field workbench — deep links', () => {
     render(<FieldWorkbench />);
     expect(scrolls.length).toBe(1);
     for (const call of scrolls) expect(call.display).not.toBe('none');
+  });
+
+  it('keeps the deep-linked window in front once the boot layout runs', () => {
+    setup('/?app=camera-lab');
+    // Run frames for real, in order: the deep link's focus frame is queued
+    // before the boot layout's, and the boot layout used to re-focus Home.
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
+    const { container } = render(<FieldWorkbench />);
+    act(() => { for (let i = 0; i < frames.length && i < 50; i += 1) frames[i]!(16 * i); });
+    expect(container.querySelector('[data-win="camera-lab"]')?.hasAttribute('data-focused')).toBe(true);
+    expect(container.querySelector('[data-win="home"]')?.hasAttribute('data-focused')).toBe(false);
   });
 
   it('leaves the boot state alone when there is no deep link', () => {

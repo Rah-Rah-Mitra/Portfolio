@@ -554,7 +554,7 @@
         "context": "AI Engineer Hackathon 2026, with 7 hours on the clock: could a game generate its own levels end to end rather than shipping authored ones?",
         "contribution": "Created the game and the pipeline under it, wiring Codex and Blender MCP into a local-first Blender-to-Three.js workflow.",
         "approach": "Python orchestration, Blender MCP, Three.js runtime integration, GLB assets with metadata, previews, playable-world QA, and Remotion video workflows.",
-        "outcome": "A playable game of AI-driven infinite levels inside the 7-hour window, and the reusable pipeline that still supplies this site’s spatial asset library."
+        "outcome": "A playable game of AI-driven infinite levels inside the 7-hour window, and the reusable pipeline that supplied this site’s earlier 3D asset library."
       }
     },
     {
@@ -860,11 +860,11 @@
       "id": "portfolio-repo",
       "title": "Portfolio",
       "category": "Portfolio Infrastructure",
-      "description": "The interactive portfolio itself: React, Three.js, CFD background experiments, chatbot controls, and profile switching.",
+      "description": "The interactive portfolio itself: a React and TypeScript blueprint workbench with an AI page assistant, an MCP résumé builder, and in-browser labs for camera calibration, flow-shop sequencing, an N-body gravity field, and a WebGL2 fluid.",
       "tags": [
         "TypeScript",
         "React",
-        "Three.js",
+        "WebGL2",
         "Portfolio"
       ],
       "repoUrl": "https://github.com/Rah-Rah-Mitra/Portfolio",
@@ -1217,7 +1217,21 @@
       "category": "Security Tooling",
       "stack": "Rust · Security · Automation",
       "domain": "Security",
-      "href": "https://github.com/Rah-Rah-Mitra/Arcane"
+      "href": "https://github.com/Rah-Rah-Mitra/Arcane",
+      "links": [
+        {
+          "label": "Arcane-PP",
+          "href": "https://github.com/Rah-Rah-Mitra/Arcane-PP"
+        },
+        {
+          "label": "Arcane-GLM",
+          "href": "https://github.com/Rah-Rah-Mitra/Arcane-GLM"
+        },
+        {
+          "label": "Arcane-OCR",
+          "href": "https://github.com/Rah-Rah-Mitra/Arcane-OCR"
+        }
+      ]
     },
     {
       "id": "hailo-training",
@@ -1283,7 +1297,7 @@
       "date": "2026-01",
       "title": "Portfolio",
       "category": "Portfolio Infrastructure",
-      "stack": "TypeScript · React · Three.js",
+      "stack": "TypeScript · React · WebGL2",
       "domain": "Software",
       "href": "https://github.com/Rah-Rah-Mitra/Portfolio"
     },
@@ -1328,7 +1342,13 @@
       "title": "Maritime Deficiency Severity Forecasting",
       "category": "AI & NLP",
       "stack": "BERT · DNN · NLP",
-      "domain": "AI"
+      "domain": "AI",
+      "links": [
+        {
+          "label": "Certificate of submission",
+          "href": "/certificates/maritime-hackathon-2025-submission.pdf"
+        }
+      ]
     },
     {
       "id": "smart-exam",

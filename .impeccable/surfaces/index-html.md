@@ -2,17 +2,16 @@
 version: 1
 slug: "index-html"
 primary_target: "index.html"
-related_targets: ["App.tsx","index.css"]
+related_targets: ["App.tsx","index.css","components/workbench/FieldWorkbench.tsx","components/workbench/FieldIndex.tsx"]
 ---
 
 # Portfolio surface brief
 
-- Scope and mode: the recruiter portfolio at `index.html`; Experience mode with a fast Persuade opening inside an optional precision-retro workstation.
-- Audience and job: recruiters should understand Rahul's connected intelligent-systems position, representative proof, suitable résumé, and contact path in roughly 20 seconds. Technical visitors can move deliberately between full chapters, filter the factual record, and open the optional assistant, Effects Lab, or Spatial Map.
-- Outcome and proof: preserve immediate positioning, current work, representative projects, résumé, profiles, and contact while moving deeper evidence and deterministic exhibits into explicitly named applications.
-- Chosen direction: a clean white precision-retro optical workstation. The bottom rail behaves as a real selector assembly with socketed application modules, an active carriage, state lamps, calibration ticks, and bounded mechanical movement.
-- Structural thesis: Home / Dossier owns normal recruiter scrolling. One focused tool application can open above it; minimizing restores the exact document position. AI remains a right-side copilot utility and FX remains a rail utility tray.
-- Signature interaction and motion: opening an app mechanically latches its module into the active bay; minimizing returns it to the rail. Courier reactions and mechanisms explain state, while headings and evidence remain stationary.
-- Geometry authority: camera frustums, sparse points, match-graph edges, outside-looking-in trajectories, and pose labels follow Structure-from-Motion conventions described by COLMAP, Building Rome in a Day, Tanks and Temples, and ScanNet++. No external dataset is bundled and no visual motif is presented as Rahul's completed research.
-- Boundaries: preserve the unified evidence model, project filters, archive search, private API and fallback, analytics, effects, Three.js assets, résumé downloads, accessibility, and canonical SEO. Do not revive Build/Secure lenses or imply unsupported robotics, SLAM, localization, mapping, or Gaussian-splatting delivery.
-- States and adaptation: desktop tools move, resize, maximize, and snap. Tablet and mobile tools become full-screen sheets. Quick Scan and no-JavaScript rendering flatten every application into the approved semantic evidence order.
+- Scope and mode: the recruiter portfolio at `index.html`; Experience mode with a fast Persuade opening, drawn as the Industry "Field Workbench".
+- Audience and job: recruiters should understand Rahul's connected intelligent-systems position, representative proof, suitable résumé, and contact path in roughly 20 seconds. Technical visitors can open the labs, filter the full record, and use the optional assistant and FX panel.
+- Outcome and proof: Home / Dossier and Selected Work open at boot; every other surface is a named window over the desk on desktop and a row in the Field Index on mobile. Nothing recruiter-critical lives only in a lab, the FX panel, or the assistant.
+- Chosen direction: a light blueprint drawing set — steel-blue accent, Barlow Condensed over Barlow, square hairline frames with `+` registration marks, duotone imagery. See `DESIGN.md` and `design/industry/`.
+- Structural thesis: eleven draggable windows over a gridded desk with a tool rail; cards hang from crane rigs (`lib/rig.ts`). Mobile is one searchable registry. The server renders both; CSS hides one and hydration keeps only the active surface.
+- Signature interaction and motion: windows swing on their rigs; the labs run real models (Camera Lab: pinhole, pose, thin lens, stereo, Zhang calibration; Systems Lab: mechanism bench, flow-shop sequencing, drop test). The FX panel can switch on an N-body or fluid desk backdrop, both off at boot. Every loop halts under reduced motion or "Pause all motion" (`lib/motion.ts`).
+- Boundaries: preserve the unified evidence model, project filters, archive search, the private assistant API and its fallback, analytics, résumé downloads, accessibility, and canonical SEO. Do not revive Build/Secure lenses, a dark scheme, or the retired optical workstation, and do not imply robotics, SLAM, localization, mapping, or Gaussian-splatting delivery.
+- States and adaptation: desktop at 881px and wider, the Field Index at 880px and narrower. With JavaScript off, every window body is ordinary prerendered content in the evidence order.

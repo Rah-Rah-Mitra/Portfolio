@@ -25,3 +25,9 @@ selection, or production GLB is claimed.
 
 Model weights, browser state, credentials, cookies, tokens, and untouched
 Mixamo downloads must never be committed.
+
+**Retired 2026-10.** The Courier left the site with the rest of the field-test
+UI. The concept sheets, review candidates and Blender/Mixamo scripts named above
+(`assets/optical-courier/`, `scripts/optical-courier/`) were removed from the
+tree and remain in git history (last present at `aad91d6`). This record, the
+saved ComfyUI workflow and the prompt manifest stay as provenance.

@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
+// Tailwind contributes only its preflight reset and the `sr-only` utility; every
+// visual rule is a token or component class in index.css (Industry design system).
 export default {
-  darkMode: 'class',
   content: [
     './index.html',
     './*.{ts,tsx}',
@@ -10,30 +11,7 @@ export default {
     './lib/**/*.{ts,tsx}',
   ],
   theme: {
-    extend: {
-      colors: {
-        background: 'rgb(var(--ui-background-rgb) / <alpha-value>)',
-        foreground: 'rgb(var(--ui-foreground-rgb) / <alpha-value>)',
-        border: 'rgb(var(--ui-border-rgb) / <alpha-value>)',
-        ring: 'rgb(var(--accent-rgb) / <alpha-value>)',
-        muted: {
-          DEFAULT: 'rgb(var(--ui-muted-rgb) / <alpha-value>)',
-          foreground: 'rgb(var(--ui-muted-foreground-rgb) / <alpha-value>)',
-        },
-        primary: {
-          DEFAULT: 'rgb(var(--accent-rgb) / <alpha-value>)',
-          foreground: 'rgb(var(--ui-primary-foreground-rgb) / <alpha-value>)',
-        },
-        secondary: {
-          DEFAULT: 'rgb(var(--ui-muted-rgb) / <alpha-value>)',
-          foreground: 'rgb(var(--ui-foreground-rgb) / <alpha-value>)',
-        },
-        destructive: {
-          DEFAULT: 'rgb(var(--ui-destructive-rgb) / <alpha-value>)',
-          foreground: 'rgb(255 255 255 / <alpha-value>)',
-        },
-      },
-    },
+    extend: {},
   },
   plugins: [],
 };

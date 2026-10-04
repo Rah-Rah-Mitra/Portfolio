@@ -441,10 +441,6 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-stages div[data-accent] { background: var(--color-accent-200); }
 .wb-stages-legend { display: flex; justify-content: space-between; margin-top: 5px; font-size: 9px; letter-spacing: 0.09em; color: var(--color-neutral-700); }
 
-.wb-fovrow { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-.wb-fovrow label { font-size: 11px; letter-spacing: 0.09em; color: var(--color-neutral-700); }
-.wb-fovrow input[type='range'] { width: 220px; accent-color: var(--color-accent); }
-.wb-fovrow output { font-family: var(--font-heading); font-weight: 600; font-size: 18px; font-feature-settings: 'tnum' 1; }
 .wb-metrics { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--color-divider); margin-top: 16px; }
 .wb-metrics > div { padding: 9px 12px; border-right: 1px solid var(--color-divider); }
 .wb-metrics > div:last-child { border-right: 0; }
@@ -699,7 +695,7 @@ button { font-family: var(--font-body); color: inherit; }
 }
 .lab-safety-row button:hover { background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
 .lab-safety-row button[aria-pressed='true'] { background: var(--color-accent-700); color: #fff; border-color: var(--color-accent-700); }
-.lab-sample { border: 1px solid var(--color-divider); padding: 10px 12px; font-size: 14px; background: var(--paper-55); }
+.lab-note { font-size: 11.5px; line-height: 1.5; color: var(--color-neutral-700); margin: 6px 0 10px; }
 .lab-sections { display: flex; flex-direction: column; gap: 16px; }
 .lab-sections section { border-top: 1px solid var(--color-divider); padding-top: 12px; }
 .lab-sections h3 { font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
@@ -708,44 +704,298 @@ button { font-family: var(--font-body); color: inherit; }
   border: 1px solid var(--color-divider); background: transparent; padding: 8px 10px;
   cursor: pointer; text-align: left; margin-bottom: 8px;
 }
-.lab-toggle:hover { background: color-mix(in srgb, var(--color-accent) 6%, transparent); }
+.lab-toggle:hover:not(:disabled) { background: color-mix(in srgb, var(--color-accent) 6%, transparent); }
+.lab-toggle:disabled { cursor: not-allowed; opacity: 0.55; }
 .lab-toggle strong { display: block; font-family: var(--font-heading); font-weight: 600; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
 .lab-toggle small { display: block; font-size: 11px; color: var(--color-neutral-700); }
+.lab-toggle .lab-status { margin-top: 3px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent-700); }
 .toggle-track { flex: none; width: 34px; height: 18px; border: 1px solid var(--color-divider); position: relative; }
 .toggle-track span { position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; background: var(--color-neutral-400); transition: transform 0.15s ease, background-color 0.15s ease; }
 .lab-toggle[aria-pressed='true'] .toggle-track { border-color: var(--color-accent); }
 .lab-toggle[aria-pressed='true'] .toggle-track span { transform: translateX(16px); background: var(--color-accent); }
-.lab-presets { display: flex; gap: 6px; margin-bottom: 8px; }
-.lab-presets button {
-  border: 1px solid var(--color-divider); background: transparent; padding: 3px 9px;
+/* A switched-on backdrop's settings hang under its toggle, keyed by a hairline. */
+.lab-params { margin: -2px 0 12px; padding: 8px 0 2px 12px; border-left: 1px solid var(--color-accent-400); }
+.lab-segment { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.lab-segment button {
+  border: 1px solid var(--color-divider); background: transparent; padding: 3px 10px;
   font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; color: var(--color-neutral-700);
 }
-.lab-presets button:hover { background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
+.lab-segment button:hover { background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
+.lab-segment button[aria-pressed='true'] { background: var(--color-accent-700); color: #fff; border-color: var(--color-accent-700); }
 .lab-range { display: block; margin-bottom: 8px; }
 .lab-range > span { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-neutral-700); margin-bottom: 3px; }
 .lab-range output { font-feature-settings: 'tnum' 1; }
 .lab-range input[type='range'] { width: 100%; accent-color: var(--color-accent); display: block; }
+.lab-check { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11.5px; color: var(--color-neutral-800); cursor: pointer; }
+.lab-check input { accent-color: var(--color-accent); margin: 0; }
+.lab-solver { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 12px; margin-top: 6px; }
 .lab-select { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 11px; color: var(--color-neutral-700); }
 .lab-select select { border: 1px solid var(--color-divider); background: var(--paper-55); padding: 4px 8px; font: inherit; font-size: 12px; border-radius: 0; }
-.world-control p { font-size: 11.5px; color: var(--color-neutral-700); margin-bottom: 6px; }
-.world-control a { font-size: 11px; letter-spacing: 0.06em; }
+.lab-handoff { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.lab-handoff p { flex: 1 1 14rem; font-size: 11.5px; line-height: 1.5; color: var(--color-neutral-700); }
+.lab-handoff .btn { font-size: 12px; padding: 6px 12px; }
 
-/* — text-effect layer (FX panel test surface) — */
-.pretext-effect [data-word] { display: inline-block; transition: color 0.15s ease, transform 0.15s ease, filter 0.15s ease; }
-.pretext-decode [data-word]:hover { color: var(--color-accent); text-shadow: calc(var(--pretext-intensity, 40) * 0.03px) 0 color-mix(in srgb, var(--color-accent) 40%, transparent); }
-.pretext-scan [data-word] { animation: pretext-scan 3.2s steps(1, end) infinite; text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 0.08em; }
-.pretext-pulse [data-word]:nth-child(4n+1), .pretext-pulse [data-word]:nth-child(4n+3) { animation: pretext-pulse 2.2s ease-in-out infinite; }
-.word-restoring { transition: transform 0.5s ease-out; }
-.physics-active { position: relative; z-index: 65; }
-.no-select { user-select: none; }
-@keyframes pretext-scan { 45%, 55% { color: var(--color-accent-700); text-decoration-color: var(--color-accent); } }
-@keyframes pretext-pulse { 50% { filter: brightness(1.25); transform: translateY(-1px); } }
+/* — FX "Pause all motion" (lib/motion.ts reads the same attribute) — */
+html[data-motion-paused="true"] .wb-cube { animation-play-state: paused; }
+
+/* === FX: desk backdrops — N-body + fluid (DeskBackdrop.tsx) === */
+/* First child of .wb-desk. Positioned at z-index 0 and first in tree order, so
+   every later positioned sibling (shortcuts, hint, plate, windows) paints above
+   it. Transparent canvases: the desk's own grid is the ground. Fluid follows
+   N-body in the DOM, so smoke composites over the bodies. */
+.wb-backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.wb-backdrop-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+/* An opaque tag, not bare text: smoke at full FX opacity under the caption
+   would otherwise pull neutral-700 below 4.5:1. */
+.wb-backdrop-caption {
+  position: absolute; right: 22px; top: 16px; margin: 0; padding: 5px 9px;
+  display: grid; justify-items: end; gap: 3px;
+  background: var(--paper-55); border: 1px solid var(--color-divider);
+  font-size: 10px; letter-spacing: 0.1em; color: var(--color-neutral-700);
+}
+/* The same ground for the desk's other bare text, but only while a backdrop is
+   mounted, so the default desk is unchanged. Pointer splats put smoke right
+   under the hint and the shortcut labels: measured, the hint fell to 4.0:1 at
+   the default fluid opacity and 1.8:1 at Vivid, the labels to 2.8:1. axe reports
+   canvas-backed text only as "incomplete", so CI cannot catch it. The hint's
+   offsets absorb its padding so the text does not move; the labels take the
+   ground on the span, not the button, so the button keeps its hover tint. */
+.wb-desk:has(> .wb-backdrop) .wb-hint { left: 18px; bottom: 12px; padding: 2px 6px; background: var(--paper-55); }
+.wb-desk:has(> .wb-backdrop) .wb-shortcuts button span { background: var(--paper-55); }
+/* === end FX: desk backdrops === */
+
+/* === Systems Lab: flow-shop bench (FlowShopBench.tsx) === */
+/* FIG. 05d. SVG + DOM only: no canvas, no rAF. Ops and the makespan line move
+   by CSS transition and the overlays fade in; all three stop under the FX
+   motion pause and prefers-reduced-motion (the pair motionHalted() reads). */
+.wb-fs-lede { margin: 0 0 12px; max-width: 72ch; font-size: 12.5px; line-height: 1.55; color: var(--color-neutral-800); }
+.wb-fs-striphead { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 10px; letter-spacing: 0.11em; color: var(--color-neutral-700); }
+.wb-fs-jobs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.wb-fs-jobs > li { display: flex; min-width: 0; }
+/* pan-y: a sideways drag is ours, a vertical swipe still scrolls the sheet
+   (and raises pointercancel, which reverts the drag). */
+.wb-fs-job {
+  flex: 1; min-width: 0; min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 4px 2px; border: 1px solid var(--color-divider); border-radius: 0; background: var(--paper-75); color: var(--color-text);
+  font-family: var(--font-body); cursor: grab; user-select: none; -webkit-user-select: none; touch-action: pan-y;
+}
+.wb-fs-job:hover { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-fs-job[data-picked] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
+.wb-fs-job[data-dragging] { cursor: grabbing; position: relative; z-index: 1; box-shadow: var(--shadow-md); }
+.wb-fs-job[data-picked][data-dragging] { box-shadow: inset 0 0 0 1px var(--color-accent-700), var(--shadow-md); }
+.wb-fs-job-id { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 19px; line-height: 1; }
+.wb-fs-job-p { font-size: 11px; line-height: 1.2; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
+.wb-fs-moves { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 8px; }
+.wb-fs-moves .btn { font-size: 11px; padding: 4px 10px; gap: 4px; }
+.wb-fs-hint { margin: 0; font-size: 10.5px; color: var(--color-neutral-700); }
+.wb-fs-change { min-height: 1.6em; margin: 6px 0 4px; font-size: 11.5px; line-height: 1.6; color: var(--color-neutral-800); }
+
+/* The chart keeps a legible floor inside a 320px window and scrolls instead. */
+.wb-fs-chart { overflow-x: auto; }
+.wb-fs-svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.wb-fs-svg text { font-family: var(--font-body); font-size: 9.5px; fill: var(--color-neutral-700); }
+.wb-fs-svg .wb-fs-strong { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.06em; fill: var(--color-text); }
+.wb-fs-track { fill: var(--paper-75); stroke: var(--color-divider); stroke-width: 1; }
+.wb-fs-track[data-busiest] { fill: var(--color-accent-100); }
+.wb-fs-op { transition: transform 220ms cubic-bezier(.2, .7, .2, 1); }
+.wb-fs-op rect { fill: var(--color-accent-200); stroke: var(--color-accent-700); stroke-width: 1; }
+.wb-fs-op[data-critical] rect { fill: var(--color-accent-400); stroke: var(--color-accent-800); stroke-width: 1.5; }
+.wb-fs-op[data-traced] rect { stroke: var(--color-text); stroke-width: 2; }
+/* Ink on accent-400 is ~8.3:1. Never put op text on accent-700. */
+.wb-fs-svg .wb-fs-op text {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px;
+  fill: var(--color-text); text-anchor: middle; pointer-events: none;
+}
+.wb-fs-hatchline { stroke: var(--color-neutral-500); stroke-width: 1; }
+.wb-fs-wait { stroke: var(--color-neutral-500); stroke-width: 1; stroke-dasharray: 2 2; }
+.wb-fs-waitlabel-bg { fill: var(--paper-75); }
+.wb-fs-crit { fill: none; stroke: var(--color-accent-700); stroke-width: 2; stroke-linejoin: miter; stroke-linecap: square; }
+.wb-fs-bound { stroke: var(--color-accent-700); stroke-width: 1; stroke-dasharray: 4 3; }
+.wb-fs-cmax { transition: transform 220ms cubic-bezier(.2, .7, .2, 1); }
+.wb-fs-cmax line { stroke: var(--color-text); stroke-width: 1.25; }
+.wb-fs-axis { stroke: var(--color-neutral-500); stroke-width: 1; }
+.wb-fs-bin { fill: var(--color-neutral-400); }
+.wb-fs-bin[data-best] { fill: var(--color-accent-500); }
+.wb-fs-bin[data-current] { fill: var(--color-accent-700); }
+.wb-fs-overlay { animation: wb-fs-fade 220ms ease-out; }
+@keyframes wb-fs-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.wb-fs-metrics { margin-top: 12px; }
+.wb-fs-why { margin-top: 12px; padding: 8px 12px; border-left: 2px solid var(--color-accent); background: var(--paper-75); }
+.wb-fs-why-head { margin: 0; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 15px; letter-spacing: 0.02em; }
+/* Reserved height: the crane rig only re-measures on scroll, so the card
+   should not change height while the visitor reorders. */
+.wb-fs-why-detail { min-height: 3em; margin: 3px 0 0; font-size: 12px; line-height: 1.5; color: var(--color-neutral-800); }
+
+/* flex-wrap, not media queries: a window's width is not the viewport's. */
+.wb-fs-ledger { margin-top: 14px; border-top: 1px solid var(--ink-8); }
+.wb-fs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 0; border-bottom: 1px solid var(--ink-8); }
+.wb-fs-method {
+  flex: 0 0 172px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; justify-items: start;
+  gap: 2px 10px; padding: 6px 10px; font-size: 13px; text-align: left;
+}
+.wb-fs-method strong { font-size: 17px; font-feature-settings: 'tnum' 1; }
+.wb-fs-method-order { grid-column: 1 / -1; font-family: var(--font-body); font-weight: 400; font-size: 11px; letter-spacing: 0.14em; text-transform: none; }
+.wb-fs-guarantee { flex: 1 1 260px; margin: 0; font-size: 10.5px; line-height: 1.5; color: var(--color-neutral-700); }
+
+.wb-fs-legend { display: grid; gap: 4px; margin: 12px 0 0; padding: 0; list-style: none; font-size: 10.5px; line-height: 1.45; color: var(--color-neutral-700); }
+.wb-fs-legend li { display: flex; align-items: flex-start; gap: 7px; }
+.wb-fs-swatch { flex: none; margin-top: 2px; }
+.wb-fs-sw-crit { fill: var(--color-accent-400); stroke: var(--color-accent-800); stroke-width: 1.5; }
+
+html[data-motion-paused="true"] .wb-fs-op, html[data-motion-paused="true"] .wb-fs-cmax { transition: none; }
+html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wb-fs-op, .wb-fs-cmax { transition: none; }
+  .wb-fs-overlay { animation: none; }
+}
+/* === end Systems Lab: flow-shop bench === */
+
+/* === Systems Lab: drop test (DropTest.tsx) === */
+.wb-drop-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; margin-bottom: 8px; }
+.wb-drop-modes { display: flex; gap: 4px; }
+.wb-drop-controls .btn { font-size: 12px; padding: 5px 10px; }
+.wb-drop-range { display: flex; flex-direction: column; gap: 3px; flex: 1 1 140px; min-width: 130px; max-width: 200px; }
+.wb-drop-range > span { display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-700); }
+.wb-drop-range output { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 12px; letter-spacing: 0.02em; text-transform: none; color: var(--color-text); font-feature-settings: 'tnum' 1; }
+.wb-drop-range input[type='range'] { width: 100%; margin: 0; accent-color: var(--color-accent); }
+.wb-drop-actions { display: flex; gap: 4px; margin-left: auto; }
+.wb-drop-hint { margin-bottom: 6px; font-size: 11px; color: var(--color-neutral-700); }
+
+/* The rig: an SVG in fixed 640 x 280 rig units (1 u = 1 cm), scaled by its viewBox. */
+.wb-drop-stage {
+  display: block; width: 100%; height: auto; background: var(--paper-75); border: 1px solid var(--color-divider);
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair;
+}
+.wb-drop-stage[data-mode='gravity'] { cursor: grab; }
+.wb-drop-stage[data-mode='gravity']:active { cursor: grabbing; }
+.wb-drop-stage path, .wb-drop-stage line, .wb-drop-stage rect, .wb-drop-stage circle { vector-effect: non-scaling-stroke; }
+.wb-drop-grid { fill: none; stroke: var(--color-neutral-300); stroke-width: 1; opacity: 0.55; }
+.wb-drop-bay { fill: none; stroke: var(--color-neutral-400); stroke-width: 1; stroke-dasharray: 2 4; }
+.wb-drop-hatch { fill: none; stroke: var(--color-neutral-500); stroke-width: 1; }
+.wb-drop-floor { stroke: var(--color-text); stroke-width: 1.5; }
+.wb-drop-dim { fill: none; stroke: var(--color-neutral-700); stroke-width: 1; }
+.wb-drop-note text, .wb-drop-col text { font-family: var(--font-body); font-size: 8.5px; letter-spacing: 0.1em; fill: var(--color-neutral-700); }
+.wb-drop-g0 { display: none; }
+.wb-drop-stage[data-zero-g] .wb-drop-g { display: none; }
+.wb-drop-stage[data-zero-g] .wb-drop-g0 { display: inline; fill: var(--color-accent-700); }
+.wb-drop-block rect { fill: var(--color-accent-100); stroke: var(--color-accent-700); stroke-width: 1; transition: fill 0.2s ease; }
+.wb-drop-block[data-moving] rect { fill: var(--color-accent-300); }
+.wb-drop-block text {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 9.5px;
+  letter-spacing: 0.04em; text-transform: uppercase; fill: var(--color-accent-900);
+}
+.wb-drop-ring { fill: none; stroke: var(--color-accent); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; transition: opacity 0.15s ease; pointer-events: none; }
+.wb-drop-ring[data-show] { opacity: 0.85; }
+.wb-drop-well { opacity: 0; pointer-events: none; }
+.wb-drop-well[data-show] { opacity: 1; }
+.wb-drop-well circle { fill: color-mix(in srgb, var(--color-accent) 10%, transparent); stroke: var(--color-accent-700); stroke-width: 1; }
+.wb-drop-well path { fill: none; stroke: var(--color-accent-700); stroke-width: 1.5; }
+.wb-drop-flash {
+  fill: color-mix(in srgb, var(--color-accent) 16%, transparent); stroke: var(--color-accent); stroke-width: 1;
+  opacity: 0; pointer-events: none; transform-box: fill-box; transform-origin: center;
+}
+
+.wb-drop-readouts { display: grid; grid-template-columns: repeat(4, 1fr); margin: 10px 0 0; border: 1px solid var(--color-divider); }
+.wb-drop-readouts > div { min-width: 0; padding: 7px 10px; border-right: 1px solid var(--color-divider); }
+.wb-drop-readouts > div:last-child { border-right: 0; }
+.wb-drop-readouts dt { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-neutral-700); }
+.wb-drop-readouts dd { margin: 0; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 19px; font-feature-settings: 'tnum' 1; white-space: nowrap; }
+.wb-drop-status { min-height: 1.5em; margin-top: 6px; font-size: 11px; color: var(--color-neutral-700); }
+/* === end Systems Lab: drop test === */
+
+/* === Camera Lab (CameraLab.tsx) === */
+/* One scene, four models (lib/cameraModel.ts), drawn as plain SVG. Colour comes
+   from the scoped classes below and never from presentation attributes, so the
+   SSR markup carries no hex (tests/camera-lab.test.ts greps for one). */
+.wb-cam { container-type: inline-size; }
+.wb-cam-lead { margin: 0 0 12px; max-width: 80ch; font-size: 12.5px; line-height: 1.55; color: var(--color-neutral-800); }
+.wb-cam-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.wb-cam-bar > .btn { margin-left: auto; }
+.wb-cam-tabs button {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.wb-cam-tabs button:focus-visible { outline: 2px solid var(--color-accent-700); outline-offset: 2px; position: relative; }
+.wb-cam-tabno { font-family: var(--font-body); font-size: 9.5px; letter-spacing: 0.1em; color: var(--color-neutral-700); }
+.wb-cam-tabs button[data-active] .wb-cam-tabno { color: inherit; }
+
+.wb-cam-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 16px; align-items: end; margin-bottom: 14px; }
+.wb-cam-ctl { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wb-cam-ctl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 9.5px; letter-spacing: 0.1em; color: var(--color-neutral-700); white-space: nowrap; }
+.wb-cam-ctl-head var { letter-spacing: 0; }
+.wb-cam-ctl-head output { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 15px; letter-spacing: 0.02em; color: var(--color-text); font-feature-settings: 'tnum' 1; }
+.wb-cam-ctl input[type='range'] { width: 100%; margin: 0; accent-color: var(--color-accent-700); }
+.wb-cam-focusbtn { justify-self: start; }
+.wb-cam var { font-family: inherit; }
+.wb-cam sub, .wb-cam sup { font-size: 0.72em; line-height: 0; }
+
+.wb-cam-views { display: grid; grid-template-columns: 300fr 400fr; gap: 14px; align-items: start; }
+.wb-cam-svg { display: block; width: 100%; height: auto; background: var(--paper-75); border: 1px solid var(--color-divider); border-radius: 0; overflow: hidden; }
+.wb-cam-plan { touch-action: none; cursor: grab; }
+.wb-cam-plan[data-dragging] { cursor: grabbing; }
+.wb-cam-chart { margin-top: 10px; }
+.wb-cam-svg text { font-family: var(--font-body); font-size: 9.5px; letter-spacing: 0.06em; fill: var(--color-neutral-700); stroke: none; }
+/* The paper halo is for the accent labels that sit on the board: accent-700 on
+   accent-300 is 4.41:1, and axe cannot judge SVG text to catch it. */
+.wb-cam-svg text.t-acc7 { fill: var(--color-accent-700); paint-order: stroke; stroke: var(--paper-75); stroke-width: 3px; stroke-linejoin: round; }
+.wb-cam-svg .ink { stroke: var(--color-text); fill: none; }
+.wb-cam-svg .acc { stroke: var(--color-accent); fill: none; }
+.wb-cam-svg .acc7 { stroke: var(--color-accent-700); fill: none; }
+.wb-cam-svg .ghost { stroke: var(--color-neutral-500); fill: none; }
+.wb-cam-svg .faint { stroke: var(--color-neutral-300); fill: none; }
+.wb-cam-svg .body { fill: var(--paper-75); }
+.wb-cam-svg .fill-board { fill: var(--color-accent-300); stroke: none; }
+.wb-cam-svg .fill-band { fill: var(--color-accent-100); stroke: none; }
+.wb-cam-svg .fill-ink { fill: var(--color-text); stroke: none; }
+.wb-cam-svg .fill-ghost { fill: var(--color-neutral-500); stroke: none; }
+.wb-cam-svg .fill-acc { fill: var(--color-accent); stroke: none; }
+.wb-cam-svg .fill-acc7 { fill: var(--color-accent-700); stroke: none; }
+.wb-cam-svg .hatch { stroke: none; }
+.wb-cam-svg .hatch-line { stroke: var(--color-accent); stroke-width: 1; fill: none; }
+.wb-cam-svg .dash { stroke-dasharray: 3 3; }
+.wb-cam-svg .dotline { stroke-width: 2.2; stroke-linecap: round; }
+.wb-cam-svg :is(.ink, .acc, .acc7, .ghost, .faint) { vector-effect: non-scaling-stroke; }
+
+.wb-cam-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 22px; margin: 16px 0 22px; }
+.wb-cam-eqs { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.65; color: var(--color-neutral-800); }
+.wb-cam-eqs li::marker { font-size: 10px; color: var(--color-neutral-700); }
+.wb-cam-eqs li:last-child { color: var(--color-accent-800); }
+.wb-cam-aside { display: flex; flex-direction: column; gap: 10px; min-width: 0; font-size: 12px; }
+.wb-cam-aside p { margin: 0; font-size: 11.5px; line-height: 1.55; color: var(--color-neutral-800); }
+.wb-cam-mat { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.wb-cam-matrix { border-collapse: collapse; border-left: 1px solid var(--color-text); border-right: 1px solid var(--color-text); font-size: 11.5px; font-feature-settings: 'tnum' 1; }
+.wb-cam-matrix td { padding: 1px 8px; text-align: right; white-space: nowrap; }
+.wb-cam-matrix td[data-sep] { border-left: 1px dashed var(--color-neutral-500); }
+.wb-cam-table { width: 100%; border-collapse: collapse; font-size: 11.5px; font-feature-settings: 'tnum' 1; }
+.wb-cam-table th { padding: 3px 6px; font-size: 9px; font-weight: 400; letter-spacing: 0.12em; text-align: right; color: var(--color-neutral-700); border-bottom: 1px solid var(--color-divider); white-space: nowrap; }
+.wb-cam-table tbody th { font-size: 11px; letter-spacing: 0.04em; color: var(--color-text); border-bottom-color: var(--ink-8); }
+.wb-cam-table td { padding: 3px 6px; text-align: right; border-bottom: 1px solid var(--ink-8); white-space: nowrap; }
+.wb-cam-table :is(th, td):first-child { text-align: left; }
+.wb-cam-metrics { grid-column: 1 / -1; margin-top: 0; }
+.wb-cam-metrics strong { font-size: 17px; white-space: nowrap; }
+.wb-cam-alert { grid-column: 1 / -1; margin: 0; padding: 8px 10px; border: 1px solid var(--color-accent-700); font-size: 11.5px; color: var(--color-accent-800); background: var(--paper-75); }
+
+.wb-cam-calrow { display: flex; align-items: flex-end; gap: 10px 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.wb-cam-calrow .wb-cam-ctl { width: 200px; }
+.wb-cam-status { display: inline-flex; align-items: center; gap: 8px; min-height: 30px; font-size: 11.5px; color: var(--color-neutral-800); }
+.wb-cam-thumbs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.wb-cam-thumbs li { min-width: 0; }
+.wb-cam-thumbs text { font-size: 8px; letter-spacing: 0.04em; }
+.wb-cam-thumb-cap { display: block; margin-top: 3px; font-size: 9px; letter-spacing: 0.08em; color: var(--color-neutral-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wb-cam-results { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 16px; align-items: start; margin-top: 14px; }
+.wb-cam-caltable caption { caption-side: top; padding-bottom: 6px; text-align: left; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent-700); }
+
+@container (max-width: 620px) {
+  .wb-cam-views, .wb-cam-detail, .wb-cam-results { grid-template-columns: minmax(0, 1fr); }
+  .wb-cam-thumbs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* === end Camera Lab === */
 
 /* — reduced motion — */
 @media (prefers-reduced-motion: reduce) {
   .wb-cube { animation: none; transform: rotateX(-22deg) rotateY(35deg); }
-  .pretext-scan [data-word], .pretext-pulse [data-word] { animation: none !important; }
-  .toggle-track span, .pretext-effect [data-word], .word-restoring { transition-duration: 0.01ms !important; }
+  .toggle-track span { transition-duration: 0.01ms !important; }
 }
 
 /* — print — */

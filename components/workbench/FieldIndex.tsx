@@ -1,11 +1,12 @@
 import React from 'react';
 import type { DesktopAppId } from '../../types';
-import { archiveRows, CONTACT, featuredCards, generalResume, POSITIONING, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../../lib/workbench';
+import { archiveRows, CONTACT, featuredCards, generalResume, POSITIONING, projectLinks, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../../lib/workbench';
 import { allProjects, coreCompetencies, experienceRecords, resumeProfiles, unifiedPortfolioData } from '../../portfolioData';
 import { certificationDateLabel, listedCertifications } from '../../lib/certifications';
 import { SITE_CONFIG } from '../../siteConfig';
 import { desktopAppFromSearch } from '../../lib/workstation';
 import { clamp, pathSampler, routePath, spring, type PathSampler } from '../../lib/rig';
+import { motionHalted, onMotionChange } from '../../lib/motion';
 import { Corners } from './bits';
 import { track } from '../../lib/analytics';
 
@@ -20,24 +21,28 @@ interface IndexRow {
   sub: string;
   detail: string;
   tags: string[];
-  link?: { label: string; href: string; download?: boolean };
+  links?: Array<{ label: string; href: string }>;
 }
 
 const projectById = new Map(allProjects.map((project) => [project.id, project]));
 
 const INDEX_ROWS: IndexRow[] = [
-  ...archiveRows.map((row): IndexRow => ({
-    id: `project:${row.id}`,
-    kind: 'PROJECTS',
-    date: row.date,
-    title: row.title,
-    sub: `${row.category} · ${row.domain}`,
-    detail: projectById.get(row.id)?.description ?? row.category,
-    tags: projectById.get(row.id)?.tags.slice(0, 3) ?? [],
-    // Same rule as the desktop card: a project with no public repo links its live
-    // work instead, and the label has to say which one the reader is opening.
-    link: row.href ? { label: projectById.get(row.id)?.repoUrl ? 'OPEN REPO ↗' : 'OPEN LIVE ↗', href: row.href } : undefined,
-  })),
+  ...archiveRows.map((row): IndexRow => {
+    const project = projectById.get(row.id);
+    return {
+      id: `project:${row.id}`,
+      kind: 'PROJECTS',
+      date: row.date,
+      title: row.title,
+      sub: `${row.category} · ${row.domain}`,
+      detail: project?.description ?? row.category,
+      tags: project?.tags.slice(0, 3) ?? [],
+      // Same links, same order as the desktop card: the repo, else the live work,
+      // then the rest (the Arcane sub-repos, the Maritime certificate). Each label
+      // says which one the reader is opening.
+      links: project ? projectLinks(project).map((link) => ({ label: `${link.label.toUpperCase()} ↗`, href: link.href })) : undefined,
+    };
+  }),
   ...experienceRecords.map((record): IndexRow => ({
     id: `experience:${record.id}`,
     kind: 'EXPERIENCE',
@@ -67,7 +72,7 @@ const INDEX_ROWS: IndexRow[] = [
     sub: achievement.category ?? 'Distinction',
     detail: achievement.description,
     tags: achievement.tags?.slice(0, 3) ?? [],
-    link: achievement.proofUrl ? { label: `${(achievement.proofLabel ?? 'View proof').toUpperCase()} ↗`, href: achievement.proofUrl } : undefined,
+    links: achievement.proofUrl ? [{ label: `${(achievement.proofLabel ?? 'View proof').toUpperCase()} ↗`, href: achievement.proofUrl }] : undefined,
   })),
   // The builder is a two-column desktop surface; mobile gets a pointer to it,
   // the same way the labs and the 3D world are not reproduced here.
@@ -79,7 +84,7 @@ const INDEX_ROWS: IndexRow[] = [
     sub: 'Compose a targeted resume from the evidence record',
     detail: 'Pick the experience, projects and skills a role calls for and the PDF rebuilds as you go. Needs a wider screen — open it on a desktop browser.',
     tags: ['Custom', 'PDF · DOCX', 'NUS CDE'],
-    link: { label: 'OPEN ON DESKTOP', href: '/?app=resume-builder' },
+    links: [{ label: 'OPEN ON DESKTOP', href: '/?app=resume-builder' }],
   },
   ...resumeProfiles.map((profile): IndexRow => ({
     id: `resume:${profile.id}`,
@@ -89,7 +94,7 @@ const INDEX_ROWS: IndexRow[] = [
     sub: profile.keywords.slice(0, 4).join(' · '),
     detail: `${profile.headline} Edition REV ${SITE_CONFIG.resumeEdition}, generated from the same registry.`,
     tags: profile.keywords.slice(0, 3),
-    link: { label: 'DOWNLOAD PDF', href: profile.pdfUrl },
+    links: [{ label: 'DOWNLOAD PDF', href: profile.pdfUrl }],
   })),
   ...listedCertifications.map((certification): IndexRow => ({
     id: `cert:${certification.id}`,
@@ -99,7 +104,7 @@ const INDEX_ROWS: IndexRow[] = [
     sub: certification.issuer,
     detail: `${certification.group} · ${certification.tags.join(' · ')}.${certification.credentialId ? ` Certificate ID ${certification.credentialId}.` : ''}`,
     tags: certification.tags,
-    link: { label: `OPEN ${certification.ext.toUpperCase()}`, href: certification.file },
+    links: [{ label: `OPEN ${certification.ext.toUpperCase()}`, href: certification.file }],
   })),
 ];
 
@@ -302,10 +307,9 @@ const FieldIndex: React.FC = () => {
   // Rig layout + physics loop.
   React.useEffect(() => {
     const rig = rigRef.current;
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const syncMotion = () => { rig.motion = !motionQuery.matches; };
+    const syncMotion = () => { rig.motion = !motionHalted(); };
     syncMotion();
-    motionQuery.addEventListener('change', syncMotion);
+    const stopMotionSync = onMotionChange(syncMotion);
 
     requestAnimationFrame(() => { layoutCrane(); layoutTraverse(); cacheRig(); });
     const onResize = () => { layoutCrane(); layoutTraverse(); cacheRig(); };
@@ -457,7 +461,7 @@ const FieldIndex: React.FC = () => {
 
     return () => {
       cancelAnimationFrame(raf);
-      motionQuery.removeEventListener('change', syncMotion);
+      stopMotionSync();
       window.removeEventListener('resize', onResize);
       rootRef.current?.removeEventListener('pointerdown', onDown);
       window.clearInterval(clock);
@@ -605,17 +609,22 @@ const FieldIndex: React.FC = () => {
                           <div className="wb-tags">
                             {row.tags.map((tag) => <span className="tag tag-accent" key={tag}>{tag}</span>)}
                           </div>
-                          {row.link && (
-                            <a
-                              className="btn btn-secondary fi-detail-cta"
-                              href={row.link.href}
-                              target={row.link.href.startsWith('mailto:') ? undefined : '_blank'}
-                              rel="noreferrer"
-                              onClick={() => track('project_link_clicked', { title: row.title, destination: row.link?.href ?? '' })}
-                            >
-                              {row.link.label}
-                            </a>
-                          )}
+                          {row.links?.length ? (
+                            <div className="wb-actions">
+                              {row.links.map((link) => (
+                                <a
+                                  key={link.href}
+                                  className="btn btn-secondary fi-detail-cta"
+                                  href={link.href}
+                                  target={link.href.startsWith('mailto:') ? undefined : '_blank'}
+                                  rel="noreferrer"
+                                  onClick={() => track('project_link_clicked', { title: row.title, destination: link.href })}
+                                >
+                                  {link.label}
+                                </a>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       </>
                     )}

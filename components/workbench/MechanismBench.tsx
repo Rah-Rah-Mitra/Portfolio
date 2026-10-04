@@ -2,6 +2,7 @@ import React from 'react';
 import { MECHANISMS, MECHANISM_FRAME, type Io, type Mechanism, type St } from '../../lib/pgaMechanisms';
 import { kit, type Kit, type Palette } from '../../lib/pgaDraw';
 import { Corners } from './bits';
+import { motionHalted, onMotionChange } from '../../lib/motion';
 
 // Six mechanisms from the PGA library, each solved from constraints every frame.
 // Hosting rules this file exists to enforce:
@@ -16,9 +17,10 @@ import { Corners } from './bits';
 //    words are rendered as real text beside it.
 //
 // Canvases are found by scanning the DOM rather than by ref callbacks: the
-// workbench keeps all eleven windows mounted and re-renders them on open/close,
-// which detaches and re-attaches every ref. A scan after each render (and a
-// prune of disconnected nodes) survives that; a one-shot ref registry does not.
+// workbench keeps all eleven windows mounted, and when it re-rendered them on
+// every open/close (window bodies are memoized now) that detached and re-attached
+// every ref and blanked all six. A scan after each render (and a prune of
+// disconnected nodes) survives any re-render; a one-shot ref registry does not.
 
 const { w: W, h: H } = MECHANISM_FRAME;
 
@@ -57,7 +59,6 @@ export const MechanismBench: React.FC = () => {
   React.useEffect(() => {
     const palette = readPalette();
     const live = new Map<string, Rec>();
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let running = false;
     let raf = 0;
     let last = 0;
@@ -87,7 +88,7 @@ export const MechanismBench: React.FC = () => {
       const rec: Rec = {
         el,
         g: kit(el, W, H, palette),
-        io: { u: 0, t: 0, dt: 1 / 60, mx: W / 2, my: H / 2, hover: false, down: false, traces: !motionQuery.matches },
+        io: { u: 0, t: 0, dt: 1 / 60, mx: W / 2, my: H / 2, hover: false, down: false, traces: !motionHalted() },
         st: {},
         mech,
         visible: true,
@@ -180,7 +181,7 @@ export const MechanismBench: React.FC = () => {
     };
 
     const syncMotion = () => {
-      const wanted = !motionQuery.matches;
+      const wanted = !motionHalted();
       for (const rec of live.values()) rec.io.traces = wanted;
       if (wanted === running) return;
       running = wanted;
@@ -196,11 +197,11 @@ export const MechanismBench: React.FC = () => {
 
     scan();
     syncMotion();
-    motionQuery.addEventListener('change', syncMotion);
+    const stopMotionSync = onMotionChange(syncMotion);
 
     return () => {
       scanRef.current = () => {};
-      motionQuery.removeEventListener('change', syncMotion);
+      stopMotionSync();
       cancelAnimationFrame(raf);
       live.forEach((rec) => rec.detach());
       live.clear();
@@ -208,8 +209,8 @@ export const MechanismBench: React.FC = () => {
     };
   }, []);
 
-  // No dep array: the workbench re-renders every window on open/close, which can
-  // replace these canvas nodes. Re-scan after each render so they get re-attached.
+  // No dep array: a re-render can replace these canvas nodes. Re-scan after each
+  // render so they get re-attached.
   React.useEffect(() => { scanRef.current(); });
 
   return (

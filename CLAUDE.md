@@ -27,10 +27,18 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   drawing set (11 draggable windows over a blueprint desk, crane-rig physics
   from `lib/rig.ts`). App registry/data adapters: `lib/workbench.ts` (ids
   reuse `lib/workstation.ts` so the AI assistant + `server/pageAgent.mjs`
-  command contract stay valid). Window sections keep the legacy anchors
-  (`#home #work #experience #all-work #technical-lab #world #domains #proof
-  #resumes #contact #resume-builder`, `experience-<id>`, `project-<id>`) — the assistant and
-  `tests/semantic-render.test.ts` depend on them.
+  command contract stay valid). Window sections keep their anchors (`#home
+  #work #experience #all-work #systems-lab #technical-lab #world #domains #proof
+  #resumes #contact #resume-builder`, `experience-<id>`, `project-<id>`) — the
+  assistant cites them (`allowedLinks` in `lib/askPageState.ts`, pinned against
+  the registry by `tests/page-agent-server.test.ts`) and
+  `tests/semantic-render.test.ts` pins `experience-<id>`/`project-<id>`. The
+  DOM ids are hardcoded in the window bodies (`WorkbenchWindows.tsx`,
+  `ResumeBuilder.tsx`), not derived from the registry, so renaming one passes
+  the tests and strands the assistant.
+  `#flow-shop` and `#drop-test` are in-window targets, not citable anchors; the
+  FX panel opens the latter with `dispatchWorkbenchOpen({ appId: 'systems-lab',
+  targetId: 'drop-test' })`.
 - Mobile ≤880px: `components/workbench/FieldIndex.tsx` — one searchable
   registry with traverse/crane rigs. SSR renders both surfaces (CSS hides
   one); after hydration `App.tsx` prunes to the active one. Keep `App`
@@ -43,20 +51,68 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   against its original and compares every canvas call, so the port cannot drift.
   Three host rules the file exists to keep: canvas work happens only in an effect
   (`kit()` reads `devicePixelRatio`, and `App.tsx` is prerendered), canvases are
-  found by DOM scan rather than refs (the workbench re-renders every window on
-  open/close, which detaches refs and blanked all six), and the kit's caption
+  found by DOM scan rather than refs (when the workbench re-rendered every window
+  on open/close, that detached refs and blanked all six; window bodies are
+  memoized now (`MEMO_BODIES` in FieldWorkbench), but the scan stays the rule),
+  and the kit's caption
   colour is `--color-neutral-700`, not the mockup's `--color-neutral-500` — axe
   cannot see into a canvas, so that would have broken the contrast rule while
   passing CI. Mechanisms are authored in a fixed 320×230 frame and only ever
   scale **down**; upscaling goes soft because the backing store caps at 2×.
-- Retained layers: `AskThePage` (AI) and `EffectsLabPanel` (FX) plus their
-  providers (`ExperienceModeProvider`, `EffectsProvider`). They reach the
-  workbench via the `portfolio:workbench-open` CustomEvent
-  (`dispatchWorkbenchOpen` in `lib/workbench.ts`).
-- The pre-2026-09 "continuous field test" UI (`PortfolioExperience`,
-  `WorkstationShell`, appearance system, nbody/fluid/ascii backgrounds) is
-  **unmounted but still on disk** with its unit tests passing — pending
-  deletion sweep. Don't remount it and don't build on it.
+- **Systems Lab exhibits** (desktop-only, each a `<Hoist>` after the mechanism
+  bench — no new app id). FIG. 05d `FlowShopBench.tsx` (`#flow-shop`): a seeded
+  F3|prmu|Cmax teaching model in `lib/permutationFlowShop.ts` (pure, no imports:
+  Taillard generator, Johnson/CDS, NEH, the exhaustive 720-order optimum, Taillard's
+  lower bound, `explain()`). Synthetic jobs, unrelated to FIG. 05a (the Abbott
+  work) — never let it borrow Abbott's words. No JS animation; its CSS transitions
+  switch off under the motion rule below. FIG. 05e `DropTest.tsx` (`#drop-test`):
+  the old Smash/Gravity word physics, contained — six stacks of the competency
+  tools in a 640×280 cm rig. `lib/dropTest.ts` owns layout, units and both force
+  models; `DropRig` (matter-js at a fixed 1/60 s) is `lib/dropRig.ts`, imported
+  beside matter-js (`lib/physicsRuntime.ts`) when the rig is first needed —
+  neither is in the main bundle, so never import `dropRig` statically. One rAF, stopped when every
+  block sleeps, the rig is offscreen, or motion is halted; halted, a strike
+  resolves straight to rest. Interactive stages stop `pointerdown` natively, or
+  FieldWorkbench's hoist nudge swings the card under the visitor's drag.
+- **Camera Lab** (`CameraLab.tsx` is the whole Camera window body, inside
+  `#technical-lab`): one synthetic 35 mm camera and 9×6 checkerboard read through
+  four modes — `intrinsics | extrinsics | optics | stereo`, ids the assistant
+  targets via the `portfolio:camera-lab-mode` event — plus a seeded Zhang
+  calibration. The math is pure (`lib/cameraModel.ts`, `lib/cameraCalibration.ts`,
+  `lib/cameraFigure.ts`). The Zhang solver (`lib/cameraCalibration.ts`) is
+  imported dynamically on the first Calibrate, out of the main bundle; the seeded
+  views the prerender draws are `lib/cameraCalibrationViews.ts` (re-exported by
+  the solver), so only import the solver statically from tests. Its known answers in `tests/camera-model.test.ts`
+  and `tests/camera-calibration.test.ts` are pinned: a number that moves means
+  the math moved, so justify it against an independent check (e.g. OpenCV
+  `calibrateCamera`) before re-pinning — never just update the expectation. No
+  animation loop; the prerender is the full Intrinsics view.
+- **FX desk backdrops** (`DeskBackdrop.tsx`, first child of `.wb-desk`, desktop
+  only): two FX-panel toggles, both off at boot — the N-body field (`NBodyField.tsx`,
+  a 2-D fast multipole solver in `lib/nbody/fmm.ts` run by `workers/nbody.worker.ts`,
+  painted by `lib/nbody/paint.ts`) and WebGL2 stable-fluids smoke (`FluidField.tsx`).
+  Each engine is a lazy chunk loaded on first switch-on. `lib/desktopBackgroundPolicy.ts`
+  decides: mount only once `allowHeavyAssets` (false under reduced motion and
+  Save-Data), then freeze rather than tear down when the page hides or motion
+  halts. Settings are `BackdropSettings` (`lib/backdropSettings.ts`) in
+  `EffectsProvider` (`contexts/PhysicsContext.tsx`); DeskBackdrop reads
+  `EffectsContext` directly so a bare `<FieldWorkbench/>` still mounts in tests.
+- **Motion rule.** `lib/motion.ts`: `motionHalted()` is prefers-reduced-motion OR
+  the FX "Pause all motion" switch (`html[data-motion-paused="true"]`), and
+  `onMotionChange()` re-syncs. Every animation loop stops, or draws one still
+  frame, through it; no loop queries prefers-reduced-motion on its own
+  (`lib/experienceMode.ts` reads it once, for the heavy-asset policy).
+- Retained layers: `AskThePage` (AI), `EffectsLabPanel` (FX) and
+  `AudioSpriteController` (opt-in sound cues) plus their providers
+  (`ExperienceModeProvider`, `EffectsProvider`). The panels reach the workbench via
+  the `portfolio:workbench-open` CustomEvent (`dispatchWorkbenchOpen` in
+  `lib/workbench.ts`). Lab and window outcomes are `PortfolioWorldEvent`s
+  (`lib/worldEvents.ts`) that only the sound cues listen to (`lib/audioPolicy.ts`).
+- The pre-2026-09 "continuous field test" UI — `PortfolioExperience`,
+  `WorkstationShell`, the appearance system, the optical world and Courier, the
+  ASCII background, Three.js and GSAP — was **deleted** in the 2026-10 sweep; the
+  parts worth adapting became the features above. Git history has the rest (last
+  present at `aad91d6`). Don't resurrect it.
 
 ## Resume system (NUS CDE style, edition-based)
 

@@ -123,6 +123,8 @@ test.describe('field workbench — desktop', () => {
   });
 
   test('prerendered document keeps the semantic evidence without JavaScript', async ({ browser }) => {
+    // DOM presence, not visibility: on desktop every window but Home and Selected
+    // Work is display:none until JS runs, so these counts include hidden nodes.
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto('/');
@@ -137,6 +139,45 @@ test.describe('field workbench — desktop', () => {
     const results = await new AxeBuilder({ page }).analyze();
     const serious = results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''));
     expect(serious).toEqual([]);
+  });
+
+  // The labs and desk backgrounds are closed at boot, so the scan above never
+  // sees them. Motion is paused first: the hoisted exhibit cards swing, and
+  // Playwright will not click an element that is still moving.
+  test('lab windows and desk backgrounds stay accessible and error-free', async ({ page }) => {
+    test.setTimeout(90_000); // several axe passes over a large prerendered document
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+    // Scoped to the surface under test; the boot-state scan above covers the rest.
+    const serious = async (scope: string) => (await new AxeBuilder({ page }).include(scope).analyze()).violations
+      .filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''));
+
+    await page.goto('/');
+    await page.getByRole('button', { name: 'FX, open optional effects lab' }).click();
+    const fx = page.getByRole('dialog', { name: 'Effects lab' });
+    await fx.getByRole('button', { name: /^Pause all motion/ }).click();
+    await fx.getByRole('button', { name: /^N-body field/ }).click();
+    await fx.getByRole('button', { name: /^Fluid smoke/ }).click();
+    expect(await serious('.effects-lab')).toEqual([]);
+    await fx.getByRole('button', { name: 'Close' }).click();
+    await expect(page.locator('[data-desk] canvas[data-backdrop]')).toHaveCount(2);
+
+    const rail = page.getByRole('navigation', { name: 'Tool rail' });
+    await rail.getByRole('button', { name: 'Open Systems Lab' }).click();
+    const systems = page.getByRole('dialog', { name: 'Systems Lab' });
+    await expect(systems.locator('#flow-shop')).toBeAttached();
+    await expect(systems.locator('#drop-test')).toBeAttached();
+    expect(await serious('[data-win="systems-lab"]')).toEqual([]);
+
+    await rail.getByRole('button', { name: 'Open Camera Lab' }).click();
+    const camera = page.getByRole('dialog', { name: 'Camera Lab' });
+    for (const tab of ['Intrinsics', 'Extrinsics', 'Optics', 'Stereo']) {
+      await camera.getByRole('tab', { name: new RegExp(tab) }).click();
+      await expect(camera.getByRole('tab', { name: new RegExp(tab) })).toHaveAttribute('aria-selected', 'true');
+      expect(await serious('[data-win="camera-lab"]')).toEqual([]);
+    }
+    expect(errors).toEqual([]);
   });
 });
 

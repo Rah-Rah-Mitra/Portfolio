@@ -1,6 +1,9 @@
 import React from 'react';
 import { Corners, Hoist, Kicker } from './bits';
 import { MechanismBench } from './MechanismBench';
+import { FlowShopBench } from './FlowShopBench';
+import { DropTest } from './DropTest';
+import { CameraLab } from './CameraLab';
 import {
   archiveRows,
   BIO,
@@ -10,6 +13,7 @@ import {
   featuredCards,
   filterArchiveRows,
   POSITIONING,
+  projectLinks,
   WORKBENCH_DOMAINS,
   type WorkbenchDomain,
 } from '../../lib/workbench';
@@ -96,17 +100,18 @@ export const WorkWindow: React.FC = () => (
               {project.tags.slice(0, 3).map((tag) => <span className="tag tag-accent" key={tag}>{tag}</span>)}
             </div>
             <p className="wb-outcome"><strong>OUTCOME — </strong>{outcome}</p>
-            {(project.repoUrl ?? project.liveUrl) && (
+            {projectLinks(project).map((link) => (
               <a
                 className="wb-cardlink"
-                href={project.repoUrl ?? project.liveUrl}
+                key={link.href}
+                href={link.href}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => track('project_link_clicked', { title: project.title, destination: project.repoUrl ?? project.liveUrl ?? '' })}
+                onClick={() => track('project_link_clicked', { title: project.title, destination: link.href })}
               >
-                {project.repoUrl ? 'OPEN REPO ↗' : 'OPEN LIVE ↗'}
+                {link.label.toUpperCase()} ↗
               </a>
-            )}
+            ))}
           </article>
         </Hoist>
       ))}
@@ -175,11 +180,21 @@ export const ArchiveWindow: React.FC = () => {
       {rows.map((row) => (
         <article className="wb-archrow" id={`project-${row.id}`} key={row.id}>
           <span className="wb-archrow-date">{row.date}</span>
-          <span className="wb-archrow-title">
+          <div className="wb-archrow-title">
             {row.href
               ? <a href={row.href} target="_blank" rel="noreferrer" onClick={() => track('project_link_clicked', { title: row.title, destination: row.href ?? '' })}>{row.title}</a>
               : row.title}
-          </span>
+            {row.links && (
+              <p className="wb-proofline">
+                {row.links.map((link, index) => (
+                  <React.Fragment key={link.href}>
+                    {index > 0 && ' · '}
+                    <a href={link.href} target="_blank" rel="noreferrer" onClick={() => track('project_link_clicked', { title: row.title, destination: link.href })}>{link.label} ↗</a>
+                  </React.Fragment>
+                ))}
+              </p>
+            )}
+          </div>
           <span className="wb-archrow-cat">{row.category}</span>
           <span className="wb-archrow-stack">{row.stack}</span>
           <span className="tag tag-outline">{row.domain}</span>
@@ -248,69 +263,63 @@ export const SystemsWindow: React.FC = () => (
     <Hoist>
       <MechanismBench />
     </Hoist>
+    <Hoist>
+      <FlowShopBench />
+    </Hoist>
+    <Hoist>
+      <DropTest />
+    </Hoist>
   </div>
 );
 
-export const CameraWindow: React.FC = () => {
-  const [fov, setFov] = React.useState(70);
-  const rad = ((fov / 2) * Math.PI) / 180;
-  const dy = Math.min(96, 110 * Math.tan(rad));
-  const ph = Math.min(92, 98 * Math.tan(rad));
-  const frustumPath = `M42 104 L${(42 + 110 * 4).toFixed(0)} ${(104 - dy * 4).toFixed(0)} M42 104 L${(42 + 110 * 4).toFixed(0)} ${(104 + dy * 4).toFixed(0)} M140 ${(104 - ph).toFixed(0)} V${(104 + ph).toFixed(0)}`;
-  const fx = Math.round(1920 / (2 * Math.tan(rad)));
-  return (
-    <div id="technical-lab">
-      <Kicker>C4 / CALIBRATE — THIN-LENS OPTICS, DETERMINISTIC</Kicker>
-      <div className="wb-fovrow">
-        <label htmlFor="wb-fov">HORIZONTAL FOV</label>
-        <input id="wb-fov" type="range" min={30} max={110} step={1} value={fov} onChange={(event) => setFov(Number(event.target.value))} />
-        <output htmlFor="wb-fov">{fov}°</output>
-      </div>
-      <Hoist>
-        <figure className="blueprint wb-figure">
-          <Corners />
-          <svg viewBox="0 0 640 208" className="wb-figure-svg" role="img" aria-label="Pinhole camera frustum, top view">
-            <g stroke="#d4d4d7" strokeWidth="1"><line x1="0" y1="104" x2="640" y2="104" strokeDasharray="3 5" /></g>
-            <path d={frustumPath} stroke="#5980a6" strokeWidth="1.5" fill="none" />
-            <rect x="22" y="94" width="20" height="20" fill="none" stroke="#1d1f20" strokeWidth="1.5" />
-            <circle cx="42" cy="104" r="3" fill="#5980a6" />
-            <g fontFamily="Barlow, sans-serif" fontSize="10" fill="#5d5d60" letterSpacing="1">
-              <text x="20" y="86">PINHOLE C</text><text x="196" y="30">IMAGE PLANE</text><text x="520" y="98">OPTICAL AXIS Z</text>
-            </g>
-          </svg>
-          <figcaption>FIG. 06 — Top view; plane at f. Intrinsics recompute live below.</figcaption>
-        </figure>
-      </Hoist>
-      <div className="wb-metrics">
-        <div><span>fx = fy (PX)</span><strong>{fx}</strong></div>
-        <div><span>cx (PX)</span><strong>960</strong></div>
-        <div><span>cy (PX)</span><strong>540</strong></div>
-        <div><span>SENSOR</span><strong>1920×1080</strong></div>
-      </div>
-      <p className="wb-note">
-        Backed by the top-student CS4277 record: projective geometry, epipolar geometry, absolute pose, SfM with
-        bundle adjustment, multi-view stereo. This lab is a synthetic portfolio experiment — stated plainly.
-      </p>
-    </div>
-  );
+export const CameraWindow: React.FC = () => (
+  <div id="technical-lab">
+    <CameraLab />
+  </div>
+);
+
+// The #world anchor outlived the WebGL world it once marked; the assistant, the
+// field index and the deep links still resolve it. What is behind it now is said
+// plainly: a CSS drawing, and the spatial record it points to. The topics are the
+// CS4277 syllabus as the Proof window records it; the builds are the archive's
+// 3D / Vision domain, so a new spatial project lists itself here.
+const SPATIAL_TOPICS = ['Projective geometry', 'Absolute pose', 'Structure from motion', 'Multi-view stereo'];
+const spatialBuilds = archiveRows.filter((row) => row.domain === '3D / Vision');
+
+// Real in-page hrefs keep the targets addressable in the prerendered DOM (the
+// windows they point into are display:none until JS runs, so without JS they go
+// nowhere on desktop). With JS this opens the target window, even when the hash
+// is already current.
+const openFromLink = (event: React.MouseEvent, appId: DesktopAppId, targetId: string) => {
+  event.preventDefault();
+  dispatchWorkbenchOpen({ appId, targetId });
 };
 
 export const WorldWindow: React.FC = () => (
   <div id="world" className="wb-world">
     <div className="wb-world-main">
-      <Kicker>SHARED #WORLD ANCHOR — OPTICAL TEST BENCH</Kicker>
-      <h3 className="wb-world-title">Optical Test Bench</h3>
+      <Kicker>SHARED #WORLD ANCHOR — SPATIAL RECORD</Kicker>
+      <h3 className="wb-world-title">Spatial Systems</h3>
       <p className="wb-bio">
-        One shared 3D surface, fed by the OnTheSpectrum pipeline — Blender-authored GLBs with metadata, previews,
-        and playable-world QA. In this drawing set the bench appears as a lighter accent: it renders on demand,
-        never as a page-wide background.
+        A drawing, not a scene: the bench volume beside this is a CSS figure with no 3D engine behind it. The
+        spatial work it stands for is in the record: top student of 24 in NUS CS4277 3D Computer Vision, and the
+        builds below.
       </p>
       <div className="wb-tags">
-        <span className="tag tag-accent">Three.js</span>
-        <span className="tag tag-accent">Blender MCP</span>
-        <span className="tag tag-accent">GLB</span>
-        <span className="tag tag-neutral">Optical Courier</span>
+        {SPATIAL_TOPICS.map((topic) => <span className="tag tag-accent" key={topic}>{topic}</span>)}
       </div>
+      <p className="wb-note">
+        BUILDS —{' '}
+        {spatialBuilds.map((row, index) => (
+          <React.Fragment key={row.id}>
+            {index > 0 && ' · '}
+            {/* A fork stays labelled as one: "kalidokit" alone under BUILDS reads as Rahul's library. */}
+            <a href={`#project-${row.id}`} onClick={(event) => openFromLink(event, 'project-archive', `project-${row.id}`)}>{row.title}{/\bfork\b/i.test(row.category) ? ' (fork)' : ''}</a>
+          </React.Fragment>
+        ))}
+        . The working camera models are in the{' '}
+        <a href="#technical-lab" onClick={(event) => openFromLink(event, 'camera-lab', 'technical-lab')}>Camera Lab</a>.
+      </p>
     </div>
     <Hoist className="wb-world-side">
       <figure className="blueprint wb-figure wb-cubefig">
@@ -320,7 +329,7 @@ export const WorldWindow: React.FC = () => (
             <div /><div /><div /><div /><div /><div />
           </div>
         </div>
-        <figcaption>FIG. 07 — BENCH VOLUME (LIVE ACCENT)</figcaption>
+        <figcaption>FIG. 07 — BENCH VOLUME, A CSS DRAWING</figcaption>
       </figure>
     </Hoist>
   </div>

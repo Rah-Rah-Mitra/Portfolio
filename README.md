@@ -1,8 +1,8 @@
-# Rahul Mitra — Continuous Field Test
+# Rahul Mitra — Field Workbench
 
 Production: [rahul-mitra.com](https://rahul-mitra.com/)
 
-An evidence-first engineering portfolio spanning software systems, AI and perception, operations research, solution architecture, 3D, civic work, and responsible security. Experience, projects, outcomes, resumes, and contact paths remain semantic HTML; the Optical Courier world, Effects Lab, AI assistant, and media are optional supporting layers. Explore World links to the shared `#world` optical-test-bench anchor and surface used by both Guided and local Explore control.
+An evidence-first engineering portfolio spanning software systems, AI and perception, operations research, solution architecture, 3D, civic work, and responsible security. On desktop it is a blueprint workbench of draggable windows; on mobile, one searchable registry. Experience, projects, outcomes, resumes, and contact paths are prerendered semantic HTML; the labs, the FX panel and the AI assistant are optional layers beside them.
 
 ## Run locally
 
@@ -41,4 +41,12 @@ npm run media:check
 
 Reproducible prompts, seeds, workflow inputs, output hashes, model hashes, and license notes live in [`workflows/comfyui`](workflows/comfyui). Model weights and user-level MCP credentials are intentionally excluded from Git. See [`workflows/comfyui/README.md`](workflows/comfyui/README.md) for Claude Code and optional Codex MCP setup; restart those clients after changing their user configuration.
 
-The Camera Laboratory is explicitly a synthetic portfolio-site experiment, not professional project experience. It ships deterministic intrinsics, extrinsics, thin-lens optics, and stereo calculations as semantic controls and result tables. The separate OpenCV/C-RADIO/BiRefNet SLAM study remains unpublished and cannot delay the core experience.
+## Labs and effects
+
+The labs are synthetic portfolio-site experiments, not professional project experience. Each runs a real model and shows its numbers as text:
+
+- **Camera Lab:** one synthetic camera and checkerboard read through four models (pinhole intrinsics with Brown–Conrady distortion, pose and the board homography, thin-lens depth of field, rectified stereo), plus a seeded Zhang calibration with Levenberg–Marquardt refinement.
+- **Systems Lab:** a mechanism bench drawn with planar projective geometric algebra; a three-machine permutation flow shop on seeded synthetic jobs (Johnson, CDS and NEH against the exhaustive optimum and Taillard's lower bound); and a matter.js drop test that strikes or pulls stacks of the site's own skill names.
+- **FX panel:** Pause all motion, opt-in sound cues, and two desk backdrops that are off by default: an N-body gravity field solved by a fast multipole method in a worker, and a WebGL2 stable-fluids smoke.
+
+The separate OpenCV/C-RADIO/BiRefNet SLAM study remains unpublished and cannot delay the core experience.

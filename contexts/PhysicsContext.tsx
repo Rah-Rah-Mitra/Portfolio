@@ -1,100 +1,53 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
-import type Matter from 'matter-js';
-import { loadMatter, peekMatter } from '../lib/physicsRuntime';
-import { useSmashInteraction } from '../hooks/useSmashInteraction';
-import { useGravityWellInteraction } from '../hooks/useGravityWellInteraction';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { track } from '../lib/analytics';
-import type { QualityTier } from '../types';
 import { readSoundPreference, SOUND_PREFERENCE_KEY } from '../lib/audioPolicy';
+import { defaultBackdropSettings, type BackdropSettings } from '../lib/backdropSettings';
+import { MOTION_PAUSED_ATTR, onMotionChange, prefersReducedMotion } from '../lib/motion';
 
-type BodyRef = {
-  body: Matter.Body | null;
-  element: HTMLElement;
-  initial: {
-    x: number;
-    y: number;
-    angle: number;
-  };
-  size: { width: number; height: number };
-};
+// The FX layer. Two things live here and nothing else:
+//  - the desk backgrounds (N-body field, fluid smoke): off at boot, toggled and
+//    tuned from the Effects lab drawer, drawn by components/workbench/DeskBackdrop;
+//  - the site-wide switches: "Pause all motion" (written to html[data-motion-paused],
+//    which every animation loop reads through lib/motion) and sound cues.
+// Page-wide word physics (smash / gravity over the whole document) is gone; the
+// drop test in the Systems Lab window is its contained replacement.
 
-export type TextEffectMode = 'decode' | 'scan' | 'pulse';
-export type FluidQuality = 'balanced' | 'high';
+export type EffectId = keyof BackdropSettings;
+export type EffectPatch<K extends EffectId> = Partial<BackdropSettings[K]>;
 
-export type EffectSettings = {
-  smash: {
-    enabled: boolean;
-    intensity: number;
-    radius: number;
-  };
-  gravity: {
-    enabled: boolean;
-    strength: number;
-    radius: number;
-  };
-  fluid: {
-    enabled: boolean;
-    speed: number;
-    intensity: number;
-    opacity: number;
-    splatRadius: number;
-    curl: number;
-    quality: FluidQuality;
-  };
-  pretext: {
-    enabled: boolean;
-    intensity: number;
-    mode: TextEffectMode;
-  };
-};
-
-export type VisualDensity = 'minimal' | 'balanced' | 'dense';
 export type EnhancementSettings = {
   motionPaused: boolean;
-  visualDensity: VisualDensity;
-  mediaEnabled: boolean;
   soundEnabled: boolean;
   soundUnlocked: boolean;
-  quality: QualityTier;
 };
-
-export type EffectId = keyof EffectSettings;
-export type NumericEffectId = 'smash' | 'gravity' | 'fluid' | 'pretext';
 
 interface EffectsContextType {
-  settings: EffectSettings;
-  isInteractionActive: boolean;
-  setEffectEnabled: (id: EffectId, enabled: boolean) => void;
-  toggleEffect: (id: EffectId) => void;
-  setEffectParam: (id: NumericEffectId, param: string, value: number) => void;
-  setPretextMode: (mode: TextEffectMode) => void;
-  setFluidQuality: (quality: FluidQuality) => void;
-  restoreAll: () => void;
-  pauseAll: () => void;
+  settings: BackdropSettings;
   enhancements: EnhancementSettings;
+  /** The visitor's system asks for reduced motion (detected after mount). */
+  reducedMotion: boolean;
+  toggleEffect: (id: EffectId) => void;
+  updateEffect: <K extends EffectId>(id: K, patch: EffectPatch<K>) => void;
   setMotionPaused: (paused: boolean) => void;
-  setVisualDensity: (density: VisualDensity) => void;
-  setMediaEnabled: (enabled: boolean) => void;
   setSoundEnabled: (enabled: boolean) => void;
-  setQuality: (quality: QualityTier) => void;
-  registerWords: (elements: HTMLElement[]) => () => void;
+  pauseAll: () => void;
 }
 
-export const defaultSettings: EffectSettings = {
-  smash: { enabled: false, intensity: 60, radius: 42 },
-  gravity: { enabled: false, strength: 45, radius: 48 },
-  fluid: { enabled: false, speed: 0.7, intensity: 38, opacity: 28, splatRadius: 28, curl: 18, quality: 'balanced' },
-  pretext: { enabled: false, intensity: 42, mode: 'decode' },
-};
+export const defaultSettings: BackdropSettings = defaultBackdropSettings;
 
-const PARAM_LIMITS: Record<NumericEffectId, Record<string, [number, number]>> = {
-  smash: {
-    intensity: [0, 100],
-    radius: [20, 70],
-  },
-  gravity: {
-    strength: [0, 100],
-    radius: [20, 75],
+// [min, max, integer]. Ported from the retired appearance validators so a patch
+// from anywhere (the drawer, a future page-agent command) lands inside the range
+// the engines were tuned for.
+type Range = readonly [number, number, boolean?];
+
+const RANGES: { [K in EffectId]: Partial<Record<keyof BackdropSettings[K], Range>> } = {
+  nbody: {
+    particleCount: [256, 4096, true],
+    timeScale: [0.25, 2],
+    gravity: [0.2, 2],
+    softening: [0.002, 0.04],
+    trailPersistence: [0, 90],
+    seed: [0, 2_147_483_647, true],
   },
   fluid: {
     speed: [0.2, 2.4],
@@ -103,9 +56,58 @@ const PARAM_LIMITS: Record<NumericEffectId, Record<string, [number, number]>> = 
     splatRadius: [10, 85],
     curl: [0, 90],
   },
-  pretext: {
-    intensity: [0, 100],
+};
+
+// Discrete settings: anything off this list is dropped, not snapped. An FMM
+// expansion order of 7 is not "nearly 8", it is a request the solver never ran.
+const CHOICES: { [K in EffectId]: Partial<Record<keyof BackdropSettings[K], readonly unknown[]>> } = {
+  nbody: {
+    preset: ['galaxy', 'binary', 'field'],
+    expansionOrder: [4, 6, 8, 10],
+    leafCapacity: [24, 48, 72, 96],
   },
+  fluid: {
+    quality: ['balanced', 'high'],
+  },
+};
+
+const FLAGS: { [K in EffectId]: readonly (keyof BackdropSettings[K])[] } = {
+  nbody: ['enabled', 'pointerAttraction', 'showTree'],
+  fluid: ['enabled', 'pointerInteraction'],
+};
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+/** Keeps only the keys of `patch` that are valid for `id`, clamping numbers into range. */
+export const sanitizeEffectPatch = <K extends EffectId>(id: K, patch: Record<string, unknown>): EffectPatch<K> => {
+  const ranges = RANGES[id] as Record<string, Range | undefined>;
+  const choices = CHOICES[id] as Record<string, readonly unknown[] | undefined>;
+  const flags = FLAGS[id] as readonly string[];
+  const clean: Record<string, unknown> = {};
+  Object.entries(patch).forEach(([key, value]) => {
+    const range = ranges[key];
+    if (range) {
+      if (typeof value !== 'number' || !Number.isFinite(value)) return;
+      const [min, max, integer] = range;
+      const bounded = clamp(value, min, max);
+      clean[key] = integer ? Math.round(bounded) : bounded;
+      return;
+    }
+    const options = choices[key];
+    if (options) {
+      if (options.includes(value)) clean[key] = value;
+      return;
+    }
+    if (flags.includes(key) && typeof value === 'boolean') clean[key] = value;
+  });
+  return clean as EffectPatch<K>;
+};
+
+/** Pure settings reducer behind updateEffect: unknown keys and bad values never land. */
+export const applyEffectPatch = <K extends EffectId>(settings: BackdropSettings, id: K, patch: EffectPatch<K>): BackdropSettings => {
+  const clean = sanitizeEffectPatch(id, patch as Record<string, unknown>);
+  if (Object.keys(clean).length === 0) return settings;
+  return { ...settings, [id]: { ...settings[id], ...clean } };
 };
 
 export const EffectsContext = createContext<EffectsContextType | undefined>(undefined);
@@ -118,340 +120,85 @@ export const useEffects = () => {
   return context;
 };
 
-// Backwards-compatible name for older components.
-export const usePhysics = useEffects;
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const readStoredSoundPreference = () => {
+  try {
+    return readSoundPreference(window.localStorage.getItem(SOUND_PREFERENCE_KEY));
+  } catch {
+    return false; // storage blocked (private window, sandboxed frame): stay muted
+  }
+};
 
 export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<EffectSettings>(defaultSettings);
+  const [settings, setSettings] = useState<BackdropSettings>(defaultSettings);
   const [enhancements, setEnhancements] = useState<EnhancementSettings>({
-    motionPaused: false, visualDensity: 'balanced', mediaEnabled: true, soundEnabled: false, soundUnlocked: false, quality: 'balanced',
+    motionPaused: false, soundEnabled: false, soundUnlocked: false,
   });
-  const engineRef = useRef<Matter.Engine | null>(null);
-  const runnerRef = useRef<Matter.Runner | null>(null);
-  const bodiesRef = useRef<Map<string, BodyRef>>(new Map());
-  const boundariesRef = useRef<Matter.Body[]>([]);
-  const restoreTimers = useRef(new Set<number>());
-  const [physicsReady, setPhysicsReady] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
-  const restoreAll = useCallback(() => {
-    setSettings((prev) => ({
-      ...prev,
-      smash: { ...prev.smash, enabled: false },
-      gravity: { ...prev.gravity, enabled: false },
-    }));
-
-    if (engineRef.current) engineRef.current.gravity.y = 0.4;
-
-    restoreTimers.current.forEach((timerId) => clearTimeout(timerId));
-    restoreTimers.current.clear();
-
-    const matter = peekMatter();
-    bodiesRef.current.forEach((ref) => {
-      const { element, body, initial } = ref;
-
-      if (!matter || !body || body.isStatic) {
-        return;
-      }
-
-      let fallbackTimeoutId: number | undefined;
-
-      const snapToFinalPosition = () => {
-        element.removeEventListener('transitionend', snapToFinalPosition);
-        if (fallbackTimeoutId) {
-          restoreTimers.current.delete(fallbackTimeoutId);
-          clearTimeout(fallbackTimeoutId);
-        }
-
-        element.classList.remove('word-restoring', 'physics-active');
-        element.style.transform = '';
-
-        matter.Body.setStatic(body, true);
-        matter.Body.setPosition(body, { x: initial.x, y: initial.y });
-        matter.Body.setAngle(body, 0);
-        matter.Body.setVelocity(body, { x: 0, y: 0 });
-        matter.Body.setAngularVelocity(body, 0);
-      };
-
-      element.addEventListener('transitionend', snapToFinalPosition, { once: true });
-      fallbackTimeoutId = window.setTimeout(snapToFinalPosition, 600);
-      restoreTimers.current.add(fallbackTimeoutId);
-
-      element.classList.add('word-restoring');
-      element.style.transform = 'translate(0px, 0px) rotate(0rad)';
-      matter.Body.setStatic(body, true);
-    });
+  // Sound stays muted until the visitor has opted in (persisted) AND touched
+  // the page: browsers refuse audio before a gesture anyway.
+  useEffect(() => {
+    setEnhancements((current) => ({ ...current, soundEnabled: readStoredSoundPreference() }));
+    const unlock = () => setEnhancements((current) => (current.soundUnlocked ? current : { ...current, soundUnlocked: true }));
+    // Capture phase: the lab stages stop pointerdown propagation (so their
+    // hoisted cards don't swing), and a first gesture there must still count.
+    window.addEventListener('pointerdown', unlock, { once: true, capture: true });
+    window.addEventListener('keydown', unlock, { once: true, capture: true });
+    return () => { window.removeEventListener('pointerdown', unlock, true); window.removeEventListener('keydown', unlock, true); };
   }, []);
 
-  const physicsActive = settings.smash.enabled || settings.gravity.enabled;
-
-  // Load the physics engine on first activation and give queued word
-  // registrations their bodies once it arrives.
+  // The one write behind "Pause all motion". lib/motion reads this attribute,
+  // so every loop on the site (rig springs, mechanisms, backdrops, labs) halts
+  // without knowing this provider exists.
   useEffect(() => {
-    if (!physicsActive || physicsReady) return undefined;
-    let cancelled = false;
-    loadMatter().then((matter) => {
-      if (cancelled) return;
-      if (!engineRef.current) engineRef.current = matter.Engine.create();
-      if (!runnerRef.current) runnerRef.current = matter.Runner.create();
-      const engine = engineRef.current;
-      bodiesRef.current.forEach((ref) => {
-        if (ref.body) return;
-        ref.body = matter.Bodies.rectangle(ref.initial.x, ref.initial.y, ref.size.width, ref.size.height, {
-          isStatic: true,
-          restitution: 0.3,
-          friction: 0.2,
-        });
-        matter.Composite.add(engine.world, ref.body);
-      });
-      setPhysicsReady(true);
-    });
-    return () => { cancelled = true; };
-  }, [physicsActive, physicsReady]);
+    document.documentElement.setAttribute(MOTION_PAUSED_ATTR, String(enhancements.motionPaused));
+  }, [enhancements.motionPaused]);
+  useEffect(() => () => document.documentElement.removeAttribute(MOTION_PAUSED_ATTR), []);
 
   useEffect(() => {
-    if (!physicsReady) return undefined;
-    const matter = peekMatter();
-    const engine = engineRef.current;
-    if (!matter || !engine) return undefined;
-    engine.gravity.y = 0.4;
+    const sync = () => setReducedMotion(prefersReducedMotion());
+    sync();
+    return onMotionChange(sync);
+  }, []);
 
-    const setupBoundaries = () => {
-      if (boundariesRef.current.length > 0) {
-        matter.Composite.remove(engine.world, boundariesRef.current);
-      }
+  const setMotionPaused = useCallback((motionPaused: boolean) => {
+    setEnhancements((current) => (current.motionPaused === motionPaused ? current : { ...current, motionPaused }));
+  }, []);
 
-      const { scrollWidth, scrollHeight } = document.documentElement;
-
-      boundariesRef.current = [
-        matter.Bodies.rectangle(scrollWidth / 2, -30, scrollWidth, 60, { isStatic: true }),
-        matter.Bodies.rectangle(scrollWidth / 2, scrollHeight + 30, scrollWidth, 60, { isStatic: true }),
-        matter.Bodies.rectangle(-30, scrollHeight / 2, 60, scrollHeight, { isStatic: true }),
-        matter.Bodies.rectangle(scrollWidth + 30, scrollHeight / 2, 60, scrollHeight, { isStatic: true }),
-      ];
-      matter.Composite.add(engine.world, boundariesRef.current);
-    };
-
-    setupBoundaries();
-
-    const handleResize = () => {
-      setupBoundaries();
-      restoreAll();
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      if (runnerRef.current) matter.Runner.stop(runnerRef.current);
-      matter.World.clear(engine.world, false);
-      matter.Engine.clear(engine);
-      window.removeEventListener('resize', handleResize);
-      restoreTimers.current.forEach((timerId) => clearTimeout(timerId));
-    };
-  }, [physicsReady, restoreAll]);
-
-  useEffect(() => {
-    if (!physicsActive || !physicsReady) return undefined;
-    const matter = peekMatter();
-    const runner = runnerRef.current;
-    const engine = engineRef.current;
-    if (!matter || !runner || !engine) return undefined;
-    let animationId = 0;
-    let running = false;
-
-    const renderLoop = () => {
-      bodiesRef.current.forEach((ref) => {
-        if (!ref.element || !ref.body) return;
-        const restoring = ref.element.classList.contains('word-restoring');
-        ref.element.classList.toggle('physics-active', !ref.body.isStatic && !restoring);
-        if (restoring || ref.body.isStatic) return;
-        const { x, y } = ref.body.position;
-        ref.element.style.transform = `translate(${x - ref.initial.x}px, ${y - ref.initial.y}px) rotate(${ref.body.angle}rad)`;
-      });
-      animationId = requestAnimationFrame(renderLoop);
-    };
-
-    const start = () => {
-      if (running || document.hidden) return;
-      running = true;
-      matter.Runner.run(runner, engine);
-      renderLoop();
-    };
-    const stop = () => {
-      if (!running) return;
-      running = false;
-      matter.Runner.stop(runner);
-      cancelAnimationFrame(animationId);
-    };
-    const handleVisibility = () => { if (document.hidden) stop(); else start(); };
-
-    start();
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => {
-      stop();
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [physicsActive, physicsReady]);
-
-  useEffect(() => {
-    if (engineRef.current) engineRef.current.gravity.y = settings.gravity.enabled ? 0 : 0.4;
-  }, [physicsReady, settings.gravity.enabled]);
-
-  useEffect(() => {
-    const isPhysicsActive = settings.smash.enabled || settings.gravity.enabled;
-    document.body.classList.toggle('no-select', isPhysicsActive);
-    return () => {
-      document.body.classList.remove('no-select');
-    };
-  }, [settings.smash.enabled, settings.gravity.enabled]);
-
-  useSmashInteraction(engineRef, bodiesRef, settings.smash.enabled && physicsReady, {
-    intensity: settings.smash.intensity,
-    radius: settings.smash.radius,
-  });
-  useGravityWellInteraction(engineRef, bodiesRef, settings.gravity.enabled && physicsReady, {
-    strength: settings.gravity.strength,
-    radius: settings.gravity.radius,
-  });
-
+  // Freezes rather than switches off: the backdrops keep their last frame and
+  // resume where they stopped, so pausing never loses a configured scene.
   const pauseAll = useCallback(() => {
-    restoreAll();
-    setSettings((prev) => ({
-      ...prev,
-      smash: { ...prev.smash, enabled: false },
-      gravity: { ...prev.gravity, enabled: false },
-      fluid: { ...prev.fluid, enabled: false },
-      pretext: { ...prev.pretext, enabled: false },
-    }));
-    track('effect_control_changed', { effect: 'all', control: 'enabled', value: 'false' });
-    setEnhancements((current) => ({ ...current, motionPaused: true, mediaEnabled: false }));
-  }, [restoreAll]);
+    setMotionPaused(true);
+    track('effect_control_changed', { effect: 'all', control: 'motion', value: 'paused' });
+  }, [setMotionPaused]);
 
-  useEffect(() => {
-    setEnhancements((current) => ({ ...current, soundEnabled: readSoundPreference(localStorage.getItem(SOUND_PREFERENCE_KEY)) }));
-    const unlock = () => setEnhancements((current) => ({ ...current, soundUnlocked: true }));
-    window.addEventListener('pointerdown', unlock, { once: true });
-    window.addEventListener('keydown', unlock, { once: true });
-    return () => { window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock); };
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.motionPaused = String(enhancements.motionPaused);
-    document.documentElement.dataset.visualDensity = enhancements.visualDensity;
-    window.dispatchEvent(new CustomEvent('portfolio:enhancement-policy', { detail: enhancements }));
-  }, [enhancements]);
-
-  const setMotionPaused = useCallback((paused: boolean) => setEnhancements((current) => ({ ...current, motionPaused: paused })), []);
-  const setVisualDensity = useCallback((visualDensity: VisualDensity) => setEnhancements((current) => ({ ...current, visualDensity })), []);
-  const setMediaEnabled = useCallback((mediaEnabled: boolean) => setEnhancements((current) => ({ ...current, mediaEnabled })), []);
   const setSoundEnabled = useCallback((soundEnabled: boolean) => {
-    localStorage.setItem(SOUND_PREFERENCE_KEY, String(soundEnabled));
+    try {
+      window.localStorage.setItem(SOUND_PREFERENCE_KEY, String(soundEnabled));
+    } catch {
+      // Not persisted; the choice still holds for this visit.
+    }
     setEnhancements((current) => ({ ...current, soundEnabled }));
-  }, []);
-  const setQuality = useCallback((quality: QualityTier) => {
-    setEnhancements((current) => ({ ...current, quality }));
-    window.dispatchEvent(new CustomEvent('portfolio:world-event', { detail: { type: 'QUALITY_CHANGED', tier: quality } }));
-  }, []);
-
-  const setEffectEnabled = useCallback((id: EffectId, enabled: boolean) => {
-    setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
   }, []);
 
   const toggleEffect = useCallback((id: EffectId) => {
-    const enabled = !settings[id].enabled;
-    setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled } } as EffectSettings));
-  }, [settings]);
-
-  const setEffectParam = useCallback((id: NumericEffectId, param: string, value: number) => {
-    const limits = PARAM_LIMITS[id][param];
-    if (!limits) return;
-    const [min, max] = limits;
-    setSettings((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        [param]: clamp(value, min, max),
-      },
-    } as EffectSettings));
+    setSettings((prev) => ({ ...prev, [id]: { ...prev[id], enabled: !prev[id].enabled } }));
   }, []);
 
-  const setPretextMode = useCallback((mode: TextEffectMode) => {
-    setSettings((prev) => ({
-      ...prev,
-      pretext: { ...prev.pretext, mode },
-    }));
+  const updateEffect = useCallback(<K extends EffectId>(id: K, patch: EffectPatch<K>) => {
+    setSettings((prev) => applyEffectPatch(prev, id, patch));
   }, []);
 
-  const setFluidQuality = useCallback((quality: FluidQuality) => {
-    setSettings((prev) => ({
-      ...prev,
-      fluid: { ...prev.fluid, quality },
-    }));
-  }, []);
-
-  const registerWords = useCallback((elements: HTMLElement[]) => {
-    const wordIds: string[] = [];
-    const matter = peekMatter();
-    elements.forEach((element, i) => {
-      const id = `${Date.now()}-${Math.random()}-${i}`;
-      element.dataset.physicsId = id;
-      wordIds.push(id);
-
-      const rect = element.getBoundingClientRect();
-      const initialX = rect.left + window.scrollX + rect.width / 2;
-      const initialY = rect.top + window.scrollY + rect.height / 2;
-
-      // Bodies materialize immediately when the engine is loaded; otherwise
-      // the registration is queued and picked up by the activation effect.
-      let body: Matter.Body | null = null;
-      if (matter && engineRef.current) {
-        body = matter.Bodies.rectangle(initialX, initialY, rect.width, rect.height, {
-          isStatic: true,
-          restitution: 0.3,
-          friction: 0.2,
-        });
-        matter.Composite.add(engineRef.current.world, body);
-      }
-
-      bodiesRef.current.set(id, {
-        body,
-        element,
-        initial: { x: initialX, y: initialY, angle: 0 },
-        size: { width: rect.width, height: rect.height },
-      });
-    });
-
-    return () => {
-      const matterNow = peekMatter();
-      wordIds.forEach((id) => {
-        const ref = bodiesRef.current.get(id);
-        if (ref) {
-          if (matterNow && engineRef.current && ref.body) matterNow.Composite.remove(engineRef.current.world, ref.body);
-          bodiesRef.current.delete(id);
-        }
-      });
-    };
-  }, []);
-
-  const value: EffectsContextType = {
+  const value = useMemo<EffectsContextType>(() => ({
     settings,
-    isInteractionActive: settings.smash.enabled || settings.gravity.enabled,
-    setEffectEnabled,
-    toggleEffect,
-    setEffectParam,
-    setPretextMode,
-    setFluidQuality,
-    registerWords,
-    restoreAll,
-    pauseAll,
     enhancements,
+    reducedMotion,
+    toggleEffect,
+    updateEffect,
     setMotionPaused,
-    setVisualDensity,
-    setMediaEnabled,
     setSoundEnabled,
-    setQuality,
-  };
+    pauseAll,
+  }), [settings, enhancements, reducedMotion, toggleEffect, updateEffect, setMotionPaused, setSoundEnabled, pauseAll]);
 
   return (
     <EffectsContext.Provider value={value}>
@@ -459,5 +206,3 @@ export const EffectsProvider: React.FC<{ children: ReactNode }> = ({ children })
     </EffectsContext.Provider>
   );
 };
-
-export const PhysicsProvider = EffectsProvider;

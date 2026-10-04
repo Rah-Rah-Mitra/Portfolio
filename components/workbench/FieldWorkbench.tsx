@@ -3,10 +3,13 @@ import type { DesktopAppId } from '../../types';
 import { appForAnchor, workbenchApps, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../../lib/workbench';
 import { desktopAppFromSearch, isDesktopAppId } from '../../lib/workstation';
 import { routePath, spring } from '../../lib/rig';
+import { motionHalted, onMotionChange } from '../../lib/motion';
 import { SITE_CONFIG } from '../../siteConfig';
 import { AppIcon } from './bits';
 import { WINDOW_BODIES } from './WorkbenchWindows';
+import { DeskBackdrop } from './DeskBackdrop';
 import { track } from '../../lib/analytics';
+import { dispatchPortfolioWorldEvent } from '../../lib/worldEvents';
 
 type Bounds = [number, number, number, number];
 
@@ -16,7 +19,7 @@ const DEFAULT_BOUNDS: Record<DesktopAppId, Bounds> = {
   'experience': [230, 80, 880, 600],
   'project-archive': [280, 60, 940, 640],
   'systems-lab': [300, 88, 860, 610],
-  'camera-lab': [330, 100, 840, 590],
+  'camera-lab': [330, 100, 840, 640],
   'world-3d': [360, 110, 820, 540],
   'capabilities': [250, 70, 900, 620],
   'proof-vault': [290, 90, 880, 600],
@@ -30,13 +33,21 @@ const WINDOW_FOOTERS: Record<DesktopAppId, [string, string]> = {
   'experience': ['SHEET WIN-03', 'FULL RECORD — NO GAPS'],
   'project-archive': ['SHEET WIN-04 · REGISTRY', 'TYPE TO FILTER'],
   'systems-lab': ['SHEET WIN-05 · DETERMINISTIC', 'SEED-STABLE EXHIBITS'],
-  'camera-lab': ['SHEET WIN-06 · K = [fx 0 cx / 0 fy cy / 0 0 1]', 'DRAG THE SLIDER'],
-  'world-3d': ['SHEET WIN-07 · #WORLD', 'RENDERS ON DEMAND ONLY'],
+  'camera-lab': ['SHEET WIN-06 · K = [fx 0 cx / 0 fy cy / 0 0 1]', 'ONE SCENE · FOUR MODELS'],
+  'world-3d': ['SHEET WIN-07 · #WORLD', 'CSS DRAWING · NO 3D ENGINE'],
   'capabilities': ['SHEET WIN-08', 'EVERY METHOD CITES EVIDENCE'],
   'proof-vault': ['SHEET WIN-09 · EVERY CLAIM LINKS OUT', 'EVIDENCE-FIRST'],
   'resumes-contact': ['SHEET WIN-10 · HANDOFF', 'DOCX + PDF PER EDITION'],
   'resume-builder': ['SHEET WIN-11 · COMPOSE TO ORDER', 'SELECTED EVIDENCE ONLY'],
 };
+
+// Window bodies take no props, so memoizing them means a focus, open or close
+// here never re-renders window contents — only a body's own state does. Built
+// once at module scope: a memo type made during render would be a new component
+// on every render and remount all eleven bodies.
+const MEMO_BODIES: Record<string, React.ComponentType> = Object.fromEntries(
+  Object.entries(WINDOW_BODIES).map(([id, Body]) => [id, React.memo(Body)]),
+);
 
 const INITIAL_OPEN: Record<DesktopAppId, boolean> = {
   'home': true, 'selected-work': true, 'experience': false, 'project-archive': false,
@@ -194,6 +205,20 @@ const FieldWorkbench: React.FC = () => {
     });
   }, [focusWin]);
 
+  // Window open/close as world events (the sound cues listen). Diffed
+  // after commit rather than fired inside openApp/closeApp: those also re-focus
+  // windows that are already open, and their state updaters must stay pure.
+  // One event per real transition, whichever path made it (rail, deep link,
+  // assistant, ESC, DESK); the boot windows are the baseline, not an event.
+  const announcedOpen = React.useRef(INITIAL_OPEN);
+  React.useEffect(() => {
+    const before = announcedOpen.current;
+    announcedOpen.current = open;
+    (Object.keys(open) as DesktopAppId[]).forEach((appId) => {
+      if (open[appId] !== before[appId]) dispatchPortfolioWorldEvent({ type: 'WORKBENCH_WINDOW', appId, action: open[appId] ? 'open' : 'close' });
+    });
+  }, [open]);
+
   const showDesk = React.useCallback(() => {
     const engine = engineRef.current;
     engine.rigDone = {};
@@ -229,10 +254,9 @@ const FieldWorkbench: React.FC = () => {
     const root = rootRef.current;
     if (!root) return;
 
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const syncMotion = () => { engine.motion = !motionQuery.matches; };
+    const syncMotion = () => { engine.motion = !motionHalted(); };
     syncMotion();
-    motionQuery.addEventListener('change', syncMotion);
+    const stopMotionSync = onMotionChange(syncMotion);
 
     const onMove = (event: PointerEvent) => {
       const drag = engine.dragCtx;
@@ -286,7 +310,7 @@ const FieldWorkbench: React.FC = () => {
     }, 1000);
 
     return () => {
-      motionQuery.removeEventListener('change', syncMotion);
+      stopMotionSync();
       root.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
@@ -334,7 +358,9 @@ const FieldWorkbench: React.FC = () => {
         applyBounds(id);
         layoutRig(id);
       });
-      focusWin('home');
+      // A deep link (?app=, #anchor) has already focused its window by now;
+      // Home only takes focus on a plain visit.
+      if (!engine.focused) focusWin('home');
     });
 
     let raf = 0;
@@ -461,6 +487,7 @@ const FieldWorkbench: React.FC = () => {
           <button type="button" className="wb-rail-desk" onClick={showDesk}>DESK</button>
         </nav>
         <main className="wb-desk" data-desk>
+          <DeskBackdrop />
           <ul className="wb-shortcuts" aria-label="Desktop shortcuts">
             {workbenchApps.map((app) => (
               <li key={app.id}>
@@ -481,7 +508,7 @@ const FieldWorkbench: React.FC = () => {
             </div>
           </div>
           {workbenchApps.map((app) => {
-            const Body = WINDOW_BODIES[app.id];
+            const Body = MEMO_BODIES[app.id];
             const [footLeft, footRight] = WINDOW_FOOTERS[app.id];
             return (
               <section

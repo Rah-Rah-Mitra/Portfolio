@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { FmmSolver2D, createInitialConditions } from '../lib/nbody/fmm';
 import { normalizeNBodyWorkerMessage, resolveEffectiveParticleCount, type NBodyWorkerConfig } from '../lib/nbody/workerProtocol';
+import { paintField, paintSprite, SPRITE_SIZE, type FieldInk } from '../lib/nbody/paint';
 
 const worker = self as DedicatedWorkerGlobalScope;
 const solver = new FmmSolver2D(4096, 10);
@@ -54,52 +55,25 @@ const stepP95 = () => {
   return sortedStepTimes[Math.min(count - 1, Math.floor(count * 0.95))]!;
 };
 
-const render = (widthCss: number, heightCss: number, dpr: number, trailPersistence: number, accent: string, surface: string, darkSurface: boolean) => {
+// Painting lives in lib/nbody/paint.ts so the main-thread fallback draws the
+// same picture. The sprite is rebuilt only when the palette changes.
+const render = (widthCss: number, heightCss: number, dpr: number, ink: FieldInk) => {
   if (!renderCanvas || !renderContext) return;
   const width = Math.max(1, Math.round(widthCss * dpr));
   const height = Math.max(1, Math.round(heightCss * dpr));
   if (renderCanvas.width !== width || renderCanvas.height !== height) { renderCanvas.width = width; renderCanvas.height = height; }
-  const nextSpriteColor = `${accent}:${darkSurface ? 'dark' : 'light'}`;
+  const nextSpriteColor = `${ink.accent}:${ink.accentDeep}`;
   if (!sprite || spriteColor !== nextSpriteColor) {
-    sprite = new OffscreenCanvas(12, 12);
+    sprite = new OffscreenCanvas(SPRITE_SIZE, SPRITE_SIZE);
     const context = sprite.getContext('2d');
-    if (context) {
-      const gradient = context.createRadialGradient(6, 6, 0, 6, 6, 6);
-      gradient.addColorStop(0, darkSurface ? '#ffffff' : '#06110f');
-      gradient.addColorStop(0.22, accent);
-      gradient.addColorStop(1, 'transparent');
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, 12, 12);
-    }
+    if (context) paintSprite(context, ink.accent, ink.accentDeep);
     spriteColor = nextSpriteColor;
   }
-  renderContext.globalCompositeOperation = 'source-over';
-  renderContext.globalAlpha = Math.max(0.06, 1 - trailPersistence / 100);
-  renderContext.fillStyle = surface;
-  renderContext.fillRect(0, 0, width, height);
-  const scale = Math.min(width, height) * 0.48;
-  renderContext.globalCompositeOperation = 'lighter';
-  renderContext.globalAlpha = 0.82;
-  if (sprite) {
-    for (let body = 0; body < masses.length; body += 1) {
-      const x = width * 0.5 + positions[body * 2]! * scale;
-      const y = height * 0.5 - positions[body * 2 + 1]! * scale;
-      renderContext.drawImage(sprite, x - 3, y - 3, 6, 6);
-    }
-  }
-  if (config?.showTree) {
-    const leafCount = solver.writeLeafBounds(leafBounds);
-    renderContext.globalCompositeOperation = 'source-over';
-    renderContext.globalAlpha = 0.22;
-    renderContext.strokeStyle = accent;
-    renderContext.lineWidth = Math.max(1, dpr * 0.5);
-    for (let leaf = 0; leaf < leafCount; leaf += 1) {
-      const offset = leaf * 3;
-      const half = leafBounds[offset + 2]! * scale;
-      renderContext.strokeRect(width * 0.5 + leafBounds[offset]! * scale - half, height * 0.5 - leafBounds[offset + 1]! * scale - half, half * 2, half * 2);
-    }
-  }
-  renderContext.globalAlpha = 1;
+  const leafCount = config?.showTree ? solver.writeLeafBounds(leafBounds) : 0;
+  paintField(renderContext, {
+    positions, count: masses.length, width, height, dpr, sprite,
+    leaves: leafCount ? { bounds: leafBounds, count: leafCount } : undefined,
+  }, ink);
 };
 
 const simulate = (dt: number) => {
@@ -139,7 +113,11 @@ const simulate = (dt: number) => {
 worker.addEventListener('message', (event: MessageEvent<unknown>) => {
   const message = normalizeNBodyWorkerMessage(event.data);
   if (!message) {
-    worker.postMessage({ type: 'protocol-error' });
+    // A rejected step still carried the host's only frame buffer; hand it back,
+    // or the host would wait on it forever and the field would stall.
+    const raw = event.data as { buffer?: unknown } | null;
+    if (raw && typeof raw === 'object' && raw.buffer instanceof ArrayBuffer) worker.postMessage({ type: 'protocol-error', buffer: raw.buffer }, [raw.buffer]);
+    else worker.postMessage({ type: 'protocol-error' });
     return;
   }
   if (message.type === 'initialize') {
@@ -151,6 +129,16 @@ worker.addEventListener('message', (event: MessageEvent<unknown>) => {
     worker.postMessage({ type: 'ready', effectiveParticleCount: config?.effectiveParticleCount ?? 0 });
     return;
   }
+  if (message.type === 'configure') {
+    // A slider step tunes the running field in place; only initialize reseeds it.
+    // Before initialize there is no config to tune, and the next initialize
+    // carries the current values anyway.
+    if (config) {
+      const { type: _type, ...live } = message;
+      config = { ...config, ...live };
+    }
+    return;
+  }
   if (message.type === 'pause') { paused = message.paused; return; }
   if (message.type === 'pointer') { pointerX = message.x; pointerY = message.y; pointerActive = message.active; return; }
   if (message.type === 'reset') {
@@ -159,12 +147,18 @@ worker.addEventListener('message', (event: MessageEvent<unknown>) => {
   }
   if (message.type === 'recycle') return;
   if (message.type === 'step') {
-    if (paused || !config) {
+    // dt === 0 is a redraw (see workerProtocol): it paints even while paused,
+    // which is how a halted field still shows a still frame.
+    if (!config || (paused && message.dt > 0)) {
       worker.postMessage({ type: 'frame', paused: true, buffer: message.buffer }, [message.buffer]);
       return;
     }
-    const performanceMetrics = simulate(message.dt);
-    render(message.width ?? 0, message.height ?? 0, message.dpr ?? 1, message.trailPersistence ?? 38, message.accent ?? '#63d7ca', message.surface ?? '#080b0f', message.darkSurface ?? true);
+    const performanceMetrics = message.dt > 0 ? simulate(message.dt) : null;
+    if (message.accent && message.accentDeep) {
+      render(message.width ?? 0, message.height ?? 0, message.dpr ?? 1, {
+        accent: message.accent, accentDeep: message.accentDeep, trailPersistence: message.trailPersistence ?? 38,
+      });
+    }
     const destination = new Float32Array(message.buffer);
     const bodyCount = Math.min(masses.length, Math.floor(destination.length / 2));
     for (let index = 0; index < bodyCount * 2; index += 1) destination[index] = positions[index]!;

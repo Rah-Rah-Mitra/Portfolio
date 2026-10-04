@@ -1,37 +1,34 @@
 import React, { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { SECTION_IDS } from '../constants';
-import { ASSISTANT_STARTERS } from '../siteConfig';
+import { ASSISTANT_STARTERS, NARROW_ASSISTANT_STARTERS } from '../siteConfig';
 import { allProjects, experienceRecords, resumeProfiles } from '../portfolioData';
 import { useEffects } from '../contexts/PhysicsContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { captureAnalyticsException, track, triggerSessionReplay } from '../lib/analytics';
 import { JOURNEY_STAGES } from '../constants';
-import type { DesktopAppId, SceneId } from '../types';
-import { useExperienceMode } from '../contexts/ExperienceModeContext';
-import { dispatchExploreControl } from '../lib/worldEvents';
+import type { DesktopAppId } from '../types';
 import { workstationApps } from '../lib/workstation';
 import { appForAnchor, dispatchWorkbenchOpen } from '../lib/workbench';
 import { allowedLinks, buildPageState } from '../lib/askPageState';
-import { useOptionalWorkstation } from '../contexts/WorkstationContext';
 
 type Reference = { label: string; href: string };
 type ChatMessage = { role: 'assistant' | 'user'; content: string; references?: Reference[] };
+type LabMode = 'intrinsics' | 'extrinsics' | 'optics' | 'stereo';
 export type PageCommand =
   | { type: 'focusExperience'; experienceId?: string }
   | { type: 'focusProject'; projectId: string }
-  | { type: 'openTechnicalLab'; mode?: 'intrinsics' | 'extrinsics' | 'optics' | 'stereo' }
+  | { type: 'openTechnicalLab'; mode?: LabMode }
   | { type: 'focusGuideChapter'; chapterId: string }
-  | { type: 'enterExploreMode'; sceneId: SceneId }
   | { type: 'openDesktopApp'; appId: DesktopAppId }
-  | { type: 'minimizeDesktopApp'; appId: DesktopAppId }
-  | { type: 'setQuickScan'; enabled: boolean };
+  | { type: 'minimizeDesktopApp'; appId: DesktopAppId };
 type AgentResponse = { reply: string; references?: Reference[]; commands?: PageCommand[]; modelUsed?: boolean; model?: string; reason?: string };
 
 const experienceIds = new Set(experienceRecords.map((record) => record.id));
 const projectIds = new Set(allProjects.map((project) => project.id));
 const chapterIds: Set<string> = new Set(JOURNEY_STAGES.map((stage) => stage.id));
-const labModes = new Set(['intrinsics', 'extrinsics', 'optics', 'stereo']);
-const sceneIds = new Set<SceneId>(['calibration', 'systems-in-motion', 'spatial-systems', 'selected-work', 'camera-laboratory', 'departure']);
+// The rebuilt Camera Lab keeps exactly these four models and listens for
+// 'portfolio:camera-lab-mode' to switch between them.
+const labModes = new Set<LabMode>(['intrinsics', 'extrinsics', 'optics', 'stereo']);
 const desktopAppIds = new Set<DesktopAppId>(workstationApps.map((app) => app.id));
 
 export const validatePageCommand = (value: unknown): PageCommand | null => {
@@ -39,12 +36,10 @@ export const validatePageCommand = (value: unknown): PageCommand | null => {
   const command = value as Record<string, unknown>;
   if (command.type === 'focusExperience' && (command.experienceId === undefined || (typeof command.experienceId === 'string' && experienceIds.has(command.experienceId)))) return { type: 'focusExperience', ...(command.experienceId ? { experienceId: command.experienceId as string } : {}) };
   if (command.type === 'focusProject' && typeof command.projectId === 'string' && projectIds.has(command.projectId)) return { type: 'focusProject', projectId: command.projectId };
-  if (command.type === 'openTechnicalLab' && (command.mode === undefined || (typeof command.mode === 'string' && labModes.has(command.mode)))) return { type: 'openTechnicalLab', ...(command.mode ? { mode: command.mode as 'intrinsics' | 'extrinsics' | 'optics' | 'stereo' } : {}) };
+  if (command.type === 'openTechnicalLab' && (command.mode === undefined || (typeof command.mode === 'string' && labModes.has(command.mode as LabMode)))) return { type: 'openTechnicalLab', ...(command.mode ? { mode: command.mode as LabMode } : {}) };
   if (command.type === 'focusGuideChapter' && typeof command.chapterId === 'string' && chapterIds.has(command.chapterId)) return { type: 'focusGuideChapter', chapterId: command.chapterId };
-  if (command.type === 'enterExploreMode' && typeof command.sceneId === 'string' && sceneIds.has(command.sceneId as SceneId)) return { type: 'enterExploreMode', sceneId: command.sceneId as SceneId };
   if (command.type === 'openDesktopApp' && typeof command.appId === 'string' && desktopAppIds.has(command.appId as DesktopAppId)) return { type: 'openDesktopApp', appId: command.appId as DesktopAppId };
   if (command.type === 'minimizeDesktopApp' && typeof command.appId === 'string' && desktopAppIds.has(command.appId as DesktopAppId)) return { type: 'minimizeDesktopApp', appId: command.appId as DesktopAppId };
-  if (command.type === 'setQuickScan' && typeof command.enabled === 'boolean') return { type: 'setQuickScan', enabled: command.enabled };
   return null;
 };
 const cleanReferences = (value: unknown): Reference[] => {
@@ -73,14 +68,20 @@ const projectRef = (id: string, label: string): Reference => ({ label, href: `#p
 export const localAgent = (message: string): AgentResponse => {
   const text = message.toLowerCase();
   const commands: PageCommand[] = [];
-  let reply = 'I could not find that in Rahul’s portfolio record. Try asking about optimization, 3D computer vision, security, a résumé, or Explore World.';
-  let references: Reference[] = [];
+  let reply = 'The offline index has no ready answer for that, which does not mean the record lacks it: Rahul’s roles are in Experience, and his email and profiles are in Contact. Try asking about optimization, 3D computer vision, security, a résumé, or the Camera and Systems Labs.';
+  let references: Reference[] = [{ label: 'Read the experience timeline', href: '#experience' }, { label: 'Contact', href: '#contact' }];
 
-  if (text.includes('technical lab') || text.includes('slam') || text.includes('calibration study')) {
-    reply = 'The shipped Technical Lab is a synthetic, local camera-geometry instrument for intrinsics, extrinsics, analytic optics, and stereo triangulation. It is explicitly separated from professional work. The separate SLAM/RADIO benchmark remains unpublished until its reproducibility and evidence gates pass.';
-    references = [{ label: 'Open the Camera Laboratory', href: '#technical-lab' }];
-    const mode = [...labModes].find((candidate) => text.includes(candidate)) as 'intrinsics' | 'extrinsics' | 'optics' | 'stereo' | undefined;
+  // Same branches, order and wording as localAgent in server/pageAgent.mjs, whose
+  // SITE_EXHIBITS is the model's description of the labs and the FX panel.
+  if (text.includes('camera lab') || text.includes('technical lab') || text.includes('slam') || text.includes('calibrat') || text.includes('zhang')) {
+    reply = 'The Camera Lab is one synthetic, deterministic camera scene with four models: intrinsics (the K matrix and lens distortion), extrinsics (pose and projection), thin-lens optics (depth of field), and rectified stereo depth. It is a portfolio instrument backed by Rahul’s CS4277 top-student record, kept separate from professional work; the SLAM/RADIO benchmark stays unpublished until its reproducibility and evidence gates pass. It also runs a seeded Zhang calibration of that camera (homographies, closed-form K, Levenberg–Marquardt) on synthetic detections. It is a desktop window (881px and wider).';
+    references = [{ label: 'Open the Camera Lab', href: '#technical-lab' }];
+    const mode = [...labModes].find((candidate) => text.includes(candidate));
     commands.push({ type: 'openTechnicalLab', ...(mode ? { mode } : {}) });
+  } else if (text.includes('systems lab') || text.includes('mechanism bench') || text.includes('drop test') || text.includes('teaching model') || text.includes('permutation flow') || text.includes('johnson') || /\bneh\b/.test(text)) {
+    reply = 'The Systems Lab holds deterministic exhibits: an illustrative figure of the Abbott hybrid flow-shop schedule (operating details abstracted), the 15-stage changeover pipeline, the Mechanism Bench of six planar mechanisms, an interactive permutation flow-shop teaching model that compares the exact optimum with Johnson’s rule and NEH on synthetic, seeded jobs (not Abbott data), and a contained matter.js drop test. It is a desktop window (881px and wider).';
+    references = [{ label: 'Open the Systems Lab', href: '#systems-lab' }];
+    commands.push({ type: 'openDesktopApp', appId: 'systems-lab' });
   } else if (text.includes('asyncddgs')) {
     reply = 'AsyncDDGS is Rahul’s maintained asyncio-first DuckDuckGo client, built with aiohttp and released through a tested PyPI workflow.';
     references = [projectRef('asyncddgs', 'Inspect AsyncDDGS')];
@@ -89,12 +90,24 @@ export const localAgent = (message: string): AgentResponse => {
     reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took the five-person team Rahul led to the finals of the Singapore Defense Tech Hackathon 2026 (1,300+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
     references = [projectRef('swarmline', 'Inspect Swarmline')];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
+  } else if (text.includes('amazon')) {
+    reply = 'Since Jul 2026 Rahul has been a Robotics Vision Engineer with Amazon (BlendED AI+X), building vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.';
+    references = [{ label: 'Read the experience timeline', href: '#experience' }];
+    commands.push({ type: 'focusExperience', experienceId: 'career-amazon-vision' });
+  } else if (text.includes('stmicro') || text.includes('st micro')) {
+    reply = 'Since Aug 2026 Rahul has been designing an AI-driven put-away recommendation system for STMicroelectronics’ Singapore warehouse, an NUS System Design Project in operations research, with capacity-aware decisions drawn from picking history, demand forecasts, and available capacity.';
+    references = [{ label: 'Read the experience timeline', href: '#experience' }];
+    commands.push({ type: 'focusExperience', experienceId: 'career-stmicro-or' });
+  } else if (text.includes('contact') || text.includes('email') || text.includes('get in touch')) {
+    reply = 'Rahul’s email, LinkedIn, and GitHub are in the Résumés & Contact window, beside the eight résumés.';
+    references = [{ label: 'Contact', href: '#contact' }];
+    commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.CONTACT });
   } else if (text.includes('experience') || text.includes('timeline')) {
     reply = 'The experience timeline presents Rahul’s role, organization, location, dates, scope, responsibilities, outcomes, and related work in ordinary HTML.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience' });
   } else if (text.includes('guide') || text.includes('chapter')) {
-    reply = 'The field engineer is a supporting navigation aid. It follows chapter checkpoints while all portfolio evidence remains stationary and readable.';
+    reply = 'Each chapter of the record is a window on the workbench: Selected Work, Experience, the project archive, the labs, Capabilities, Proof, and Résumés. The rail opens any of them, and on a phone they become one searchable registry.';
     references = [{ label: 'Return to selected work', href: '#work' }];
     commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.PROJECTS });
   } else if (text.includes('abbott') || text.includes('apc') || text.includes('changeover') || text.includes('manufacturing internship')) {
@@ -117,14 +130,16 @@ export const localAgent = (message: string): AgentResponse => {
     reply = 'Rahul’s security record includes responsible bug-bounty research for government and transport programs, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';
     references = [projectRef('arcane', 'Arcane security tooling'), { label: 'Security experience and proof', href: '#proof' }];
     commands.push({ type: 'focusGuideChapter', chapterId: SECTION_IDS.ACHIEVEMENTS });
+  } else if (/\bfx\b/.test(text) || text.includes('quick scan') || text.includes('pause') || text.includes('reduce motion') || text.includes('reduced motion') || text.includes('n-body') || text.includes('nbody') || text.includes('gravity field') || text.includes('fluid') || text.includes('backdrop') || text.includes('desk background') || text.includes('sound')) {
+    // No command: nothing opens the FX panel by id, and there is no switch left
+    // to flip. Quick Scan questions land here because the honest answer is what
+    // replaced it, and what an old ?mode=scan link still does
+    // (lib/experienceMode.ts keeps it on purpose).
+    reply = 'The FX panel holds Pause all motion, sound cues, and two desk backgrounds that stay off until switched on: an N-body gravity field computed with a fast multipole method, and a WebGL2 fluid. There is no Quick Scan switch any more: every window is plain, readable HTML, and Pause all motion halts the site’s animation. An old ?mode=scan link still opens the page without the desk backgrounds or sound cues, and without ?app= deep links.';
   } else if (text.includes('world') || text.includes('map')) {
-    reply = 'Explore World marks the shared optical test bench as this site’s enhancement target. Its semantic anchor is available now; the evidence document remains the shipped experience.';
+    reply = 'Explore World opens the 3D World window at #world: a CSS drawing of a bench volume, not a rendered 3D scene. It points to the spatial record: the CS4277 top-student result in 3D computer vision, the Camera Lab’s synthetic camera models, and 3D builds such as OnTheSpectrum. It is a desktop window (881px and wider).';
     references = [{ label: 'Explore World', href: '#world' }];
-    commands.push({ type: 'enterExploreMode', sceneId: 'camera-laboratory' });
-  } else if (text.includes('quick scan') || text.includes('concise')) {
-    reply = 'Quick Scan keeps the complete evidence document and omits optional world, video, and sound enhancements.';
-    references = [{ label: 'Quick Scan overview', href: '#home' }];
-    commands.push({ type: 'setQuickScan', enabled: true });
+    commands.push({ type: 'openDesktopApp', appId: 'world-3d' });
   } else if (text.includes('project') || text.includes('work')) {
     reply = 'The selected work is organized as evidence-led briefs covering operating context, Rahul’s contribution, technical approach, and current result or proof.';
     references = [{ label: 'Browse selected engineering work', href: '#work' }];
@@ -132,6 +147,24 @@ export const localAgent = (message: string): AgentResponse => {
   }
 
   return { reply, references, commands, modelUsed: false, reason: 'client_local_fallback' };
+};
+
+// The Camera Lab, the Systems Lab and the 3D World are desktop windows; ≤880px
+// the site is the Field Index registry, which has none of them. Same breakpoint
+// as App.tsx. Read after mount (App is prerendered), and the panel is never open
+// in the prerendered HTML, so the first paint of the starters already knows.
+const NARROW_QUERY = '(max-width: 880px)';
+const useNarrowSurface = () => {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return undefined;
+    const query = window.matchMedia(NARROW_QUERY);
+    const apply = () => setNarrow(query.matches);
+    apply();
+    query.addEventListener('change', apply);
+    return () => query.removeEventListener('change', apply);
+  }, []);
+  return narrow;
 };
 
 const AskThePage: React.FC = () => {
@@ -144,11 +177,13 @@ const AskThePage: React.FC = () => {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const openedAt = useRef<number | null>(null);
   const effects = useEffects();
-  const { chooseMode } = useExperienceMode();
-  const workstation = useOptionalWorkstation();
+  const narrow = useNarrowSurface();
   useFocusTrap(open, panelRef, '[data-open-assistant], .ask-dock');
 
-  const pageState = useMemo(() => buildPageState(effects.settings), [effects.settings]);
+  // The model is told which surface asked, so on a phone it says the labs are
+  // desktop windows instead of offering to open them (SITE_EXHIBITS).
+  const pageState = useMemo(() => buildPageState(effects.settings, narrow ? 'field-index' : 'field-workbench'), [effects.settings, narrow]);
+  const starters = narrow ? NARROW_ASSISTANT_STARTERS : ASSISTANT_STARTERS;
 
   const close = (reason: string) => {
     setOpen(false);
@@ -178,48 +213,25 @@ const AskThePage: React.FC = () => {
     return () => window.removeEventListener('keydown', escape);
   }, [open]);
 
-  const runInApp = (appId: DesktopAppId, action: () => void, targetId?: string) => {
-    if (workstation?.enabled && workstation.enhanced) {
-      workstation.openApp(appId, 'ai');
-      window.setTimeout(action, 0);
-    } else {
-      // Field Workbench / Field Index listen for this and open the window /
-      // reveal the registry entry before the scroll action runs. targetId lets
-      // Field Index expand the matching registry row (its DOM has no anchor ids).
-      dispatchWorkbenchOpen({ appId, targetId });
-      window.setTimeout(action, 80);
-    }
-  };
-
+  // Every command opens a window through the one bridge both surfaces listen on:
+  // Field Workbench opens the window and scrolls targetId into view once the
+  // window has a layout box; Field Index switches its filter and expands the
+  // matching registry row (its DOM has no anchor ids, so it maps targetId).
   const applyCommand = (command: PageCommand) => {
     const valid = validatePageCommand(command);
     if (!valid) return;
-    if (valid.type === 'focusExperience') runInApp('experience', () => document.getElementById(valid.experienceId ? `experience-${valid.experienceId}` : 'experience')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), valid.experienceId ? `experience-${valid.experienceId}` : 'experience');
-    else if (valid.type === 'focusProject') runInApp('project-archive', () => document.getElementById(`project-${valid.projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), `project-${valid.projectId}`);
+    if (valid.type === 'focusExperience') dispatchWorkbenchOpen({ appId: 'experience', targetId: valid.experienceId ? `experience-${valid.experienceId}` : 'experience' });
+    else if (valid.type === 'focusProject') dispatchWorkbenchOpen({ appId: 'project-archive', targetId: `project-${valid.projectId}` });
     else if (valid.type === 'openTechnicalLab') {
-      runInApp('camera-lab', () => {
-        document.getElementById('technical-lab')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        if (valid.mode) window.dispatchEvent(new CustomEvent('portfolio:camera-lab-mode', { detail: { mode: valid.mode } }));
-      }, 'technical-lab');
+      dispatchWorkbenchOpen({ appId: 'camera-lab', targetId: 'technical-lab' });
+      // A beat later, so the lab has committed its open window before it switches.
+      if (valid.mode) window.setTimeout(() => window.dispatchEvent(new CustomEvent('portfolio:camera-lab-mode', { detail: { mode: valid.mode } })), 80);
     } else if (valid.type === 'focusGuideChapter') {
       const appId = appForAnchor(`#${valid.chapterId}`);
-      if (appId) runInApp(appId, () => document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), valid.chapterId);
+      if (appId) dispatchWorkbenchOpen({ appId, targetId: valid.chapterId });
       else document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    else if (valid.type === 'enterExploreMode') {
-      runInApp('world-3d', () => {
-        document.getElementById('world')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        dispatchExploreControl({ action: 'enter', sceneId: valid.sceneId });
-      }, 'world');
-    } else if (valid.type === 'openDesktopApp') {
-      if (workstation?.enabled && workstation.enhanced) workstation.openApp(valid.appId, 'ai');
-      else dispatchWorkbenchOpen({ appId: valid.appId });
-    }
-    else if (valid.type === 'minimizeDesktopApp') {
-      if (workstation?.enabled && workstation.enhanced) workstation.minimizeApp(valid.appId);
-      else dispatchWorkbenchOpen({ appId: valid.appId, action: 'minimize' });
-    }
-    else if (valid.type === 'setQuickScan') chooseMode(valid.enabled ? 'scan' : 'guided');
+    } else if (valid.type === 'openDesktopApp') dispatchWorkbenchOpen({ appId: valid.appId });
+    else if (valid.type === 'minimizeDesktopApp') dispatchWorkbenchOpen({ appId: valid.appId, action: 'minimize' });
   };
 
   const submitMessage = async (message: string) => {
@@ -270,7 +282,7 @@ const AskThePage: React.FC = () => {
         <header className="panel-header"><div><h2 id="assistant-title">Ask this portfolio</h2><p className="panel-context">Private · data grounded</p></div><button type="button" onClick={() => close('close_button')}>Close</button></header>
         <p className="panel-intro">Ask a recruiter-style question or navigate the page. Keys remain server-side; if the service is unavailable, the assistant falls back to a small factual local index.</p>
         <div className="assistant-starters" aria-label="Starter questions">
-          {ASSISTANT_STARTERS.map((starter) => <button key={starter} type="button" onClick={() => void submitMessage(starter)} aria-disabled={isSending}>{starter}</button>)}
+          {starters.map((starter) => <button key={starter} type="button" onClick={() => void submitMessage(starter)} aria-disabled={isSending}>{starter}</button>)}
         </div>
         <div ref={transcriptRef} className="assistant-transcript" data-private="true" aria-live="polite" aria-busy={isSending}>
           {messages.map((message, index) => (
@@ -286,8 +298,7 @@ const AskThePage: React.FC = () => {
                     // Anchors live inside closed windows; hashchange alone won't
                     // fire when the hash already matches — always dispatch.
                     event.preventDefault();
-                    if (workstation?.enabled && workstation.enhanced) workstation.openApp(appId, 'ai');
-                    else dispatchWorkbenchOpen({ appId, targetId: reference.href.slice(1) });
+                    dispatchWorkbenchOpen({ appId, targetId: reference.href.slice(1) });
                   }
                   close('reference');
                 }}>{reference.label}{external && <span className="sr-only"> (opens in a new tab)</span>}</a>;

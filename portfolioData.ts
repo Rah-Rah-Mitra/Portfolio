@@ -1,7 +1,4 @@
-
-import React from 'react';
 import { CompetencyCluster, EventHighlight, ExperienceRecord, FieldNote, FieldNoteLink, PortfolioData, ProjectHighlight, ResumeProfile } from './types';
-import { CodeBracketIcon, AcademicCapIcon, CommandLineIcon, DevicePhoneMobileIcon, ServerStackIcon } from './components/icons/TechIcons';
 import * as assets from './assets';
 import { certificationById, certificationDateLabel } from './lib/certifications';
 import { resumeAssetUrl, SITE_CONFIG } from './siteConfig';
@@ -100,15 +97,15 @@ export const softwareEngineerData: PortfolioData = {
     }
   ],
   skills: [
-    { id: 1, name: "Python (asyncio, FastAPI, Flask)", icon: React.createElement(CommandLineIcon, { className: "w-6 h-6" }) },
-    { id: 2, name: "Deep Learning & Transformers (BERT, GPT-4, RAG)", icon: React.createElement(AcademicCapIcon, { className: "w-6 h-6" }) },
-    { id: 3, name: "Deep Reinforcement Learning (PPO, A2C, DDPG, DQN)", icon: React.createElement(CodeBracketIcon, { className: "w-6 h-6" }) },
-    { id: 4, name: "TypeScript, React & Next.js", icon: React.createElement(DevicePhoneMobileIcon, { className: "w-6 h-6" }) },
-    { id: 5, name: "HPC & Distributed Training (ASPIRE 2A, CUDA)", icon: React.createElement(ServerStackIcon, { className: "w-6 h-6" }) },
-    { id: 6, name: "SQL & NoSQL Databases", icon: React.createElement(ServerStackIcon, { className: "w-6 h-6" }) },
-    { id: 7, name: "Mathematical Modeling (Linear Algebra, Probability, Calculus)", icon: React.createElement(AcademicCapIcon, { className: "w-6 h-6" }) },
-    { id: 8, name: "Rust (Systems Programming & Digital Twins)", icon: React.createElement(CodeBracketIcon, { className: "w-6 h-6" }) },
-    { id: 9, name: "Generative AI Tools (Claude Code, ChatGPT, Codex, Gemini, ComfyUI)", icon: React.createElement(CommandLineIcon, { className: "w-6 h-6" }) },
+    { id: 1, name: "Python (asyncio, FastAPI, Flask)" },
+    { id: 2, name: "Deep Learning & Transformers (BERT, GPT-4, RAG)" },
+    { id: 3, name: "Deep Reinforcement Learning (PPO, A2C, DDPG, DQN)" },
+    { id: 4, name: "TypeScript, React & Next.js" },
+    { id: 5, name: "HPC & Distributed Training (ASPIRE 2A, CUDA)" },
+    { id: 6, name: "SQL & NoSQL Databases" },
+    { id: 7, name: "Mathematical Modeling (Linear Algebra, Probability, Calculus)" },
+    { id: 8, name: "Rust (Systems Programming & Digital Twins)" },
+    { id: 9, name: "Generative AI Tools (Claude Code, ChatGPT, Codex, Gemini, ComfyUI)" },
   ],
 };
 
@@ -154,14 +151,14 @@ export const cybersecurityData: PortfolioData = {
     }
   ],
   skills: [
-    { id: 1, name: "Web App Penetration Testing (Burp Suite)", icon: React.createElement(CommandLineIcon, { className: "w-6 h-6" }) },
-    { id: 2, name: "Network Analysis (Wireshark, TCP/UDP, TLS)", icon: React.createElement(ServerStackIcon, { className: "w-6 h-6" }) },
-    { id: 3, name: "Vuln Research (SSRF, CSRF, SQLi, Auth Bypass)", icon: React.createElement(CodeBracketIcon, { className: "w-6 h-6" }) },
-    { id: 4, name: "Custom Exploit Scripting (Python, Bash)", icon: React.createElement(CommandLineIcon, { className: "w-6 h-6" }) },
-    { id: 5, name: "CTF Competitions", icon: React.createElement(AcademicCapIcon, { className: "w-6 h-6" }) },
-    { id: 6, name: "OWASP Top 10 & Secure Design", icon: React.createElement(CodeBracketIcon, { className: "w-6 h-6" }) },
-    { id: 7, name: "JWT / OAuth2 / Session Analysis", icon: React.createElement(DevicePhoneMobileIcon, { className: "w-6 h-6" }) },
-    { id: 8, name: "Cloud Security (AWS IMDSv2, Metadata APIs)", icon: React.createElement(ServerStackIcon, { className: "w-6 h-6" }) },
+    { id: 1, name: "Web App Penetration Testing (Burp Suite)" },
+    { id: 2, name: "Network Analysis (Wireshark, TCP/UDP, TLS)" },
+    { id: 3, name: "Vuln Research (SSRF, CSRF, SQLi, Auth Bypass)" },
+    { id: 4, name: "Custom Exploit Scripting (Python, Bash)" },
+    { id: 5, name: "CTF Competitions" },
+    { id: 6, name: "OWASP Top 10 & Secure Design" },
+    { id: 7, name: "JWT / OAuth2 / Session Analysis" },
+    { id: 8, name: "Cloud Security (AWS IMDSv2, Metadata APIs)" },
   ],
 };
 
@@ -345,7 +342,7 @@ export const projectHighlights: ProjectHighlight[] = [
       context: 'AI Engineer Hackathon 2026, with 7 hours on the clock: could a game generate its own levels end to end rather than shipping authored ones?',
       contribution: 'Created the game and the pipeline under it, wiring Codex and Blender MCP into a local-first Blender-to-Three.js workflow.',
       approach: 'Python orchestration, Blender MCP, Three.js runtime integration, GLB assets with metadata, previews, playable-world QA, and Remotion video workflows.',
-      outcome: 'A playable game of AI-driven infinite levels inside the 7-hour window, and the reusable pipeline that still supplies this site’s spatial asset library.',
+      outcome: 'A playable game of AI-driven infinite levels inside the 7-hour window, and the reusable pipeline that supplied this site’s earlier 3D asset library.',
     },
   },
   {
@@ -652,8 +649,8 @@ export const projectArchive: ProjectHighlight[] = [
     id: 'portfolio-repo',
     title: 'Portfolio',
     category: 'Portfolio Infrastructure',
-    description: 'The interactive portfolio itself: React, Three.js, CFD background experiments, chatbot controls, and profile switching.',
-    tags: ['TypeScript', 'React', 'Three.js', 'Portfolio'],
+    description: 'The interactive portfolio itself: a React and TypeScript blueprint workbench with an AI page assistant, an MCP résumé builder, and in-browser labs for camera calibration, flow-shop sequencing, an N-body gravity field, and a WebGL2 fluid.',
+    tags: ['TypeScript', 'React', 'WebGL2', 'Portfolio'],
     repoUrl: 'https://github.com/Rah-Rah-Mitra/Portfolio',
     dateLabel: '2026',
     sortDate: '2026-01-01',

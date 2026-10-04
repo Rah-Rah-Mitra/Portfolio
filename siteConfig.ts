@@ -20,13 +20,23 @@ export const SITE_CONFIG = {
   resumeEdition: '2026-11',
 } as const;
 
+// Each starter has to land on its own topic in the assistant's local fallback
+// (tests/assistant.test.ts pins which). "experience" would route a starter to the
+// generic timeline answer, which is why the security one says "record".
+const CAMERA_LAB_STARTER = 'Open the Camera Lab stereo depth model.';
 export const ASSISTANT_STARTERS = [
   'Show me Rahul’s optimization work.',
   'What did Rahul study in 3D computer vision?',
   'Which résumé should I download?',
-  'Show security experience.',
-  'Go to the Explore World optical test bench anchor.',
+  'Show Rahul’s security record.',
+  CAMERA_LAB_STARTER,
 ] as const;
+
+// ≤880px the site is the Field Index registry, which has no Camera Lab, so a
+// phone is offered a starter that registry can show instead.
+export const NARROW_ASSISTANT_STARTERS: readonly string[] = ASSISTANT_STARTERS.map((starter) => (
+  starter === CAMERA_LAB_STARTER ? 'Tell me about Swarmline.' : starter
+));
 
 export const resumeAssetUrl = (slug: string, format: 'docx' | 'pdf') => (
   `/resume/generated/rahul-mitra-${slug}-${SITE_CONFIG.resumeEdition}.${format}`

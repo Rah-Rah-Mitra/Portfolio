@@ -12,12 +12,6 @@ type PostHogClient = (typeof import('posthog-js'))['default'];
 
 export type PanelName = 'effects_lab' | 'ask_the_page' | 'ask_this_portfolio';
 
-export type UrlTargetSummary = {
-  target_type: 'preset' | 'external' | 'invalid';
-  target_label?: string;
-  target_host: string;
-};
-
 type ReplayReason =
   | 'api_error'
   | 'ask_page_command'
@@ -26,42 +20,23 @@ type ReplayReason =
   | 'resume_download';
 
 export type AnalyticsEvent =
-  | { event: 'portfolio_viewed'; props: { surface: 'continuous_field_test' | 'field_workbench' } }
-  | { event: 'section_viewed'; props: { section: string } }
-  | { event: 'scroll_depth_reached'; props: { depth: 25 | 50 | 75 | 90; surface: 'continuous_field_test' } }
+  | { event: 'portfolio_viewed'; props: { surface: 'field_workbench' } }
   | { event: 'nav_link_clicked'; props: { destination: string } }
-  | { event: 'journey_marker_clicked'; props: { section: string; camera_index: number } }
   | { event: 'cta_clicked'; props: { label: string } }
   | { event: 'social_link_clicked'; props: { platform: 'linkedin' | 'github' | 'instagram'; location: 'hero' | 'contact' | 'footer' } }
   | { event: 'contact_email_clicked'; props: Partial<{ location: 'contact' | 'footer' }> }
-  | { event: 'achievement_viewed'; props: { title: string; category: string; index: number } }
   | { event: 'achievement_proof_opened'; props: { title: string } }
-  | { event: 'achievement_hovered'; props: { title: string; hover_duration_ms: number } }
-  | { event: 'physics_mode_toggled'; props: { mode: 'hammer' | 'gravity_well'; action: 'activated' | 'deactivated' } }
   | { event: 'effect_control_changed'; props: { effect: string; control: string; value: string } }
   | { event: 'effect_preset_applied'; props: { effect: string; preset: string } }
   | { event: 'project_link_clicked'; props: { title: string; destination: string } }
-  | { event: 'selected_project_view_changed'; props: { project: string; source: string } }
-  | { event: 'featured_projects_toggled'; props: { expanded: boolean; visible_count: number } }
-  | { event: 'project_archive_toggled'; props: { expanded: boolean; visible_count: number } }
   | { event: 'project_filter_changed'; props: { filter: string; result_count: number } }
-  | { event: 'project_showcase_opened'; props: { title: string } }
   | { event: 'archive_search_changed'; props: { query_length: number; result_count: number } }
   | { event: 'resume_download_clicked'; props: { role: string; format: 'docx' | 'pdf' } }
   | { event: 'resume_builder_preset_applied'; props: { preset: string } }
-  | { event: 'qr_target_selected'; props: UrlTargetSummary }
-  | { event: 'qr_code_clicked'; props: UrlTargetSummary }
-  | { event: 'qr_code_downloaded'; props: UrlTargetSummary & { format: 'png' | 'svg' } }
-  | { event: 'event_project_link_clicked'; props: { event: string; project: string } }
-  | { event: 'event_link_clicked'; props: { event: string; destination: string } }
-  | { event: 'field_notes_filter_changed'; props: { filter: string } }
   | { event: 'panel_opened'; props: { panel: PanelName; source: string } }
   | { event: 'panel_closed'; props: { panel: PanelName; reason: string; duration_ms: number } }
-  | { event: 'chatbot_quick_action_clicked'; props: { action: string; command_count: string } }
   | { event: 'chatbot_command_submitted'; props: { used_model: string; command_count: string; status: string; fallback_reason?: string } }
   | { event: 'api_request_completed'; props: { route: string; status: number | 'network_error'; ok: boolean; duration_ms: number; response_source: string } }
-  | { event: 'guide_capability_detected'; props: { mode: string; chapter: string } }
-  | { event: 'technical_layer_changed'; props: { layer: string; method: string } }
   | { event: 'session_replay_triggered'; props: { reason: ReplayReason; source?: string } }
   | { event: 'frontend_exception_captured'; props: { area: string; error_name: string } };
 
@@ -97,7 +72,7 @@ const getReferrerHost = () => {
 
 const getBaseProperties = (): Properties => ({
   app_surface: 'portfolio',
-  surface_mode: 'continuous_field_test',
+  surface_mode: 'field_workbench',
   viewport_bucket: getViewportBucket(),
   referrer_host: getReferrerHost(),
 });
@@ -192,7 +167,7 @@ const loadAnalytics = async (): Promise<boolean> => {
           events_burst_limit: 32,
         },
         loaded(ph) {
-          ph.register_once({ first_seen_surface: 'continuous_field_test' });
+          ph.register_once({ first_seen_surface: 'field_workbench' });
           ph.register(getBaseProperties());
           if (ANALYTICS_DEBUG) console.log('[analytics] PostHog ready. Distinct ID:', ph.get_distinct_id());
         },
@@ -312,21 +287,4 @@ export function triggerSessionReplay(reason: ReplayReason, properties: { source?
       // Replay should be opportunistic, never required.
     }
   });
-}
-
-export function summarizeUrlTarget(rawTarget: string, targetLabel?: string): UrlTargetSummary {
-  try {
-    const parsed = new URL(rawTarget);
-    return {
-      target_type: targetLabel ? 'preset' : 'external',
-      target_label: targetLabel,
-      target_host: parsed.hostname || 'unknown',
-    };
-  } catch {
-    return {
-      target_type: 'invalid',
-      target_label: targetLabel,
-      target_host: 'invalid',
-    };
-  }
 }

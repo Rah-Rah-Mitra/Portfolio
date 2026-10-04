@@ -104,6 +104,24 @@ const PROJECT_DOMAINS: Record<string, WorkbenchDomain> = {
   'eg1311-project': 'Software',
 };
 
+export interface ProjectLink {
+  label: string;
+  href: string;
+}
+
+/**
+ * Every public link a project carries, primary first: its repository, else its
+ * live work, then whatever else it lists — the Arcane sub-repositories, the
+ * Maritime certificate of submission. The workbench used to read
+ * `repoUrl ?? liveUrl` alone, so those four were reachable only by asking the
+ * assistant (the FieldNote merge in portfolioData.ts already folded them in).
+ */
+export const projectLinks = (project: ProjectHighlight): ProjectLink[] => [
+  ...(project.repoUrl ? [{ label: 'Open repo', href: project.repoUrl }] : []),
+  ...(project.liveUrl ? [{ label: 'Open live', href: project.liveUrl }] : []),
+  ...(project.links ?? []).map(({ label, url }) => ({ label, href: url })),
+];
+
 export interface ArchiveRow {
   id: string;
   date: string;
@@ -111,18 +129,26 @@ export interface ArchiveRow {
   category: string;
   stack: string;
   domain: WorkbenchDomain;
+  /** The title's link: the repository, else the live work. */
   href?: string;
+  /** The project's other links, after href. Omitted when there are none. */
+  links?: ProjectLink[];
 }
 
-export const archiveRows: readonly ArchiveRow[] = allProjects.map((project) => ({
-  id: project.id,
-  date: project.sortDate?.slice(0, 7) ?? project.dateLabel ?? '-',
-  title: project.title,
-  category: project.category,
-  stack: project.tags.slice(0, 3).join(' · '),
-  domain: PROJECT_DOMAINS[project.id] ?? 'Software',
-  href: project.repoUrl ?? project.liveUrl,
-}));
+export const archiveRows: readonly ArchiveRow[] = allProjects.map((project) => {
+  const href = project.repoUrl ?? project.liveUrl;
+  const links = projectLinks(project).slice(href ? 1 : 0);
+  return {
+    id: project.id,
+    date: project.sortDate?.slice(0, 7) ?? project.dateLabel ?? '-',
+    title: project.title,
+    category: project.category,
+    stack: project.tags.slice(0, 3).join(' · '),
+    domain: PROJECT_DOMAINS[project.id] ?? 'Software',
+    href,
+    ...(links.length ? { links } : {}),
+  };
+});
 
 export const filterArchiveRows = (query: string, domain: WorkbenchDomain): ArchiveRow[] => {
   const q = query.trim().toLowerCase();

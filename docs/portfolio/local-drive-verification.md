@@ -1,6 +1,6 @@
 # Local-drive verification
 
-Run Node/Vite verification from a local-drive mirror when the source checkout is a UNC path. The verifier copies the source into a destination outside the repository, excludes user-owned `.claude/`, `.git/`, `node_modules/`, `dist/`, `.impeccable/`, and entries whose basename starts with `.env`, then runs fresh dependency installation plus test, typecheck, and build there. It never writes back to the source checkout.
+Run Node/Vite verification from a local-drive mirror when the source checkout is a UNC path. The verifier copies the source into a destination outside the repository, excludes user-owned `.claude/`, `.git/`, `node_modules/` and `dist/` wherever they appear; at the source root only, the `external/` submodule checkout, local pack builds in `artifacts/`, and the untracked review and QA output in `.impeccable/review/`, `.impeccable/resume-qa/` and `.impeccable/resume-facets/` (the rest of `.impeccable/` is tracked and a test reads it); and entries whose basename starts with `.env`. It then runs fresh dependency installation plus test, typecheck, and build there. It never writes back to the source checkout.
 
 ```powershell
 $env:PORTFOLIO_VERIFY_MIRROR = 'C:\codex-verify\portfolio'

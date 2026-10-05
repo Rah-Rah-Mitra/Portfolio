@@ -1,0 +1,7 @@
+# Estate pack files are named by a hash of their content; core.autocrlf=true
+# must never rewrite them, or a fresh checkout stops matching its own names.
+public/estate/** -text
+tests/fixtures/estate/** -text
+*.glb binary
+*.gz binary
+lib/estate/catalogue.generated.ts text eol=lf

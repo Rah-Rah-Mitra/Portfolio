@@ -27,5 +27,8 @@
     "paths": {
       "@/*" :  ["./*"]
     }
-  }
+  },
+  /* Setting exclude replaces the default, so node_modules is listed again.
+     external/ is the Bonsai-Estate submodule: provenance only, never compiled. */
+  "exclude": ["node_modules", "**/node_modules", "dist", "external", "artifacts", ".semantic-prerender"]
 }

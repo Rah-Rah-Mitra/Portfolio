@@ -1,0 +1,7 @@
+# Never uploaded or built: the Bonsai-Estate submodule (provenance only), local
+# estate pack builds, and the pack tooling's own install. The leading slash keeps
+# the first two at the root; without it they would match a folder of that name
+# at any depth.
+/external/
+/artifacts/
+scripts/estate/node_modules/

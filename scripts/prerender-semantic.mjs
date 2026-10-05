@@ -17,6 +17,8 @@ export const prerenderSemanticPortfolio = async () => {
     await build({
       root: projectRoot,
       configFile: false,
+      // The SSR bundle needs none of public/; copying it here only to delete it is waste.
+      publicDir: false,
       logLevel: 'warn',
       build: {
         ssr: path.join(projectRoot, 'semanticRender.tsx'),

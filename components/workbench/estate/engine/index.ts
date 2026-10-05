@@ -1,21 +1,26 @@
+import type { EstateLocation } from '../../../../lib/estate/announce';
 import type {
-  CreateEngine, EstateEngine, EstateEngineEvent, EstateEngineFeatures, EstateResume, EstateView,
+  CreateEngine, EstateEngine, EstateEngineFeatures, EstateEngineOptions, EstatePopover, EstateResume, EstateView,
 } from '../engineApi';
+import { EstateCore } from './core';
+import { EngineEmitter } from './lifecycle';
+import { createNavigation, type EngineNavigation, type ViewAccess } from './navigation';
 
 // The Estate engine's entry (plan §7.1): the lazy chunk's only export the shell
 // sees, reached solely through estate/loadEngine.ts. three r186 and
 // camera-controls may be imported here and under estate/live/, nowhere else
 // (tests/estate-boundary.test.ts).
 //
-// SKELETON. This file is the contract stub the engine is built into: it
-// satisfies engineApi.ts so the shell, the HUD and their tests can be written
-// against it, and start() throws until the renderer lands. The real modules go
-// beside it (renderer, clip, loaders, materials, scene, streaming, loop,
-// governor, picking, controls/{orbit,firstPerson,tween}; P5 adds interior,
-// lifts) and this file wires them.
+// This file is the EstateEngine handle: lifecycle and readiness rules, the view
+// snapshot the shell's Esc listener reads, and command routing. The render core
+// (core.ts and the modules beside it: renderer, clip, loaders, materials,
+// scene, streaming, loop, governor, levels, stats, lifecycle) draws; the
+// navigation module (navigation.ts: Overview, Fly, fly-to and picking in P4b,
+// P5's Walk and Enter, P6's Plan) moves the camera. A command whose feature is
+// not in this build returns false, as engineApi.ts promises.
 
-/** What this build does (engineApi EstateEngineFeatures). The stub does nothing yet. */
-export const ENGINE_FEATURES: EstateEngineFeatures = Object.freeze({
+/** The core's own features: none of the navigation ones. navigation.ts adds its own over these. */
+const CORE_FEATURES: EstateEngineFeatures = Object.freeze({
   overview: false,
   fly: false,
   flyTo: false,
@@ -25,68 +30,163 @@ export const ENGINE_FEATURES: EstateEngineFeatures = Object.freeze({
   plan: false,
 });
 
-const INITIAL_VIEW: EstateView = Object.freeze({
-  location: Object.freeze({ site: null, storey: null, unit: null, room: null, mode: 'overview' as const }),
-  selection: null,
-  transition: null,
-  flight: false,
-  popover: null,
-  popoverOpen: false,
-  moving: false,
-  pointerLocked: false,
-  pointerUnlockedAtMs: null,
-  lean: false,
-});
+const INITIAL_LOCATION: EstateLocation = Object.freeze({ site: null, storey: null, unit: null, room: null, mode: 'overview' as const });
 
-export const createEngine: CreateEngine = (options) => {
-  const listeners = new Set<(event: EstateEngineEvent) => void>();
-  let disposed = false;
-  let view: EstateView = { ...INITIAL_VIEW, lean: options.lean };
-  const resume: EstateResume = options.resume ?? {
-    mode: 'overview', selection: null, position: [0, 0, 0], target: [0, 0, 0],
+const sameLocation = (a: EstateLocation, b: EstateLocation): boolean =>
+  a.site === b.site && a.storey === b.storey && a.unit === b.unit && a.room === b.room && a.mode === b.mode;
+
+const sameView = (a: EstateView, b: EstateView): boolean =>
+  sameLocation(a.location, b.location) && a.selection === b.selection && a.transition === b.transition
+  && a.flight === b.flight && a.popover === b.popover && a.moving === b.moving && a.pointerLocked === b.pointerLocked
+  && a.pointerUnlockedAtMs === b.pointerUnlockedAtMs && a.lean === b.lean;
+
+/** The handle and the render core behind it. The shell only ever sees the handle (createEngine); harnesses, benches and tests may drive the core directly. */
+export interface EngineInternals {
+  engine: EstateEngine;
+  core: EstateCore;
+}
+
+export const createEngineInternals = (options: EstateEngineOptions): EngineInternals => {
+  let view: EstateView = Object.freeze({
+    location: INITIAL_LOCATION,
+    selection: options.resume?.selection ?? null,
+    transition: null,
+    flight: false,
+    popover: null,
+    popoverOpen: false,
+    moving: false,
+    pointerLocked: false,
+    pointerUnlockedAtMs: null,
+    lean: options.lean,
+  });
+
+  const emitter = new EngineEmitter(options.token, options.onEvent);
+  let core: EstateCore | null = null;
+  /** Location events sent, so the one before `ready` is not sent twice when navigation's ready() already sent it. */
+  let locations = 0;
+
+  const emitLocation = (via?: string) => {
+    locations += 1;
+    emitter.emit({ type: 'location', ...view, ...(via !== undefined ? { via } : {}) });
   };
-  const refuse = (): boolean => false;
+
+  const access: ViewAccess = {
+    get: () => view,
+    set: (patch, via) => {
+      const location = patch.location ? { ...view.location, ...patch.location } : view.location;
+      const popover = patch.popover !== undefined ? patch.popover : view.popover;
+      const next: EstateView = { ...view, ...patch, location, popover, popoverOpen: popover !== null };
+      if (sameView(next, view)) return false;
+      view = Object.freeze({ ...next, location: Object.freeze(location) });
+      if (core && core.isReady && !core.isDisposed) emitLocation(via);
+      return true;
+    },
+    announce: (full, text) => {
+      if (core && core.isReady) emitter.emit({ type: 'announce', full, text });
+    },
+  };
+
+  let navigation: EngineNavigation | null = null;
+  const engineCore = new EstateCore(options, emitter, {
+    beforeReady: () => {
+      const before = locations;
+      navigation?.ready?.();
+      if (locations === before) emitLocation();
+    },
+    moving: (moving) => { access.set({ moving }); },
+  });
+  core = engineCore;
+  if (view.selection) engineCore.setFocus(view.selection);
+  // navigation.ts is the seam: P4b's controls (Overview, Fly, fly-to, picking), P5's Walk, P6's Plan.
+  const nav = createNavigation(engineCore, access);
+  navigation = nav;
+  const features: EstateEngineFeatures = Object.freeze({ ...CORE_FEATURES, ...nav.features });
+
+  /** Navigation commands act only on a live, unfrozen engine. */
+  const live = (): boolean => engineCore.isReady && !engineCore.isDisposed && !engineCore.isFrozen;
+
+  const select = (site: Parameters<EstateEngine['select']>[0]): boolean => {
+    if (!live() || site === view.selection) return false;
+    engineCore.setFocus(site);
+    access.set({ selection: site });
+    return true;
+  };
+
+  const setPopover = (popover: EstatePopover | null): boolean => {
+    if (!live() || popover === view.popover) return false;
+    access.set({ popover });
+    return true;
+  };
 
   const engine: EstateEngine = {
     token: options.token,
-    features: ENGINE_FEATURES,
-    preload: () => Promise.resolve(),
-    start: () => {
-      if (disposed) return;
-      throw new Error('not implemented: the Estate engine is a skeleton');
+    features,
+    preload: () => engineCore.preload(),
+    start: () => engineCore.start(),
+    freeze: () => {
+      if (engineCore.isDisposed) return;
+      nav.freeze?.();
+      engineCore.freeze();
     },
-    freeze: () => undefined,
-    resume: () => undefined,
+    resume: () => engineCore.resume(),
     dispose: () => {
-      disposed = true;
-      listeners.clear();
+      if (engineCore.isDisposed) return;
+      nav.dispose?.();
+      engineCore.dispose();
     },
-    getResume: () => resume,
+    getResume: (): EstateResume => {
+      if (!engineCore.scene) {
+        return options.resume ?? { mode: 'overview', selection: view.selection, position: [0, 0, 0], target: [0, 0, 0] };
+      }
+      const { position, target } = engineCore.cameraEstate();
+      return { mode: view.location.mode, selection: view.selection, position, target, inside: null };
+    },
     getView: () => view,
-    subscribe: (listener) => {
-      if (disposed) return () => undefined;
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
+    subscribe: (listener) => emitter.subscribe(listener),
+
+    flyTo: (site, flyOptions) => live() && nav.flyTo !== undefined && nav.flyTo(site, flyOptions),
+    enter: (site, enterOptions) => live() && nav.enter !== undefined && nav.enter(site, enterOptions),
+    setMode: (mode) => live() && mode !== view.location.mode && nav.setMode !== undefined && nav.setMode(mode),
+    setStorey: (target) => live() && nav.setStorey !== undefined && nav.setStorey(target),
+    takeLift: (level) => live() && nav.takeLift !== undefined && nav.takeLift(level),
+    takeStairs: (direction) => live() && nav.takeStairs !== undefined && nav.takeStairs(direction),
+    planView: (site, storey) => live() && nav.planView !== undefined && nav.planView(site, storey),
+    walkStep: (step) => live() && nav.walkStep !== undefined && nav.walkStep(step),
+    setStick: (x, y) => live() && nav.setStick !== undefined && nav.setStick(x, y),
+    select,
+    home: () => {
+      if (!live()) return false;
+      if (nav.home) return nav.home();
+      const pose = engineCore.posterPose();
+      if (!pose || engineCore.currentRig !== engineCore.staticRig) return false;
+      engineCore.staticRig.setPose(pose.position, pose.target, pose.fovDeg);
+      engineCore.invalidate();
+      return true;
     },
-    flyTo: refuse,
-    enter: refuse,
-    setMode: refuse,
-    setStorey: refuse,
-    takeLift: refuse,
-    takeStairs: refuse,
-    planView: refuse,
-    walkStep: refuse,
-    setStick: refuse,
-    select: refuse,
-    home: refuse,
-    escape: refuse,
-    setPopover: refuse,
-    capture: refuse,
+    escape: (action) => {
+      if (!live()) return false;
+      switch (action) {
+        case 'close-popover': return setPopover(null);
+        case 'clear-selection': return select(null);
+        case 'none': return false;
+        default:
+          if (nav.escape?.(action)) return true;
+          // Leaving Plan clears the selection with it (§8.3 amendment).
+          return action === 'exit-plan' ? select(null) : false;
+      }
+    },
+    setPopover,
+    capture: () => live() && nav.capture !== undefined && nav.capture(),
     setLean: (lean) => {
-      if (!disposed) view = { ...view, lean };
+      if (engineCore.isDisposed) return;
+      engineCore.setLean(lean);
+      access.set({ lean });
     },
   };
-  return engine;
+  return { engine, core: engineCore };
 };
+
+export const createEngine: CreateEngine = (options) => createEngineInternals(options).engine;
+
+/** What this build does (engineApi EstateEngineFeatures), for callers that need it before creating an engine. */
+export const ENGINE_FEATURES: EstateEngineFeatures = CORE_FEATURES;

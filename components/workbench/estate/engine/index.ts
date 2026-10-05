@@ -2,9 +2,10 @@ import type { EstateLocation } from '../../../../lib/estate/announce';
 import type {
   CreateEngine, EstateEngine, EstateEngineFeatures, EstateEngineOptions, EstatePopover, EstateResume, EstateView,
 } from '../engineApi';
+import { CONTROLS_FEATURES, createControls } from './controls';
 import { EstateCore } from './core';
 import { EngineEmitter } from './lifecycle';
-import { createNavigation, type EngineNavigation, type ViewAccess } from './navigation';
+import type { EngineNavigation, ViewAccess } from './navigation';
 
 // The Estate engine's entry (plan §7.1): the lazy chunk's only export the shell
 // sees, reached solely through estate/loadEngine.ts. three r186 and
@@ -97,8 +98,8 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
   });
   core = engineCore;
   if (view.selection) engineCore.setFocus(view.selection);
-  // navigation.ts is the seam: P4b's controls (Overview, Fly, fly-to, picking), P5's Walk, P6's Plan.
-  const nav = createNavigation(engineCore, access);
+  // P4b's controls (Overview, Fly, fly-to, picking); navigation.ts is the seam P5's Walk and P6's Plan extend.
+  const nav = createControls(engineCore, access);
   navigation = nav;
   const features: EstateEngineFeatures = Object.freeze({ ...CORE_FEATURES, ...nav.features });
 
@@ -189,4 +190,4 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
 export const createEngine: CreateEngine = (options) => createEngineInternals(options).engine;
 
 /** What this build does (engineApi EstateEngineFeatures), for callers that need it before creating an engine. */
-export const ENGINE_FEATURES: EstateEngineFeatures = CORE_FEATURES;
+export const ENGINE_FEATURES: EstateEngineFeatures = Object.freeze({ ...CORE_FEATURES, ...CONTROLS_FEATURES });

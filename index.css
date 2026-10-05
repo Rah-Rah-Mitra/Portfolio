@@ -1052,6 +1052,74 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
   .wb-estate-side { width: auto; flex: 1 1 45%; }
 }
 
+/* The HUD (live/EstateHud.tsx, in the engine's lazy chunk): opaque paper chips
+   over the canvas (z 1) and under the caption and plate (z 3) and the focus
+   ring (z 4). The layer itself takes no pointer, so a drag on the open scene
+   reaches the canvas; only chips and buttons do. Survey-annotation capitals;
+   the smallest text is neutral-700; the only solid fill is the active mode
+   (.wb-domainseg's accent-700). */
+.wb-estate-hud { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.wb-estate-hud-top {
+  position: absolute; left: 10px; right: 10px; top: 10px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+}
+/* The location column keeps its width (up to 45%); the controls take the rest
+   and wrap among themselves, so a chip changing its words never drops the
+   whole cluster under the location chip. */
+.wb-estate-hud-col { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; flex: 0 1 auto; min-width: 0; max-width: 45%; }
+.wb-estate-hud-col-end { flex: 1 1 0; max-width: none; align-items: flex-end; }
+.wb-estate-hud-row { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 6px; }
+.wb-estate-hud-bottom {
+  position: absolute; left: 10px; bottom: 40px; max-width: calc(100% - 130px);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+}
+.wb-estate-chip {
+  pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 4px 8px; max-width: 100%;
+  background: var(--paper-55); border: 1px solid var(--color-divider); border-radius: 0;
+  font-size: 10.5px; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-800);
+}
+.wb-estate-chip-loc { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 13px; letter-spacing: 0.05em; color: var(--color-text); }
+.wb-estate-chip-quiet { font-size: 10px; color: var(--color-neutral-700); }
+.wb-estate-chip-key { font-size: 10px; letter-spacing: 0.12em; color: var(--color-neutral-700); }
+.wb-estate-chip-sel { flex-wrap: wrap; padding: 3px 3px 3px 8px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 12px; color: var(--color-text); }
+.wb-estate-chip-keys[data-on] { border-color: var(--color-accent-700); color: var(--color-accent-800); }
+.wb-estate-chip-lock { border-color: var(--color-accent-700); color: var(--color-accent-800); }
+.wb-estate-prompt, .wb-estate-chip-keys { pointer-events: none; }
+.wb-estate-hud-btn {
+  pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 3px 8px;
+  border: 1px solid var(--color-divider); border-radius: 0; background: var(--paper-55); color: var(--color-text); cursor: pointer;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; line-height: 1.2; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.wb-estate-hud-btn:hover { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-estate-hud-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.wb-estate-hud-btn[aria-expanded='true'], .wb-estate-hud-btn[aria-pressed='true'] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
+.wb-estate-hud .wb-domainseg { pointer-events: auto; background: var(--paper-55); }
+.wb-estate-hud .wb-domainseg button { padding: 4px 9px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); text-transform: uppercase; }
+.wb-estate-hud .wb-domainseg button:disabled { opacity: 0.45; cursor: not-allowed; }
+.wb-estate-hud-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.wb-estate-north { padding: 1px; width: 30px; justify-content: center; pointer-events: none; }
+.wb-estate-north svg { width: 24px; height: 24px; overflow: visible; transform: rotate(var(--estate-north, 0rad)); }
+.wb-estate-north-arrow { fill: var(--color-accent-700); stroke: none; }
+.wb-estate-north text { fill: var(--color-neutral-800); font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 8px; }
+.wb-estate-popover {
+  pointer-events: auto; width: 250px; max-width: 100%; max-height: min(320px, calc(100vh - 200px)); overflow-y: auto; overscroll-behavior: contain;
+  padding: 8px 10px 10px; background: var(--paper-55); border: 1px solid var(--color-divider);
+}
+.wb-estate-popover-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--color-accent-700);
+}
+.wb-estate-streaming { flex-direction: column; align-items: stretch; gap: 4px; min-width: 180px; }
+.wb-estate-hud-progress { display: block; height: 1px; background: var(--color-divider); }
+.wb-estate-hud-progress > span { display: block; height: 1px; background: var(--color-accent-700); }
+.wb-estate-steps { position: absolute; right: 10px; bottom: 40px; display: grid; grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(2, 28px); gap: 3px; }
+.wb-estate-steps .wb-estate-hud-btn { min-height: 0; padding: 0; }
+.wb-estate-step-forward { grid-column: 2; grid-row: 1; }
+.wb-estate-step-turn-left { grid-column: 1; grid-row: 2; }
+.wb-estate-step-back { grid-column: 2; grid-row: 2; }
+.wb-estate-step-turn-right { grid-column: 3; grid-row: 2; }
+/* Fullscreen takes the whole window body: stage and side panel, on the page's ground. */
+.wb-estate:fullscreen { padding: 12px; background: var(--color-bg); }
 
 html[data-motion-paused="true"] .wb-estate * { transition: none; }
 @media (prefers-reduced-motion: reduce) {

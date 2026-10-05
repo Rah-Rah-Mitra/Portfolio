@@ -56,7 +56,7 @@ export type NavigationFactory = (core: EstateCore, view: ViewAccess) => EngineNa
 
 /**
  * A navigation that moves nothing: the core alone, drawing from its static
- * pose. P4b's controls replace it in the engine; it stays for harnesses and
- * benches.
+ * pose. This build mounts controls/index.ts createControls instead (P4b's
+ * Overview, Fly, fly-to and picking); this stays for harnesses and benches.
  */
 export const createNavigation: NavigationFactory = () => ({ features: {} });

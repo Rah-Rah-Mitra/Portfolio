@@ -16,13 +16,14 @@ import { CLASS_ORDER, EDITION, FRAME, PACK_SCHEMA, REPO } from '../scripts/estat
 import { slotOf } from '../scripts/estate/lib/palette.mjs';
 import { featureEdges } from '../scripts/estate/lib/pure/edges.mjs';
 import { openPoseYup, orientClosedSolids, surfaceErrorP90, transformPoint } from '../scripts/estate/lib/pure/geom.mjs';
-import { expandRooms, packRooms, roomsProblem, templateName } from '../scripts/estate/lib/pure/navjson.mjs';
-import { mergePanels, midPlanePanel, panelsNearSoup, pushPanel, triangleNearPanel } from '../scripts/estate/lib/pure/panels.mjs';
+import { doorsProblem, expandDoors, expandRooms, navDoor, packDoors, packRooms, roomsProblem, templateName } from '../scripts/estate/lib/pure/navjson.mjs';
+import { mergePanels, midPlanePanel, openingPanel, panelsNearSoup, pushPanel, triangleNearPanel } from '../scripts/estate/lib/pure/panels.mjs';
+import { coplanarPairs, matchMap, matchWithin, pairCoplanar, quantisationZFights } from '../scripts/estate/lib/pure/quantcheck.mjs';
 import { leakInPayload, packPathProblem } from '../scripts/estate/lib/pure/paths.mjs';
 import { Soup } from '../scripts/estate/lib/pure/soup.mjs';
 import { GROUND_NODATA, rasterGround, readGround, readWalkHeader, writeGround } from '../scripts/estate/lib/pure/sn5w.mjs';
 import { bandIndex, canonicalTag, storeyList } from '../scripts/estate/lib/pure/storeys.mjs';
-import { tagByChunks } from '../scripts/estate/lib/pure/tag.mjs';
+import { searchOrder, tagByChunks } from '../scripts/estate/lib/pure/tag.mjs';
 import { countKeys, exactSplitProblem, soupKeys, splitTypical } from '../scripts/estate/lib/pure/trikeys.mjs';
 
 // The pack tool's pure algorithms (plan §6.2; P2 in §10.2), on synthetic data.
@@ -201,6 +202,21 @@ describe('façade storey tags (step 6b)', () => {
     expect([...f.storey.subarray(12, 24)].every((s) => s === 1)).toBe(true);
     expect([...f.storey.subarray(24, 36)].every((s) => s === 2)).toBe(true);
   });
+
+  it('searches every storey nearest the band first, so a double-height hall roof keeps the storey whose chunk holds it', () => {
+    expect(searchOrder(2, 5)).toEqual([2, 1, 3, 0, 4]);
+    expect(searchOrder(0, 3)).toEqual([0, 1, 2]);
+    // NC_514: L1 0, L2 4.2, RF 8.2. A canopy at 8.0–8.25 lies in RF's band but only
+    // L1's chunk holds it (the hall is double height); it was tagged RF before.
+    const ffls = [0, 4.2, 8.2];
+    const chunk0 = new Soup(12);
+    pushBox(chunk0, [0, 8.0, 0], [6, 8.25, 4], 7, 0);
+    const f = new Soup(12);
+    pushBox(f, [0, 8.0, 0], [6, 8.25, 4], 7);
+    const out = tagByChunks(f, ffls, [countKeys(soupKeys(chunk0, 0)), new Map(), new Map()]);
+    expect(out).toEqual({ exactMatched: 12, banded: 0 });
+    expect([...f.storey.subarray(0, 12)].every((s) => s === 0)).toBe(true);
+  });
 });
 
 describe('panels (step 6b)', () => {
@@ -234,6 +250,26 @@ describe('panels (step 6b)', () => {
     expect(triangleNearPanel(panel, far)).toBe(false);
     expect(triangleNearPanel(panel, touching)).toBe(false);
     expect(triangleNearPanel(panel, across)).toBe(false);
+  });
+
+  it('a window panel spans the opening (the whole window), on the glass mid-plane', () => {
+    // A 1.0 × 1.3 m window kit: frames around a 0.88 × 1.18 m pane, 6 mm thick at z 0.04.
+    const glass: [number[], number[]] = [[0.06, 0.06, 0.037], [0.94, 1.24, 0.043]];
+    const whole: [number[], number[]] = [[0, 0, 0], [1, 1.3, 0.08]];
+    const p = openingPanel(glass, whole, IDENTITY);
+    expect(p.origin[2]).toBeCloseTo(0.04, 12);
+    expect([p.w, p.h].map((v: number) => Number(v.toFixed(9))).sort()).toEqual([1, 1.3]);
+  });
+
+  it('a double-sided panel is the same rectangle facing both ways', () => {
+    const panel = midPlanePanel([0, 0, 0], [1, 2, 0.04], IDENTITY);
+    const soup = new Soup(4);
+    expect(pushPanel(soup, panel, 8, 0, { doubleSided: true })).toBe(4);
+    const nz = (t: number) => { const q = soup.pos; const o = t * 9; return (q[o + 3] - q[o]) * (q[o + 7] - q[o + 1]) - (q[o + 4] - q[o + 1]) * (q[o + 6] - q[o]); };
+    expect(Math.sign(nz(0))).toBe(Math.sign(nz(1)));
+    expect(Math.sign(nz(2))).toBe(-Math.sign(nz(0)));
+    expect(Math.sign(nz(3))).toBe(-Math.sign(nz(0)));
+    expect(pushPanel(new Soup(2), panel, 8)).toBe(2);
   });
 
   it('merges a double leaf into one panel', () => {
@@ -270,7 +306,20 @@ describe('geometry steps', () => {
     // 12 box edges; the 0.4 m ones are too short; the diagonals are flat seams.
     expect(edges.length).toBe(8);
     expect(edges.every((e: { storey: number; length: number }) => e.storey === 3 && e.length >= 0.5)).toBe(true);
-    expect(featureEdges(soup, { max: 3 }).length).toBe(3);
+    // The cap never splits a length class: four 2 m edges, then four 1 m edges.
+    expect(featureEdges(soup, { max: 3 }).length).toBe(0);
+    expect(featureEdges(soup, { max: 4 }).length).toBe(4);
+    expect(featureEdges(soup, { max: 7 }).length).toBe(4);
+    expect(featureEdges(soup, { max: 8 }).length).toBe(8);
+  });
+
+  it('identical storeys keep identical edge lines under the cap', () => {
+    // Four identical "storeys" of a 2 × 1 m slab, 0.3 m thick, one above the other.
+    const soup = new Soup(48);
+    for (let s = 0; s < 4; s += 1) pushBox(soup, [0, s * 3, 0], [2, s * 3 + 0.3, 1], 0, s);
+    const edges = featureEdges(soup, { max: 10 });
+    const per = [0, 1, 2, 3].map((s) => edges.filter((e: { storey: number }) => e.storey === s).length);
+    expect(new Set(per).size).toBe(1);
   });
 
   it('measures the massing error as the 0.9 quantile of distances to the massing surface', () => {
@@ -290,6 +339,55 @@ describe('geometry steps', () => {
     const file = writeGround({ cell: 0.5, lo: [10, -2], nx: 4, ny: 4, heightsCm: h });
     expect(String.fromCharCode(...file.subarray(0, 4))).toBe('SN5G');
     expect(readGround(file)).toMatchObject({ cell: 0.5, lo: [10, -2], nx: 4, ny: 4 });
+  });
+});
+
+describe('quantisation checks (steps 8–9, on decoded geometry)', () => {
+  // A 4 × 4 m slab top (slot 1) and a 1 m road marking 5 mm above it (slot 2).
+  const scene = (markY: number) => {
+    const s = new Soup(4);
+    s.push(0, 0, 0, 0, 0, -4, 4, 0, -4, 1, 0); s.push(0, 0, 0, 4, 0, -4, 4, 0, 0, 1, 0);
+    s.push(1, markY, -1, 1, markY, -2, 2, markY, -2, 2, 0); s.push(1, markY, -1, 2, markY, -2, 2, markY, -1, 2, 0);
+    return s;
+  };
+  it('finds coplanar overlapping pairs of different slots, not ones a few mm apart or only touching', () => {
+    expect(coplanarPairs(scene(0.005)).length).toBe(0);
+    expect(coplanarPairs(scene(0)).length).toBe(2);
+    const touching = new Soup(2);
+    touching.push(0, 0, 0, 0, 0, -1, 1, 0, -1, 1, 0); touching.push(1, 0, -1, 2, 0, -1, 1, 0, 0, 2, 0);
+    expect(pairCoplanar(touching, 0, 1)).toBe(false);
+  });
+  it('refuses the pairs quantisation flattened, and keeps the ones the source already had', () => {
+    const built = scene(0.005);
+    const flattened = scene(0); // what a 12 mm step does to a 5 mm marking
+    const { problem, map } = matchMap(built, flattened, 0.006);
+    expect(problem).toBeNull();
+    expect(quantisationZFights(built, flattened, map, { slack: 0.002 }).created).toHaveLength(2);
+    const already = scene(0);
+    const same = matchMap(already, scene(0), 0.001);
+    expect(quantisationZFights(already, scene(0), same.map, { slack: 0.002 })).toMatchObject({ decoded: 2, existing: 2, created: [] });
+  });
+  it('matches decoded triangles to built ones within the tolerance, any start vertex', () => {
+    const a = new Soup(1); a.push(0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0);
+    const b = new Soup(1); b.push(1, 0.0004, 0, 0, 1, 0, 0, 0, 0.0003, 3, 0);
+    expect(matchWithin(a, b, 0.0005)).toBeNull();
+    expect(matchWithin(a, b, 0.0002)).toMatch(/no built triangle within/);
+    const c = new Soup(1); c.push(0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0);
+    expect(matchWithin(a, c, 0.001)).toMatch(/no built triangle/); // another slot
+  });
+});
+
+describe('nav doors (step 11)', () => {
+  it('stores each passable door as its centre, wall direction and width, a typical storey once', () => {
+    const door = (y: number) => ({ origin: [2, y, 0], along_wall: [1, 0, 0], width: 0.9 });
+    expect(navDoor(door(5))).toEqual([2.45, 5, 1, 0, 0.9]);
+    const byStorey = ['L1', 'L2', 'L3', 'L4'].map((tag, i) => ({ tag, doors: i === 0 ? [navDoor(door(1))] : [navDoor(door(5)), navDoor(door(7))] }));
+    const packed: any = packDoors(byStorey);
+    expect(packed.typical.storeys).toEqual(['L2', 'L3', 'L4']);
+    expect(Object.keys(packed.storeys)).toEqual(['L1']);
+    expect(doorsProblem(packed, byStorey)).toBeNull();
+    expect((expandDoors(packed) as Record<string, number[][]>).L3).toHaveLength(2);
+    expect(() => navDoor({ name: 'x' })).toThrow(/origin, along_wall and width/);
   });
 });
 

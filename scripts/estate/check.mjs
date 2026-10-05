@@ -5,18 +5,23 @@
 //   node scripts/estate/check.mjs                      the committed pack: public/estate/v*/
 //   node scripts/estate/check.mjs --pack <dir>         one pack folder (a dev or candidate pack)
 //   node scripts/estate/check.mjs --provenance         also: source.commit = gitlink = v1.2^{commit}
+//   node scripts/estate/check.mjs --provenance --zips <downloaded release folder>
+//                                                      also: the zips hash to source.assets
 //
 // Checks: every referenced file exists, its stored bytes hash to gzSha256 and
 // its raw payload (gunzipped for .gz) to sha256, whose first 8 hex name it;
 // sizes match; no stray files; caps from lib/estate/packBudgets.json; palette
-// tokens exist in index.css; a leak scan of every byte (gz decompressed); a
-// dev pack never under public/.
+// tokens exist in index.css; a leak scan of every byte (gz decompressed, and
+// the stored bytes too, header included); gzip headers carry no optional field;
+// public/estate holds LICENSE.txt and exactly one vX.Y folder, nothing else;
+// a dev pack nowhere under public/.
 
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzip, gzipDeterministic, sha256 } from './lib/files.mjs';
-import { leakInPayload, packPathProblem, payloadKind } from './lib/pure/paths.mjs';
+import { binaryLeak, leakInPayload, packPathProblem, payloadKind } from './lib/pure/paths.mjs';
 import { gitlink, tagCommit } from './lib/provenance.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -86,7 +91,10 @@ export const verifyFiles = (dir, pack, { allowed = [] } = {}) => {
     const hash = sha256(raw);
     if (hash !== ref.sha256) problems.push(`${ref.path}: raw payload does not hash to sha256`);
     if (!ref.path.split('/').pop().includes(`.${hash.slice(0, 8)}.`)) problems.push(`${ref.path}: name does not carry .${hash.slice(0, 8)}.`);
-    if (ref.path.endsWith('.gz') && (stored[9] !== 0xff || stored.readUInt32LE(4) !== 0)) problems.push(`${ref.path}: gzip header is not mtime 0, OS 0xff`);
+    if (ref.path.endsWith('.gz')) {
+      const header = gzipHeaderProblem(stored);
+      if (header) problems.push(`${ref.path}: ${header}`);
+    }
   }
   const packName = findPackJson(dir).split(/[\\/]/).pop();
   for (const file of listFiles(dir)) {
@@ -94,6 +102,19 @@ export const verifyFiles = (dir, pack, { allowed = [] } = {}) => {
     problems.push(`${file}: stray file (not in pack.json)`);
   }
   return problems;
+};
+
+/**
+ * The tool's gzip header exactly: magic, deflate, FLG 0 (no name, comment,
+ * extra field or header CRC — nothing a reader skips), mtime 0, XFL 0 or 2,
+ * OS 0xff. Returns why not, or null.
+ */
+export const gzipHeaderProblem = (stored) => {
+  if (stored.length < 18 || stored[0] !== 0x1f || stored[1] !== 0x8b || stored[2] !== 8) return 'not a deflate gzip stream';
+  if (stored[3] !== 0) return `gzip FLG is 0x${stored[3].toString(16)}: optional header fields (name, comment, extra) are not allowed`;
+  if (stored.readUInt32LE(4) !== 0 || stored[9] !== 0xff) return 'gzip header is not mtime 0, OS 0xff';
+  if (stored[8] !== 0 && stored[8] !== 2) return `gzip XFL is ${stored[8]}`;
+  return null;
 };
 
 /** Caps (plan §6.5). Returns { problems, warnings, measured }. */
@@ -168,6 +189,13 @@ export const leakScanDir = (dir) => {
     const payload = file.endsWith('.gz') ? gunzip(stored) : stored;
     const hit = leakInPayload(payload, payloadKind(file.replace(/\.gz$/, '')));
     if (hit) hits.push(`${file} @${hit.offset}: ${JSON.stringify(hit.match)}`);
+    // The stored bytes too: a gzip header can carry a file name or a comment.
+    if (file.endsWith('.gz')) {
+      const raw = binaryLeak(stored);
+      if (raw) hits.push(`${file} (stored) @${raw.offset}: ${JSON.stringify(raw.match)}`);
+      const header = gzipHeaderProblem(stored);
+      if (header) hits.push(`${file}: ${header}`);
+    }
     const pathProblem = packPathProblem(file);
     if (pathProblem) hits.push(`${file}: ${pathProblem}`);
   }
@@ -176,12 +204,58 @@ export const leakScanDir = (dir) => {
 
 const isUnder = (child, parent) => { const r = relative(parent, child); return r === '' || (!r.startsWith('..') && !r.includes(':')); };
 
+const sha256File = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
+
+/**
+ * Plan §6.6's public/estate rule: LICENSE.txt and exactly one vX.Y folder,
+ * nothing else; and no dev pack anywhere under public/. Returns { problems,
+ * versions }.
+ */
+export const checkPublicEstate = (repoRoot = REPO_ROOT) => {
+  const problems = [];
+  const base = join(repoRoot, 'public', 'estate');
+  const versions = [];
+  if (existsSync(base)) {
+    for (const entry of readdirSync(base, { withFileTypes: true })) {
+      if (entry.isDirectory() && /^v\d+\.\d+$/.test(entry.name)) versions.push(entry.name);
+      else if (!(entry.isFile() && entry.name === 'LICENSE.txt')) problems.push(`public/estate/${entry.name}: only LICENSE.txt and one vX.Y folder may live here`);
+    }
+    if (versions.length > 1) problems.push(`public/estate holds ${versions.length} version folders (${versions.join(', ')}); exactly one may exist`);
+  }
+  const pub = join(repoRoot, 'public');
+  if (existsSync(pub)) {
+    for (const file of listFiles(pub)) {
+      if (!/(^|\/)pack\.[0-9a-f]{8}\.json$/.test(file)) continue;
+      try {
+        if (JSON.parse(readFileSync(join(pub, ...file.split('/')), 'utf8')).source?.dev === true) problems.push(`public/${file} is a dev pack (source.dev): dev packs are never committed`);
+      } catch { problems.push(`public/${file} does not parse`); }
+    }
+  }
+  return { problems, versions };
+};
+
+/**
+ * --provenance --zips: the downloaded release zips hash to the pack's
+ * source.assets (plan §6.6), name for name.
+ */
+export const checkAssets = (pack, zipsDir) => {
+  const problems = [];
+  for (const asset of pack.source?.assets ?? []) {
+    const file = join(zipsDir, asset.name);
+    if (!existsSync(file)) { problems.push(`--zips: ${asset.name} is not in ${zipsDir}`); continue; }
+    const hash = sha256File(file); const bytes = statSync(file).size;
+    if (hash !== asset.sha256 || bytes !== asset.bytes) problems.push(`--zips: ${asset.name} is ${hash} (${bytes} B), source.assets records ${asset.sha256} (${asset.bytes} B)`);
+  }
+  if (!(pack.source?.assets ?? []).length) problems.push('--zips: the pack records no source.assets');
+  return problems;
+};
+
 /**
  * Checks one pack folder. Returns { problems, warnings, measured, pack }.
  * @param {string} dir
- * @param {{ allowed?: string[], provenance?: boolean }} [options]
+ * @param {{ allowed?: string[], provenance?: boolean, zips?: string | null }} [options]
  */
-export const checkPackDir = (dir, { allowed = [], provenance = false } = {}) => {
+export const checkPackDir = (dir, { allowed = [], provenance = false, zips = null } = {}) => {
   const problems = []; const warnings = [];
   const packPath = findPackJson(dir);
   const packBytes = readFileSync(packPath);
@@ -207,30 +281,35 @@ export const checkPackDir = (dir, { allowed = [], provenance = false } = {}) => 
       if (tagged !== link) problems.push(`--provenance: ${pack.edition}^{commit} ${tagged ?? 'unknown'} ≠ gitlink ${link}`);
     }
     if (pack.source.dev) problems.push('--provenance: a dev pack has no provenance');
+    if (zips) problems.push(...checkAssets(pack, zips));
   }
   return { problems, warnings, measured: budget.measured, pack };
 };
 
 const main = (argv) => {
-  const args = { pack: null, provenance: false };
+  const args = { pack: null, provenance: false, zips: null };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--pack') args.pack = argv[++i];
     else if (argv[i] === '--provenance') args.provenance = true;
+    else if (argv[i] === '--zips') args.zips = argv[++i];
     else { console.error(`unknown argument ${argv[i]}`); return 2; }
   }
-  let dirs;
-  if (args.pack) dirs = [resolve(args.pack)];
-  else {
-    const base = join(REPO_ROOT, 'public', 'estate');
-    const versions = existsSync(base) ? readdirSync(base).filter((d) => /^v\d+\.\d+$/.test(d) && statSync(join(base, d)).isDirectory()) : [];
-    if (!versions.length) { console.log('estate:check: no committed pack under public/estate (nothing to check).'); return 0; }
-    if (versions.length > 1) { console.error(`estate:check: ${versions.length} version folders under public/estate; exactly one may exist`); return 1; }
-    dirs = [join(base, versions[0])];
-  }
+  if (args.zips && !args.provenance) { console.error('--zips belongs with --provenance'); return 2; }
+  const base = process.env.INIT_CWD || process.cwd();
+  if (args.zips) args.zips = resolve(base, args.zips);
   let failed = false;
+  let dirs;
+  if (args.pack) dirs = [resolve(base, args.pack)];
+  else {
+    const { problems, versions } = checkPublicEstate();
+    for (const p of problems) console.error(`  FAIL: ${p}`);
+    if (problems.length) failed = true;
+    if (!versions.length) { console.log('estate:check: no committed pack under public/estate (nothing to check).'); return failed ? 1 : 0; }
+    dirs = versions.length === 1 ? [join(REPO_ROOT, 'public', 'estate', versions[0])] : [];
+  }
   for (const dir of dirs) {
     const allowed = existsSync(join(dir, 'catalogue.generated.ts')) && !isUnder(dir, join(REPO_ROOT, 'public')) ? ['catalogue.generated.ts', 'report.json'] : [];
-    const { problems, warnings, measured } = checkPackDir(dir, { allowed, provenance: args.provenance });
+    const { problems, warnings, measured } = checkPackDir(dir, { allowed, provenance: args.provenance, zips: args.zips });
     console.log(`estate:check ${relative(REPO_ROOT, dir).split(sep).join('/')}: ${measured.files} files, ${measured.total} B, first frame ${measured.stage0} B`);
     for (const [klass, bytes] of Object.entries(measured.byClass)) console.log(`  ${klass.padEnd(6)} ${String(bytes).padStart(9)} B`);
     for (const w of warnings) console.log(`  warning: ${w}`);

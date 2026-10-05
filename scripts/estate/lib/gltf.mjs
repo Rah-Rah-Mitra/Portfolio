@@ -7,7 +7,7 @@ import { ALL_EXTENSIONS, EXTMeshGPUInstancing } from '@gltf-transform/extensions
 import { instance, meshopt, prune, weld } from '@gltf-transform/functions';
 import { MeshoptDecoder, MeshoptEncoder } from 'meshoptimizer';
 import validator from 'gltf-validator';
-import { det3, transformPoint } from './pure/geom.mjs';
+import { det3, multiply, transformPoint } from './pure/geom.mjs';
 import { Soup } from './pure/soup.mjs';
 import { slotOf } from './palette.mjs';
 
@@ -210,6 +210,10 @@ export const meshSoup = (mesh, opts) => {
  */
 export const instanceAll = async (ctx, storeyOf = null) => {
   await ctx.doc.transform(instance({ min: 1 }));
+  // Required, not just used: a kit's dequantisation scale lives in the
+  // instance SCALE, so a reader without the extension would draw every kit
+  // once, at the origin, in normalised units. gltf-transform marks it optional.
+  for (const ext of ctx.doc.getRoot().listExtensionsUsed()) if (ext.extensionName === 'EXT_mesh_gpu_instancing') ext.setRequired(true);
   const batches = [];
   for (const node of ctx.doc.getRoot().listNodes()) {
     const batch = node.getExtension('EXT_mesh_gpu_instancing');
@@ -257,7 +261,9 @@ export const storeyRoundTrip = async (glb, batches) => {
 /**
  * Step 8: weld → (reorder → quantize, inside meshopt) → meshopt 'high' with
  * EXT_meshopt_compression → prune. Positions are quantised to `bits` (14 for
- * massing, F and site; 16 for D and I); _META is already u8 and is left alone.
+ * massing; 16 for F, site, D and I — at 14 bits a 200 m site quadrant steps
+ * 12 mm and flattens 5 mm road markings onto the asphalt under them); _META is
+ * already u8 and is left alone.
  * Returns the GLB bytes.
  */
 export const encodeDoc = async (ctx, bits) => {
@@ -269,6 +275,78 @@ export const encodeDoc = async (ctx, bits) => {
   );
   return io.writeBinary(ctx.doc);
 };
+
+// ---- decoding (what a reader gets back) ---------------------------------------------------
+
+// Column-major T · R · S from an instance's translation, quaternion and scale.
+const compose = (t, q, sc) => {
+  const [x, y, z, w] = q;
+  const xx = x * x, yy = y * y, zz = z * z, xy = x * y, xz = x * z, yz = y * z, wx = w * x, wy = w * y, wz = w * z;
+  return [
+    (1 - 2 * (yy + zz)) * sc[0], 2 * (xy + wz) * sc[0], 2 * (xz - wy) * sc[0], 0,
+    2 * (xy - wz) * sc[1], (1 - 2 * (xx + zz)) * sc[1], 2 * (yz + wx) * sc[1], 0,
+    2 * (xz + wy) * sc[2], 2 * (yz - wx) * sc[2], (1 - 2 * (xx + yy)) * sc[2], 0,
+    t[0], t[1], t[2], 1,
+  ];
+};
+
+/** Every instance matrix of an EXT_mesh_gpu_instancing batch, column-major. */
+export const instanceMatrices = (batch) => {
+  const tr = batch.getAttribute('TRANSLATION'); const ro = batch.getAttribute('ROTATION'); const sc = batch.getAttribute('SCALE');
+  const n = (tr ?? ro ?? sc).getCount();
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    out.push(compose(tr ? tr.getElement(i, [0, 0, 0]) : [0, 0, 0], ro ? ro.getElement(i, [0, 0, 0, 0]) : [0, 0, 0, 1], sc ? sc.getElement(i, [0, 0, 0]) : [1, 1, 1]));
+  }
+  return out;
+};
+
+/**
+ * Decodes a GLB the way a reader does (meshopt, then dequantisation through
+ * each node's matrix and each instance's TRS) into one triangle soup per mesh
+ * node, slot and storey read back from _META. Lines are skipped. Returns
+ * [{ name, soup, scale (the node's), copies }].
+ */
+export const decodeGlb = async (glb) => {
+  const doc = await readGlb(glb);
+  const out = [];
+  const a = [0, 0, 0], b = [0, 0, 0], c = [0, 0, 0];
+  const el = [0, 0, 0]; const meta = [0, 0, 0, 0];
+  for (const node of doc.getRoot().listNodes()) {
+    const mesh = node.getMesh();
+    if (!mesh) continue;
+    const world = node.getWorldMatrix();
+    const batch = node.getExtension('EXT_mesh_gpu_instancing');
+    const matrices = batch ? instanceMatrices(batch).map((m) => multiply(world, m)) : [world];
+    const soup = new Soup(1024);
+    for (const m of matrices) {
+      const flip = det3(m) < 0;
+      for (const prim of mesh.listPrimitives()) {
+        if (prim.getMode() !== Primitive.Mode.TRIANGLES) continue;
+        const pos = prim.getAttribute('POSITION'); const metaAttr = prim.getAttribute('_META');
+        const n = pos.getCount();
+        const world3 = new Float64Array(n * 3); const slot = new Uint8Array(n); const storey = new Uint8Array(n);
+        for (let v = 0; v < n; v += 1) {
+          pos.getElement(v, el);
+          transformPoint(m, el[0], el[1], el[2], a);
+          world3[v * 3] = a[0]; world3[v * 3 + 1] = a[1]; world3[v * 3 + 2] = a[2];
+          if (metaAttr) { metaAttr.getElement(v, meta); slot[v] = meta[0]; storey[v] = meta[2]; }
+        }
+        const idx = prim.getIndices()?.getArray() ?? Uint32Array.from({ length: n }, (_, i) => i);
+        for (let t = 0; t + 2 < idx.length; t += 3) {
+          const i0 = idx[t], i1 = idx[t + (flip ? 2 : 1)], i2 = idx[t + (flip ? 1 : 2)];
+          for (const [dst, i] of [[a, i0], [b, i1], [c, i2]]) { dst[0] = world3[i * 3]; dst[1] = world3[i * 3 + 1]; dst[2] = world3[i * 3 + 2]; }
+          soup.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], slot[i0], storey[i0]);
+        }
+      }
+    }
+    out.push({ name: node.getName(), soup, scale: node.getScale()[0], copies: matrices.length });
+  }
+  return out;
+};
+
+/** The quantisation step a node's uniform scale gives at `bits` (KHR_mesh_quantization, signed normalised). */
+export const quantStep = (scale, bits) => scale / (2 ** (bits - 1) - 1);
 
 // ---- validation (step 9) ------------------------------------------------------------------
 

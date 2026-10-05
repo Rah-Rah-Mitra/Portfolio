@@ -15,10 +15,10 @@
 // or .blend: they are neither extracted nor read.
 
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { sha256 } from './files.mjs';
-import { generatorUnchanged, gitlink, tagCommit } from './provenance.mjs';
+import { COMMIT_ID, generatorUnchanged, gitlink, isAncestor, tagCommit } from './provenance.mjs';
 import { openZip } from './zip.mjs';
 
 export const SITE_IDS = ['BLK_501', 'BLK_502', 'BLK_503', 'BLK_504', 'BLK_505', 'BLK_506', 'BLK_507', 'BLK_508', 'BLK_509', 'BLK_510', 'BLK_511', 'BLK_512', 'MSCP_513', 'NC_514'];
@@ -40,18 +40,44 @@ export const isPackInput = (name) => (
 // Never opened (plan §6.1): checked so a loosened isPackInput cannot let them in.
 const NEVER = /(_nav\.json|\.build\.json|\.ifc|\.blend)$|^model\/(?!SITE_)[^/]+\/[^/]+_lod0\.glb$/;
 
+// Inputs whose hash no export record anchors: the two records themselves, and
+// the two report entries (anchored only by release_manifest.json's per-entry
+// sha256, which openRelease checks).
+const SELF_ANCHORED = new Set([
+  'model/estate_manifest.json', 'model/export_info.json',
+  'reports/renders/ESTATE/ESTATE_views.json', 'reports/renders/ESTATE/ESTATE_aerial_NE.png',
+]);
+
 class Source {
-  constructor(root, mode) { this.root = root; this.mode = mode; this.read_ = new Map(); }
+  /** `entries`: the zip paths this run extracted (release); null reads whatever is on disk (dev). */
+  constructor(root, mode, entries = null) { this.root = root; this.mode = mode; this.entries = entries; this.read_ = new Map(); }
   path(rel) { return join(this.root, ...rel.split('/')); }
-  has(rel) { return existsSync(this.path(rel)); }
+  has(rel) { return (this.entries === null || this.entries.has(rel)) && existsSync(this.path(rel)); }
   read(rel) {
     if (NEVER.test(rel)) throw new Error(`the pack never opens ${rel}`);
+    if (this.entries !== null && !this.entries.has(rel)) throw new Error(`${rel} is not an entry of this release`);
     const bytes = readFileSync(this.path(rel));
     this.read_.set(rel, sha256(bytes));
     return bytes;
   }
   json(rel) { return JSON.parse(this.read(rel).toString('utf8')); }
 }
+
+/**
+ * Every input the build read, against the hashes the export records anchored
+ * (`anchored`: Map rel → sha256 from estate_manifest.json files.* and
+ * export_info.json files). Returns the reads no record vouches for.
+ */
+export const unanchoredReads = (source, anchored) => {
+  const out = [];
+  for (const [rel, hash] of source.read_) {
+    if (SELF_ANCHORED.has(rel)) continue;
+    const want = anchored.get(rel);
+    if (want === undefined) out.push(`${rel}: no estate_manifest.json or export_info.json record hashes it`);
+    else if (want !== hash) out.push(`${rel}: read as ${hash}, recorded as ${want}`);
+  }
+  return out;
+};
 
 /**
  * Opens a release: verifies the zips, extracts the pack's inputs to
@@ -76,6 +102,12 @@ export const openRelease = ({ zipsDir, extractRoot, edition }) => {
     assets.push({ name, sha256: hash, bytes });
   }
   const root = resolve(extractRoot, edition);
+  if (relative(resolve(extractRoot), root).startsWith('..') || resolve(extractRoot) === root) throw new Error(`extraction folder ${root} is not inside ${extractRoot}`);
+  // A fresh folder every run: a file left by an earlier release must never be
+  // packed under this release's hashes.
+  rmSync(root, { recursive: true, force: true });
+  if (!rm.entries || typeof rm.entries !== 'object') throw new Error('release_manifest.json has no per-entry sha256 (entries)');
+  const names = new Set();
   let extracted = 0;
   for (const { name } of assets) {
     const zip = openZip(join(zipsDir, name));
@@ -84,8 +116,11 @@ export const openRelease = ({ zipsDir, extractRoot, edition }) => {
         if (entry.name.endsWith('/') || !isPackInput(entry.name)) continue;
         if (NEVER.test(entry.name)) throw new Error(`isPackInput admitted ${entry.name}`);
         const data = zip.read(entry);
-        const want = rm.entries?.[entry.name];
-        if (want !== undefined && sha256(data) !== want) throw new Error(`zip entry ${entry.name} differs from release_manifest.json`);
+        const want = rm.entries[entry.name];
+        if (want === undefined) throw new Error(`zip entry ${entry.name} has no sha256 in release_manifest.json`);
+        if (sha256(data) !== want) throw new Error(`zip entry ${entry.name} differs from release_manifest.json`);
+        if (names.has(entry.name)) throw new Error(`zip entry ${entry.name} appears twice in the release`);
+        names.add(entry.name);
         const out = join(root, ...entry.name.split('/'));
         if (relative(root, out).startsWith('..')) throw new Error(`zip entry ${entry.name} escapes the extraction folder`);
         mkdirSync(dirname(out), { recursive: true });
@@ -94,7 +129,7 @@ export const openRelease = ({ zipsDir, extractRoot, edition }) => {
       }
     } finally { zip.close(); }
   }
-  return { source: new Source(root, 'release'), assets, releaseManifest: rm, extracted };
+  return { source: new Source(root, 'release', names), assets, releaseManifest: rm, extracted };
 };
 
 /** Opens an extracted export for a dev run. The asset record hashes the file list, so two dev packs say whether they saw the same inputs. */
@@ -118,18 +153,33 @@ export const openDevSource = (dir) => {
 /**
  * The export's own hashes (both modes) and, in release mode, the provenance
  * gates. Returns { manifest, manifestSha256, exportInfo, exportInfoSha256,
- * commit (gitlink), buildCommit }.
+ * commit (gitlink), buildCommit, anchored }. `anchored` maps every input path a
+ * record hashes to that hash, for unanchoredReads() after the build.
+ *
+ * The commit chain (plan §2, R2a): upstream builds on M (export_info.commit),
+ * commits the regenerated reports as R and releases; release_manifest.json
+ * repeats export_info.commit, so the two upstream records must agree. The
+ * portfolio's gitlink G is R: G must descend from M and the generator must be
+ * unchanged between them. `expectedAssets` (--release) is the candidate pack's
+ * source.assets the downloaded zips must equal.
  */
-export const checkExport = ({ source, repoRoot, release, releaseManifest, previousAssets, assets, edition, allowRot = false }) => {
+export const checkExport = ({ source, repoRoot, release, releaseManifest, expectedAssets = null, assets, edition, allowRot = false }) => {
+  const strict = source.mode === 'release';
   const manifestBytes = source.read('model/estate_manifest.json');
   const manifest = JSON.parse(manifestBytes.toString('utf8'));
   const manifestSha256 = sha256(manifestBytes);
   const problems = [];
-  // Every GLB the pack reads must be the one the manifest names.
+  const anchored = new Map();
+  // Every GLB and engine JSON the pack reads must be the one the manifest
+  // names; in a release a missing record is a refusal, not a skipped check.
   const checkFile = (entry, where) => {
-    if (!entry) return;
+    if (!entry || typeof entry.path !== 'string' || !/^[0-9a-f]{64}$/.test(entry.sha256 ?? '')) {
+      if (strict) problems.push(`${where}: estate_manifest.json records no path and sha256`);
+      return;
+    }
     const rel = `model/${entry.path}`;
-    if (!source.has(rel)) return;
+    anchored.set(rel, entry.sha256);
+    if (!source.has(rel)) return; // not read, or reading it fails later
     const hash = sha256(readFileSync(source.path(rel)));
     if (hash !== entry.sha256) problems.push(`${where}: ${entry.path} sha256 ${hash} ≠ the manifest's ${entry.sha256}`);
   };
@@ -137,7 +187,9 @@ export const checkExport = ({ source, repoRoot, release, releaseManifest, previo
     checkFile(site.files?.glb_lod1, `${site.id} lod1`);
     checkFile(site.files?.glb_lod2, `${site.id} lod2`);
     checkFile(site.files?.engine, `${site.id} engine`);
-    for (const chunk of site.files?.glb_int ?? []) checkFile(chunk, `${site.id} ${chunk.storey}`);
+    const chunks = site.files?.glb_int ?? [];
+    if (strict && !chunks.length) problems.push(`${site.id}: estate_manifest.json lists no interior chunks`);
+    for (const chunk of chunks) checkFile(chunk, `${site.id} ${chunk.storey}`);
     if (site.rot && !allowRot) problems.push(`${site.id} is rotated (rot ${site.rot}); the pack refuses rotated sites without --allow-rot`);
   }
   checkFile(manifest.site?.files?.glb_lod0, 'SITE lod0');
@@ -150,7 +202,7 @@ export const checkExport = ({ source, repoRoot, release, releaseManifest, previo
     exportInfoSha256 = sha256(bytes);
     buildCommit = exportInfo.commit;
   }
-  if (source.mode === 'release') {
+  if (strict) {
     if (!exportInfo) problems.push('model/export_info.json is missing');
     else {
       if (exportInfo.dirty !== false) problems.push(`export_info.dirty is ${exportInfo.dirty}: the export was built from a modified tree`);
@@ -159,30 +211,38 @@ export const checkExport = ({ source, repoRoot, release, releaseManifest, previo
         for (const kind of ['walk.bin', 'web.json']) {
           const key = `${id}/${id}_${kind}`;
           const want = exportInfo.files?.[key];
-          if (!want) { problems.push(`export_info.files has no ${key}`); continue; }
+          if (!want || !/^[0-9a-f]{64}$/.test(want.sha256 ?? '')) { problems.push(`export_info.files has no sha256 for ${key}`); continue; }
+          anchored.set(`model/${key}`, want.sha256);
           if (!source.has(`model/${key}`)) { problems.push(`${key} is not in the release`); continue; }
-          const hash = sha256(readFileSync(source.path(`model/${key}`)));
-          if (hash !== want.sha256) problems.push(`${key} sha256 ${hash} ≠ export_info's ${want.sha256}`);
+          const data = readFileSync(source.path(`model/${key}`));
+          const hash = sha256(data);
+          if (hash !== want.sha256 || (want.bytes !== undefined && data.length !== want.bytes)) problems.push(`${key} sha256 ${hash} (${data.length} B) ≠ export_info's ${want.sha256} (${want.bytes} B)`);
         }
       }
-      if (!/^[0-9a-f]{40}$/.test(buildCommit ?? '')) problems.push(`export_info.commit ${buildCommit} is not a commit id`);
+      if (!COMMIT_ID.test(buildCommit ?? '')) problems.push(`export_info.commit ${JSON.stringify(buildCommit)} is not a 40-hex commit id`);
+    }
+    const releaseCommit = releaseManifest?.commit;
+    if (!COMMIT_ID.test(releaseCommit ?? '')) problems.push(`release_manifest.json commit ${JSON.stringify(releaseCommit)} is not a 40-hex commit id`);
+    else if (COMMIT_ID.test(buildCommit ?? '') && releaseCommit !== buildCommit) {
+      problems.push(`release_manifest.json commit ${releaseCommit} ≠ export_info.commit ${buildCommit}: the two upstream records disagree`);
     }
     if (!commit) problems.push('no Bonsai-Estate gitlink in the portfolio index (is this a git checkout?)');
-    else {
-      if (buildCommit && !generatorUnchanged(repoRoot, buildCommit, commit)) {
-        problems.push(`the generator changed between export_info.commit ${buildCommit} and the gitlink ${commit}`);
-      }
-      if (releaseManifest?.commit && releaseManifest.commit !== commit) problems.push(`release_manifest.json commit ${releaseManifest.commit} ≠ the gitlink ${commit}`);
+    else if (COMMIT_ID.test(buildCommit ?? '')) {
+      // Only validated ids reach git (provenance.mjs checks again).
+      const gate = (fn) => { try { fn(); } catch (e) { problems.push(e.message); } };
+      gate(() => { if (!isAncestor(repoRoot, buildCommit, commit)) problems.push(`the gitlink ${commit} does not descend from export_info.commit ${buildCommit}`); });
+      gate(() => { if (!generatorUnchanged(repoRoot, buildCommit, commit)) problems.push(`the generator changed between export_info.commit ${buildCommit} and the gitlink ${commit}`); });
     }
     if (release) {
-      const tagged = tagCommit(repoRoot, edition);
+      const tagged = commit ? tagCommit(repoRoot, edition) : null;
       if (tagged !== commit) problems.push(`--release: ${edition}^{commit} is ${tagged ?? 'unknown'}, the gitlink is ${commit}`);
-      if (previousAssets) {
-        const a = JSON.stringify(assets); const b = JSON.stringify(previousAssets);
-        if (a !== b) problems.push('--release: the downloaded zips differ from the committed pack.json source.assets');
+      if (!expectedAssets) problems.push('--release: no candidate assets to compare the zips with (pass --expect-assets <candidate pack.json>, or replace a pack already in --out)');
+      else {
+        const canon = (list) => JSON.stringify([...list].map(({ name, sha256: h, bytes }) => ({ name, sha256: h, bytes })).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)));
+        if (canon(assets) !== canon(expectedAssets)) problems.push(`--release: the zips differ from the candidate's source.assets:\n      got  ${canon(assets)}\n      want ${canon(expectedAssets)}`);
       }
     }
   }
   if (problems.length) throw new Error(`refusing to pack:\n  - ${problems.join('\n  - ')}`);
-  return { manifest, manifestSha256, exportInfo, exportInfoSha256, commit, buildCommit };
+  return { manifest, manifestSha256, exportInfo, exportInfoSha256, commit, buildCommit, anchored };
 };

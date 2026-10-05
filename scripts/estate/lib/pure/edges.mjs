@@ -1,6 +1,12 @@
 // Façade edge lines (plan §6.2 step 6f): edges where two faces meet at 60° or
 // more and that are at least 0.5 m long, the longest `max` per building, each
 // inheriting a storey tag from its faces. Imports nothing.
+//
+// The cap never splits a length class (lengths equal to the millimetre): a
+// cut inside one kept an arbitrary, position-ordered part of it, so identical
+// typical storeys drew different line work (BLK_509 kept 728 of its 2,360
+// 2.6 m edges, 272 on L3 and 380 on L4). The class that would cross `max` is
+// dropped whole, with every shorter one.
 
 const Q = 1e4; // weld at 0.1 mm
 
@@ -52,5 +58,14 @@ export const featureEdges = (soup, { minAngleDeg = 60, minLength = 0.5, max = 60
     out.push({ a: rec.a, b: rec.b, length, storey: Math.min(soup.storey[f], soup.storey[g]), slot: soup.slot[f] });
   }
   out.sort((x, y) => y.length - x.length || x.a[0] - y.a[0] || x.a[1] - y.a[1] || x.a[2] - y.a[2] || x.b[0] - y.b[0] || x.b[1] - y.b[1] || x.b[2] - y.b[2]);
-  return out.slice(0, max);
+  if (out.length <= max) return out;
+  const mm = (e) => Math.round(e.length * 1000);
+  let keep = 0;
+  while (keep < out.length) {
+    let end = keep;
+    while (end < out.length && mm(out[end]) === mm(out[keep])) end += 1;
+    if (end > max) break;
+    keep = end;
+  }
+  return out.slice(0, keep);
 };

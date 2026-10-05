@@ -35,6 +35,19 @@ export const midPlanePanel = (min, max, matrix) => {
   return { origin: o, u, v, n: norm(cross(u, v)), w, h, thickness: ext[thin] };
 };
 
+/**
+ * A window's panel: the glass's mid-plane (its thinnest axis), spanning the
+ * whole window mesh in the other two axes — the opening, not just the pane, so
+ * no ring of frame-width hole shows once D's frames are no longer drawn.
+ */
+export const openingPanel = (glassBox, wholeBox, matrix) => {
+  const ext = [0, 1, 2].map((k) => glassBox[1][k] - glassBox[0][k]);
+  const thin = ext[0] <= ext[1] && ext[0] <= ext[2] ? 0 : ext[1] <= ext[2] ? 1 : 2;
+  const lo = wholeBox[0].slice(); const hi = wholeBox[1].slice();
+  lo[thin] = glassBox[0][thin]; hi[thin] = glassBox[1][thin];
+  return midPlanePanel(lo, hi, matrix);
+};
+
 /** The four corners of a panel, counter-clockwise about its normal. */
 export const panelCorners = (p) => {
   const at = (a, b) => [p.origin[0] + p.u[0] * a + p.v[0] * b, p.origin[1] + p.u[1] * a + p.v[1] * b, p.origin[2] + p.u[2] * a + p.v[2] * b];
@@ -128,11 +141,20 @@ export const facePanelOut = (panel, rings) => {
   return { panel: away < 0 ? flipPanel(panel) : panel, decided: false };
 };
 
-/** Adds a panel's two triangles to a soup. */
-export const pushPanel = (soup, panel, slot, storey = 0) => {
+/**
+ * Adds a panel's two triangles to a soup, and with `doubleSided` two more
+ * facing the other way (a door panel: which side is outdoors is a guess at a
+ * lift landing or a stair discharge, and F is drawn one-sided). Returns how
+ * many triangles it added.
+ */
+export const pushPanel = (soup, panel, slot, storey = 0, { doubleSided = false } = {}) => {
   const [a, b, c, d] = panelCorners(panel);
   soup.push(...a, ...b, ...c, slot, storey);
   soup.push(...a, ...c, ...d, slot, storey);
+  if (!doubleSided) return 2;
+  soup.push(...a, ...c, ...b, slot, storey);
+  soup.push(...a, ...d, ...c, slot, storey);
+  return 4;
 };
 
 // ---- the 2 mm check -------------------------------------------------------------------

@@ -5,7 +5,7 @@ import { bakeMesh, buildMesh, buildPrimitives, classify, instanceAll, meshBox, m
 import { EDGE_SLOT, GLASS_INTERIOR_SLOT, GLASS_SLOT, slotOf } from './palette.mjs';
 import { featureEdges } from './pure/edges.mjs';
 import { det3, multiply, openPoseYup, orientClosedSolids, surfaceErrorP90 } from './pure/geom.mjs';
-import { facePanelFromRooms, facePanelOut, mergePanels, midPlanePanel, panelCorners, panelsNearSoup, pushPanel } from './pure/panels.mjs';
+import { facePanelFromRooms, facePanelOut, mergePanels, midPlanePanel, openingPanel, panelCorners, panelsNearSoup, pushPanel } from './pure/panels.mjs';
 import { Soup, concatSoups } from './pure/soup.mjs';
 import { bandIndex, canonicalTag, storeyList } from './pure/storeys.mjs';
 import { instanceStorey, tagByChunks } from './pure/tag.mjs';
@@ -15,6 +15,9 @@ import { countKeys, exactSplitProblem, soupKeys, splitTypical } from './pure/tri
 export const T_STOREY = 255;
 
 const MIRROR = 'a mirroring placement';
+
+/** Triangles a mesh stores (every primitive, indexed or not). */
+const meshTris = (mesh) => mesh.listPrimitives().reduce((n, prim) => n + Math.floor((prim.getIndices()?.getCount() ?? prim.getAttribute('POSITION').getCount()) / 3), 0);
 
 // The kit name of a furniture mesh: upstream's mesh name without FURN_ and
 // without a trailing 22-character IFC GUID (BLK_507's letterbox banks carry one).
@@ -79,9 +82,15 @@ export const analyseBuilding = async ({ id, engine, read, web, minShare, warn })
     const extras = rootNode?.getExtras() ?? {};
     if (canonicalTag(extras.storey) !== tag) throw new Error(`${id}: ${chunkName} says storey ${extras.storey}, expected ${tag}`);
     const soup = new Soup(4096);
+    // What the chunk stores, counted from the GLB itself rather than from what
+    // was baked, so pack.json's sourceTris can disagree with drawnTris.
+    const raw = { total: 0, furniture: 0, lift: 0 };
     for (const node of meshNodes(doc)) {
       const cls = classify(node.getName());
-      if (cls === 'lift') continue; // upstream keeps cars out of chunks; never ship one
+      const n = meshTris(node.getMesh());
+      raw.total += n;
+      if (cls === 'lift') { raw.lift += n; continue; } // upstream keeps cars out of chunks; never ship one
+      if (cls === 'furn') raw.furniture += n;
       let matrix = node.getWorldMatrix();
       if (det3(matrix) < 0 && cls === 'furn') throw new Error(`${id} ${tag}: furniture ${node.getName()} has ${MIRROR}`);
       if (cls === 'furn') {
@@ -104,7 +113,10 @@ export const analyseBuilding = async ({ id, engine, read, web, minShare, warn })
     const o = orientClosedSolids(soup);
     for (const k of Object.keys(orientation)) orientation[k] += o[k];
     const keys = soupKeys(soup, ffl);
-    chunks.push({ tag, ffl, soup, keys, counts: countKeys(keys) });
+    const statics = raw.total - raw.furniture - raw.lift;
+    if (soup.count !== statics) throw new Error(`${id} ${tag}: baked ${soup.count} of the chunk's ${statics} triangles that are neither furniture nor lift cars`);
+    if (raw.lift) warn(`${id} ${tag}: dropped ${raw.lift} lift-car triangles from the interior chunk`);
+    chunks.push({ tag, ffl, soup, keys, counts: countKeys(keys), raw });
   }
   if (web && opened !== passableLeaves) {
     throw new Error(`${id}: opened ${opened} leaves, but the engine JSON has ${passableLeaves} passable leaves`);
@@ -143,7 +155,8 @@ export const buildInterior = async (a, budgets) => {
   // on a typical storey, the special mesh otherwise. They are equal by the
   // hard check; pack.json carries both so estate-pack.test.ts can say so.
   storeys.forEach(({ tag }, s) => {
-    sourceTris[tag] = chunks[s].soup.count;
+    const raw = chunks[s].raw;
+    sourceTris[tag] = raw.total - raw.furniture - raw.lift;
     drawnTris[tag] = typicalSet.has(s) ? tSoup.count + split.residual.get(s).length : chunks[s].soup.count;
   });
 
@@ -168,6 +181,12 @@ export const buildInterior = async (a, budgets) => {
     ctx.scene.addChild(ctx.doc.createNode().setMesh(kit.mesh).setMatrix(f.matrix));
     ctx.scene.addChild(ctx.doc.createNode().setMesh(kit.proxy).setMatrix(f.matrix));
   }
+  // Every FURN_ triangle of every chunk is drawn by a kit instance: none is dropped.
+  const furnDrawn = new Map();
+  for (const f of furniture) furnDrawn.set(f.storey, (furnDrawn.get(f.storey) ?? 0) + kits.get(f.kit).tris);
+  storeys.forEach(({ tag }, s) => {
+    if ((furnDrawn.get(s) ?? 0) !== chunks[s].raw.furniture) throw new Error(`${id} ${tag}: furniture kits draw ${furnDrawn.get(s) ?? 0} triangles of the chunk's ${chunks[s].raw.furniture}`);
+  });
   const batches = kits.size ? await instanceAll(ctx, (y) => instanceStorey(a.ffls, y)) : [];
 
   const add = (name, soup) => {
@@ -230,8 +249,9 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
   const tagged = tagByChunks(shell, ffls, chunkCounts);
 
   // Panels and the D soup they are checked against.
-  const panels = []; const panelSlots = []; const dSoup = new Soup(65536);
-  let undecided = 0; let byRooms = 0; let byFootprint = 0; let doorFallback = 0; let mismatch = 0;
+  const panels = []; const panelSlots = []; const panelDoors = []; const dSoup = new Soup(65536);
+  let undecided = 0; let byRooms = 0; let byFootprint = 0; let doubleSided = 0; let doorFallback = 0; let mismatch = 0;
+  const fallbackNames = [];
   const roomsByStorey = new Map();
   for (const room of engineRooms) {
     const s = a.storeys.findIndex((st) => st.tag === room.storey);
@@ -246,9 +266,9 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
     const mesh = node.getMesh();
     let panel; let slot;
     if (cls === 'l1win') {
-      const box = meshBox(mesh, (m) => m === 'Glass');
-      if (!box) throw new Error(`${id}: window ${node.getName()} has no Glass primitive`);
-      panel = midPlanePanel(box[0], box[1], matrix);
+      const glass = meshBox(mesh, (m) => m === 'Glass');
+      if (!glass) throw new Error(`${id}: window ${node.getName()} has no Glass primitive`);
+      panel = openingPanel(glass, meshBox(mesh), matrix);
       slot = GLASS_SLOT;
       bakeMesh(mesh, matrix, dSoup, { skip: (m) => m === 'Glass' });
     } else {
@@ -263,30 +283,44 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
       slot = dominantSlot(mesh);
       bakeMesh(mesh, matrix, dSoup);
     }
-    const roomsHere = roomsByStorey.get(bandIndex(ffls, Math.min(...panelCorners(panel).map((c) => c[1])))) ?? [];
-    let out = facePanelFromRooms(panel, roomsHere);
-    if (out.decided) byRooms += 1;
+    // A door panel is drawn from both sides: the room probe cannot tell a lift
+    // landing door from the shaft behind it (the shaft is no room), nor a stair
+    // discharge door from the car park it opens on, and every L1 lift door
+    // faced into its shaft until it was. A window faces out of its flat.
+    let out = { panel };
+    if (cls === 'l1door') doubleSided += 1;
     else {
-      out = facePanelOut(panel, footprintRings);
-      if (out.decided) byFootprint += 1; else undecided += 1;
+      const roomsHere = roomsByStorey.get(bandIndex(ffls, Math.min(...panelCorners(panel).map((c) => c[1])))) ?? [];
+      out = facePanelFromRooms(panel, roomsHere);
+      if (out.decided) byRooms += 1;
+      else {
+        out = facePanelOut(panel, footprintRings);
+        if (out.decided) byFootprint += 1; else undecided += 1;
+        fallbackNames.push(node.getName().replace(/_[0-9A-Za-z_$]{22}$/, ''));
+      }
     }
-    panels.push(out.panel); panelSlots.push(slot);
+    panels.push(out.panel); panelSlots.push(slot); panelDoors.push(cls === 'l1door');
     const storey = instanceStorey(ffls, matrix[13]);
     placements.push({ node, cls, matrix, storey });
   }
   const near = panelsNearSoup(panels, dSoup);
   if (near.length) throw new Error(`${id}: ${near.length}+ façade panels lie within 2 mm of a D face (first: panel ${near[0].panel})`);
-  if (undecided) warn(`${id}: ${undecided} of ${panels.length} façade panels faced away from the footprint centroid (no room or footprint probe decided)`);
+  if (byFootprint || undecided) {
+    const named = `${fallbackNames.slice(0, 6).join(', ')}${fallbackNames.length > 6 ? ', …' : ''}`;
+    warn(`${id}: ${byFootprint + undecided} of ${panels.length - doubleSided} window panels were faced by a fallback, not by the rooms either side (${byFootprint} by the footprint probe, ${undecided} away from the footprint centroid): ${named}`);
+  }
   if (doorFallback) warn(`${id}: ${doorFallback} exterior doors had no leaf in any chunk; their panel sits on the door's own mid-plane`);
 
-  const fSoup = new Soup(shell.count + panels.length * 2);
+  const fSoup = new Soup(shell.count + panels.length * 4);
   fSoup.append(shell);
   panels.forEach((p, i) => {
     const first = fSoup.count;
-    pushPanel(fSoup, p, panelSlots[i], 0);
+    const added = pushPanel(fSoup, p, panelSlots[i], 0, { doubleSided: panelDoors[i] });
     // F's rule for a panel: the band of its lowest point. It must agree with its D instance's.
-    const s = bandIndex(ffls, Math.min(fSoup.minY(first), fSoup.minY(first + 1)));
-    fSoup.storey[first] = s; fSoup.storey[first + 1] = s;
+    let low = Infinity;
+    for (let t = first; t < first + added; t += 1) low = Math.min(low, fSoup.minY(t));
+    const s = bandIndex(ffls, low);
+    for (let t = first; t < first + added; t += 1) fSoup.storey[t] = s;
     if (s !== placements[i].storey) mismatch += 1;
   });
   if (mismatch) warn(`${id}: ${mismatch} panels' z-min band differs from their D instance's translation band`);
@@ -320,8 +354,8 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
   const dDrawn = [...kits.values()].reduce((n, k) => n + k.tris * k.instances, 0);
 
   return {
-    facade: { ctx: f, soup: fSoup, tris: fSoup.count, shellTris: shell.count, panels: panels.length, facing: { byRooms, byFootprint, undecided }, edges: edges.length, exactMatched: tagged.exactMatched, banded: tagged.banded, shell },
-    detail: { ctx: d, batches: dBatches, kits: kits.size, instances: placements.length, drawnTris: dDrawn, storedTris: [...kits.values()].reduce((n, k) => n + k.tris, 0) },
+    facade: { ctx: f, soup: fSoup, tris: fSoup.count, shellTris: shell.count, panels: panels.length, panelList: panels, facing: { byRooms, byFootprint, undecided, doubleSided }, edges: edges.length, exactMatched: tagged.exactMatched, banded: tagged.banded, shell },
+    detail: { ctx: d, batches: dBatches, kits: kits.size, instances: placements.length, drawnTris: dDrawn, storedTris: [...kits.values()].reduce((n, k) => n + k.tris, 0), soup: dSoup },
   };
 };
 

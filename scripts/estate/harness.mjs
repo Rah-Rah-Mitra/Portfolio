@@ -443,9 +443,10 @@ for (const { ref, geo, site: siteId } of packFiles(pack)) {
 }
 
 const instancingNotRequired = fileRows.filter((r) => r.used.includes('EXT_mesh_gpu_instancing') && !r.required.includes('EXT_mesh_gpu_instancing'));
-if (instancingNotRequired.length) {
-  notes.push(`${instancingNotRequired.length} files use EXT_mesh_gpu_instancing without listing it in extensionsRequired (gltf-transform's default); three honours it, but a loader without it would draw one instance per batch`);
-}
+// A kit's dequantisation scale is in its instance SCALE, so the extension is
+// required: a loader without it would draw each kit once, at the origin, in
+// normalised units. The pack marks it required (gltf.mjs instanceAll).
+for (const r of instancingNotRequired) fail(r.path, 'uses EXT_mesh_gpu_instancing without listing it in extensionsRequired');
 // Triangles outside the band of their own storey are exact chunk matches the
 // band rule would have put a storey higher (or lower): counted, not failed.
 for (const [label, geo, which] of [['F', 'f', 'other'], ['I residual + specials', 'i', 'other'], ['I T (placed at a typical FFL)', 'i', 'T']]) {
@@ -559,7 +560,8 @@ if (complete) {
     if (l5 >= 0 && measured.i.has(b509.id)) {
       let xy = [0, 0];
       if (b509.nav) {
-        const nav = JSON.parse(readFileSync(join(args.pack, ...b509.nav.path.split('/')), 'utf8'));
+        const navBytes = readFileSync(join(args.pack, ...b509.nav.path.split('/')));
+        const nav = JSON.parse((b509.nav.path.endsWith('.gz') ? gunzipSync(navBytes) : navBytes).toString('utf8'));
         const landings = (nav.lifts ?? []).map((l) => l.landings?.L5?.xy).filter(Boolean);
         if (landings.length) xy = landings.sort((a, b) => Math.hypot(...a) - Math.hypot(...b))[0];
       }

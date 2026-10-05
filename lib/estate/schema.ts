@@ -85,6 +85,15 @@ export interface PackLicence { data: 'CC-BY-4.0'; attribution: string; url: '/es
 export interface PackEstate { name: typeof ESTATE_NAME; code: 'SN5'; extent: [0, 0, 400, 400]; flats: 1206; storeys: 245 }
 /** The pack tool's record of the palette it baked. Only slot ↔ material is binding; role and token are informative. */
 export interface PackPaletteEntry { slot: number; material: string; role: string; token: PaletteToken; source: Vec4 }
+/**
+ * The poster's camera, from upstream's ESTATE_views.json (render.py camera_info)
+ * — still in Blender's terms. `eye` is in the estate frame (Z up, m) and `quat`
+ * (x, y, z, w) is the camera's rotation in that frame for a camera that looks
+ * down its local −Z with +Y up, so the engine pre-multiplies by the estate →
+ * three rotation (frames.ts) before using either. `vfovDeg` is the vertical
+ * field of view at `aspect` (render width / height). `shift` is Blender's lens
+ * shift, in units of the larger image side (sensor_fit AUTO).
+ */
 export interface AerialView { eye: Vec3; quat: Vec4; vfovDeg: number; shift: Vec2; aspect: number }
 export interface PackViews { aerialNE?: AerialView }
 
@@ -105,11 +114,26 @@ export interface PackSiteLayer {
 
 export interface PackStorey { tag: EstateStoreyTag; name: string; ffl: number; geom: 'typical' | 'special'; walkLayer: number }
 export interface PackFurniture { kit: string; instances: number; tris: number; proxyTris: number }
+/**
+ * One building's interior file. Its nodes keep their TRS (KHR_mesh_quantization
+ * puts each mesh's dequantisation there): `typical` is T, stored relative to its
+ * storey floor with storey byte 255 and no `_STOREY`, so the engine instances it
+ * itself with instance matrix T(0, FFL_i, 0) · M_node (mesh matrix identity) and
+ * masks it per instance, not by `_meta.z`; `residual` and `special_<tag>` are
+ * absolute with storey tags; furniture batches carry `_STOREY` like D.
+ */
 export interface PackInterior extends Geo {
   typicalTris: number;
   residualTris: number;
   specials: { tag: EstateStoreyTag; tris: number }[];
   furniture?: PackFurniture[];
+  /**
+   * Per storey: the triangles its upstream chunk stores that are neither
+   * furniture (counted by instance in `furniture`) nor lift cars (dropped),
+   * counted from the chunk itself; and what the pack draws for that storey
+   * (T + R_s on a typical storey, its special mesh otherwise). Equal, or the
+   * pack lost geometry.
+   */
   sourceTris: Record<string, number>;
   drawnTris: Record<string, number>;
 }
@@ -140,10 +164,16 @@ export interface PackBuilding {
   /** Bottom-up, the canonical list in ids.ts; `walkLayer` is the storey's own index. */
   storeys: PackStorey[];
   massing?: { mesh: string; tris: number; error: number };
+  /** Shell plus one panel per window (one-sided) and per exterior door (both sides); `tris` is what the file stores. */
   facade?: Geo & { error: 0.06; edges: number; exactMatched: number };
+  /** `tris` counts every instance drawn (what the LOD budget adds to F's); every other `tris` counts what a file stores. */
   detail?: Geo & { instances: number };
   interior?: PackInterior;
   walk?: PackWalk;
+  /**
+   * nav/<ID>.<h8>.json.gz: gzipped JSON (portfolio/estate-nav/1, block-local Z
+   * up): storeys, rooms, lift landings, passable doors, stairs, spawns.
+   */
   nav?: FileRef;
   /** Entrance spawns (kind 'entrance'), estate frame. */
   spawns: PackSpawn[];

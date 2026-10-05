@@ -2,7 +2,7 @@
 // slice the pack reads (§6.1: storeys, rooms, lifts, portals of kind lift or
 // stair, spawns) and, when upstream exported it, <ID>_web.json's stairs.
 
-import { NAV_SCHEMA, commonHeight, liftLandings, navRoom, navSpawn, navStairs, packRooms, roomsProblem } from './pure/navjson.mjs';
+import { NAV_SCHEMA, commonHeight, doorsProblem, liftLandings, navDoor, navRoom, navSpawn, navStairs, packDoors, packRooms, roomsProblem } from './pure/navjson.mjs';
 
 /**
  * Returns { nav, warnings }. `storeys`: [{ tag, ffl, geom }] bottom-up, from
@@ -18,6 +18,13 @@ export const buildNav = ({ id, engine, storeys, web }) => {
   const rooms = packRooms(byStorey);
   const problem = roomsProblem(rooms, byStorey);
   if (problem) throw new Error(`${id}: nav rooms: ${problem}`);
+
+  const doorsBy = storeys.map(({ tag }) => ({ tag, doors: (engine.doors ?? []).filter((d) => d.passable && d.storey === tag).map(navDoor) }));
+  const strayDoors = (engine.doors ?? []).filter((d) => d.passable && !fflOf.has(d.storey));
+  if (strayDoors.length) throw new Error(`${id}: ${strayDoors.length} passable doors sit on storeys the building does not have (first: ${strayDoors[0].storey})`);
+  const doors = packDoors(doorsBy);
+  const doorProblem = doorsProblem(doors, doorsBy);
+  if (doorProblem) throw new Error(`${id}: nav doors: ${doorProblem}`);
 
   const portalsByNode = new Map();
   for (const p of engine.portals ?? []) if (p.kind === 'lift' || p.kind === 'stair') portalsByNode.set(p.node, p);
@@ -37,6 +44,7 @@ export const buildNav = ({ id, engine, storeys, web }) => {
     roomHeight,
     rooms,
     lifts,
+    doors,
     spawns: (engine.spawns ?? []).map(navSpawn),
   };
   if (web) nav.stairs = navStairs(web.stairs ?? []);

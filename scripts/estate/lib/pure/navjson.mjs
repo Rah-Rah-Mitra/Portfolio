@@ -167,3 +167,52 @@ export const navStairs = (stairs) => {
   };
   return stairs.map(clean);
 };
+
+/**
+ * One passable door, for the walk checks of plan §6.7 ("every passable door
+ * connects"): [x, y, ax, ay, w] — the doorway's centre on its wall line
+ * (block-local, Z up, 0.01 m), the unit direction along the wall and the
+ * width. The engine JSON's `origin` is the jamb the width is measured from.
+ */
+export const navDoor = (door) => {
+  const { origin, along_wall: along, width } = door;
+  if (!Array.isArray(origin) || !Array.isArray(along) || typeof width !== 'number') throw new Error(`door ${door.name ?? '?'} has no origin, along_wall and width`);
+  return [r2(origin[0] + (along[0] * width) / 2), r2(origin[1] + (along[1] * width) / 2), r2(along[0]), r2(along[1]), r2(width)];
+};
+
+const sortDoors = (doors) => doors.slice().sort((a, b) => { for (let k = 0; k < a.length; k += 1) if (a[k] !== b[k]) return a[k] - b[k]; return 0; });
+
+/**
+ * Groups storeys' doors like packRooms: the largest set (two or more) of
+ * numbered storeys with identical door lists is stored once as `typical`.
+ * `byStorey`: [{ tag, doors: navDoor[] }] bottom-up.
+ */
+export const packDoors = (byStorey) => {
+  const groups = new Map();
+  for (const { tag, doors } of byStorey) {
+    if (storeyNumber(tag) === null) continue;
+    const key = JSON.stringify(sortDoors(doors));
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(tag);
+  }
+  let typicalKey = null; let typicalTags = [];
+  for (const [key, tags] of groups) if (tags.length >= 2 && tags.length > typicalTags.length) { typicalKey = key; typicalTags = tags; }
+  const out = { typical: typicalKey === null ? null : { storeys: typicalTags, doors: JSON.parse(typicalKey) }, storeys: {} };
+  for (const { tag, doors } of byStorey) if (!typicalTags.includes(tag) && doors.length) out.storeys[tag] = sortDoors(doors);
+  return out;
+};
+
+/** Every storey's doors from a packed `doors` object, as { tag: navDoor[] }. */
+export const expandDoors = (packed) => {
+  const out = {};
+  if (packed.typical) for (const tag of packed.typical.storeys) out[tag] = packed.typical.doors.map((d) => d.slice());
+  for (const [tag, doors] of Object.entries(packed.storeys)) out[tag] = doors.map((d) => d.slice());
+  return out;
+};
+
+/** null when packed doors expand back to exactly `byStorey`, else the first storey that differs. */
+export const doorsProblem = (packed, byStorey) => {
+  const got = expandDoors(packed);
+  for (const { tag, doors } of byStorey) if (JSON.stringify(sortDoors(got[tag] ?? [])) !== JSON.stringify(sortDoors(doors))) return `doors of ${tag} do not round-trip`;
+  return null;
+};

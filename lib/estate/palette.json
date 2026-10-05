@@ -1,0 +1,48 @@
+{
+  "schema": "portfolio/estate-palette/1",
+  "size": 32,
+  "materials": [
+    { "slot": 0, "material": "Painted RC - HDB off-white", "role": "wall", "token": "--color-neutral-100", "sourceRGBA": [0.93, 0.91, 0.86, 1] },
+    { "slot": 1, "material": "Lightweight panel - white", "role": "panel", "token": "--color-neutral-200", "sourceRGBA": [0.96, 0.95, 0.92, 1] },
+    { "slot": 2, "material": "RC - household shelter", "role": "shelter-wall", "token": "--color-neutral-200", "sourceRGBA": [0.8, 0.79, 0.76, 1] },
+    { "slot": 3, "material": "Painted RC - core accent", "role": "core-accent", "token": "--color-accent-200", "sourceRGBA": [0.62, 0.7, 0.62, 1] },
+    { "slot": 4, "material": "RC slab", "role": "slab", "token": "--color-neutral-300", "sourceRGBA": [0.7, 0.7, 0.68, 1] },
+    { "slot": 5, "material": "Roof waterproofing", "role": "roofing", "token": "--color-neutral-400", "sourceRGBA": [0.42, 0.43, 0.45, 1] },
+    { "slot": 6, "material": "RC stair - granolithic", "role": "stair", "token": "--color-neutral-400", "sourceRGBA": [0.78, 0.76, 0.72, 1] },
+    { "slot": 7, "material": "Mild steel - painted", "role": "metal", "token": "--color-neutral-600", "sourceRGBA": [0.25, 0.27, 0.3, 1] },
+    { "slot": 8, "material": "Timber door", "role": "door", "token": "--color-neutral-500", "sourceRGBA": [0.58, 0.4, 0.25, 1] },
+    { "slot": 9, "material": "Steel blast door", "role": "door", "token": "--color-neutral-500", "sourceRGBA": [0.55, 0.57, 0.58, 1] },
+    { "slot": 10, "material": "Stainless steel", "role": "metal", "token": "--color-neutral-600", "sourceRGBA": [0.78, 0.8, 0.82, 1] },
+    { "slot": 11, "material": "Glass", "role": "glass", "token": "--color-accent-700", "sourceRGBA": [0.55, 0.74, 0.85, 0.4] },
+    { "slot": 12, "material": "Aluminium frame", "role": "metal", "token": "--color-neutral-600", "sourceRGBA": [0.8, 0.81, 0.82, 1] },
+    { "slot": 13, "material": "Aluminium railing", "role": "metal", "token": "--color-neutral-600", "sourceRGBA": [0.74, 0.76, 0.78, 1] },
+    { "slot": 14, "material": "RC column", "role": "column", "token": "--color-neutral-300", "sourceRGBA": [0.85, 0.83, 0.78, 1] },
+    { "slot": 15, "material": "Grass", "role": "grass", "token": "--color-accent-300", "sourceRGBA": [0.42, 0.6, 0.33, 1] },
+    { "slot": 16, "material": "Concrete paving", "role": "paving", "token": "--color-neutral-300", "sourceRGBA": [0.74, 0.72, 0.68, 1] },
+    { "slot": 17, "material": "Asphalt", "role": "asphalt", "token": "--color-neutral-700", "sourceRGBA": [0.22, 0.22, 0.24, 1] },
+    { "slot": 18, "material": "Water tank - GRP", "role": "tank", "token": "--color-accent-300", "sourceRGBA": [0.45, 0.62, 0.78, 1] },
+    { "slot": 19, "material": "Bark", "role": "bark", "token": "--color-neutral-600", "sourceRGBA": [0.4, 0.28, 0.18, 1] },
+    { "slot": 20, "material": "Foliage", "role": "foliage", "token": "--color-accent-400", "sourceRGBA": [0.24, 0.48, 0.22, 1] },
+    { "slot": 21, "material": "Painted RC - party wall", "role": "party-wall", "token": "--color-neutral-200", "sourceRGBA": [0.9, 0.88, 0.84, 1] },
+    { "slot": 22, "material": "Painted RC - block accent", "role": "block-accent", "token": "--color-accent-300", "sourceRGBA": [0.8, 0.55, 0.42, 1] },
+    { "slot": 23, "material": "Homogeneous tile - wet area", "role": "wet-area", "token": "--color-neutral-200", "sourceRGBA": [0.86, 0.87, 0.88, 1] },
+    { "slot": 24, "material": "Precast concrete kerb", "role": "kerb", "token": "--color-neutral-300", "sourceRGBA": [0.66, 0.65, 0.62, 1] },
+    { "slot": 25, "material": "Road marking - white", "role": "marking", "token": "--color-neutral-100", "sourceRGBA": [0.95, 0.95, 0.93, 1] },
+    { "slot": 26, "material": "EPDM playground surface", "role": "play-surface", "token": "--color-neutral-400", "sourceRGBA": [0.8, 0.36, 0.28, 1] },
+    { "slot": 27, "material": "Metal deck roof - linkway", "role": "roofing", "token": "--color-neutral-400", "sourceRGBA": [0.56, 0.6, 0.64, 1] },
+    { "slot": 28, "material": "Roller shutter - galvanised", "role": "door", "token": "--color-neutral-500", "sourceRGBA": [0.62, 0.64, 0.66, 1] }
+  ],
+  "extras": [
+    { "slot": 29, "key": "glass-interior", "role": "glass-interior", "token": "--color-accent-300", "alpha": 0.35, "interiorOf": "Glass" },
+    { "slot": 30, "key": "edge", "role": "edge", "token": "--color-accent-700", "alpha": 1 },
+    { "slot": 31, "key": "cut", "role": "cut", "token": "--color-accent-900", "alpha": 1 }
+  ],
+  "scene": {
+    "background": "--color-bg",
+    "fog": "--color-bg",
+    "skyLight": "--paper-75",
+    "groundLight": "--color-neutral-300",
+    "gridMinor": "--color-neutral-300",
+    "gridMajor": "--color-neutral-400"
+  }
+}

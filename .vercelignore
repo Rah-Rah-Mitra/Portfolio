@@ -1,0 +1,5 @@
+# Never uploaded or built: the Bonsai-Estate submodule (provenance only), local
+# estate pack builds, and the pack tooling's own install.
+external/
+artifacts/
+scripts/estate/node_modules/

@@ -7,7 +7,7 @@
     "dev": "node dev.mjs",
     "dev:vite": "vite",
     "api": "node server.mjs",
-    "build": "vite build && node scripts/prerender-semantic.mjs",
+    "build": "vite build && node scripts/prerender-semantic.mjs && node scripts/check-bundle.mjs",
     "snapshot": "node scripts/export-portfolio-snapshot.mjs",
     "resume:lint": "node scripts/resume/lint_pool.mjs",
     "typecheck": "tsc --noEmit",

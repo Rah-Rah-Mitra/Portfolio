@@ -8,7 +8,9 @@ const sourceDirectory = path.resolve(scriptDirectory, '..');
 const defaultMirror = process.platform === 'win32'
   ? 'C:\\codex-verify\\portfolio'
   : path.resolve(sourceDirectory, '..', '.portfolio-verify');
-const excludedDirectories = new Set(['.git', '.claude', 'node_modules', 'dist', '.impeccable']);
+// external/ is the Bonsai-Estate submodule and artifacts/ holds local pack builds;
+// the build never reads either, so the mirror proves it builds without them.
+export const excludedDirectories = new Set(['.git', '.claude', 'node_modules', 'dist', '.impeccable', 'external', 'artifacts']);
 
 export const isSafeMirrorDestination = (source, destination) => {
   const resolvedSource = path.resolve(source).toLowerCase();

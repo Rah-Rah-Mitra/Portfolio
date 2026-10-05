@@ -404,6 +404,28 @@ date in `experienceStartById`. `tests/portfolio-data.test.ts` asserts the
 newest organization and ordering; `tests/semantic-render.test.ts` pins
 `experienceRecords` length — update both, then `npm run snapshot`.
 
+## Bonsai-Estate submodule
+
+- `external/Bonsai-Estate` is a git submodule (`--name Bonsai-Estate`, https URL,
+  no `branch`/`shallow`/`update` keys) of the public `Rah-Rah-Mitra/Bonsai-Estate`
+  repo. The gitlink **records provenance only** — which upstream commit the estate
+  pack is built from — and no build, test or deploy step reads it. Why: upstream
+  does not track its `model/` export (it ships as release zips), so the submodule
+  holds nothing the site could use, and a clone without it must build and pass the
+  tests. It is pinned at `85dd3cb` (v1.1) until the pack lands, and only ever
+  moves to a tagged commit. Never add it with a local path, `file://` or
+  `--reference`.
+- Optional locally: `git submodule update --init external/Bonsai-Estate`.
+- `external/` is excluded from `tsc` (`tsconfig.json` `exclude`), from Vite's
+  watcher, `server.fs` and dependency scan (`optimizeDeps.entries` is just
+  `index.html`, or the scan would crawl upstream's `reports/report.html`), from
+  the local mirror (`scripts/verify-local-mirror.mjs`) and from the Vercel upload
+  (`.vercelignore`, with `artifacts/`). `tests/repo-hygiene.test.ts` pins all of
+  that and fails if anything under `components/ lib/ contexts/ server/ api/
+  scripts/ tests/` (or `App.tsx`, `semanticRender.tsx`) imports or reads a path
+  into `external/`; the only exception it allows is
+  `scripts/estate/lib/provenance.mjs`.
+
 ## Gotchas
 
 - vitest picks up ANY `tests/**/*.test.ts` on disk, tracked or not.
@@ -423,3 +445,13 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   on both surfaces.
 - All public asset paths (`/images`, `/resume`, ...) must exist on disk under
   `public/` — no speculative references.
+- `.gitattributes` marks `public/estate/**` and `tests/fixtures/estate/**`
+  `-text` (and `*.glb`/`*.gz` binary): estate pack files are named by a hash of
+  their content, and this checkout's `core.autocrlf=true` would otherwise rewrite
+  them so a fresh clone no longer matches its own names.
+- `npm run build` ends with `scripts/check-bundle.mjs`, which fails the build
+  (Vercel included) when the main entry chunk — the one module script in
+  `dist/index.html` — exceeds 510,000 B (496,834 B when the cap landed; Vite
+  itself only warns at 500 kB). Do not raise `chunkSizeWarningLimit` instead.
+- Keep impeccable and other repo-wide scans off `external/`; it is upstream's
+  tree, not this site.

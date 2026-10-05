@@ -444,10 +444,18 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
 - The pack's only real input is a Bonsai-Estate **release** (`--zips`: the two
   zips and `release_manifest.json`, every hash and the gitlink gated). `--dev-src`
   packs an extracted folder for pipeline work only: it skips provenance, stamps
-  `source.dev: true`, refuses `--release` and any output under `public/`, and
-  writes to `artifacts/estate/v1.2-dev/` (gitignored). Never commit a dev pack.
-  Exactly one `public/estate/v*` folder exists; nav, build, blend, IFC and
-  building LOD0 files are never opened, let alone shipped.
+  `source.dev: true` with an all-zero commit, refuses `--release`, `--catalogue`
+  and any output under any `public/` folder (links resolved), and writes to
+  `artifacts/estate/v1.2-dev/` (gitignored). Never commit a dev pack. A release
+  pack goes under `public/` only at `public/estate/v1.2` and only with
+  `--release`; a failed run empties only a folder that run itself emptied and
+  took over (never "clean up public/"). Exactly one `public/estate/v*` folder
+  exists; nav, build, blend, IFC and building LOD0 files are never opened, let
+  alone shipped.
+- The tool decodes every GLB it writes and refuses one whose triangles moved
+  more than a quantisation step or whose quantisation made two faces of
+  different slots coplanar (`lib/pure/quantcheck.mjs`): that is why F and the
+  site are 16-bit — at 14 bits 5 mm road markings fell onto the asphalt.
 - The few rules the tool shares with `lib/estate` (`packPathProblem`, storey-tag
   normalisation, the palette slot lookup, the SN5W header) are import-free ports
   in `scripts/estate/lib/pure/` — Node cannot load `lib/estate/*.ts` (extensionless

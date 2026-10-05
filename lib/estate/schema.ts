@@ -72,6 +72,13 @@ export interface PackSource {
   manifestSha256: string;
   exportInfoSha256: string;
   assets: { name: string; sha256: string; bytes: number }[];
+  /**
+   * Present (and true) only on a pack built with `--dev-src` from an extracted
+   * export: the provenance gates were skipped and the hashes above describe
+   * whatever was on disk. The pack tool never writes one under public/, and
+   * scripts/estate/check.mjs refuses one there.
+   */
+  dev?: true;
 }
 export interface PackTool { pipeline: 'scripts/estate/pack.mjs'; gltfTransform: '4.5.1'; meshoptimizer: '1.3.0'; node: '24' }
 export interface PackLicence { data: 'CC-BY-4.0'; attribution: string; url: '/estate/LICENSE.txt' }
@@ -319,8 +326,10 @@ const fileRef = (v: unknown, path: string, klass: Klass, ledger: Ledger) =>
   readFile(object(v, path, FILE_KEYS), path, klass, ledger);
 
 const source = (v: unknown, path: string): PackSource => {
-  const o = object(v, path, ['repo', 'tag', 'commit', 'buildCommit', 'manifestSha256', 'exportInfoSha256', 'assets']);
+  const o = object(v, path, ['repo', 'tag', 'commit', 'buildCommit', 'manifestSha256', 'exportInfoSha256', 'assets'], ['dev']);
+  if (o.dev !== undefined && o.dev !== true) fail(`${path}.dev`, `expected true or nothing, got ${show(o.dev)}`);
   return {
+    ...(o.dev === true ? { dev: true as const } : {}),
     repo: literal(o.repo, `${path}.repo`, ESTATE_REPO),
     tag: literal(o.tag, `${path}.tag`, ESTATE_PACK_EDITION, 'tag'),
     commit: hex(o.commit, `${path}.commit`, 40),

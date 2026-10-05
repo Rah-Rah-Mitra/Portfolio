@@ -174,6 +174,13 @@ describe('parsePack accepts', () => {
     expect(parsePack(input).palette[4]).toMatchObject({ slot: 4, material: 'RC slab' });
   });
 
+  it('a dev pack stamped source.dev = true (scripts/estate --dev-src), keeping the stamp', () => {
+    const input = makePack(false);
+    input.source.dev = true;
+    expect(parsePack(input).source.dev).toBe(true);
+    expect('dev' in parsePack(makePack(false)).source).toBe(false);
+  });
+
   it('the bus-stop spawns on the site layer, not on any building', () => {
     const pack = parsePack(makePack(true));
     expect(pack.site?.spawns).toEqual([{ name: 'Bus stop BS1', pos: [100, 375.3, 0], facing: [0, 1], kind: 'bus' }]);
@@ -191,6 +198,11 @@ describe('parsePack rejects', () => {
     rejects(broken(false, (p) => { delete p.posters[0].sha256; }), /^pack\.posters\[0\]\.sha256: missing$/);
     rejects(broken(true, (p) => { delete p.sites[8].facade.gzSha256; }), /^pack\.sites\[8\]\.facade\.gzSha256: missing$/);
     rejects(broken(true, (p) => { delete p.site.ground.sha256; }), /^pack\.site\.ground\.sha256: missing$/);
+  });
+
+  it('a dev stamp that is anything but true', () => {
+    rejects(broken(false, (p) => { p.source.dev = false; }), /source\.dev: expected true or nothing/);
+    rejects(broken(false, (p) => { p.source.dev = 'yes'; }), /source\.dev: expected true or nothing/);
   });
 
   it('a malformed hash or commit', () => {

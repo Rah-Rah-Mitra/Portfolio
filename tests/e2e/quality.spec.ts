@@ -42,6 +42,31 @@ test.describe('field workbench — desktop', () => {
     await expect(experience).toBeHidden();
   });
 
+  // Every raise is ++z with no cap. .wb-desk's `isolation: isolate` keeps even a
+  // window raised past the docks (70) and the panel backdrop (85) beneath both.
+  test('a window raised thirty times stays under the docks and the panel backdrop', async ({ page }) => {
+    await page.goto('/');
+    const rail = page.getByRole('navigation', { name: 'Tool rail' });
+    for (let i = 0; i < 30; i += 1) await rail.getByRole('button', { name: 'Open Experience', exact: true }).click();
+    const experience = page.getByRole('dialog', { name: 'Experience' });
+    await experience.getByRole('button', { name: 'Maximize Experience' }).click(); // now spans the FX dock's corner
+    await expect.poll(() => experience.evaluate((el) => Number((el as HTMLElement).style.zIndex))).toBeGreaterThan(85);
+
+    // A real click: Playwright refuses it if the window intercepts the pointer.
+    await page.getByRole('button', { name: 'FX, open optional effects lab' }).click();
+    const fx = page.getByRole('dialog', { name: 'Effects lab' });
+    await expect(fx).toBeVisible();
+    const hit = await page.evaluate(() => {
+      const panel = document.querySelector('.effects-lab')!.getBoundingClientRect();
+      const probe = (x: number) => {
+        const element = document.elementFromPoint(x, 400);
+        return element?.closest('[data-win]') ? 'window' : element?.closest('.effects-lab') ? 'panel' : element?.closest('.panel-backdrop') ? 'backdrop' : 'other';
+      };
+      return { panel: probe(panel.right - 40), backdrop: probe(panel.right + 200) };
+    });
+    expect(hit).toEqual({ panel: 'panel', backdrop: 'backdrop' });
+  });
+
   test('a hash deep link opens the archive AND brings the row into view', async ({ page }) => {
     await page.goto('/#project-kaogenie');
     const archive = page.getByRole('dialog', { name: 'Project Archive' });

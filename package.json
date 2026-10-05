@@ -18,6 +18,9 @@
     "media:check": "node scripts/media/check-budgets.mjs",
     "media:audio": "node scripts/media/generate-audio-sprite.mjs",
     "media:provenance": "node scripts/media/validate-provenance.mjs",
+    "estate:setup": "npm --prefix scripts/estate ci",
+    "estate:pack": "npm --prefix scripts/estate run pack --",
+    "estate:check": "node scripts/estate/check.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"

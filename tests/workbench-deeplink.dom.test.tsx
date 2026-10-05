@@ -2,6 +2,15 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FieldWorkbench from '../components/workbench/FieldWorkbench';
 import FieldIndex from '../components/workbench/FieldIndex';
+import { ExperienceModeProvider } from '../contexts/ExperienceModeContext';
+import { loadEngine } from '../components/workbench/estate/loadEngine';
+
+// The Estate engine is a lazy chunk; here only whether, and when, the window
+// asks for it matters, so the loader is a spy that never resolves.
+vi.mock('../components/workbench/estate/loadEngine', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../components/workbench/estate/loadEngine')>()),
+  loadEngine: vi.fn(() => new Promise(() => {})),
+}));
 
 // The recruiter deep-link path. /#project-kaogenie has to open the Project
 // Archive AND bring the row into view; ?app=… has to mean the same thing on the
@@ -133,5 +142,94 @@ describe('dossier — graduation date', () => {
     setup('/');
     const mobile = render(<FieldIndex />);
     expect(mobile.container.textContent).toContain('Graduating Jul 2027');
+  });
+});
+
+describe('Estate window — deep links (?app=world-3d)', () => {
+  // Microtasks: the window reads its section's display through a MutationObserver.
+  // The window imports its controller chunk when it first opens; awaiting the
+  // same import means the window's has settled too.
+  const flush = () => act(async () => {
+    await import('../components/workbench/estate/EstateController');
+    for (let i = 0; i < 10; i += 1) await Promise.resolve();
+  });
+  const phaseOf = (container: HTMLElement) => container.querySelector('#world')?.getAttribute('data-estate-phase');
+  const estateFetches = () => vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes('/estate/'));
+  // Every phase the window passes through, so a flash of consent cannot hide between two reads.
+  const watchPhases = (container: HTMLElement) => {
+    const seen: string[] = [String(phaseOf(container))];
+    const observer = new MutationObserver(() => seen.push(String(phaseOf(container))));
+    observer.observe(container.querySelector('#world')!, { attributes: true, attributeFilter: ['data-estate-phase'] });
+    return { seen, stop: () => observer.disconnect() };
+  };
+  let idle: Array<() => void>;
+
+  beforeEach(() => {
+    vi.mocked(loadEngine).mockClear();
+    idle = [];
+  });
+
+  const stubIdle = () => {
+    vi.stubGlobal('requestIdleCallback', vi.fn((callback: () => void) => idle.push(callback)));
+    vi.stubGlobal('cancelIdleCallback', vi.fn());
+  };
+
+  it('(a) a bare mount opens on the poster and asks for nothing', async () => {
+    setup('/?app=world-3d');
+    stubIdle();
+    const { container } = render(<FieldWorkbench />);
+    await flush();
+    act(() => { idle.splice(0).forEach((callback) => callback()); });
+    expect(container.querySelector<HTMLElement>('[data-win="world-3d"]')?.style.display).toBe('flex');
+    expect(phaseOf(container)).toBe('poster');
+    expect(container.querySelector('#world img')?.getAttribute('alt')).toBeTruthy();
+    expect(loadEngine).not.toHaveBeenCalled();
+    expect(estateFetches()).toEqual([]);
+    expect(container.querySelector('[data-estate-action]')).toBeNull();
+  });
+
+  it('(b) allowed heavy assets load once, only after readyState is complete and the page is idle, never via consent', async () => {
+    setup('/?app=world-3d');
+    stubIdle();
+    let readyState: DocumentReadyState = 'interactive';
+    vi.spyOn(document, 'readyState', 'get').mockImplementation(() => readyState);
+    const { container } = render(
+      <ExperienceModeProvider capabilities={{ saveData: false, reducedMotion: false }}><FieldWorkbench /></ExperienceModeProvider>,
+    );
+    const phases = watchPhases(container);
+    await flush();
+    expect(phaseOf(container)).toBe('poster');
+    expect(idle).toHaveLength(0);
+    expect(loadEngine).not.toHaveBeenCalled();
+
+    readyState = 'complete';
+    act(() => { document.dispatchEvent(new Event('readystatechange')); });
+    await flush();
+    expect(phaseOf(container)).toBe('loading');
+    expect(loadEngine).not.toHaveBeenCalled(); // waits for idle
+
+    act(() => { idle.splice(0).forEach((callback) => callback()); });
+    await flush();
+    expect(loadEngine).toHaveBeenCalledTimes(1);
+    expect(phaseOf(container)).toBe('loading');
+    phases.stop();
+    expect(phases.seen).not.toContain('consent');
+  });
+
+  it('(c) under Save-Data it waits for consent and requests nothing', async () => {
+    setup('/?app=world-3d');
+    stubIdle();
+    const { container } = render(
+      <ExperienceModeProvider capabilities={{ saveData: true, reducedMotion: false }}><FieldWorkbench /></ExperienceModeProvider>,
+    );
+    await flush();
+    act(() => { idle.splice(0).forEach((callback) => callback()); });
+    await flush();
+    expect(phaseOf(container)).toBe('consent');
+    const load = container.querySelector<HTMLButtonElement>('[data-estate-action]');
+    expect(load?.textContent).toMatch(/^Load the 3D estate · \d+\.\d MB$/);
+    expect(container.querySelector('#world .wb-estate-state')?.textContent).toMatch(/held: Data Saver is on/);
+    expect(loadEngine).not.toHaveBeenCalled();
+    expect(estateFetches()).toEqual([]);
   });
 });

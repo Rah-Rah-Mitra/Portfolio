@@ -75,7 +75,7 @@ const INDEX_ROWS: IndexRow[] = [
     links: achievement.proofUrl ? [{ label: `${(achievement.proofLabel ?? 'View proof').toUpperCase()} ↗`, href: achievement.proofUrl }] : undefined,
   })),
   // The builder is a two-column desktop surface; mobile gets a pointer to it,
-  // the same way the labs and the 3D world are not reproduced here.
+  // the same way the labs and the Estate are not reproduced here.
   {
     id: 'resume:builder',
     kind: 'RESUMES',
@@ -144,7 +144,7 @@ const APP_TO_KIND: Partial<Record<DesktopAppId, Kind>> = {
 // This file is the only mounted producer of ?app= (the builder row's
 // "OPEN ON DESKTOP" href), so it has to be able to read it back: a phone user
 // who taps its own link must land somewhere. Windows with no row of their own
-// (the labs, the 3D world) get their filter chip and nothing more.
+// (the labs, the Estate) get their filter chip and nothing more.
 const APP_TO_ROW: Partial<Record<DesktopAppId, string>> = {
   'resume-builder': 'resume:builder',
 };

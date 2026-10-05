@@ -34,7 +34,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   the registry by `tests/page-agent-server.test.ts`) and
   `tests/semantic-render.test.ts` pins `experience-<id>`/`project-<id>`. The
   DOM ids are hardcoded in the window bodies (`WorkbenchWindows.tsx`,
-  `ResumeBuilder.tsx`), not derived from the registry, so renaming one passes
+  `ResumeBuilder.tsx` and `estate/EstateWindow.tsx`, whose `id="world"` the
+  Estate keeps), not derived from the registry, so renaming one passes
   the tests and strands the assistant.
   `#flow-shop` and `#drop-test` are in-window targets, not citable anchors; the
   FX panel opens the latter with `dispatchWorkbenchOpen({ appId: 'systems-lab',
@@ -87,6 +88,62 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   the math moved, so justify it against an independent check (e.g. OpenCV
   `calibrateCamera`) before re-pinning — never just update the expectation. No
   animation loop; the prerender is the full Intrinsics view.
+- **Estate (WIN-07)** — app id `world-3d`, anchor `#world`, FIG. 07, retitled
+  "Estate" (label and short label); still 11 windows, no new id or anchor, and a
+  building id never goes into `targetId`. It shows Sample Town N5, the generated
+  HDB estate of the Bonsai-Estate submodule (a sample, "not a real town" — that
+  phrase is pinned in four places). Three layers, each heavier one lazy:
+  1. **View** (main bundle, prerendered): `estate/EstateWindow.tsx` (`EstateView`
+     + a bootstrap) and `estate/EstateRegistry.tsx` — duotone poster
+     (`<picture>`, lazy, from the catalogue), FIG. 07 caption, and a side panel
+     that is its own scroller (the sheet does not scroll: DESIGN.md's
+     one-scroller exception) with the facts, 14 building rows as buttons,
+     `#estate-keys` in a closed `<details>`, the spatial RECORD links, the repo
+     link and the CC BY credit linking `/estate/LICENSE.txt`. Every value is read
+     from `lib/estate/catalogue.generated.ts` (written by the pack tool; never
+     hand-edit it). No canvas is prerendered; no id starts with `experience-`,
+     `project-` or `selected-`; no `Hoist` wraps the stage. The stage gets
+     `role="application"`/`tabIndex=0` only while live or frozen.
+  2. **Controller** (`estate/EstateController.tsx`, a lazy chunk the bootstrap
+     imports the first time the window is open, or when a focus request or row
+     press comes first): renders nothing, reports an `EstateModel`
+     (`estate/estateModel.ts`, types only) to the view. It exists because the
+     main bundle may grow by at most 12,000 B for the Estate; policy, presence,
+     Esc and the engine lifecycle do not fit in that and decide nothing before
+     the window opens. It runs `lib/estate/policy.ts resolveEstatePhase` on what
+     `estate/usePanePresence.ts` observes (a MutationObserver on the section's
+     `style`/`data-focused`, an IntersectionObserver on the stage,
+     visibilitychange, `onMotionChange`; **never** the `WORKBENCH_WINDOW` event,
+     which belongs to the sound cues) plus `useOptionalExperienceMode()` — whose
+     new `resolved` flag, not `capabilities !== null`, says the policy has
+     resolved, so a deep link never flashes consent. Phases: poster, consent
+     (Save-Data, reduced motion, `?mode=scan`; the Load label is generated from
+     the catalogue and never understates the download; Save-Data loads lean),
+     loading (automatic loads wait for `readyState` complete, then idle),
+     live, frozen (closed, hidden, off screen), released (closed 30 s, or DESK),
+     lost / unavailable (two live resets a minute, no restore in 5 s) / error /
+     stale (Reload). Esc is scope 2: one native keydown listener on the section
+     peels one layer per press through `lib/estate/input.ts decideEscape` and
+     stops propagation only for a press it consumes, so FieldWorkbench's handler
+     minimises on exactly the rest. A press or focus in the body raises an
+     unfocused window (`dispatchWorkbenchOpen`), except from the titlebar. Focus
+     moves (to the stage after a clicked Load, a registry fly-to) are requests
+     the view carries out after its commit, never on an automatic load or a
+     focus request. `portfolio:estate-focus` (`lib/estate/events.ts`) requests are
+     held until live and delivered once; the assistant's `focusEstate` command
+     that sends them is P6.
+  3. **Engine + HUD** (`estate/engine/**`, `estate/live/**`: three r186,
+     camera-controls), reached only through `estate/loadEngine.ts` and known to
+     the shell only through `estate/engineApi.ts` (types only). The controller
+     finds the stage by DOM scan (`[data-estate-stage]`), mints a fresh token per
+     instance and drops events carrying any other.
+  Pinned by `tests/estate-window.dom.test.tsx` (fake engine), the Estate cases in
+  `tests/workbench-deeplink.dom.test.tsx` and `tests/workbench-links.test.ts`
+  (exact links, no hex anywhere under `estate/`, identical double render), and
+  the Estate shell case in `tests/e2e/quality.spec.ts`. Restated constants in
+  the view (`ESTATE_DISPLAY_NAME`, `ESTATE_REPO_URL`, `ESTATE_FOCUS_EVENT_NAME`,
+  the shell's tier list) exist so the main bundle need not import `lib/estate`
+  modules that build tables at import; the DOM test pins each to its source.
 - **FX desk backdrops** (`DeskBackdrop.tsx`, first child of `.wb-desk`, desktop
   only): two FX-panel toggles, both off at boot — the N-body field (`NBodyField.tsx`,
   a 2-D fast multipole solver in `lib/nbody/fmm.ts` run by `workers/nbody.worker.ts`,
@@ -400,8 +457,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - Nothing here reaches `server/portfolio-snapshot.json`, so nothing reaches
   `ATTESTED` in `jobSearch.mjs`. The two RL certificates stay uncovered by
   `build_tailored_resume` on purpose — a completed course is not applied work.
-- `tests/certifications.test.ts` is the only place in the repo that checks a
-  `/public` reference resolves on disk.
+- Apart from the estate pack's checker (`scripts/estate/check.mjs`, which covers
+  `public/estate` only), `tests/certifications.test.ts` is the only place in the
+  repo that checks a `/public` reference resolves on disk.
 
 ## Experience data (site)
 

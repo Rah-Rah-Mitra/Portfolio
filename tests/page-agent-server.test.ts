@@ -29,6 +29,7 @@ describe('server page-agent command parity', () => {
     ['show the experience timeline', 'focusExperience'],
     ['focus the work guide chapter', 'focusGuideChapter'],
     ['show me Explore World', 'openDesktopApp'],
+    ['walk me through the HDB estate', 'openDesktopApp'],
     ['open the systems lab', 'openDesktopApp'],
   ])('returns the %s fallback through the same validated command surface', async (message, type) => {
     vi.stubEnv('GEMINI_API_KEY', ''); vi.stubEnv('GOOGLE_API_KEY', '');
@@ -100,6 +101,10 @@ describe('server page-agent command parity', () => {
     ['show adversarial security work', { type: 'focusGuideChapter', chapterId: 'proof' }],
     ['Show Rahul’s security record.', { type: 'focusGuideChapter', chapterId: 'proof' }],
     ['show me Explore World', { type: 'openDesktopApp', appId: 'world-3d' }],
+    ['walk me through the HDB estate', { type: 'openDesktopApp', appId: 'world-3d' }],
+    ['is there a hawker centre in the estate?', { type: 'openDesktopApp', appId: 'world-3d' }],
+    ['what is blk 509?', { type: 'openDesktopApp', appId: 'world-3d' }],
+    ['show the multi-storey car park', { type: 'openDesktopApp', appId: 'world-3d' }],
     ['show generic project work', { type: 'focusGuideChapter', chapterId: 'work' }],
   ])('keeps client/server fallback parity for %s', (message, expected) => {
     const clientCommand = clientAgent(message).commands?.[0];
@@ -113,6 +118,7 @@ describe('server page-agent command parity', () => {
   it.each([
     'use Quick Scan',
     'show me Explore World',
+    'walk me through the HDB estate',
     'what is in the systems lab?',
     'open the Camera Lab stereo depth model',
     'How does the Zhang calibration work?',
@@ -146,14 +152,14 @@ describe('server page-agent command parity', () => {
     expect(exhibits).toMatch(/intrinsics[\s\S]*extrinsics[\s\S]*thin-lens optics[\s\S]*rectified stereo/);
     expect(exhibits).toMatch(/synthetic, seeded jobs \(not Abbott data\)/);
     expect(exhibits).toMatch(/N-body gravity field[\s\S]*WebGL2 fluid/);
-    expect(exhibits).toMatch(/renders no live 3D scene/);
+    expect(exhibits).toMatch(/Sample Town N5[\s\S]*not a real town[\s\S]*desktop/i);
     // FIG. 06b ships with the Camera Lab; the model was told only the four models.
     expect(exhibits).toMatch(/Zhang calibration[\s\S]*Levenberg–Marquardt/);
     // ?mode=scan is still honoured (lib/experienceMode.ts); the mode is not denied.
     expect(exhibits).not.toMatch(/There is no Quick Scan mode/);
     expect(exhibits).toMatch(/\?mode=scan link still opens the page without the desk backgrounds or sound cues/);
-    // A phone asks from field-index, which has no labs and no 3D World.
-    expect(exhibits).toMatch(/field-index is the phone registry, which does not show the Camera Lab, the Systems Lab or the 3D World/);
+    // A phone asks from field-index, which has no labs and no Estate.
+    expect(exhibits).toMatch(/field-index is the phone registry, which does not show the Camera Lab, the Systems Lab or the Estate/);
     expect(exhibits).not.toMatch(/optical test bench|Three\.js|Optical Courier|renders on demand/i);
   });
 

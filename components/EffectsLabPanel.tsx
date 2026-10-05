@@ -3,7 +3,8 @@ import { useEffects, type EffectId, type EffectPatch } from '../contexts/Physics
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { track } from '../lib/analytics';
 import { describeAudioPolicy } from '../lib/audioPolicy';
-import { describeBackdropHold } from '../lib/desktopBackgroundPolicy';
+import { BACKDROP_YIELD_HOLD, describeBackdropHold } from '../lib/desktopBackgroundPolicy';
+import { isGpuClaimed, onGpuClaimChange } from '../lib/gpuClaim';
 import { dispatchWorkbenchOpen } from '../lib/workbench';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';
 import type { NBodyExpansionOrder, NBodyLeafCapacity, NBodyPreset } from '../types';
@@ -80,6 +81,13 @@ const EffectsLabPanel: React.FC = () => {
   const sound = useSoundPolicy();
   const narrow = useNarrowSurface();
   const { policy } = useExperienceMode();
+  // Whether the Estate window holds the GPU (lib/gpuClaim.ts), read after mount.
+  const [gpuClaimed, setGpuClaimed] = useState(false);
+  useEffect(() => {
+    const sync = () => setGpuClaimed(isGpuClaimed());
+    sync();
+    return onGpuClaimChange(sync);
+  }, []);
   useFocusTrap(open, panelRef, '.effects-dock', suppressFocusRestore);
 
   const close = (reason: string) => {
@@ -155,12 +163,14 @@ const EffectsLabPanel: React.FC = () => {
   // live settings over a desk that stays plain. Not on the narrow surface,
   // whose note already says why the toggles are off there.
   const backdropHold = narrow ? null : describeBackdropHold(policy);
-  const holdStatus = (enabled: boolean) => (backdropHold ? `${enabled ? 'On' : 'Off'} · ${backdropHold}` : undefined);
+  // An enabled backdrop also yields while the Estate window holds the GPU.
+  const holdStatus = (enabled: boolean) => (backdropHold ? `${enabled ? 'On' : 'Off'} · ${backdropHold}`
+    : enabled && gpuClaimed && !narrow ? `On · ${BACKDROP_YIELD_HOLD}` : undefined);
   const motionNote = enhancements.motionPaused
-    ? 'Paused. Window rigs, Systems Lab mechanisms, the World window’s cube and the desk backgrounds hold their current frame; the labs skip straight to their end state.'
+    ? 'Paused. Window rigs, Systems Lab mechanisms and the desk backgrounds hold their current frame; the labs skip straight to their end state, and the Estate camera’s flights cut to the end.'
     : reducedMotion
       ? 'Your device asks for reduced motion, so every loop on this site already holds still.'
-      : 'Stops every animation loop on the site at once: window rigs, mechanisms, the World window’s cube, desk backgrounds and labs.';
+      : 'Stops every animation loop on the site at once: window rigs, mechanisms, desk backgrounds and labs, and makes the Estate camera’s flights cut to the end.';
 
   return (
     <>

@@ -104,9 +104,11 @@ stays mounted.
 The labs are working models, not decoration: the Camera Lab (pinhole K with
 lens distortion, pose and homography, thin-lens depth of field, rectified stereo
 and a Zhang calibration), and inside the Systems Lab a mechanism bench, a
-flow-shop sequencing model and a contained drop test. The FX panel can switch
-on two desk backdrops, an N-body gravity field and a fluid; both are off at
-boot.
+flow-shop sequencing model and a contained drop test. The Estate window shows
+Sample Town N5, a generated sample HDB neighbourhood, as a duotone still render
+with a text registry of its fourteen buildings, and a 3D viewer to orbit it or
+fly to a building. The FX panel can switch on two desk backdrops, an N-body
+gravity field and a fluid; both are off at boot.
 
 **Key characteristics:**
 
@@ -161,7 +163,10 @@ Never set a paragraph in the condensed face.
 
 The desktop frame is a 46px header, a 96px tool rail and the desk. Windows open
 at fixed cascade positions, move by their titlebar, and each owns one internal
-scroller. A window's body may carry a hoist rig across its top; hoisted cards
+scroller. **The one exception is the Estate:** its sheet does not scroll (the
+viewer fills it), and its side panel is its own scroller with
+`overscroll-behavior: contain`; below 620px of window width the panel stacks
+under the stage. A window's body may carry a hoist rig across its top; hoisted cards
 (`[data-hoist]`) hang from it. The desk carries a 24px minor and 120px major
 grid, the desk shortcuts and the title-block plate.
 
@@ -226,6 +231,27 @@ the FX "Pause all motion").
   through four models, plus a seeded Zhang calibration.
 - **Systems Lab**: FIG. 05c mechanism bench, FIG. 05d flow-shop sequencing
   bench (seeded synthetic data, not Abbott's), FIG. 05e drop test.
+- **Estate** (FIG. 07): the poster and registry are prerendered text; the 3D
+  viewer is a lazy chunk. Rules a 3D viewport adds to the ones above:
+  - a keyboard viewport is `role="application"` with an `aria-label` and an
+    `aria-describedby` pointing at a prerendered key list (`#estate-keys`), and
+    only while there is a viewer to drive; the same facts (buildings, storeys,
+    heights) are text beside it, and every pointer action is a button;
+  - halted motion turns every flight into a cut and nothing moves by itself, but
+    a visitor-driven viewer still redraws on input (drag, keys);
+  - text over a scene sits on opaque chips (`--paper-55`, a hairline border,
+    square corners): the caption, the state plate and the HUD;
+  - the focus ring is drawn inset, above the canvas: 2px `--color-accent-700`
+    at −3px with a 4px `--paper-75` inner band, so it shows on any frame and
+    stays inside the sheet's clip;
+  - **HUD language is survey annotation** — location chips, storey strips,
+    north arrow, plain prompts. No crosshair, minimap, score or game chrome;
+  - **one palette:** every 3D material role maps onto the design tokens
+    (walls `--color-neutral-100`, slabs and paving `--color-neutral-300`, doors
+    `--color-neutral-500`, asphalt `--color-neutral-700`, grass and foliage
+    `--color-accent-300/400`, exterior glass and edges `--color-accent-700`;
+    `lib/estate/palette.json`), read from CSS at mount. There is no second
+    "model" palette and no colour in engine code.
 
 ### FX panel and assistant
 

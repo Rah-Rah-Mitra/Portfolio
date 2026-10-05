@@ -6,15 +6,17 @@ export interface ExperienceCapabilities {
 }
 
 /**
- * How much optional weight the page may carry. The desk backdrops read
- * allowHeavyAssets (false for Save-Data and for reduced motion); audio reads
- * lowMotion and the Save-Data capability.
+ * How much optional weight the page may carry. The desk backdrops and the
+ * Estate window read allowHeavyAssets (false for Save-Data and for reduced
+ * motion: the Estate then waits for a click); audio reads lowMotion and the
+ * Save-Data capability.
  *
  * There is no WebGL probe here any more. It existed to guard a WebGL world the
- * site no longer ships, and the one GPU surface left (the fluid backdrop) checks
- * WebGL2 itself when it is switched on. With it went the only way the policy could
- * fail hard, so hardFailure is always false; it stays so every consumer keeps one
- * policy shape.
+ * site no longer ships, and the GPU surfaces left — the desk backdrops and the
+ * Estate window — check WebGL2 themselves when they start (the Estate's engine
+ * also picks its quality tier from the renderer, in its own chunk). With the
+ * probe went the only way the policy could fail hard, so hardFailure is always
+ * false; it stays so every consumer keeps one policy shape.
  */
 export interface ExperiencePolicy {
   mode: ExperienceMode;

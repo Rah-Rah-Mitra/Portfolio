@@ -136,9 +136,9 @@ export const localAgent = (message: string): AgentResponse => {
     // replaced it, and what an old ?mode=scan link still does
     // (lib/experienceMode.ts keeps it on purpose).
     reply = 'The FX panel holds Pause all motion, sound cues, and two desk backgrounds that stay off until switched on: an N-body gravity field computed with a fast multipole method, and a WebGL2 fluid. There is no Quick Scan switch any more: every window is plain, readable HTML, and Pause all motion halts the site’s animation. An old ?mode=scan link still opens the page without the desk backgrounds or sound cues, and without ?app= deep links.';
-  } else if (text.includes('world') || text.includes('map')) {
-    reply = 'Explore World opens the 3D World window at #world: a CSS drawing of a bench volume, not a rendered 3D scene. It points to the spatial record: the CS4277 top-student result in 3D computer vision, the Camera Lab’s synthetic camera models, and 3D builds such as OnTheSpectrum. It is a desktop window (881px and wider).';
-    references = [{ label: 'Explore World', href: '#world' }];
+  } else if (text.includes('world') || text.includes('map') || text.includes('estate') || text.includes('hdb') || text.includes('bonsai') || text.includes('hawker') || text.includes('car park') || text.includes('mscp') || /\bblk\b/.test(text)) {
+    reply = 'The Estate window shows Sample Town N5, a generated sample HDB neighbourhood (not a real town or HDB’s own plans) built as IFC4X3 by Rahul’s Bonsai-Estate pipeline with IfcOpenShell, Bonsai and Blender: 12 residential blocks with 1,206 flats, a multi-storey car park and a hawker centre. Orbit it or fly to a building; detail loads as you get closer. It is a desktop window (881px and wider).';
+    references = [{ label: 'Explore the estate', href: '#world' }];
     commands.push({ type: 'openDesktopApp', appId: 'world-3d' });
   } else if (text.includes('project') || text.includes('work')) {
     reply = 'The selected work is organized as evidence-led briefs covering operating context, Rahul’s contribution, technical approach, and current result or proof.';
@@ -149,7 +149,7 @@ export const localAgent = (message: string): AgentResponse => {
   return { reply, references, commands, modelUsed: false, reason: 'client_local_fallback' };
 };
 
-// The Camera Lab, the Systems Lab and the 3D World are desktop windows; ≤880px
+// The Camera Lab, the Systems Lab and the Estate are desktop windows; ≤880px
 // the site is the Field Index registry, which has none of them. Same breakpoint
 // as App.tsx. Read after mount (App is prerendered), and the panel is never open
 // in the prerendered HTML, so the first paint of the starters already knows.

@@ -22,6 +22,14 @@ const staticPolicy: ExperiencePolicy = {
 interface ExperienceModeContextValue {
   policy: ExperiencePolicy;
   capabilities: ExperienceCapabilities | null;
+  /**
+   * The real policy has replaced staticPolicy (set in the same effect, so the
+   * two change in one commit). Not `capabilities !== null`: supplied
+   * capabilities are present on the first render, while the policy is still
+   * the static one. The Estate window reads this so a deep link never shows
+   * its consent button before the device has been asked.
+   */
+  resolved: boolean;
 }
 
 const ExperienceModeContext = createContext<ExperienceModeContextValue | null>(null);
@@ -31,6 +39,13 @@ export const useExperienceMode = () => {
   if (!value) throw new Error('useExperienceMode must be used within ExperienceModeProvider');
   return value;
 };
+
+/**
+ * The same context without the throw, for a window body that is also mounted
+ * bare (tests mount <FieldWorkbench/> with no providers). null means there is
+ * no provider: no heavy assets, and a policy that never resolves.
+ */
+export const useOptionalExperienceMode = (): ExperienceModeContextValue | null => useContext(ExperienceModeContext);
 
 /**
  * There is no mode chooser any more: the Guided / Quick Scan switch went with the
@@ -44,13 +59,15 @@ export const ExperienceModeProvider: React.FC<{
 }> = ({ children, capabilities: suppliedCapabilities }) => {
   const [capabilities, setCapabilities] = useState<ExperienceCapabilities | null>(suppliedCapabilities ?? null);
   const [policy, setPolicy] = useState<ExperiencePolicy>(staticPolicy);
+  const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
     const detected = suppliedCapabilities ?? detectExperienceCapabilities();
     setCapabilities(detected);
     setPolicy(resolveExperiencePolicy(detected, modeFromSearch(window.location.search)));
+    setResolved(true);
   }, [suppliedCapabilities]);
 
-  const value = useMemo(() => ({ policy, capabilities }), [policy, capabilities]);
+  const value = useMemo(() => ({ policy, capabilities, resolved }), [policy, capabilities, resolved]);
   return <ExperienceModeContext.Provider value={value}>{children}</ExperienceModeContext.Provider>;
 };

@@ -19,13 +19,15 @@ describe('portfolio AI commands', () => {
     expect(serialized).not.toContain('switchProfile');
   });
 
-  it('opens the World window and describes it as the drawing it is', () => {
-    const response = localAgent('show me Explore World');
-
-    expect(response.reply).toMatch(/CSS drawing/);
-    expect(response.reply).not.toMatch(/optical test bench|enhancement target|Three\.js|GLB/i);
-    expect(response.references).toContainEqual({ label: 'Explore World', href: '#world' });
-    expect(response.commands).toEqual([{ type: 'openDesktopApp', appId: 'world-3d' }]);
+  it('opens the Estate window and describes it as the generated sample it is', () => {
+    for (const prompt of ['show me Explore World', 'walk me through the HDB estate']) {
+      const response = localAgent(prompt);
+      expect(response.reply, prompt).toMatch(/generated sample HDB neighbourhood/);
+      expect(response.reply, prompt).toMatch(/not a real town/);
+      expect(response.reply, prompt).not.toMatch(/CSS drawing|optical test bench|enhancement target|Three\.js|GLB|renders on demand/i);
+      expect(response.references, prompt).toContainEqual({ label: 'Explore the estate', href: '#world' });
+      expect(response.commands, prompt).toEqual([{ type: 'openDesktopApp', appId: 'world-3d' }]);
+    }
   });
 
   it('answers Quick Scan with the FX panel that replaced it, and switches nothing', () => {
@@ -68,8 +70,8 @@ describe('portfolio AI commands', () => {
     expect(response.commands).toEqual([]);
   });
 
-  it('says the labs and the World are desktop windows', () => {
-    for (const prompt of ['open the Camera Lab', 'what is in the systems lab?', 'show me Explore World']) {
+  it('says the labs and the Estate are desktop windows', () => {
+    for (const prompt of ['open the Camera Lab', 'what is in the systems lab?', 'show me Explore World', 'walk me through the HDB estate']) {
       expect(localAgent(prompt).reply, prompt).toMatch(/desktop window \(881px and wider\)/);
     }
   });
@@ -128,7 +130,7 @@ describe('portfolio AI commands', () => {
   });
 
   it('offers a phone no starter that opens a window the registry does not have', () => {
-    // ≤880px the site is the Field Index, where the labs and the 3D World only
+    // ≤880px the site is the Field Index, where the labs and the Estate only
     // switch the PROJECTS chip. A starter that says "Open…" must not land there.
     expect(NARROW_ASSISTANT_STARTERS).toHaveLength(ASSISTANT_STARTERS.length);
     for (const starter of NARROW_ASSISTANT_STARTERS) {
@@ -152,7 +154,7 @@ describe('portfolio AI commands', () => {
 
     expect(serverAgent).not.toMatch(/optional spatial portfolio map|Three\.js layer|effect":"smash\|gravity\|fluid\|pretext\|world/i);
     expect(serverAgent).not.toMatch(/enterExploreMode|setQuickScan|optical test bench/);
-    expect(serverAgent).toContain("{ label: 'Explore World', href: '#world' }");
+    expect(serverAgent).toContain("{ label: 'Explore the estate', href: '#world' }");
   });
 
   it('labels analytics with the surface that is mounted', async () => {

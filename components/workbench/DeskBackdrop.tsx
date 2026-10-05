@@ -2,6 +2,7 @@ import React, { Suspense, useContext, useEffect, useState } from 'react';
 import { EffectsContext } from '../../contexts/PhysicsContext';
 import { useExperienceMode } from '../../contexts/ExperienceModeContext';
 import { motionHalted, onMotionChange } from '../../lib/motion';
+import { isGpuClaimed, onGpuClaimChange } from '../../lib/gpuClaim';
 import type { FluidEffect, NBodyEffect } from '../../lib/backdropSettings';
 import {
   FLUID_GRID, readBackdropPalette, resolveBackdropActivity,
@@ -31,6 +32,7 @@ const STATE_WORD: Record<BackdropActivity['reason'], string> = {
   capability: 'HELD',
   hidden: 'HELD',
   'motion-halted': 'STILL FRAME',
+  yielded: 'HELD · ESTATE',
   running: 'LIVE',
 };
 
@@ -38,6 +40,8 @@ interface Environment {
   palette: BackdropPalette | null;
   halted: boolean;
   hidden: boolean;
+  /** The Estate window holds the GPU (lib/gpuClaim.ts). */
+  yielded: boolean;
 }
 
 const DeskBackdropLayer: React.FC<{ nbody: NBodyEffect; fluid: FluidEffect }> = ({ nbody, fluid }) => {
@@ -50,20 +54,23 @@ const DeskBackdropLayer: React.FC<{ nbody: NBodyEffect; fluid: FluidEffect }> = 
 
   useEffect(() => {
     const palette = readBackdropPalette();
-    const sync = () => setEnvironment({ palette, halted: motionHalted(), hidden: document.hidden });
+    const sync = () => setEnvironment({ palette, halted: motionHalted(), hidden: document.hidden, yielded: isGpuClaimed() });
     sync();
     const stopMotion = onMotionChange(sync);
+    const stopClaims = onGpuClaimChange(sync);
     document.addEventListener('visibilitychange', sync);
     return () => {
       stopMotion();
+      stopClaims();
       document.removeEventListener('visibilitychange', sync);
     };
   }, []);
 
   const halted = environment?.halted ?? true;
   const hidden = environment?.hidden ?? false;
-  const nbodyActivity = resolveBackdropActivity({ enabled: nbody.enabled, allowHeavyAssets: policy.allowHeavyAssets, motionHalted: halted, documentHidden: hidden }, leases.nbody);
-  const fluidActivity = resolveBackdropActivity({ enabled: fluid.enabled, allowHeavyAssets: policy.allowHeavyAssets, motionHalted: halted, documentHidden: hidden }, leases.fluid);
+  const yielded = environment?.yielded ?? false;
+  const nbodyActivity = resolveBackdropActivity({ enabled: nbody.enabled, allowHeavyAssets: policy.allowHeavyAssets, motionHalted: halted, documentHidden: hidden, yielded }, leases.nbody);
+  const fluidActivity = resolveBackdropActivity({ enabled: fluid.enabled, allowHeavyAssets: policy.allowHeavyAssets, motionHalted: halted, documentHidden: hidden, yielded }, leases.fluid);
   // An engine keeps its lease (worker, WebGL context) from the first time it is
   // allowed until its toggle goes off. Adjusting state during render is React's
   // own pattern for "state derived from the previous render"; it settles in one pass.

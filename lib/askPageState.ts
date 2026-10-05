@@ -25,7 +25,7 @@ export const allowedLinks = new Set([
  * a project no longer fits. What the labs and the FX panel are is not here: the
  * server states that itself (SITE_EXHIBITS), where a browser cannot rewrite it.
  * `surface` is which one asked: on 'field-index' (the ≤880px phone registry)
- * the labs and the 3D World are not there, and SITE_EXHIBITS tells the model so.
+ * the labs and the Estate are not there, and SITE_EXHIBITS tells the model so.
  */
 export type AssistantSurface = 'field-workbench' | 'field-index';
 export const buildPageState = (settings: BackdropSettings, surface: AssistantSurface = 'field-workbench') => ({

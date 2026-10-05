@@ -137,7 +137,7 @@ export type CreateEngine = (options: EstateEngineOptions) => EstateEngine;
 /** One storey down (-1) or up (+1). */
 export type EstateStep = -1 | 1;
 
-/** A Walk step button (§8.6 bottom row): 0.5 m forward or back, or a 15° turn. */
+/** A step button (§8.6 bottom row): forward or back (in Walk 0.5 m), or a 15° turn. walkStep() says what each mode does. */
 export type EstateWalkStep = 'forward' | 'back' | 'turn-left' | 'turn-right';
 
 /**
@@ -289,7 +289,12 @@ export interface EstateEngine {
   takeStairs(direction: EstateStep): boolean;
   /** P6: the 55° plan view of `site` cut at `storey` floor + 1.2 m. False in P4b and P5. */
   planView(site: EstateSiteId, storey: EstateStoreyTag): boolean;
-  /** P5: one Walk step-button press (0.5 m, 15°), for pointer and touch alike. */
+  /**
+   * One press of the HUD's step buttons (§8.6 bottom row), for pointer and touch
+   * alike, in every mode that moves: Overview dollies ×0.8 in or out, or orbits
+   * 15°; Fly moves half a second's travel or turns 15° (P4b); Walk takes a 0.5 m step or a 15° turn
+   * (P5). Cancels a running fly-to where it is. False in a mode without steps.
+   */
   walkStep(step: EstateWalkStep): boolean;
   /** P5: the touch stick's deflection, each axis −1…1 (x strafe, y forward); 0, 0 releases it. */
   setStick(x: number, y: number): boolean;

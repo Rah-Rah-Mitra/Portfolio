@@ -6,7 +6,7 @@ import { EstateWindow } from '../components/workbench/estate/EstateWindow';
 import { ESTATE_DISPLAY_NAME, ESTATE_REPO_URL } from '../components/workbench/estate/EstateRegistry';
 import { ESTATE_FOCUS_EVENT_NAME } from '../components/workbench/estate/EstateWindow';
 import { ESTATE_NAME } from '../lib/estate/ids';
-import { SHELL_TIERS, qualityFromSearch } from '../components/workbench/estate/shellDom';
+import { RELEASE_OVERRIDE_RANGE, SHELL_TIERS, qualityFromSearch, releaseMsFromSearch } from '../components/workbench/estate/shellDom';
 import { EstateLoadError, loadEngine } from '../components/workbench/estate/loadEngine';
 import type {
   EstateEngine, EstateEngineEvent, EstateEngineOptions, EstateHudProps, EstateRuntime, EstateView,
@@ -664,5 +664,15 @@ describe('Estate shell — restated constants', () => {
       expect(qualityFromSearch(`?estate-quality=${encodeURIComponent(raw)}`) ?? null, raw).toBe(parseQualityOverride(raw));
     }
     expect(qualityFromSearch('')).toBeUndefined();
+  });
+
+  it('honours ?estate-release-ms= only to shorten the release hold (test seam, §10.2 case 14)', () => {
+    const at = (raw: string) => releaseMsFromSearch(`?estate-release-ms=${encodeURIComponent(raw)}`, RELEASE_AFTER_MS);
+    expect(releaseMsFromSearch('', RELEASE_AFTER_MS)).toBe(RELEASE_AFTER_MS);
+    expect(at('1000')).toBe(1000);
+    expect(at(' 250 ')).toBe(250);
+    expect(at(String(RELEASE_OVERRIDE_RANGE[0]))).toBe(RELEASE_OVERRIDE_RANGE[0]);
+    // Never longer than the policy's hold, never below the floor, never a non-integer.
+    for (const raw of ['99', '0', '-5', '60000', '1e3', '1.5', 'soon', '']) expect(at(raw), raw).toBe(RELEASE_AFTER_MS);
   });
 });

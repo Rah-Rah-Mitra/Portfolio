@@ -22,7 +22,7 @@ import {
 import type { EstateEngine, EstateEngineEvent, EstateResume, EstateRuntime } from './engineApi';
 import { EstateLoadError, loadEngine } from './loadEngine';
 import { ESTATE_SECTION, ESTATE_STAGE, usePanePresence } from './usePanePresence';
-import { debugFromSearch, onDocumentComplete, qualityFromSearch, readTokenColours, whenIdle } from './shellDom';
+import { debugFromSearch, onDocumentComplete, qualityFromSearch, readTokenColours, releaseMsFromSearch, whenIdle } from './shellDom';
 import type { EstateControllerProps, EstateModel, EstateModelAction, EstateModelHandlers } from './estateModel';
 
 // The Estate window's controller (WIN-07, #world): a lazy chunk the window
@@ -378,13 +378,14 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     };
   }, [result.claimGpu]);
 
-  // Closed with an instance alive: release after 30 s unless it reopens.
+  // Closed with an instance alive: release after 30 s unless it reopens
+  // (`?estate-release-ms=` shortens the wait for the release-and-reopen e2e).
   React.useEffect(() => {
     if (presence.open || !engine) {
       setReleaseDue(false);
       return undefined;
     }
-    const id = setTimeout(() => setReleaseDue(true), RELEASE_AFTER_MS);
+    const id = setTimeout(() => setReleaseDue(true), releaseMsFromSearch(window.location.search, RELEASE_AFTER_MS));
     return () => clearTimeout(id);
   }, [presence.open, engine]);
 

@@ -133,14 +133,77 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      held until live and delivered once; the assistant's `focusEstate` command
      that sends them is P6.
   3. **Engine + HUD** (`estate/engine/**`, `estate/live/**`: three r186,
-     camera-controls), reached only through `estate/loadEngine.ts` and known to
-     the shell only through `estate/engineApi.ts` (types only). The controller
-     finds the stage by DOM scan (`[data-estate-stage]`), mints a fresh token per
-     instance and drops events carrying any other.
+     camera-controls; built as `assets/estate-engine-<hash>.js` plus
+     `EstateHud-<hash>.js`), reached only through `estate/loadEngine.ts` (one
+     shared `import()` of both, not cached on failure; a 404 means the site was
+     redeployed under the page → `stale`, Reload) and known to the shell only
+     through `estate/engineApi.ts` (types only). The controller finds the stage
+     by DOM scan (`[data-estate-stage]`), mints a fresh token per instance and
+     drops events carrying any other. The engine appends its own canvas to the
+     stage, takes pointer and wheel input on that canvas only and keys only when
+     the stage itself is the target (scope 1, so HUD and registry buttons keep
+     native Enter/Space), and writes `data-estate-draws/-tris/-ms/-programs/-band`
+     on the stage at most twice a second.
+     - `engine/core.ts` draws, with `renderer`, `clip`, `loaders`, `materials`,
+       `scene`, `streaming`, `loop`, `governor`, `levels`, `stats` and
+       `lifecycle` beside it: one token palette (`lib/estate/palette.json`, read
+       at start through `shellDom.readTokenColours`; six programs, every switch a
+       uniform, no colour in engine code); massing → F → D per building by
+       screen-space error within the tier's caps (`lib/estate/{lod,tiers}.ts`:
+       150 draws and 1.2 M triangles at the top tier); downloads through
+       `lib/estate/scheduler.ts` (≤ 4 at once, ≤ 1 geometry upload a frame,
+       pre-gzipped files sniffed and inflated by `DecompressionStream`). It
+       renders only on change (`lib/estate/frameLoop.ts`) — **at rest it requests
+       no animation frames** — and its governor (`lib/estate/governorCore.ts`)
+       steps pixel ratio and tier down on dropped frames and probes back up. The
+       starting tier is read from the renderer string in `engine/renderer.ts`
+       (never in `lib/experienceMode.ts`, whose test bans GPU probes) or from
+       `?estate-quality=high|mid|low|min`. On a lost context the engine reports
+       `lost`/`restored` and the shell counts live resets; `dispose()` is the
+       ordered teardown and emits nothing. F triangles and D instances carry
+       their storey (`_meta`, `_STOREY`.x) so P5's façade mask can hide a band.
+     - `engine/controls/`: Overview (camera-controls with its own wheel handler
+       off; the stage's non-passive wheel dollies at the cursor, so the sheet
+       never scrolls), Fly (WASD, E/Space up, Q/C down, drag looks; pointer lock
+       only on L or CAPTURE), the 1.2 s fly-to (a cut when `motionHalted()` or
+       `instant`) and footprint picking. `engine/navigation.ts` and
+       `engine/rig.ts` are the seam P5's Walk, Enter and interiors and P6's Plan
+       extend: `features` names the live commands, and every other one returns
+       false rather than throwing.
+     - `live/EstateHud.tsx`: survey-annotation chips over the canvas — location
+       (no live role; one visually hidden `role="status"` node speaks through
+       `lib/estate/announce.ts`), selection with mirrored Fly to, OVERVIEW | FLY,
+       Home, a KEYS popover (an Esc layer), CAPTURE, FULLSCREEN on `#world`,
+       north arrow, KEYS ACTIVE, step buttons, the streaming line and lean mode's
+       "Load full detail". `?estate-debug=1` adds the stats row. Its CSS is the
+       `.wb-estate-hud*` block in `index.css`.
+     Test seams: `?estate-quality=` and `?estate-release-ms=` (100 ms–30 s; only
+     ever shortens the 30 s release hold). `?estate-bench=1` turns on the debug
+     readouts only; the benchmark route is P7.
+  The GPU claim (`lib/gpuClaim.ts`, event `portfolio:gpu-claim`): while live,
+  focused and under no `.panel-backdrop`, the controller holds
+  `claimGpu('estate')`, and a mounted desk backdrop yields — it keeps its context
+  and last frame, stops animating, and reads "HELD · ESTATE"
+  (`desktopBackgroundPolicy` reason `yielded`, checked last, just before
+  `running`).
+  The pack (`public/estate/v1.2/`, raw-content-hashed immutable names; P4b loads
+  `poster`, `s0`, `f` and `d`) comes only from the pack tool (see the
+  Bonsai-Estate section). Until the v1.2 release is published, the window runs on
+  a dev pack copied into `public/estate/v1.2/` and excluded in `.git/info/exclude`
+  — never commit it — and the committed `catalogue.generated.ts` says `dev: true`;
+  both are replaced from the real release pack before merge.
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine), the Estate cases in
   `tests/workbench-deeplink.dom.test.tsx` and `tests/workbench-links.test.ts`
-  (exact links, no hex anywhere under `estate/`, identical double render), and
-  the Estate shell case in `tests/e2e/quality.spec.ts`. Restated constants in
+  (exact links, no hex anywhere under `estate/`, identical double render),
+  `tests/estate-boundary.test.ts` (the import rules above),
+  `tests/estate-runtime.test.ts` (the loader), `tests/estate-engine-*.test.ts`
+  (teardown with a fake canvas, the pure helpers, parts decoded from the pack
+  when one is present), `tests/estate-controls*.test.ts`, the Estate shell case
+  in `tests/e2e/quality.spec.ts`, and `tests/e2e/estate.spec.ts`, which runs the
+  real engine in its own Playwright project, `chromium-webgl` (SwiftShader
+  flags): live within 30 s inside the caps, fly-to, Esc layers, axe, consent,
+  no-WebGL, **zero animation frames at rest**, a fly-to that cuts while motion
+  is paused, the Save-Data byte count against its label, and stale. Restated constants in
   the view (`ESTATE_DISPLAY_NAME`, `ESTATE_REPO_URL`, `ESTATE_FOCUS_EVENT_NAME`,
   the shell's tier list) exist so the main bundle need not import `lib/estate`
   modules that build tables at import; the DOM test pins each to its source.
@@ -154,6 +217,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   halts. Settings are `BackdropSettings` (`lib/backdropSettings.ts`) in
   `EffectsProvider` (`contexts/PhysicsContext.tsx`); DeskBackdrop reads
   `EffectsContext` directly so a bare `<FieldWorkbench/>` still mounts in tests.
+  A mounted backdrop also freezes (reason `yielded`, "HELD · ESTATE") while the
+  Estate window holds the GPU claim (`lib/gpuClaim.ts`, see the Estate bullet).
 - **Motion rule.** `lib/motion.ts`: `motionHalted()` is prefers-reduced-motion OR
   the FX "Pause all motion" switch (`html[data-motion-paused="true"]`), and
   `onMotionChange()` re-syncs. Every animation loop stops, or draws one still
@@ -164,7 +229,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `wakeRef` (scroll, nudge, drag, focus/layout, resize, motion change, sheet
   content resizing); MechanismBench stops while no canvas is on screen. Both
   are pinned in tests/workbench-rig-idle.dom.test.tsx and
-  tests/mechanism-bench.dom.test.tsx.
+  tests/mechanism-bench.dom.test.tsx. The Estate engine renders only on change
+  and, halted, turns every flight into a cut while a visitor's own drag still
+  redraws; the real engine is pinned idle and cutting by
+  `tests/e2e/estate.spec.ts` (cases 11 and 12), not by a fake.
 - Retained layers: `AskThePage` (AI), `EffectsLabPanel` (FX) and
   `AudioSpriteController` (opt-in sound cues) plus their providers
   (`ExperienceModeProvider`, `EffectsProvider`). The panels reach the workbench via
@@ -562,9 +630,23 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
 - `npm run build` ends with `scripts/check-bundle.mjs`, which fails the build
   (Vercel included) when the main bundle — the one module script in
   `dist/index.html` plus every chunk it imports statically, all of which loads on
-  every visit — exceeds 510,000 B (496,834 B when the cap landed, all of it the
-  entry; Vite itself only warns at 500 kB). Do not raise `chunkSizeWarningLimit`
-  instead.
+  every visit — exceeds min(B + 12,000, 510,000) B, where B = 496,834 B is the
+  main bundle when the cap landed (all of it the entry; Vite itself only warns at
+  500 kB) and the 12,000 B are the Estate shell's whole allowance. Do not raise
+  `chunkSizeWarningLimit` instead. The same check holds the Estate engine:
+  none of `WebGLRenderer`, `GLTFLoader`, `MeshoptDecoder` or `camera-controls`
+  in the main bundle; exactly one chunk containing `WebGLRenderer`, within
+  `lib/estate/packBudgets.json` `engineMinified` and `engineGzip`; and what the
+  Load click downloads (engine and HUD chunks plus what they import that the page
+  has not loaded) within `engineGzip`, because the consent label counts that
+  cap. Both budgets were re-pinned in P4b at the measured size + 5%; a re-pin may
+  move them but never above the plan's 307,200 B / 950,000 B.
+- `npm run test:e2e` runs two Playwright projects: `chromium` (everything but the
+  Estate engine) and `chromium-webgl` (`tests/e2e/estate.spec.ts` only, launched
+  with `--use-angle=swiftshader --enable-unsafe-swiftshader` so headless Chromium
+  has WebGL2). Against your own server: `npm run build`, `npx vite preview --port
+  <p> --strictPort` (with `API_PORT` pointing at a `node server.mjs`), then
+  `PLAYWRIGHT_BASE_URL=http://127.0.0.1:<p> npx playwright test`.
 - The local mirror (`scripts/verify-local-mirror.mjs`) copies `.impeccable/`
   except its untracked `review/`, `resume-qa/` and `resume-facets/` output:
   `tests/world-retirement.test.ts` reads the tracked

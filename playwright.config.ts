@@ -2,6 +2,18 @@ import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:4175';
 
+// Containers with a system-provisioned Chromium (no playwright install) can
+// point PLAYWRIGHT_CHROMIUM_PATH at it instead of downloading a browser.
+const executable = process.env.PLAYWRIGHT_CHROMIUM_PATH
+  ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+  : {};
+
+// The Estate window's live 3D view (tests/e2e/estate.spec.ts) needs WebGL2, which
+// headless Chromium on a CI box without a GPU only has through SwiftShader. The
+// rest of the suite runs without these flags, as it always has.
+const WEBGL = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+const ESTATE_SPEC = /estate\.spec\.ts$/;
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30_000,
@@ -10,11 +22,7 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    // Containers with a system-provisioned Chromium (no playwright install) can
-    // point PLAYWRIGHT_CHROMIUM_PATH at it instead of downloading a browser.
-    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
-      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
-      : {},
+    launchOptions: executable,
   },
   webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
     // Acceptance exercises the pre-rendered semantic document, so the local
@@ -23,5 +31,13 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: true,
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: ESTATE_SPEC },
+    {
+      name: 'chromium-webgl',
+      testMatch: ESTATE_SPEC,
+      timeout: 90_000,
+      use: { ...devices['Desktop Chrome'], launchOptions: { ...executable, args: WEBGL } },
+    },
+  ],
 });

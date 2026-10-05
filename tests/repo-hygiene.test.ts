@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { normalizePath, resolveConfig, type UserConfig } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
-import { MAIN_CHUNK_LIMIT, checkBundle, findEntryScript, staticImports } from '../scripts/check-bundle.mjs';
+import {
+  ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, checkBundle, findEntryScript, readEngineBudgets, staticImports,
+} from '../scripts/check-bundle.mjs';
 import viteConfig from '../vite.config';
 
 // external/Bonsai-Estate is a gitlink that records which upstream commit the estate
@@ -205,30 +207,104 @@ describe('build hygiene', () => {
     expect(staticImports('const m=()=>__vitePreload(()=>import("./module-zz3LrXDo.js"),__vite__mapDeps([0]));')).toEqual([]);
   });
 
+  // A fake dist: the entry, a chunk it shares statically, the estate controller
+  // (lazy, loaded before the consent button), and the Load click's engine, HUD and
+  // the chunk those two share. Sizes are spaces, so gzip shrinks them to nothing.
+  const fakeDist = async (dist: string, chunks: Record<string, string>) => {
+    await mkdir(path.join(dist, 'assets'), { recursive: true });
+    await writeFile(path.join(dist, 'index.html'), '<script type="module" crossorigin src="/assets/index-a1.js"></script>');
+    for (const [name, code] of Object.entries(chunks)) await writeFile(path.join(dist, 'assets', name), code);
+  };
+  const BUDGETS = { engineGzip: 307_200, engineMinified: 950_000 };
+  const ENTRY = 'import{x}from"./shared-b2.js";const l=()=>import("./EstateController-c3.js");';
+  // A shared chunk imports the entry back, as Rollup's chunks do.
+  const shared = (size: number) => `import"./index-a1.js";export const x=1;${' '.repeat(size)}`;
+  const engineSet = (engine: string) => ({
+    'EstateController-c3.js': 'import"./index-a1.js";export const c=1;const e=()=>import("./estate-engine-d4.js");',
+    'estate-engine-d4.js': `import{c}from"./EstateController-c3.js";import{s}from"./announce-e5.js";${engine}`,
+    'EstateHud-f6.js': 'import"./index-a1.js";import{s}from"./announce-e5.js";export const H=1;',
+    'announce-e5.js': 'import{c}from"./EstateController-c3.js";export const s=1;',
+  });
+
   it('caps the entry together with every chunk it imports statically', async () => {
     const dist = await mkdtemp(path.join(tmpdir(), 'check-bundle-'));
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
-      await mkdir(path.join(dist, 'assets'));
-      await writeFile(path.join(dist, 'index.html'), '<script type="module" crossorigin src="/assets/index-a1.js"></script>');
-      const entry = 'import{x}from"./shared-b2.js";const l=()=>import("./lazy-c3.js");';
-      await writeFile(path.join(dist, 'assets', 'index-a1.js'), entry);
-      await writeFile(path.join(dist, 'assets', 'lazy-c3.js'), ' '.repeat(MAIN_CHUNK_LIMIT));
-      // A shared chunk imports the entry back, as Rollup's chunks do.
-      const shared = (size: number) => `import"./index-a1.js";export const x=1;${' '.repeat(size)}`;
-      await writeFile(path.join(dist, 'assets', 'shared-b2.js'), shared(1000));
-      const under = await checkBundle(dist);
+      await fakeDist(dist, { 'index-a1.js': ENTRY, 'shared-b2.js': shared(1000), ...engineSet('this.isWebGLRenderer=!0;') });
+      const under = await checkBundle(dist, { budgets: BUDGETS });
       expect(under.files).toEqual(['assets/index-a1.js', 'assets/shared-b2.js']);
-      expect(under.bytes).toBe(entry.length + shared(1000).length);
+      expect(under.bytes).toBe(ENTRY.length + shared(1000).length);
       expect(under.failures).toEqual([]);
       // Over the cap only once the static chunk is counted; the entry alone is tiny.
-      await writeFile(path.join(dist, 'assets', 'shared-b2.js'), shared(MAIN_CHUNK_LIMIT));
-      const over = await checkBundle(dist);
-      expect(over.bytes).toBeGreaterThan(MAIN_CHUNK_LIMIT);
+      await writeFile(path.join(dist, 'assets', 'shared-b2.js'), shared(MAIN_LIMIT));
+      const over = await checkBundle(dist, { budgets: BUDGETS });
+      expect(over.bytes).toBeGreaterThan(MAIN_LIMIT);
       expect(over.failures).toHaveLength(1);
     } finally {
       log.mockRestore();
       await rm(dist, { recursive: true, force: true });
+    }
+  });
+
+  it('holds the main bundle to B + 12,000 for the Estate shell, under the absolute cap', () => {
+    expect(MAIN_BASELINE).toBe(496_834);
+    expect(MAIN_LIMIT).toBe(Math.min(MAIN_BASELINE + 12_000, MAIN_CHUNK_LIMIT));
+    expect(MAIN_LIMIT).toBe(508_834);
+    expect(ENGINE_MARKERS).toEqual(['WebGLRenderer', 'GLTFLoader', 'MeshoptDecoder', 'camera-controls']);
+  });
+
+  it('keeps the engine out of the main bundle and in exactly one chunk, within its budgets', async () => {
+    const dist = await mkdtemp(path.join(tmpdir(), 'check-bundle-'));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const run = async (chunks: Record<string, string>, budgets = BUDGETS) => {
+      await rm(dist, { recursive: true, force: true });
+      await fakeDist(dist, chunks);
+      return checkBundle(dist, { budgets });
+    };
+    try {
+      const base = { 'index-a1.js': ENTRY, 'shared-b2.js': shared(10), ...engineSet('this.isWebGLRenderer=!0;') };
+      const ok = await run(base);
+      expect(ok.failures).toEqual([]);
+      expect(ok.engine?.file).toBe('assets/estate-engine-d4.js');
+      // The click downloads the engine, the HUD and what they share; the entry and
+      // the controller (already loaded at consent) are not counted again.
+      expect(ok.engine?.runtimeFiles).toEqual(['assets/estate-engine-d4.js', 'assets/announce-e5.js', 'assets/EstateHud-f6.js']);
+
+      // Any engine name in the main bundle fails, wherever it sits.
+      for (const marker of ENGINE_MARKERS) {
+        const leaked = await run({ ...base, 'shared-b2.js': `${shared(10)}"${marker}"` });
+        expect(leaked.failures.join(' | ')).toMatch(new RegExp(`shared-b2\\.js is in the main bundle and contains ${marker}`));
+      }
+      // No engine chunk, or two, fails.
+      expect((await run({ ...base, ...engineSet('const r=1;') })).failures.join(' | ')).toMatch(/exactly one chunk containing WebGLRenderer.*found 0/);
+      expect((await run({ ...base, 'NBodyField-g7.js': 'class WebGLRenderer{}' })).failures.join(' | ')).toMatch(/found 2: assets\/NBodyField-g7\.js, assets\/estate-engine-d4\.js/);
+      // Over either engine budget fails; so does a click that downloads more than the label counts.
+      const engineBytes = ok.engine!.bytes;
+      expect((await run(base, { ...BUDGETS, engineMinified: engineBytes - 1 })).failures.join(' | ')).toMatch(/over engineMinified/);
+      const tight = await run(base, { ...BUDGETS, engineGzip: ok.engine!.gzipped });
+      expect(tight.failures).toEqual([expect.stringMatching(/the Load click downloads \d+ B gzipped .* over engineGzip/)]);
+      // The HUD and controller chunks are found by their source names; losing one is a failure, not a smaller sum.
+      const { 'EstateHud-f6.js': _hud, ...withoutHud } = base;
+      expect((await run(withoutHud)).failures.join(' | ')).toMatch(/expected one EstateHud-\*\.js chunk, found 0/);
+    } finally {
+      log.mockRestore();
+      await rm(dist, { recursive: true, force: true });
+    }
+  });
+
+  it('reads both engine budgets from packBudgets.json and refuses a missing one', async () => {
+    const budgets = await readEngineBudgets();
+    const file = JSON.parse(await read('lib/estate/packBudgets.json')) as Record<string, unknown>;
+    expect(budgets).toEqual({ engineGzip: file.engineGzip, engineMinified: file.engineMinified });
+    const dir = await mkdtemp(path.join(tmpdir(), 'check-bundle-budgets-'));
+    try {
+      for (const missing of ['engineGzip', 'engineMinified']) {
+        const { [missing]: _gone, ...rest } = file;
+        await writeFile(path.join(dir, 'b.json'), JSON.stringify(rest));
+        await expect(readEngineBudgets(path.join(dir, 'b.json'))).rejects.toThrow(new RegExp(`${missing} must be a positive integer`));
+      }
+    } finally {
+      await rm(dir, { recursive: true, force: true });
     }
   });
 

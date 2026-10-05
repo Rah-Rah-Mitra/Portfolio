@@ -41,6 +41,21 @@ export default defineConfig(() => {
           'three/examples/jsm/libs/meshopt_decoder.module.js',
         ],
       },
+      build: {
+        rollupOptions: {
+          output: {
+            // The Estate engine's facade is estate/engine/index.ts, which Rollup
+            // would name index-<hash>.js, the entry chunk's own pattern. Named for
+            // what it is, it cannot be mistaken for the entry by anything globbing
+            // dist/assets. Every other chunk keeps Vite's default name.
+            chunkFileNames: (chunk) => (
+              /[\\/]estate[\\/]engine[\\/]index\.ts$/.test(chunk.facadeModuleId ?? '')
+                ? 'assets/estate-engine-[hash].js'
+                : 'assets/[name]-[hash].js'
+            ),
+          },
+        },
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

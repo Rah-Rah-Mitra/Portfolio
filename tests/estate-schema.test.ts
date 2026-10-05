@@ -371,8 +371,12 @@ describe('pack budgets (plan §6.5, §7.4)', () => {
     // Top-level keys, named as plan §4 and §6.5 name them: a dependency-free
     // check-bundle.mjs written to the plan reads exactly these, and an undefined
     // cap would compare false and never fail the build.
-    expect(budgets.engineGzip).toBe(307_200);
-    expect(budgets.engineMinified).toBe(950_000);
+    // Re-pinned in P4b at the measured size + 5% (the units note says from what);
+    // a re-pin may move them, but never above the plan caps.
+    expect(budgets.engineGzip).toBe(235_000);
+    expect(budgets.engineMinified).toBe(860_000);
+    expect(budgets.engineGzip).toBeLessThanOrEqual(307_200);
+    expect(budgets.engineMinified).toBeLessThanOrEqual(950_000);
     expect('engine' in budgets).toBe(false);
     expect(budgets.pack).toMatchObject({ hardBytes: 12_000_000, warnBytes: 8_000_000, maxFiles: 100, firstFrame: { bytes: 350_000 } });
     expect(budgets.classes).toMatchObject({

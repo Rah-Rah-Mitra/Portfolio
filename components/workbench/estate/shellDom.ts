@@ -51,6 +51,24 @@ export const debugFromSearch = (search: string): boolean => {
   return params.get('estate-debug') === '1' || params.get('estate-bench') === '1';
 };
 
+/** The shortest and longest `?estate-release-ms=` honoured. */
+export const RELEASE_OVERRIDE_RANGE = [100, 30_000] as const;
+
+/**
+ * `?estate-release-ms=` (test only, plan §10.2 case 14): how long a closed window
+ * keeps its engine before releasing it, instead of `fallback` (policy
+ * RELEASE_AFTER_MS, 30 s), so an e2e run can watch release and reopen without
+ * waiting half a minute. Whole milliseconds within RELEASE_OVERRIDE_RANGE only; it
+ * can shorten the hold, never lengthen it, and anything else is ignored.
+ */
+export const releaseMsFromSearch = (search: string, fallback: number): number => {
+  const raw = new URLSearchParams(search).get('estate-release-ms');
+  if (raw === null || !/^\d+$/.test(raw.trim())) return fallback;
+  const value = Number(raw.trim());
+  const [lo, hi] = RELEASE_OVERRIDE_RANGE;
+  return value >= lo && value <= Math.min(hi, fallback) ? value : fallback;
+};
+
 /**
  * `callback` once document.readyState is 'complete' (now, if it already is).
  * Returns the cancel. An automatic start waits for this, then for idle (§9.3),

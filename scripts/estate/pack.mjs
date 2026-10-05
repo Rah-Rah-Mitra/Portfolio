@@ -13,12 +13,13 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analyseBuilding, buildExterior, buildInterior, buildMassing } from './lib/building.mjs';
 import { buildMesh, countGlb, encodeDoc, newDoc, readGlb, storeyRoundTrip, validateGlb } from './lib/gltf.mjs';
-import { gunzip, gzipDeterministic, sha256, writeHashed } from './lib/files.mjs';
+import { gunzip, sha256, writeHashed } from './lib/files.mjs';
 import { SITE_IDS, checkExport, openDevSource, openRelease } from './lib/inputs.mjs';
 import { ATTRIBUTION, CLASS_ORDER, EDITION, FRAME, PACK_SCHEMA, REPO, boundsRadius, catalogueSource, mm, packFileName, serialisePack, storeyName } from './lib/manifest.mjs';
 import { buildNav } from './lib/nav.mjs';
 import { packPalette } from './lib/palette.mjs';
 import { encodePosters } from './lib/posters.mjs';
+import { textLeak } from './lib/pure/paths.mjs';
 import { readWalkHeader, writeGround } from './lib/pure/sn5w.mjs';
 import { buildSite } from './lib/site.mjs';
 import { REPO_ROOT, checkBudgets, checkTokens, leakScanDir, listFiles, loadBudgets, loadPalette, verifyFiles } from './check.mjs';
@@ -339,19 +340,13 @@ export const build = async (opts, outDir, log) => {
   problems.push(...checkTokens(loadPalette(), readFileSync(join(REPO_ROOT, 'index.css'), 'utf8')));
   problems.push(...leakScanDir(outDir).map((h) => `leak: ${h}`));
   if (!allowed.length) {
-    const hit = leakScanTextFile(cataloguePath);
-    if (hit) problems.push(`leak: catalogue ${hit}`);
+    const hit = textLeak(readFileSync(cataloguePath));
+    if (hit) problems.push(`leak: catalogue @${hit.offset}: ${JSON.stringify(hit.match)}`);
   }
   report.measured = budget.measured;
   report.packJson = { name: packName, bytes: packBytes.length, gzBytes };
   report.timings.total = Date.now() - t0;
   return { packName, problems, warnings: pack.warnings, report, pack, cataloguePath };
-};
-
-const leakScanTextFile = (path) => {
-  const text = readFileSync(path, 'utf8');
-  const m = /[A-Za-z]:\\|\/Users\/|\\Users\\|rapiular/.exec(text);
-  return m ? `@${m.index}: ${JSON.stringify(m[0])}` : null;
 };
 
 // Blender's camera record (U2's ESTATE_views.json) → pack.views.aerialNE.
@@ -436,13 +431,26 @@ const main = async (argv) => {
     for (const [k, v] of Object.entries(result.report.measured.byClass)) console.log(`  ${k.padEnd(6)} ${String(v).padStart(9)} B`);
     console.log(`  catalogue: ${relative(REPO_ROOT, result.cataloguePath).split(sep).join('/')}`);
     console.log(`  report:    ${relative(REPO_ROOT, reportPath).split(sep).join('/')}`);
-    if (result.problems.length) { console.error(`\nREFUSED: ${result.problems.length} problems:\n  ${result.problems.join('\n  ')}`); return 1; }
+    if (result.problems.length) {
+      console.error(`\nREFUSED: ${result.problems.length} problems:\n  ${result.problems.join('\n  ')}`);
+      discardPublic(out);
+      return 1;
+    }
     if (opts.devSrc) console.warn(DEV_BANNER);
     return 0;
   } catch (e) {
     console.error(`\nestate:pack failed: ${e.message}`);
+    discardPublic(out);
     return 1;
   }
+};
+
+// A refused or failed build never leaves a half-written pack where it could be
+// committed: under public/ the folder is emptied (git restores the last good one).
+const discardPublic = (out) => {
+  if (!isUnder(out, join(REPO_ROOT, 'public')) || !existsSync(out)) return;
+  for (const e of readdirSync(out)) rmSync(join(out, e), { recursive: true, force: true });
+  console.error(`  ${relative(REPO_ROOT, out).split(sep).join('/')} was emptied; "git checkout -- public/estate" restores the committed pack.`);
 };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = await main(process.argv.slice(2));

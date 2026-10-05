@@ -114,7 +114,7 @@ building GLBs are block-local glTF Y-up (three: put the building root at
 | `s0/massing` | one per site id, mesh `<ID>_massing` | LOD2 `ext` + `roof`, one primitive each; `sites[].massing.error` is the p90 distance of the LOD1 shell's vertices from it |
 | `s0/site` | `quadrant_<qx>_<qy>` ×4 (200 m); `tree_<species>` and `crown_<species>` batches | shelter glass is drawn opaque; crowns are 8-triangle octahedra over each species' foliage box |
 | `f/<ID>` | `facade`: triangles (≤ 65,535 vertices per primitive) + one LINES primitive | shell + one 2-triangle panel per window (glass mid-plane) and per exterior door (closed leaf's mid-plane); every triangle and line carries its storey |
-| `d/<ID>` | one batch per kit, named after upstream's mesh (`L1_W-1800x800`) | window frames (glass dropped: F's panel stands in) and whole exterior doors; instance attribute **`_STOREY`, u8 × 4, x = storey** |
+| `d/<ID>` | one batch per kit, named after upstream's mesh (`L1_W-1800x800`) | window frames (glass dropped: F's panel stands in) and whole exterior doors; instance attribute **`_STOREY`, u8 × 4, x = storey**; a kit's own `_META.z` is 0 (kits, furniture and trees take their storey per instance) |
 | `i/<ID>` | `typical`, `residual`, `special_<tag>`, `furniture_<kit>` / `proxy_<kit>` batches | `typical` is T **relative to its floor** (y = 0 at FFL), storey byte 255, to be instanced at each typical storey's FFL; `residual` and specials are absolute with storey tags; glass is a separate `glass` primitive using the `glass-interior` slot; furniture carries `_STOREY` like D |
 
 `_STOREY` is four bytes, not one: gltf-transform 4.5.1 meshopt-encodes a 1-byte

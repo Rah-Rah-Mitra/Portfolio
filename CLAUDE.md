@@ -404,7 +404,7 @@ date in `experienceStartById`. `tests/portfolio-data.test.ts` asserts the
 newest organization and ordering; `tests/semantic-render.test.ts` pins
 `experienceRecords` length — update both, then `npm run snapshot`.
 
-## Bonsai-Estate submodule
+## Bonsai-Estate submodule and estate pack
 
 - `external/Bonsai-Estate` is a git submodule (`--name Bonsai-Estate`, https URL,
   no `branch`/`shallow`/`update` keys) of the public `Rah-Rah-Mitra/Bonsai-Estate`
@@ -433,6 +433,33 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
 - `vercel.json` caches `/assets/*` and `/estate/v<major>.<minor>/*` for a year as
   `immutable` — only those files are content-hashed. Anything else under
   `/estate/` (the licence notice) keeps Vercel's default.
+- **The pack tool** (`scripts/estate/`, runbook `docs/portfolio/estate-pack.md`)
+  is its own package with exact pins and its own lockfile: `npm run estate:setup`
+  (`npm --prefix scripts/estate ci`), `npm run estate:pack -- …` (Node 24.x only),
+  `npm run estate:check` (`scripts/estate/check.mjs`, no dependencies — its
+  functions are for `tests/estate-pack.test.ts`), `npm --prefix scripts/estate
+  test` (`node --test`). Never move its dependencies into the root
+  `package.json`: `@gltf-transform/functions` pulls in `sharp`, which every Vercel
+  install would then download.
+- The pack's only real input is a Bonsai-Estate **release** (`--zips`: the two
+  zips and `release_manifest.json`, every hash and the gitlink gated). `--dev-src`
+  packs an extracted folder for pipeline work only: it skips provenance, stamps
+  `source.dev: true`, refuses `--release` and any output under `public/`, and
+  writes to `artifacts/estate/v1.2-dev/` (gitignored). Never commit a dev pack.
+  Exactly one `public/estate/v*` folder exists; nav, build, blend, IFC and
+  building LOD0 files are never opened, let alone shipped.
+- The few rules the tool shares with `lib/estate` (`packPathProblem`, storey-tag
+  normalisation, the palette slot lookup, the SN5W header) are import-free ports
+  in `scripts/estate/lib/pure/` — Node cannot load `lib/estate/*.ts` (extensionless
+  imports) — and `tests/estate-pipeline-pure.test.ts` proves each port agrees
+  with its TypeScript twin. Change both or neither. Root tests may import
+  `scripts/estate/check.mjs` and `lib/pure/*`, never a module that needs
+  `scripts/estate/node_modules`; and no `.mjs` there may start with a `#!` line,
+  which vitest cannot load.
+- Instance attributes are 4 bytes wide on purpose: `_STOREY` is u8 × 4 (x =
+  storey) because gltf-transform 4.5.1's meshopt writer pads a 1-byte instance
+  attribute to a 4-byte stride without recording it, and every reader then
+  decodes garbage. The tool decodes each batch it writes and compares.
 
 ## Gotchas
 

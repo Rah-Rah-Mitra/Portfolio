@@ -412,7 +412,7 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   pack is built from — and no build, test or deploy step reads it. Why: upstream
   does not track its `model/` export (it ships as release zips), so the submodule
   holds nothing the site could use, and a clone without it must build and pass the
-  tests. It is pinned at `d3152af`, R of the v1.2 candidate, which upstream tags
+  tests. It is pinned at `a6e1acf`, R of the v1.2 candidate rc2, which upstream tags
   `v1.2` once the pack's checks pass (plan R2b); apart from that one step it only
   ever moves to a tagged commit. Never add it with a local path, `file://` or
   `--reference`.

@@ -284,12 +284,17 @@ the SN5W header — are small import-free ports under `scripts/estate/lib/pure/`
 and `tests/estate-pipeline-pure.test.ts` imports **both** sides and proves they
 agree. Change both or neither.
 
-## Measured (v1.2 candidate, 2026-10-06)
+## Measured (v1.2 candidate rc2, 2026-10-06)
 
 The R2a candidate: `SampleTownN5_v1.2_{model,reports}.zip` from upstream's
-`release` (M = `2a533c1`, R = `d3152af`, tag not yet created), packed with every
-class into `artifacts/estate/v1.2-rc` (`pack.3b0c3a81.json`; `--verify`
-identical). Bytes as stored (gzip for `.gz`), decimal KB/MB as the caps count.
+`release` (M = `a106728`, R = `a6e1acf`, tag not yet created; model zip
+105,271,442 B, `e939dc78…`, reports zip 79,803,968 B, `8f6191bc…`), packed with
+every class into `artifacts/estate/v1.2-rc2` (`pack.fd986442.json`; `--verify`
+identical). It replaces the first candidate (M = `2a533c1`, R = `d3152af`,
+`artifacts/estate/v1.2-rc`, `pack.3b0c3a81.json`), from which it differs only in
+NC_514's nav file (the two stair end points below, 3,216 → 3,215 B) and the
+pack's own `source` (pack.json gz 15,126 → 15,136 B); every other file is byte
+for byte the same. Bytes as stored (gzip for `.gz`), decimal KB/MB as the caps count.
 Plan §6.5's "expected" assumed 3.2 B per stored triangle; F stores 1.76 B and I
 1.41 B. Every class that landed more than 25% from it has its expected figure
 re-set to the measurement (§12.2; also `expected` in `lib/estate/packBudgets.json`,
@@ -297,14 +302,14 @@ which nothing reads). **No cap moved**: every class is under its cap.
 
 | Class | Measured | Plan §6.5 expected | Off by | Expected now | Cap |
 |---|---|---|---|---|---|
-| First frame (pack.json gz 15,126 + massing 8,755 + site 60,493) | 84,374 B | ~140 KB | −40% | 84 KB | 350 KB |
+| First frame (pack.json gz 15,136 + massing 8,755 + site 60,493) | 84,384 B | ~140 KB | −40% | 84 KB | 350 KB |
 | F ×14 (16-bit) | 908,608 B (max 99,792, BLK_511) — 517,264 tris | 1.65 MB | −45% | 0.91 MB | 2.8 MB / 300 KB |
 | D ×14 | 260,576 B (max 28,213, BLK_510) — 30,088 stored, 1,186,672 drawn | 0.2 MB | +30% | 0.26 MB | 0.5 MB / 64 KB |
 | I ×14 | 495,049 B (max 53,742, BLK_510) — 351,320 tris | 1.1 MB | −55% | 0.50 MB | 2.0 MB / 240 KB |
 | w ×14 + ground | 188,493 B (max 26,817, MSCP_513) + 8,011 B | 0.6 MB | −67% | 0.20 MB | 1.3 MB / 128 KiB (ground 160 KB) |
-| nav ×14 (gzip) | 133,085 B (max 14,580, BLK_509) | 0.4 MB | −67% | 0.13 MB | 0.6 MB / 48 KB |
+| nav ×14 (gzip) | 133,084 B (max 14,580, BLK_509) | 0.4 MB | −67% | 0.13 MB | 0.6 MB / 48 KB |
 | posters | 165,442 + 55,986 + 70,451 B | 0.3 MB | −3% | 0.3 MB (kept) | 180 / 70 / 90 KB |
-| whole pack | 2,421,103 B in 77 files | ~4.4 MB | −45% | 2.4 MB | 12 MB (warning 8 MB), ≤ 100 files |
+| whole pack | 2,421,102 B in 77 files | ~4.4 MB | −45% | 2.4 MB | 12 MB (warning 8 MB), ≤ 100 files |
 
 Draws per file: massing 14, site 14, F 2, D ≤ 26, I ≤ 11 (NC_514). Triangles:
 F ≤ 57,384 (BLK_511; 2,994 of the 517,264 are the doors' back faces), massing
@@ -337,20 +342,28 @@ whole pack 2,139,868 B in 63 files).
 
 ## Upstream data the pack cannot fix (report upstream)
 
-- **Two stair paths clip a blocked cell's corner (open in the v1.2 candidate).**
-  The work-in-progress U2 files started every L1 stair of BLK_507–512 inside an
-  opened fire-door leaf; upstream fixed that (6385a5b) and now holds paths to the
-  decoded grid at build and release (`estate/web/walkcheck.py`, 2a533c1). In the
-  candidate, 645 of 647 stair paths stay on floor cells. NC_514's L1 shop-block
-  east and west stairs do not: their last segment, (58.275, −1.22) → (59.20,
-  −1.10) at 4.20 m (west: 54 m west and 5.4 m north), runs 3.5 mm × 0.45 mm
-  through the corner of blocked cell (1248, 254) (west (708, 308)), between two
-  walkable neighbours. `tests/estate-walk-realdata.test.ts` samples every 0.1 m
-  and lands one sample there, at (58.83, −1.148); walkcheck samples every
-  0.05 m and none of its 19 samples on that segment falls in the sliver, so the
-  release passed it. A check that walks every cell a segment crosses (not
-  samples) would catch it upstream. Doors, spawns, lift arrivals and the MSCP
-  ramp pass.
+- **Stair paths clipping a blocked cell's corner (fixed in the v1.2 candidate
+  rc2).** The work-in-progress U2 files started every L1 stair of BLK_507–512
+  inside an opened fire-door leaf; upstream fixed that (6385a5b) and held paths
+  to the decoded grid at build and release by sampling them every 0.05 m
+  (`estate/web/walkcheck.py`, 2a533c1). In that first candidate 645 of 647 stair
+  paths stayed on floor cells. NC_514's L1 shop-block east and west stairs did
+  not: their last segment, (58.275, −1.22) → (59.20, −1.10) at 4.20 m (west:
+  54 m west and 5.4 m north), crossed the corner of blocked cell (1248, 254)
+  (west (708, 308); 0.1 m cells from (−66.05, −26.55), so x 58.75–58.85,
+  y −1.15 to −1.05), between two walkable neighbours: in at (58.8146, −1.1500),
+  out at (58.8500, −1.1454), a sliver **35.4 mm × 4.6 mm**, 35.7 mm of the
+  segment. (This page and the pinning commit first said 3.5 mm × 0.45 mm, ten
+  times too small.) `tests/estate-walk-realdata.test.ts` samples every 0.1 m
+  and landed one sample there, at (58.83, −1.148); none of walkcheck's samples
+  on that segment fell in the sliver, so the release passed it. Upstream now
+  checks every cell a segment crosses rather than samples (`walkcheck.crossed`,
+  the supercover with a 0.1 mm edge margin; a106728): every crossed cell must
+  hold a floor within a step of the path, at build and at release, and
+  `stairs.fit_paths` fits to the same rule, which pulled NC_514's two end points
+  back along the landing to (59.10, −1.20) and (5.10, 4.20). In rc2 all 647
+  paths pass, here (`tests/estate-walk-realdata.test.ts`) and upstream; the
+  first candidate's pack still fails here on exactly those two.
 - **Coplanar faces in LOD1.** Every façade ships pre-existing coplanar,
   overlapping faces of different materials (BLK_509: 3,164 pairs — mild steel on
   granolithic stairs, the off-white/core-accent paint split, railings on walls;

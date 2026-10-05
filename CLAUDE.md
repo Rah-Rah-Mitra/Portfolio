@@ -420,11 +420,19 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   watcher, `server.fs` and dependency scan (`optimizeDeps.entries` is just
   `index.html`, or the scan would crawl upstream's `reports/report.html`), from
   the local mirror (`scripts/verify-local-mirror.mjs`) and from the Vercel upload
-  (`.vercelignore`, with `artifacts/`). `tests/repo-hygiene.test.ts` pins all of
-  that and fails if anything under `components/ lib/ contexts/ server/ api/
-  scripts/ tests/` (or `App.tsx`, `semanticRender.tsx`) imports or reads a path
-  into `external/`; the only exception it allows is
-  `scripts/estate/lib/provenance.mjs`.
+  (`.vercelignore`, with `artifacts/`). Every one of those excludes is anchored to
+  the repo root: Vite matches its globs against absolute paths
+  (case-insensitively), so a bare `**/external/**` would refuse every file of a
+  checkout that merely sits under a folder named `external`, and an unanchored
+  `.vercelignore` name drops that folder at any depth. `tests/repo-hygiene.test.ts`
+  pins all of that (the Vite globs through Vite's own matcher) and fails if any
+  code file at the repo root (site data, `server.mjs`, `dev.mjs`, every tool
+  config) or under `components/ lib/ contexts/ hooks/ workers/ server/ api/
+  scripts/ tests/` imports or reads a path into `external/`; the only exception
+  it allows is `scripts/estate/lib/provenance.mjs`.
+- `vercel.json` caches `/assets/*` and `/estate/v<major>.<minor>/*` for a year as
+  `immutable` — only those files are content-hashed. Anything else under
+  `/estate/` (the licence notice) keeps Vercel's default.
 
 ## Gotchas
 
@@ -450,8 +458,14 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   their content, and this checkout's `core.autocrlf=true` would otherwise rewrite
   them so a fresh clone no longer matches its own names.
 - `npm run build` ends with `scripts/check-bundle.mjs`, which fails the build
-  (Vercel included) when the main entry chunk — the one module script in
-  `dist/index.html` — exceeds 510,000 B (496,834 B when the cap landed; Vite
-  itself only warns at 500 kB). Do not raise `chunkSizeWarningLimit` instead.
+  (Vercel included) when the main bundle — the one module script in
+  `dist/index.html` plus every chunk it imports statically, all of which loads on
+  every visit — exceeds 510,000 B (496,834 B when the cap landed, all of it the
+  entry; Vite itself only warns at 500 kB). Do not raise `chunkSizeWarningLimit`
+  instead.
+- The local mirror (`scripts/verify-local-mirror.mjs`) copies `.impeccable/`
+  except its untracked `review/`, `resume-qa/` and `resume-facets/` output:
+  `tests/world-retirement.test.ts` reads the tracked
+  `.impeccable/surfaces/index-html.md`, and the mirror runs `npm test`.
 - Keep impeccable and other repo-wide scans off `external/`; it is upstream's
   tree, not this site.

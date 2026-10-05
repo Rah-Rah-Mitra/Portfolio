@@ -8,9 +8,20 @@ const sourceDirectory = path.resolve(scriptDirectory, '..');
 const defaultMirror = process.platform === 'win32'
   ? 'C:\\codex-verify\\portfolio'
   : path.resolve(sourceDirectory, '..', '.portfolio-verify');
-// external/ is the Bonsai-Estate submodule and artifacts/ holds local pack builds;
-// the build never reads either, so the mirror proves it builds without them.
-export const excludedDirectories = new Set(['.git', '.claude', 'node_modules', 'dist', '.impeccable', 'external', 'artifacts']);
+// Left out wherever they appear.
+export const excludedDirectories = new Set(['.git', '.claude', 'node_modules', 'dist']);
+// Left out only at these paths from the source root. external/ is the Bonsai-Estate
+// submodule and artifacts/ holds local pack builds; the build never reads either,
+// so the mirror proves it builds without them. The .impeccable/ folders are the
+// untracked review and QA output; the rest of .impeccable/ is tracked, and
+// tests/world-retirement.test.ts reads it.
+export const excludedRootPaths = new Set(['external', 'artifacts', '.impeccable/review', '.impeccable/resume-qa', '.impeccable/resume-facets']);
+
+export const isMirrored = (source, entry) => {
+  const name = path.basename(entry);
+  const relative = path.relative(source, entry).split(path.sep).join('/');
+  return !excludedDirectories.has(name) && !name.startsWith('.env') && !excludedRootPaths.has(relative);
+};
 
 export const isSafeMirrorDestination = (source, destination) => {
   const resolvedSource = path.resolve(source).toLowerCase();
@@ -38,10 +49,7 @@ export const verifyFromLocalMirror = async ({
   await mkdir(destination, { recursive: true });
   await cp(sourceDirectory, destination, {
     recursive: true,
-    filter: (entry) => {
-      const name = path.basename(entry);
-      return !excludedDirectories.has(name) && !name.startsWith('.env');
-    },
+    filter: (entry) => isMirrored(sourceDirectory, entry),
   });
   await run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['ci', '--no-audit', '--no-fund'], destination);
   for (const command of commands) await run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', command], destination);

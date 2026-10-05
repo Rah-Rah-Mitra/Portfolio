@@ -1,11 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { readFile, readdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { describe, expect, it } from 'vitest';
-import { MAIN_CHUNK_LIMIT, findEntryScript } from '../scripts/check-bundle.mjs';
+import { normalizePath, resolveConfig, type UserConfig } from 'vite';
+import { describe, expect, it, vi } from 'vitest';
+import { MAIN_CHUNK_LIMIT, checkBundle, findEntryScript, staticImports } from '../scripts/check-bundle.mjs';
 import viteConfig from '../vite.config';
 
 // external/Bonsai-Estate is a gitlink that records which upstream commit the estate
@@ -18,7 +20,9 @@ const read = (relative: string) => readFile(path.join(root, relative), 'utf8');
 // The one script allowed to look inside the submodule (P2: `git -C … rev-parse`,
 // offline). This file is skipped too: its own literals name the submodule path.
 const ALLOWED = new Set(['scripts/estate/lib/provenance.mjs', 'tests/repo-hygiene.test.ts']);
-const SCANNED = ['components', 'lib', 'contexts', 'server', 'api', 'scripts', 'tests', 'hooks', 'workers', 'semanticRender.tsx', 'App.tsx', 'index.tsx'];
+// These folders recursively, plus every code file at the repository root (site data,
+// the dev servers and every tool config), so a new root file is covered unasked.
+const SCANNED = ['components', 'lib', 'contexts', 'server', 'api', 'scripts', 'tests', 'hooks', 'workers'];
 const CODE = /\.(?:[cm]?js|tsx?)$/;
 const OTHER = /\.(?:py|ps1|sh)$/;
 
@@ -72,6 +76,34 @@ const walk = async (relative: string): Promise<string[]> => {
   return nested.flat();
 };
 
+const scannedFiles = async () => {
+  const atRoot = (await readdir(root, { withFileTypes: true }))
+    .filter((entry) => entry.isFile() && (CODE.test(entry.name) || OTHER.test(entry.name)))
+    .map((entry) => entry.name);
+  const nested = (await Promise.all(SCANNED.map(walk))).flat();
+  return [...atRoot, ...nested].filter((file) => !ALLOWED.has(file));
+};
+
+type ServeConfig = UserConfig & {
+  server: { watch: { ignored: string[] }; fs: { deny: string[] } };
+  optimizeDeps: { entries: string[] };
+};
+const serveConfig = () => (viteConfig as unknown as (env: { command: 'serve'; mode: string }) => ServeConfig)({ command: 'serve', mode: 'development' });
+
+// Vite's own matcher for a deny list: picomatch over absolute paths, which the dev
+// server applies to every module it loads. The watcher matches its globs the same way.
+const viteMatcher = async (patterns: string[]) => {
+  const config = serveConfig();
+  const resolved = await resolveConfig({
+    ...config,
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    server: { ...config.server, fs: { deny: patterns } },
+  }, 'serve');
+  return (resolved as unknown as { fsDenyGlob: (file: string) => boolean }).fsDenyGlob;
+};
+
 describe('Bonsai-Estate submodule', () => {
   it('is declared once, by name, at external/Bonsai-Estate over https, with no branch, shallow or update keys', async () => {
     const lines = (await read('.gitmodules')).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -95,20 +127,36 @@ describe('Bonsai-Estate submodule', () => {
     expect(fileNames.filter((name) => /^(?:external|artifacts|dist)[\\/]/.test(path.relative(root, name)))).toEqual([]);
   });
 
-  it('is neither watched nor served by the dev server, and never crawled for entries', () => {
-    const config = (viteConfig as unknown as (env: { command: 'serve'; mode: string }) => {
-      server: { watch: { ignored: string[] }; fs: { deny: string[] } };
-      optimizeDeps: { entries: string[] };
-    })({ command: 'serve', mode: 'development' });
-    expect(config.server.watch.ignored).toEqual(expect.arrayContaining(['**/external/**', '**/artifacts/**']));
-    // Setting fs.deny replaces Vite's defaults, so they must still be there.
-    expect(config.server.fs.deny).toEqual(expect.arrayContaining(['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/external/**']));
+  it('is neither watched nor served by the dev server, and never crawled for entries', async () => {
+    const config = serveConfig();
     expect(config.optimizeDeps.entries).toEqual(['index.html']);
+    // Setting fs.deny replaces Vite's defaults, so they must still be there.
+    expect(config.server.fs.deny).toEqual(expect.arrayContaining(['.env', '.env.*', '*.{crt,pem}', '**/.git/**']));
+    // Anchored to this checkout. A bare '**/external/**' matches absolute paths, so a
+    // checkout under any folder named external would be refused every file it has.
+    for (const pattern of [...config.server.watch.ignored, ...config.server.fs.deny]) {
+      expect(pattern).not.toMatch(/^\*\*\/(?:external|artifacts)\b/);
+    }
+    const checkout = normalizePath(path.resolve(root));
+    const denied = await viteMatcher(config.server.fs.deny);
+    expect(denied(`${checkout}/external/Bonsai-Estate/README.md`)).toBe(true);
+    expect(denied(`${checkout}/External/Bonsai-Estate/README.md`)).toBe(true);
+    expect(denied(`${checkout}/.env`)).toBe(true);
+    expect(denied(`${checkout}/.git/config`)).toBe(true);
+    expect(denied(`${checkout}/index.tsx`)).toBe(false);
+    expect(denied(`${checkout}/components/external/a.ts`)).toBe(false);
+    const ignored = await viteMatcher(config.server.watch.ignored);
+    expect(ignored(`${checkout}/external/Bonsai-Estate/README.md`)).toBe(true);
+    expect(ignored(`${checkout}/artifacts/estate/v1.2/pack.json`)).toBe(true);
+    expect(ignored(`${checkout}/index.tsx`)).toBe(false);
+    expect(ignored(`${checkout}/lib/artifacts/a.ts`)).toBe(false);
   });
 
-  it('is left out of the Vercel upload', async () => {
-    const lines = (await read('.vercelignore')).split(/\r?\n/).map((line) => line.trim());
-    expect(lines).toEqual(expect.arrayContaining(['external/', 'artifacts/']));
+  it('is left out of the Vercel upload, at the root only', async () => {
+    const lines = (await read('.vercelignore')).split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !line.startsWith('#'));
+    // gitignore rules: a leading slash anchors a name to the root; without one it
+    // matches a folder of that name at any depth. An inner slash anchors already.
+    expect(lines).toEqual(['/external/', '/artifacts/', 'scripts/estate/node_modules/']);
   });
 
   it('flags a read of the submodule however it is spelled', () => {
@@ -123,9 +171,14 @@ describe('Bonsai-Estate submodule', () => {
     expect(externalReads('a.ts', "import x from 'some-external/lib';")).toEqual([]);
   });
 
-  it('is never imported or read by site, server, script or test code', async () => {
-    const files = (await Promise.all(SCANNED.map(walk))).flat().filter((file) => !ALLOWED.has(file));
+  it('is never imported or read by site, server, script, config or test code', async () => {
+    const files = await scannedFiles();
     expect(files.length).toBeGreaterThan(100);
+    expect(files).toEqual(expect.arrayContaining([
+      'App.tsx', 'index.tsx', 'semanticRender.tsx', 'portfolioData.ts', 'siteConfig.ts', 'server.mjs', 'dev.mjs',
+      'vite.config.ts', 'vitest.config.ts', 'playwright.config.ts', 'tailwind.config.js', 'postcss.config.js',
+      'hooks/useFocusTrap.ts', 'workers/nbody.worker.ts',
+    ]));
     const offenders = (await Promise.all(files.map(async (file) => externalReads(file, await read(file)).map((hit) => `${file}: ${hit}`)))).flat();
     expect(offenders).toEqual([]);
   });
@@ -146,6 +199,39 @@ describe('build hygiene', () => {
     expect(() => findEntryScript('<script type="module" src="/assets/a.js"></script><script type="module" src="/assets/b.js"></script>')).toThrow(/exactly one/);
   });
 
+  it('reads static imports from minified chunks, never lazy ones', () => {
+    expect(staticImports('import{a as b}from"./vendor-x1.js";import"./polyfill-y2.js";const c=()=>import("./lazy-z3.js");export*from\'./re-q4.js\';'))
+      .toEqual(['./vendor-x1.js', './polyfill-y2.js', './re-q4.js']);
+    expect(staticImports('const m=()=>__vitePreload(()=>import("./module-zz3LrXDo.js"),__vite__mapDeps([0]));')).toEqual([]);
+  });
+
+  it('caps the entry together with every chunk it imports statically', async () => {
+    const dist = await mkdtemp(path.join(tmpdir(), 'check-bundle-'));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      await mkdir(path.join(dist, 'assets'));
+      await writeFile(path.join(dist, 'index.html'), '<script type="module" crossorigin src="/assets/index-a1.js"></script>');
+      const entry = 'import{x}from"./shared-b2.js";const l=()=>import("./lazy-c3.js");';
+      await writeFile(path.join(dist, 'assets', 'index-a1.js'), entry);
+      await writeFile(path.join(dist, 'assets', 'lazy-c3.js'), ' '.repeat(MAIN_CHUNK_LIMIT));
+      // A shared chunk imports the entry back, as Rollup's chunks do.
+      const shared = (size: number) => `import"./index-a1.js";export const x=1;${' '.repeat(size)}`;
+      await writeFile(path.join(dist, 'assets', 'shared-b2.js'), shared(1000));
+      const under = await checkBundle(dist);
+      expect(under.files).toEqual(['assets/index-a1.js', 'assets/shared-b2.js']);
+      expect(under.bytes).toBe(entry.length + shared(1000).length);
+      expect(under.failures).toEqual([]);
+      // Over the cap only once the static chunk is counted; the entry alone is tiny.
+      await writeFile(path.join(dist, 'assets', 'shared-b2.js'), shared(MAIN_CHUNK_LIMIT));
+      const over = await checkBundle(dist);
+      expect(over.bytes).toBeGreaterThan(MAIN_CHUNK_LIMIT);
+      expect(over.failures).toHaveLength(1);
+    } finally {
+      log.mockRestore();
+      await rm(dist, { recursive: true, force: true });
+    }
+  });
+
   it('keeps estate pack bytes exact through checkout, and caches hashed files forever', async () => {
     const attributes = (await read('.gitattributes')).split(/\r?\n/).map((line) => line.trim());
     expect(attributes).toEqual(expect.arrayContaining([
@@ -156,10 +242,19 @@ describe('build hygiene', () => {
       'lib/estate/catalogue.generated.ts text eol=lf',
     ]));
     const immutable = [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }];
-    const vercel = JSON.parse(await read('vercel.json')) as { headers: unknown[] };
+    const vercel = JSON.parse(await read('vercel.json')) as { headers: { source: string }[] };
     expect(vercel.headers).toEqual([
       { source: '/assets/(.*)', headers: immutable },
-      { source: '/estate/v(.*)', headers: immutable },
+      { source: '/estate/v(\\d+\\.\\d+)/(.*)', headers: immutable },
     ]);
+    // path-to-regexp reads a parenthesised group as a raw regex and the rest of this
+    // source is plain text, so a RegExp reads it as Vercel does. Only the files in a
+    // version folder are content-hashed; nothing beside them may be cached forever.
+    const estate = new RegExp(`^${vercel.headers[1].source}$`);
+    expect(estate.test('/estate/v1.2/f/BLK_509.abcd1234.glb.gz')).toBe(true);
+    expect(estate.test('/estate/v1.2/pack.abcd1234.json')).toBe(true);
+    for (const other of ['/estate/LICENSE.txt', '/estate/views.json', '/estate/viewer/a.js', '/estate/vendor.js', '/estate/v1.2']) {
+      expect(estate.test(other)).toBe(false);
+    }
   });
 });

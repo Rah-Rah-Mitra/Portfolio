@@ -88,10 +88,10 @@ It never opens `*_nav.json`, `*.build.json`, a building's `*_lod0.glb`, IFC or
 one file allowed to touch the submodule, through `git` only
 (`tests/repo-hygiene.test.ts`).
 
-**Upstream conflict to settle before R2a:** upstream's `release` refuses unless
-HEAD equals `export_info.commit`, so as written it can only be run on M, not on
-R (M plus the reports commit). Either run `estate release` on M before
-committing the reports, or teach it the same "generator unchanged" rule.
+Upstream's `release` keeps the same rule (Bonsai-Estate `estate/web/release.py`,
+since e385476): it runs on R, accepts an `export_info.commit` that is HEAD or an
+ancestor of it with the generator unchanged, and records both in
+`release_manifest.json` (`commit` = M, `head` = R).
 
 ### Where it writes, and what a failure deletes
 
@@ -284,32 +284,38 @@ the SN5W header — are small import-free ports under `scripts/estate/lib/pure/`
 and `tests/estate-pipeline-pure.test.ts` imports **both** sides and proves they
 agree. Change both or neither.
 
-## Measured (dev runs, 2026-10-06)
+## Measured (v1.2 candidate, 2026-10-06)
 
-Two dev packs: the v1.1 snapshot (doors closed, no walk grids, no stairs), and
-the same snapshot plus upstream's work-in-progress v1.2 `*_walk.bin` and
-`*_web.json` (branch `web-export`, same model). Bytes as stored (gzip for `.gz`).
+The R2a candidate: `SampleTownN5_v1.2_{model,reports}.zip` from upstream's
+`release` (M = `2a533c1`, R = `d3152af`, tag not yet created), packed with every
+class into `artifacts/estate/v1.2-rc` (`pack.3b0c3a81.json`; `--verify`
+identical). Bytes as stored (gzip for `.gz`), decimal KB/MB as the caps count.
+Plan §6.5's "expected" assumed 3.2 B per stored triangle; F stores 1.76 B and I
+1.41 B. Every class that landed more than 25% from it has its expected figure
+re-set to the measurement (§12.2; also `expected` in `lib/estate/packBudgets.json`,
+which nothing reads). **No cap moved**: every class is under its cap.
 
-| Class | v1.1 snapshot | + U2 walk/web | Plan "expected" | Cap |
-|---|---|---|---|---|
-| First frame (pack.json gz + massing + site) | 82,886 B | 84,409 B | ~140 KB | 350 KB |
-| F ×14 (16-bit) | 908,608 B (max 99,792) — 517,264 tris | same | 1.65 MB | 2.8 MB / 300 KB |
-| D ×14 | 260,576 B (max 28,213) — 30,088 stored, 1,186,672 drawn | same | 0.2 MB | 0.5 MB / 64 KB |
-| I ×14 | 492,190 B (max 53,664) | 495,294 B (max 53,751) | 1.1 MB | 2.0 MB / 240 KB |
-| w ×14 | — | 188,431 B (max 26,828, MSCP_513) | 0.6 MB with ground | 1.3 MB with ground / 128 KiB |
-| nav ×14 (gzip) | 45,654 B | 133,083 B (max 14,584, BLK_509) | 0.4 MB | 0.6 MB / 48 KB |
-| ground | 8,011 B | same | — | 160 KB |
-| posters | 165,576 + 56,132 + 70,434 B | same | 0.3 MB | 180 / 70 / 90 KB |
-| whole pack | 2,139,868 B in 63 files | 2,421,622 B in 77 files | ~4.4 MB | 12 MB |
+| Class | Measured | Plan §6.5 expected | Off by | Expected now | Cap |
+|---|---|---|---|---|---|
+| First frame (pack.json gz 15,126 + massing 8,755 + site 60,493) | 84,374 B | ~140 KB | −40% | 84 KB | 350 KB |
+| F ×14 (16-bit) | 908,608 B (max 99,792, BLK_511) — 517,264 tris | 1.65 MB | −45% | 0.91 MB | 2.8 MB / 300 KB |
+| D ×14 | 260,576 B (max 28,213, BLK_510) — 30,088 stored, 1,186,672 drawn | 0.2 MB | +30% | 0.26 MB | 0.5 MB / 64 KB |
+| I ×14 | 495,049 B (max 53,742, BLK_510) — 351,320 tris | 1.1 MB | −55% | 0.50 MB | 2.0 MB / 240 KB |
+| w ×14 + ground | 188,493 B (max 26,817, MSCP_513) + 8,011 B | 0.6 MB | −67% | 0.20 MB | 1.3 MB / 128 KiB (ground 160 KB) |
+| nav ×14 (gzip) | 133,085 B (max 14,580, BLK_509) | 0.4 MB | −67% | 0.13 MB | 0.6 MB / 48 KB |
+| posters | 165,442 + 55,986 + 70,451 B | 0.3 MB | −3% | 0.3 MB (kept) | 180 / 70 / 90 KB |
+| whole pack | 2,421,103 B in 77 files | ~4.4 MB | −45% | 2.4 MB | 12 MB (warning 8 MB), ≤ 100 files |
 
 Draws per file: massing 14, site 14, F 2, D ≤ 26, I ≤ 11 (NC_514). Triangles:
 F ≤ 57,384 (BLK_511; 2,994 of the 517,264 are the doors' back faces), massing
 ≤ 482, T ≤ 29,620, R ≤ 2,700, special ≤ 12,568 (NC_514 L1), site 27,047 stored.
-Quantisation steps: F 0.9–1.9 mm, I 0.8–1.9 mm, site 3.05 mm. F and nav land
-well under "expected" and D 30% over it: about 168 KB of D's 401 KB meshopt
-payload is instance data (float32 TRANSLATION, ROTATION and SCALE, where SCALE is
-only each kit's dequantisation factor, plus `_STOREY`). Per §12.2 the caps are
-re-set from the real v1.2 run, not from these.
+Quantisation steps: F 0.9–1.9 mm, I 0.8–1.9 mm, site 3.05 mm. D is the one class
+over its old expectation: about 168 KB of D's 401 KB meshopt payload is instance
+data (float32 TRANSLATION, ROTATION and SCALE, where SCALE is only each kit's
+dequantisation factor, plus `_STOREY`). The last dev pack (the v1.1 snapshot plus
+U2's work-in-progress walk/web files) measured within 0.1% of this in every
+class; the v1.1 snapshot alone had no walk grids and no stairs (nav 45,654 B,
+whole pack 2,139,868 B in 63 files).
 
 ## Troubleshooting
 
@@ -331,12 +337,20 @@ re-set from the real v1.2 run, not from these.
 
 ## Upstream data the pack cannot fix (report upstream)
 
-- **Stair paths start inside an opened leaf.** With the U2 candidate, every L1
-  stair of BLK_507–512 (and NC_514's two shop-block stairs at their L2 end)
-  begins its `web.json` `path` at a point the opened fire-door leaf's `blocked`
-  stamp covers (e.g. BLK_509 L1 stair 1 at (−61.80, 1.03): the door at y −0.05
-  opens 75° into the stair room). `tests/estate-walk-realdata.test.ts` fails on it
-  with ESTATE_PACK_DIR set; doors, spawns, lift arrivals and the MSCP ramp pass.
+- **Two stair paths clip a blocked cell's corner (open in the v1.2 candidate).**
+  The work-in-progress U2 files started every L1 stair of BLK_507–512 inside an
+  opened fire-door leaf; upstream fixed that (6385a5b) and now holds paths to the
+  decoded grid at build and release (`estate/web/walkcheck.py`, 2a533c1). In the
+  candidate, 645 of 647 stair paths stay on floor cells. NC_514's L1 shop-block
+  east and west stairs do not: their last segment, (58.275, −1.22) → (59.20,
+  −1.10) at 4.20 m (west: 54 m west and 5.4 m north), runs 3.5 mm × 0.45 mm
+  through the corner of blocked cell (1248, 254) (west (708, 308)), between two
+  walkable neighbours. `tests/estate-walk-realdata.test.ts` samples every 0.1 m
+  and lands one sample there, at (58.83, −1.148); walkcheck samples every
+  0.05 m and none of its 19 samples on that segment falls in the sliver, so the
+  release passed it. A check that walks every cell a segment crosses (not
+  samples) would catch it upstream. Doors, spawns, lift arrivals and the MSCP
+  ramp pass.
 - **Coplanar faces in LOD1.** Every façade ships pre-existing coplanar,
   overlapping faces of different materials (BLK_509: 3,164 pairs — mild steel on
   granolithic stairs, the off-white/core-accent paint split, railings on walls;

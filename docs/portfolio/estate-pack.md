@@ -21,7 +21,7 @@ the root `npm ci` installs it (`.vercelignore` drops its `node_modules`).
 | `npm run estate:pack -- …` | `npm --prefix scripts/estate run pack -- …` (Node **24.x only**; any other major is refused, because pack bytes must be reproducible) |
 | `npm run estate:check [-- --pack <dir>] [-- --provenance]` | `node scripts/estate/check.mjs`: no dependencies, runs on the root's node |
 | `npm --prefix scripts/estate test` | the pipeline's IO tests (`node --test`, in-memory documents) |
-| `node scripts/estate/harness.mjs --pack <dir>` | parses every GLB with three@0.186.1's `GLTFLoader` (plan §6.7); install three first with `npm i --prefix artifacts/estate-smoke three@0.186.1` (never into a `package.json`) |
+| `node scripts/estate/harness.mjs --pack <dir> [--inspect <dir>] [--json <file>]` | parses every GLB with three@0.186.1's `GLTFLoader` + `MeshoptDecoder` (plan §6.7); checks counts, attributes (`_meta`, `_STOREY`, `instanceMatrix`), extensions, frames and the per-class caps on three's own numbers; sums the §7.11 scenarios (S1–S5, S4+D, S5+D, S4-min) against the tier caps. `--inspect` also writes `BLK_509`'s F and I decoded to plain, validated GLB with a per-storey box table (`--inspect-site <ID>` for another site). Install three first with `npm i --prefix artifacts/estate-smoke three@0.186.1` (never into a `package.json`); the `--inspect` export also needs `estate:setup`, and nothing is written under `public/` |
 
 npm 11 prints an `allow-scripts` warning for `ffmpeg-static`: its install script
 downloads the FFmpeg binary and must run. If a later npm skips it, the poster

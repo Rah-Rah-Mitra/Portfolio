@@ -187,7 +187,7 @@ little with v1.2. Bytes as stored (gzip for `.gz`).
 |---|---|---|---|
 | First frame (pack.json gz + massing + site) | 87,328 B | ~140 KB | 350 KB |
 | F ×14 | 924,562 B (max 102,629) — 514,270 tris, 1.80 B/tri | 1.65 MB | 2.8 MB / 300 KB |
-| D ×14 | 260,622 B (max 28,224) — 30,088 stored, 1,186,672 drawn, 11,169 instances | 0.2 MB | 0.5 MB / 64 KB |
+| D ×14 | 260,622 B (max 28,217) — 30,088 stored, 1,186,672 drawn, 11,169 instances | 0.2 MB | 0.5 MB / 64 KB |
 | I ×14 | 492,194 B (max 53,664) — T 245,384, R 22,664, specials 82,756 | 1.1 MB | 2.0 MB / 240 KB |
 | nav ×14 | 238,348 B (max 41,808, MSCP_513) | 0.4 MB | 0.6 MB / 48 KB |
 | ground | 8,011 B | — | 160 KB |

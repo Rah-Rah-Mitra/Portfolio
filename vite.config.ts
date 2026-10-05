@@ -30,6 +30,16 @@ export default defineConfig(() => {
       // include the submodule's reports/report.html.
       optimizeDeps: {
         entries: ['index.html'],
+        // The Estate window's engine (three r186 and camera-controls) is reached
+        // only through the dynamic import in components/workbench/estate/loadEngine.ts.
+        // Listing it pre-bundles it at server start, so opening the window in dev
+        // does not trigger a dependency re-optimisation and a full page reload.
+        include: [
+          'three',
+          'camera-controls',
+          'three/examples/jsm/loaders/GLTFLoader.js',
+          'three/examples/jsm/libs/meshopt_decoder.module.js',
+        ],
       },
       resolve: {
         alias: {

@@ -116,9 +116,18 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   (`lib/worldEvents.ts`) that only the sound cues listen to (`lib/audioPolicy.ts`).
 - The pre-2026-09 "continuous field test" UI — `PortfolioExperience`,
   `WorkstationShell`, the appearance system, the optical world and Courier, the
-  ASCII background, Three.js and GSAP — was **deleted** in the 2026-10 sweep; the
-  parts worth adapting became the features above. Git history has the rest (last
-  present at `aad91d6`). Don't resurrect it.
+  ASCII background, the retired scene's Three.js and GSAP — was **deleted** in the
+  2026-10 sweep; the parts worth adapting became the features above. Git history
+  has the rest (last present at `aad91d6`). Don't resurrect it. three r186 came
+  back in 2026-10 only as the Estate window's lazy engine: exact pins `three@0.186.1`,
+  `camera-controls@3.1.2` and `@types/three@0.186.0`, held by
+  `tests/world-retirement.test.ts`, which also bans every other WebGL scene and
+  in-browser IFC library (r3f, Babylon, PlayCanvas, OGL, web-ifc, That Open,
+  three-mesh-bvh). Both packages may be imported only under
+  `components/workbench/estate/engine/**` and `estate/live/**`, and those two
+  folders are reached only by the `import(` calls in `estate/loadEngine.ts`
+  (`tests/estate-boundary.test.ts`). The shell talks to the engine through
+  `estate/engineApi.ts`, which is types only.
 
 ## Resume system (NUS CDE style, edition-based)
 

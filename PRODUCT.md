@@ -36,7 +36,7 @@ This portfolio explains intelligent systems as one connected engineering practic
 
 ## Capabilities and Constraints
 
-- Preserve React 19, TypeScript, Vite, Tailwind (preflight and `sr-only` only), Matter.js (the Systems Lab drop test), the existing local proxy, and Vercel serverless API behavior. Three.js left with the retired 3D world in 2026-10; do not reintroduce a WebGL scene library without a feature that needs one.
+- Preserve React 19, TypeScript, Vite, Tailwind (preflight and `sr-only` only), Matter.js (the Systems Lab drop test), three.js (the Estate window, a lazy chunk loaded only when that window opens), the existing local proxy, and Vercel serverless API behavior. Three.js left with the retired 3D world in 2026-10 and came back only for the Estate; do not add another WebGL scene library.
 - Keep API keys and model calls server-side; never expose deployment secrets or private keys.
 - Keep all truthful projects, achievements, events, roles, education, certificates, resume variants, profile imagery, project imagery, and project 3D models accessible.
 - `portfolioData.ts` and the current resume documents are factual authorities. Do not fabricate experience, metrics, employers, qualifications, project outcomes, or robotics/SLAM/Gaussian-splatting work.

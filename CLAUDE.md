@@ -276,7 +276,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        (Enter, Plan and walk-in off for that building). The building the camera
        is inside is held at F (lod `maxLevel`), and the interior's triangles and
        draws are booked as the reserve before any building. Furniture: full kits
-       within the tier's radius, 12-triangle boxes beyond, band storeys only.
+       within the tier's radius, stand-ins beyond (the kit's height profile in
+       10–30 triangles: a tile top over a steel pedestal, not a crate), band
+       storeys only.
        Walk grids (`lib/estate/walk.ts`), nav
        files (`lib/estate/nav.ts`: rooms with `{S}`/`{SS}` templates expanded,
        lifts, doors, stairs, spawns) and the SN5G ground (`lib/estate/ground.ts`)
@@ -967,6 +969,12 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   more than a quantisation step or whose quantisation made two faces of
   different slots coplanar (`lib/pure/quantcheck.mjs`): that is why F and the
   site are 16-bit — at 14 bits 5 mm road markings fell onto the asphalt.
+- Every mesh of an interior file is quantised on **one lattice**
+  (`lib/pure/grid.mjs`: origin on the 0.1 m pitch, step 0.1 m / n, n a multiple
+  of 4), so T drawn at any typical FFL lands on R's points. Fitted per mesh, the
+  vertices T and R share (a face split between them) decoded up to 2.5 mm apart
+  and the seams showed as dotted lines; the tool now refuses a file where any
+  shared vertex decodes apart (`seamGaps`). Never quantise T and R separately.
 - The few rules the tool shares with `lib/estate` (`packPathProblem`, storey-tag
   normalisation, the palette slot lookup, the SN5W header) are import-free ports
   in `scripts/estate/lib/pure/` — Node cannot load `lib/estate/*.ts` (extensionless

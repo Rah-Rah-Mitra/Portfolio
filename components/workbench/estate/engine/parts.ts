@@ -83,7 +83,7 @@ export interface InteriorSpecial extends InteriorNode {
 }
 
 /**
- * One furniture kit: the full mesh near the camera, the 12-triangle box beyond
+ * One furniture kit: the full mesh near the camera, its stand-in (proxy_<kit>) beyond
  * (§8.5, the tier's furniture radius). `matrices` and `storeys` are the CPU
  * copies of every instance (16 floats; u8 × 4 with the storey in x), and
  * `centres` their block-local glTF (x, z): each partition gathers the chosen

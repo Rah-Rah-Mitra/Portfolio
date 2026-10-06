@@ -7,7 +7,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { analyseBuilding, buildExterior, buildInterior, buildMassing } from '../lib/building.mjs';
-import { bakeMesh, buildPrimitives, classify, countGlb, encodeDoc, instanceAll, newDoc, readGlb, storeyRoundTrip, validateGlb, buildMesh } from '../lib/gltf.mjs';
+import { bakeMesh, buildPrimitives, classify, countGlb, decodeGlb, docBounds, encodeDoc, instanceAll, newDoc, readGlb, storeyRoundTrip, validateGlb, buildMesh } from '../lib/gltf.mjs';
+import { interiorGrid } from '../lib/pure/grid.mjs';
+import { seamGaps } from '../lib/pure/quantcheck.mjs';
 import { gzipDeterministic } from '../lib/files.mjs';
 import { Soup } from '../lib/pure/soup.mjs';
 import { countKeys, soupKeys } from '../lib/pure/trikeys.mjs';
@@ -231,6 +233,78 @@ describe('steps 7–9: split, encode, validate', () => {
     assert.deepEqual([0, 1, 2].map((i) => st.getElement(i, [])), [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 0, 0]]);
     assert.equal(await storeyRoundTrip(glb, batches), null);
     assert.equal(node.getName(), 'kit');
+  });
+});
+
+describe('step 8: one lattice for an interior file', () => {
+  // T (relative to its floor) and R (where it stands, on storey 1 at 3.6 m)
+  // split one wall face between them, as upstream's chunks do where a face's
+  // triangulation differs between storeys; their bounds differ, so a grid
+  // fitted to each mesh rounds the shared vertices to different points.
+  const make = (withKit = false) => {
+    const ctx = newDoc();
+    const t = new Soup(4); const r = new Soup(4);
+    t.push(-9.0, 2.6, -9.1, -13.0, 2.3, -9.1, -10.7, 2.3, -9.1, 0, 255);
+    t.push(-40.2, 0, 3.3, 22.7, 0, 3.3, 22.7, 2.8, 3.3, 0, 255); // T's own extent
+    r.push(-9.0, 6.2, -9.1, -16.7, 5.9, -9.1, -13.0, 5.9, -9.1, 0, 1); // shares (-9.0, 2.6) and (-13.0, 2.3) at FFL 3.6
+    r.push(31.9, 3.6, -20.4, 31.9, 9.1, -20.4, 30.0, 9.1, -20.4, 0, 1); // R's own extent
+    ctx.scene.addChild(ctx.doc.createNode('typical').setMesh(buildMesh(ctx, 'typical', t)));
+    ctx.scene.addChild(ctx.doc.createNode('residual').setMesh(buildMesh(ctx, 'residual', r)));
+    if (withKit) {
+      const k = new Soup(1); k.push(0, 0, 0, 0.8, 0, 0, 0, 0.75, 0.8, 23, 0);
+      const kit = buildMesh(ctx, 'furniture_k', k);
+      for (const x of [1, 5]) ctx.scene.addChild(ctx.doc.createNode().setMesh(kit).setTranslation([x, 3.6, -2]));
+    }
+    return { ctx, t, r };
+  };
+  const seams = async (glb, t, r) => {
+    const nodes = new Map((await decodeGlb(glb)).map((n) => [n.name, n]));
+    return seamGaps({ builtT: t, builtR: r, decT: nodes.get('typical').soup, decR: nodes.get('residual').soup, typical: [[1, 3.6]], tol: 0.004 });
+  };
+
+  it('fitted per mesh, the vertices T and R share decode apart; on one lattice they coincide, and nothing else changes', async () => {
+    const before = make();
+    const loose = await seams(await encodeDoc(before.ctx, 16), before.t, before.r);
+    assert.equal(loose.shared, 2);
+    assert.ok(loose.apart === 2, `per-mesh grids: ${JSON.stringify(loose)}`);
+
+    const after = make();
+    const grid = interiorGrid(...docBounds(after.ctx), { bits: 16 });
+    const glb = await encodeDoc(after.ctx, 16, { grid });
+    const tight = await seams(glb, after.t, after.r);
+    assert.deepEqual([tight.shared, tight.apart, tight.missing, tight.first], [2, 0, 0, null]);
+    assert.ok(tight.maxApart < 1e-6, `${tight.maxApart} m: float32 decoding only`);
+    assert.equal((await validateGlb(glb)).errors, 0);
+    const doc = await readGlb(glb);
+    // The anchor is gone; both meshes carry the lattice's one origin and scale.
+    assert.deepEqual(doc.getRoot().listMeshes().map((m) => m.getName()).sort(), ['residual', 'typical']);
+    const nodes = doc.getRoot().listNodes();
+    assert.equal(new Set(nodes.map((n) => n.getScale().join())).size, 1);
+    assert.equal(new Set(nodes.map((n) => n.getTranslation().join())).size, 1);
+    for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(nodes[0].getTranslation()[k] - grid.origin[k]) < 1e-5);
+    assert.ok(Math.abs(nodes[0].getScale()[0] - grid.scale) < grid.scale * 1e-6);
+    // Deterministic, like every other file.
+    assert.deepEqual(Buffer.from(await encodeDoc(make().ctx, 16, { grid })), Buffer.from(glb));
+  });
+
+  it('quantises instanced kits on the lattice too, keeping each instance where it stood', async () => {
+    const { ctx } = make(true);
+    await instanceAll(ctx);
+    const grid = interiorGrid(...docBounds(ctx), { bits: 16 });
+    const glb = await encodeDoc(ctx, 16, { grid });
+    assert.equal((await validateGlb(glb)).errors, 0);
+    const kit = (await decodeGlb(glb)).find((n) => n.name === 'furniture_k');
+    assert.equal(kit.copies, 2);
+    const p = kit.soup.pos;
+    const firsts = [[p[0], p[1], p[2]], [p[9], p[10], p[11]]].sort((a, b) => a[0] - b[0]);
+    for (const [got, want] of [[firsts[0], [1, 3.6, -2]], [firsts[1], [5, 3.6, -2]]]) {
+      for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(got[k] - want[k]) <= grid.step, `${got} vs ${want}`);
+    }
+  });
+
+  it('refuses geometry the lattice does not cover', async () => {
+    const { ctx } = make();
+    await assert.rejects(encodeDoc(ctx, 16, { grid: { origin: [0, 0, 0], scale: 10 } }), /leaves the lattice's range/);
   });
 });
 

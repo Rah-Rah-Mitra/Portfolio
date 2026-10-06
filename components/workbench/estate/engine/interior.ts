@@ -49,7 +49,8 @@ import type { BuildingNode } from './scene';
 //     of S + k + 1 is outside the mask and stays as the top storey's ceiling.
 //     Not active: no mask, the interior hidden, F and D whole.
 //  5. Furniture: full kits within the tier's furniture radius of the camera,
-//     12-triangle boxes beyond, only for storeys in the band.
+//     their stand-ins (the pack's proxy_<kit>, 10–30 triangles) beyond, only
+//     for storeys in the band.
 //  6. The reserve: what the interior draws (triangles, draws), which detail
 //     selection books before any building (§7.4 per-frame budget, step 1).
 //

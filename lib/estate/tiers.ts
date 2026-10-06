@@ -22,7 +22,7 @@ export interface EstateTierRow {
   readonly bandK: number;
   /** Full-detail trees within this distance of the camera, crowns beyond; m. */
   readonly treeRadiusM: number;
-  /** Full furniture within this distance, 12-triangle proxies beyond; m. */
+  /** Full furniture within this distance, the pack's stand-ins (proxy_<kit>) beyond; m. */
   readonly furnitureRadiusM: number;
   /** Façade edge lines are drawn. */
   readonly edges: boolean;

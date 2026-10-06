@@ -6,6 +6,7 @@ import { EDGE_SLOT, GLASS_INTERIOR_SLOT, GLASS_SLOT, slotOf } from './palette.mj
 import { featureEdges } from './pure/edges.mjs';
 import { det3, multiply, openPoseYup, orientClosedSolids, surfaceErrorP90 } from './pure/geom.mjs';
 import { facePanelFromRooms, facePanelOut, mergePanels, midPlanePanel, openingPanel, panelCorners, panelsNearSoup, pushPanel } from './pure/panels.mjs';
+import { standInSoup } from './pure/proxy.mjs';
 import { Soup, concatSoups } from './pure/soup.mjs';
 import { bandIndex, canonicalTag, storeyList } from './pure/storeys.mjs';
 import { instanceStorey, majorityOwner, maskCoverage, tagByChunks } from './pure/tag.mjs';
@@ -30,18 +31,6 @@ const dominantSlot = (mesh) => {
     if (n > most) { most = n; best = prim.getMaterial()?.getName() ?? ''; }
   }
   return slotOf(best);
-};
-
-// A 12-triangle box over a local [min, max], outward-wound.
-const boxSoup = ([lo, hi], slot) => {
-  const s = new Soup(12);
-  const v = (i) => [i & 1 ? hi[0] : lo[0], i & 2 ? hi[1] : lo[1], i & 4 ? hi[2] : lo[2]];
-  const quads = [[0, 2, 3, 1], [4, 5, 7, 6], [0, 1, 5, 4], [2, 6, 7, 3], [0, 4, 6, 2], [1, 3, 7, 5]];
-  for (const [a, b, c, d] of quads) {
-    s.push(...v(a), ...v(b), ...v(c), slot, 0);
-    s.push(...v(a), ...v(c), ...v(d), slot, 0);
-  }
-  return s;
 };
 
 const splitGlass = (soup) => {
@@ -167,11 +156,13 @@ export const buildInterior = async (a, budgets) => {
     if (!kits.has(f.kit)) {
       const soup = meshSoup(f.mesh, {});
       const { opaque, glass } = splitGlass(soup);
-      const box = meshBox(f.mesh);
+      // The stand-in beyond the furniture radius follows the kit's height
+      // profile (pure/proxy.mjs): a tile top over a steel pedestal, not a crate.
+      const standIn = standInSoup(soup, { skip: (slot) => slot === GLASS_SLOT });
       kits.set(f.kit, {
         mesh: buildMesh(ctx, `furniture_${f.kit}`, opaque, glass),
-        proxy: buildMesh(ctx, `proxy_${f.kit}`, boxSoup(box, dominantSlot(f.mesh))),
-        tris: soup.count, instances: 0, source: f.mesh,
+        proxy: buildMesh(ctx, `proxy_${f.kit}`, standIn),
+        tris: soup.count, proxyTris: standIn.count, instances: 0, source: f.mesh,
       });
     } else if (kits.get(f.kit).source !== f.mesh) {
       throw new Error(`${id}: two different furniture meshes share the kit name ${f.kit}`);
@@ -219,11 +210,13 @@ export const buildInterior = async (a, budgets) => {
   return {
     ctx,
     batches,
+    // The built T (relative to its floor) and R, for the seam audit on the decoded file (quantcheck.mjs seamGaps).
+    built: { t: tSoup, r: rSoup },
     stats: {
       typicalTris: tSoup.count,
       residualTris: rSoup.count,
       specials,
-      furniture: [...kits].map(([kit, k]) => ({ kit, instances: k.instances, tris: k.tris, proxyTris: 12 })),
+      furniture: [...kits].map(([kit, k]) => ({ kit, instances: k.instances, tris: k.tris, proxyTris: k.proxyTris })),
       sourceTris, drawnTris,
       typical: split.typical.map((s) => storeys[s].tag),
       shares: Object.fromEntries(split.typical.map((s) => [storeys[s].tag, Number(split.shares.get(s).toFixed(4))])),

@@ -180,7 +180,7 @@ FFL this way and compares the boxes.
 | `s0/site` | `quadrant_<qx>_<qy>` ×4 (200 m); `tree_<species>` and `crown_<species>` batches | shelter glass is drawn opaque; `crown_<species>` is the far tree, 12 triangles (`crownTris`): an octahedron over the species' foliage box on a four-sided trunk stub from the bark box's foot to its top, inside the crown (`lib/pure/trees.mjs`) |
 | `f/<ID>` | `facade`: triangles (≤ 65,535 vertices per primitive) + one LINES primitive | shell + one panel per window on the glass's mid-plane spanning the whole window (the opening, not just the pane) and one per exterior door on the closed leaf's mid-plane, **every panel drawn from both sides** (4 triangles on the same 4 vertices): a window's front faces out of its flat in the façade-glass slot (11) and its back faces in, in the `glass-interior` slot (29); a door is its own slot both ways; every triangle and line carries its storey |
 | `d/<ID>` | one batch per kit, named after upstream's mesh (`L1_W-1800x800`, even when the batch spans L1–L16) | window frames (glass dropped: F's panel stands in) and whole exterior doors; instance attribute **`_STOREY`, u8 × 4, x = storey**; a kit's own `_META.z` is 0 (kits, furniture and trees take their storey per instance) |
-| `i/<ID>` | `typical`, `residual`, `special_<tag>`, `furniture_<kit>` / `proxy_<kit>` batches | `typical` is T **relative to its floor** (y = 0 at FFL), storey byte 255 and **no `_STOREY`** — the engine masks it per instance (its own storey list), not by `_meta.z`, and an InstancedMesh program reading `_STOREY` would get WebGL's default (L1); `residual` and specials are absolute with storey tags; glass is a separate `glass` primitive using the `glass-interior` slot; furniture carries `_STOREY` like D |
+| `i/<ID>` | `typical`, `residual`, `special_<tag>`, `furniture_<kit>` / `proxy_<kit>` batches | `typical` is T **relative to its floor** (y = 0 at FFL), storey byte 255 and **no `_STOREY`** — the engine masks it per instance (its own storey list), not by `_meta.z`, and an InstancedMesh program reading `_STOREY` would get WebGL's default (L1); `residual` and specials are absolute with storey tags; glass is a separate `glass` primitive using the `glass-interior` slot; furniture carries `_STOREY` like D, and `proxy_<kit>` is the kit's stand-in beyond the tier's furniture radius (10–30 triangles, below); every mesh of the file is quantised on **one lattice** (below) |
 
 `_STOREY` is four bytes, not one: gltf-transform 4.5.1 meshopt-encodes a 1-byte
 instance attribute with a 4-byte stride and writes no `bufferView.byteStride`,
@@ -295,6 +295,43 @@ refuse.
   storey but L1 and RF; the seed giving the most members wins; a member needs
   `|T| / |chunk| ≥ 0.93`. **T + R_s must equal chunk_s exactly** (multiset of
   keys) for every typical storey, checked on the geometry being written.
+- **One lattice per interior file** (`lib/pure/grid.mjs`). Where upstream
+  triangulates a face differently on some storeys (the wall over two flat windows
+  on BLK_509's L4–L11 is a fan from the room's top corner; L2, L3 and L12–L16
+  triangulate it another way), only part of the face is common to every typical storey:
+  that part is T, the rest R, and the two meshes share the face's inner edges.
+  Quantised the gltf-transform way — one grid fitted to each mesh's own bounds —
+  T (stored relative to its floor) and R (stored where it stands) rounded every
+  shared vertex to different points: on rc2b all 33,254 of them, 0.4–2.5 mm
+  apart, and the shared edges opened into the dotted line the P5 review saw at
+  BLK 509's L5 window heads, there whether F is drawn or not. Each I file is now
+  quantised on one lattice for all its meshes, kits included: origin on the
+  0.1 m pitch, step 0.1 m / n with n a multiple of 4 (the largest whose 16-bit
+  range still covers the file), so every FFL — upstream writes them on that
+  pitch, and the tool refuses a typical one that is not — is a whole number of
+  steps and T drawn at any typical floor lands on R's points. `encodeDoc`'s
+  `grid` pins quantize()'s `'scene'` volume with an unattached anchor mesh
+  (disposed before prune). The tool proves it on the decoded file: every plain
+  node one scale, every vertex on the lattice (T at each typical FFL), and
+  every vertex T and R_s share decoding to one point (`seamGaps` in
+  `lib/pure/quantcheck.mjs`, `report.json` `interior.seams`); a gap stops the
+  run. The step grows 2–12 % (BLK 509 1.94 → 2.08 mm) and the I files shrink
+  4–18 %. Nothing is dropped: the triangles, the T/R split and the decoded
+  T + R_s = chunk_s check are the same.
+- **Furniture stand-ins** (`lib/pure/proxy.mjs`). Beyond the tier's furniture
+  radius a kit is drawn as a stand-in that follows its height profile: the kit
+  is split at its main top surface (the height with the most upward-facing
+  area) into the slab under it (down to the nearest downward face, the top's own
+  underside), what rises above it, and what holds it up, one box each over its
+  own triangles' bounds, coloured by the slot with the most area in that layer.
+  Faces on the kit's floor and faces buried against the slab are left out. A
+  hawker table is a tile top over its steel pedestal (20 triangles), a stool
+  likewise (20), a stall counter a stainless top over its tile body (20), the
+  car park's bench a timber seat and backrest over its steel end frames (30), a
+  letterbox bank one box (10). The old stand-in — a 12-triangle box over the
+  whole kit in the slot with the most triangles — made the table a dark
+  full-height crate: the pedestal is 100 of its 112 triangles. `proxyTris` in
+  pack.json is the stand-in's own count.
 - **What a reader decodes**: every GLB is decoded again (meshopt, then each
   node's and instance's matrix) and every triangle must lie within one
   quantisation step (+0.1 mm) of a built one; T at each typical FFL plus R_s must
@@ -432,23 +469,27 @@ whole pack 2,139,868 B in 63 files).
 - **Downward open ground surfaces.** 1,435 SITE ground triangles belong to open
   surfaces and face down below grade; the tool turns them up (invisible either way).
 
-## For the release re-pack (the P5 review, 2026-10-06)
+## Fixed in the release pack (the P5 review's deferred items, 2026-10-06)
 
-Found on rc2b, left for the pack the release is cut from (each changes pack
-output, so the S1–S5 pins move with it):
-- **Furniture stand-ins take the legs' colour.** `buildInterior`
-  (`lib/building.mjs`) colours a kit's 12-triangle box by `dominantSlot()`,
-  which counts triangles, so a hawker table (top neutral-200, 8 vertices; legs
-  neutral-600, 52) becomes a dark full-height crate beyond the furniture
-  radius, beside full stools (each instance switches by its own centre). Colour
-  the box by the slot with the most upward-facing area, or give it a top in the
-  top's colour; optionally switch a table and its stools together.
-- **A dotted line at some flat window heads** (BLK 509 L5) is a sliver in the
-  interior geometry coplanar with the wall face: it stays with F hidden. Drop
-  glass coplanar with an opaque wall face, or flag such pairs in the checks.
+Found on rc2b and fixed in the tool before the release pack was cut (each
+changed only the I files, so S5 moved with it; see
+`tests/estate-budget.test.ts`):
+- **Furniture stand-ins took the legs' colour.** `buildInterior` coloured a
+  kit's 12-triangle box by the slot with the most triangles, so a hawker table
+  (a tile top of 12 triangles over a steel pedestal of 100) became a dark
+  full-height crate beyond the furniture radius. Now the profile stand-in above.
+- **A dotted line at some flat window heads** (BLK 509 L5, with F hidden). It
+  was not a sliver to drop: L5's chunk holds no glass coplanar with an opaque
+  face, and the wall's long thin triangles there are a valid fan with every
+  vertex shared. It was the T/R seam: the fan's triangles are R on some
+  storeys and T on others, and the two meshes' own quantisation grids put the
+  shared vertices up to 2.5 mm apart. Fixed by the one lattice above; nothing
+  is dropped and no geometry rule changed.
+
+Accepted, unchanged:
 - **Stair wells above the band are empty shafts**: stair flights and landings
   exist only in the interior file, so above S + k the well is open (0.04–0.29 %
-  of a floor). Accepted; `tests/estate-interior.test.ts` pins it at ≤ 0.3 %.
+  of a floor). `tests/estate-interior.test.ts` pins it at ≤ 0.3 %.
   Drawing the stair one storey beyond the band would need stair triangles
   tagged apart from their storey.
 

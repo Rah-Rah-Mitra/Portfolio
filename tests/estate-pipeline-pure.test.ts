@@ -20,7 +20,9 @@ import { featureEdges } from '../scripts/estate/lib/pure/edges.mjs';
 import { openPoseYup, orientClosedSolids, surfaceErrorP90, transformPoint } from '../scripts/estate/lib/pure/geom.mjs';
 import { doorsProblem, expandDoors, expandRooms, navDoor, packDoors, packRooms, roomsProblem, templateName } from '../scripts/estate/lib/pure/navjson.mjs';
 import { mergePanels, midPlanePanel, openingPanel, panelsNearSoup, pushPanel, triangleNearPanel } from '../scripts/estate/lib/pure/panels.mjs';
-import { coplanarPairs, matchMap, matchWithin, pairCoplanar, quantisationZFights } from '../scripts/estate/lib/pure/quantcheck.mjs';
+import { GRID_MULTIPLE, GRID_PITCH, interiorGrid, offLattice, offPitch } from '../scripts/estate/lib/pure/grid.mjs';
+import { kitProfile, standInSoup } from '../scripts/estate/lib/pure/proxy.mjs';
+import { coplanarPairs, matchMap, matchWithin, pairCoplanar, quantisationZFights, seamGaps } from '../scripts/estate/lib/pure/quantcheck.mjs';
 import { leakInPayload, packPathProblem } from '../scripts/estate/lib/pure/paths.mjs';
 import { Soup } from '../scripts/estate/lib/pure/soup.mjs';
 import { GROUND_NODATA, rasterGround, readGround, readWalkHeader, writeGround } from '../scripts/estate/lib/pure/sn5w.mjs';
@@ -608,6 +610,194 @@ describe('leak scan (step 15)', () => {
   it('every palette token is defined in index.css', () => {
     const css = readFileSync(path.join(__dirname, '..', 'index.css'), 'utf8');
     expect(checkTokens(JSON.parse(readFileSync(path.join(__dirname, '..', 'lib', 'estate', 'palette.json'), 'utf8')), css)).toEqual([]);
+  });
+});
+
+describe('the furniture stand-in (step 6d)', () => {
+  // NC_514's and MSCP_513's kits as upstream draws them (kit frame, glTF Y-up,
+  // y = 0 on the floor), boxes standing in for upstream's cylinders.
+  const TILE = slotOf('Homogeneous tile - wet area');
+  const STEEL = slotOf('Mild steel - painted');
+  const STAINLESS = slotOf('Stainless steel');
+  const TIMBER = slotOf('Timber door');
+  const GLASS = slotOf('Glass');
+  type Part = [number[], number[], number];
+  const kit = (parts: Part[]) => { const s = new Soup(64); for (const [lo, hi, slot] of parts) pushBox(s, lo, hi, slot); return s; };
+  // The pedestal in nine stacked pieces, so that — as upstream's 100-triangle
+  // cylinder against the top's 12 — the steel carries far more triangles than the tile.
+  const pedestal = (r: number, h: number): Part[] => Array.from({ length: 9 }, (_, i) => [[-r, (h * i) / 9, -r], [r, (h * (i + 1)) / 9, r], STEEL] as Part);
+  const table = kit([[[-0.4, 0.71, -0.4], [0.4, 0.75, 0.4], TILE], ...pedestal(0.06, 0.71)]);
+  const stool = kit([[[-0.17, 0.42, -0.17], [0.17, 0.46, 0.17], TILE], ...pedestal(0.04, 0.42)]);
+  const counter = kit([[[-0.75, 0, -0.3], [0.75, 0.85, 0.3], TILE], [[-0.75, 0.85, -0.3], [0.75, 0.9, 0.3], STAINLESS]]);
+  const bench = kit([
+    [[-0.84, 0, -0.2], [-0.76, 0.4, 0.2], STEEL], [[0.76, 0, -0.2], [0.84, 0.4, 0.2], STEEL],
+    [[-0.9, 0.4, -0.225], [0.9, 0.46, 0.225], TIMBER], [[-0.9, 0.46, -0.225], [0.9, 0.86, -0.175], TIMBER],
+  ]);
+  const letterbox = kit([[[-0.225, 0, -1.35], [0.225, 1.8, 1.35], STEEL]]);
+
+  const slots = (soup: InstanceType<typeof Soup>) => {
+    const m = new Map<number, number>();
+    for (let i = 0; i < soup.count; i += 1) m.set(soup.slot[i], (m.get(soup.slot[i]) ?? 0) + 1);
+    return Object.fromEntries([...m].sort((a, b) => a[0] - b[0]));
+  };
+  const tri = (soup: InstanceType<typeof Soup>, i: number) => {
+    const p = soup.pos; const o = i * 9;
+    const u = [p[o + 3] - p[o], p[o + 4] - p[o + 1], p[o + 5] - p[o + 2]];
+    const v = [p[o + 6] - p[o], p[o + 7] - p[o + 1], p[o + 8] - p[o + 2]];
+    const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    const c = [0, 1, 2].map((k) => (p[o + k] + p[o + 3 + k] + p[o + 6 + k]) / 3);
+    return { n, c, ys: [p[o + 1], p[o + 4], p[o + 7]] };
+  };
+
+  it('stands a hawker table as a tile top over a steel pedestal, not a steel crate: the top surface by area, not the slot with most triangles', () => {
+    // The steel holds 108 of the kit's 120 triangles (the old rule's colour) and a sliver of its upward area.
+    expect(slots(table)).toEqual({ [STEEL]: 108, [TILE]: 12 });
+    const profile = kitProfile(table)!;
+    expect(profile.top).toBeCloseTo(0.75, 9);
+    expect(profile.base).toBeCloseTo(0.71, 9);
+    expect(profile.layers.map((l: { name: string; slot: number; box: number[][] }) => [l.name, l.slot, l.box])).toEqual([
+      ['slab', TILE, [[-0.4, 0.71, -0.4], [0.4, 0.75, 0.4]]],
+      ['below', STEEL, [[-0.06, 0, -0.06], [0.06, 0.71, 0.06]]],
+    ]);
+    const s = standInSoup(table);
+    // The top whole (its underside shows from a seated eye), the pedestal's four sides: 12 + 8.
+    expect(s.count).toBe(20);
+    expect(slots(s)).toEqual({ [STEEL]: 8, [TILE]: 12 });
+    expect(s.bounds()).toEqual([[-0.4, 0, -0.4], [0.4, 0.75, 0.4]]);
+  });
+
+  it('gives the stool, the counter, the bench and the letterbox bank the profile they have', () => {
+    const named = (k: InstanceType<typeof Soup>) => kitProfile(k)!.layers.map((l: { name: string; slot: number; box: number[][] }) => [l.name, l.slot, l.box]);
+    expect(named(stool).map(([n, s]) => [n, s])).toEqual([['slab', TILE], ['below', STEEL]]);
+    expect(standInSoup(stool).count).toBe(20);
+    // The counter: a stainless top over a tile body of the same footprint — the slab's underside is buried, so is the body's top.
+    expect(named(counter)).toEqual([
+      ['slab', STAINLESS, [[-0.75, 0.85, -0.3], [0.75, 0.9, 0.3]]],
+      ['below', TILE, [[-0.75, 0, -0.3], [0.75, 0.85, 0.3]]],
+    ]);
+    expect(standInSoup(counter).count).toBe(10 + 8);
+    // The bench: a timber backrest above the seat, the seat, and the steel end frames' bounds below.
+    expect(named(bench)).toEqual([
+      ['above', TIMBER, [[-0.9, 0.46, -0.225], [0.9, 0.86, -0.175]]],
+      ['slab', TIMBER, [[-0.9, 0.4, -0.225], [0.9, 0.46, 0.225]]],
+      ['below', STEEL, [[-0.84, 0, -0.2], [0.84, 0.4, 0.2]]],
+    ]);
+    expect(standInSoup(bench).count).toBe(10 + 12 + 8);
+    // One material standing on the floor: one box, without the face on the floor.
+    expect(named(letterbox).map(([n, s]) => [n, s])).toEqual([['slab', STEEL]]);
+    expect(standInSoup(letterbox).count).toBe(10);
+  });
+
+  it('faces out of its own boxes, draws no face on the floor, and no two opposite faces on one plane', () => {
+    for (const k of [table, stool, counter, bench, letterbox]) {
+      const profile = kitProfile(k)!;
+      const s = standInSoup(k);
+      for (let i = 0; i < s.count; i += 1) {
+        const { n, c, ys } = tri(s, i);
+        const layer = profile.layers.find((l: { slot: number; box: number[][] }) => l.slot === s.slot[i] && [0, 1, 2].every((a) => c[a] >= l.box[0][a] - 1e-9 && c[a] <= l.box[1][a] + 1e-9))!;
+        const mid = [0, 1, 2].map((a) => (layer.box[0][a] + layer.box[1][a]) / 2);
+        expect(n[0] * (c[0] - mid[0]) + n[1] * (c[1] - mid[1]) + n[2] * (c[2] - mid[2]), `triangle ${i}`).toBeGreaterThan(0);
+        expect(Math.max(...ys) > 1e-9 || n[1] > 0, `triangle ${i} lies on the floor`).toBe(true);
+      }
+      // Opposite faces on one plane would fight in Plan, where interiors draw two-sided.
+      for (let i = 0; i < s.count; i += 1) for (let j = i + 1; j < s.count; j += 1) {
+        const a = tri(s, i); const b = tri(s, j);
+        const axis = [0, 1, 2].find((x) => Math.abs(a.n[x]) > 1e-12)!;
+        const facing = a.n[axis] * b.n[axis] < 0 && [0, 1, 2].every((x) => x === axis || (Math.abs(a.n[x]) < 1e-12 && Math.abs(b.n[x]) < 1e-12));
+        if (facing) expect(Math.abs(a.c[axis] - b.c[axis]), `${i}/${j}`).toBeGreaterThan(1e-9);
+      }
+    }
+  });
+
+  it('leaves glass out of the profile when asked, and an empty kit stands in for nothing', () => {
+    const lamp = kit([[[-0.2, 0.3, -0.2], [0.2, 0.32, 0.2], GLASS], ...pedestal(0.02, 0.3)]);
+    expect(Object.keys(slots(standInSoup(lamp, { skip: (slot: number) => slot === GLASS })))).toEqual([String(STEEL)]);
+    expect(kitProfile(new Soup(1))).toBeNull();
+    expect(standInSoup(new Soup(1)).count).toBe(0);
+  });
+});
+
+describe('one quantisation lattice per interior file (step 8)', () => {
+  // gltf-transform's quantize(): v = (x − offset) / scale stored as float32, then
+  // round(|v| × 32767) × sign(v) at 16 bits; a reader gets offset + scale × q / 32767.
+  const quantise = (x: number, offset: number, scale: number) => {
+    const v = Math.fround((x - offset) / scale);
+    return offset + (scale * Math.round(Math.abs(v) * 32767) * Math.sign(v)) / 32767;
+  };
+  // A volume as quantize() derives it from float32 points (a centre per axis, one scale: the largest half-extent).
+  const volumeOf = (pts: number[][]) => {
+    const lo = [0, 1, 2].map((k) => Math.min(...pts.map((p) => Math.fround(p[k]))));
+    const hi = [0, 1, 2].map((k) => Math.max(...pts.map((p) => Math.fround(p[k]))));
+    return { offset: [0, 1, 2].map((k) => (lo[k] + hi[k]) / 2), scale: Math.max(...[0, 1, 2].map((k) => (hi[k] - lo[k]) / 2)) };
+  };
+  const BLK_509_TYPICAL = [3.6, 6.4, 9.2, 12, 14.8, 17.6, 20.4, 23.2, 26, 28.8, 31.6, 34.4, 37.2, 40, 42.8];
+  // Seeded points on whole millimetres: T relative to its floor (one storey of walls).
+  let seed = 0x5eed;
+  const rand = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; };
+  const mm = (lo: number, hi: number) => Math.round((lo + rand() * (hi - lo)) * 1000) / 1000;
+  const shared = Array.from({ length: 400 }, () => [mm(-63, 62), mm(-0.2, 2.8), mm(-11, 9)]);
+
+  it('sits on the pitch with every FFL a whole number of steps, n a multiple of 4, as fine as 16 bits allow', () => {
+    const lo = [-63.05, -0.25, -11.2]; const hi = [63.15, 48.6, 9.4];
+    const g = interiorGrid(lo, hi);
+    expect(g.n % GRID_MULTIPLE).toBe(0);
+    expect(g.step).toBeCloseTo(GRID_PITCH / g.n, 15);
+    expect(g.scale).toBeCloseTo(g.step * 32767, 9);
+    for (const o of g.origin) expect(Math.abs(o / GRID_PITCH - Math.round(o / GRID_PITCH))).toBeLessThan(1e-9);
+    for (let k = 0; k < 3; k += 1) { expect(g.origin[k] - g.scale).toBeLessThan(lo[k]); expect(g.origin[k] + g.scale).toBeGreaterThan(hi[k]); }
+    // The next multiple of 4 would no longer cover the box: as fine as it can be.
+    const finer = (GRID_PITCH / (g.n + GRID_MULTIPLE)) * 32767;
+    expect([0, 1, 2].some((k) => g.origin[k] - finer > lo[k] || g.origin[k] + finer < hi[k])).toBe(true);
+    for (const ffl of BLK_509_TYPICAL) expect(Math.abs(ffl / g.step - Math.round(ffl / g.step))).toBeLessThan(1e-6);
+    expect(() => interiorGrid([0, 0, 0], [1e4, 1, 1])).toThrow(/does not fit/);
+    expect(offPitch([3.6, 12, 4.25])).toEqual([4.25]);
+  });
+
+  it('decodes T, placed at every typical floor, onto R’s own points; fitted per mesh, the shared vertices landed apart', () => {
+    const rPts: number[][] = [];
+    for (const ffl of BLK_509_TYPICAL) for (const p of shared.slice(0, 40)) rPts.push([p[0], p[1] + ffl, p[2]]);
+    rPts.push([-63.05, 48.6, -11.2], [63.15, 0, 9.4]); // R's own extent (a roof plant room, a far corner)
+    // The old way: one volume per mesh.
+    const vt = volumeOf(shared); const vr = volumeOf(rPts);
+    let apartBefore = 0;
+    for (const ffl of BLK_509_TYPICAL) for (const p of shared.slice(0, 40)) {
+      const t = [0, 1, 2].map((k) => quantise(p[k], vt.offset[k], vt.scale) + (k === 1 ? ffl : 0));
+      const r = [0, 1, 2].map((k) => quantise(p[k] + (k === 1 ? ffl : 0), vr.offset[k], vr.scale));
+      if (Math.hypot(t[0] - r[0], t[1] - r[1], t[2] - r[2]) > 1e-5) apartBefore += 1;
+    }
+    expect(apartBefore).toBeGreaterThan(0.9 * 40 * BLK_509_TYPICAL.length);
+    // The lattice: one volume, pinned by its anchor's float32 corners as encodeDoc writes them.
+    const all = [...shared, ...rPts];
+    const lo = [0, 1, 2].map((k) => Math.min(...all.map((p) => p[k])));
+    const hi = [0, 1, 2].map((k) => Math.max(...all.map((p) => p[k])));
+    const g = interiorGrid(lo, hi);
+    const v = volumeOf([g.origin.map((o: number) => o - g.scale), g.origin.map((o: number) => o + g.scale)]);
+    let apart = 0; let worst = 0;
+    for (const ffl of BLK_509_TYPICAL) for (const p of shared) {
+      const t = [0, 1, 2].map((k) => quantise(p[k], v.offset[k], v.scale) + (k === 1 ? ffl : 0));
+      const r = [0, 1, 2].map((k) => quantise(p[k] + (k === 1 ? ffl : 0), v.offset[k], v.scale));
+      const d = Math.hypot(t[0] - r[0], t[1] - r[1], t[2] - r[2]);
+      worst = Math.max(worst, d);
+      if (d > 1e-5) apart += 1;
+      expect(offLattice(g, t[0], t[1], t[2])).toBeLessThan(0.01);
+    }
+    expect(apart).toBe(0);
+    expect(worst).toBeLessThan(1e-5);
+  });
+
+  it('seamGaps counts every vertex T and R share, and each that decodes apart', () => {
+    const builtT = new Soup(1); builtT.push(0, 0, 0, 1, 0, 0, 0, 2.6, 0, 0, 255);
+    const builtR = new Soup(2);
+    builtR.push(1, 3.6, 0, 3, 3.6, 0, 0, 6.2, 0, 0, 1); // shares (1, 0, 0) and (0, 2.6, 0) with T at 3.6
+    builtR.push(9, 9, 9, 9, 9.5, 9, 9.5, 9, 9, 0, 2); // another storey: not compared at 3.6
+    const run = (decR: InstanceType<typeof Soup>) => seamGaps({ builtT, builtR, decT: builtT, decR, typical: [[1, 3.6]], tol: 0.003 });
+    expect(run(builtR)).toEqual({ shared: 2, apart: 0, missing: 0, maxApart: 0, first: null });
+    const off = new Soup(2); off.append(builtR); off.pos[0] += 0.001;
+    const r = run(off);
+    expect([r.shared, r.apart, r.missing]).toEqual([2, 1, 0]);
+    expect(r.first).toMatch(/1\.000 mm apart/);
+    const gone = new Soup(2); gone.append(builtR); gone.pos[0] += 0.01;
+    expect(run(gone).missing).toBe(1);
   });
 });
 

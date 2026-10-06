@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   FEET_OMEGA, WALK_BAND_PAD, WALK_BLOCKED, WALK_HEADER_BYTES, WALK_LAYER_BYTES, WALK_LRU, WALK_MAX_SUBSTEPS,
@@ -7,14 +9,15 @@ import {
 } from '../lib/estate/walk';
 import { ESTATE_SITE_STOREYS, ESTATE_STOREY_FFL, type EstateSiteId } from '../lib/estate/ids';
 
-// SN5W v1 is the contract between Bonsai-Estate's estate/web/walk.py and this
-// decoder (plan §5.2). Upstream's golden tests/fixtures/web/sn5w_sample.bin has
-// not been published yet, so the files below come from a writer kept HERE, in
-// the test, written from the plan's byte table and nothing else: the runtime
-// module stays decode-only. When the golden file lands, the it.todo under rasters
-// becomes the authority and this writer must agree with it byte for byte.
+// SN5W v1 is the contract between Bonsai-Estate's estate/web/sn5w.py and this
+// decoder (plan §5.2). The authority is upstream's golden file,
+// tests/fixtures/web/sn5w_sample.bin, copied byte for byte to
+// tests/fixtures/estate/sn5w_sample.bin and decoded field by field below as
+// upstream's tests/test_web.py does. The other files come from a writer kept
+// HERE, in the test (the runtime module stays decode-only), which must reproduce
+// the golden file byte for byte from the same sample grid.
 
-// ---- a writer, from the plan's table ---------------------------------------------
+// ---- a writer, upstream's layout ---------------------------------------------------
 
 type Mode = 'raw' | 'delta' | 'same';
 interface EncLayer {
@@ -67,6 +70,8 @@ const encodeWalk = (spec: EncSpec): ArrayBuffer => {
   dv.setUint16(34, ref, true);
   let cursor = tableEnd;
   const refHeights = layers[ref].heights!;
+  // Layer by layer, each layer's raster and then its overflow records: the
+  // order upstream writes (the golden file pins it).
   layers.forEach((layer, i) => {
     const at = WALK_HEADER_BYTES + WALK_LAYER_BYTES * i;
     for (let k = 0; k < layer.tag.length; k += 1) u8[at + k] = layer.tag.charCodeAt(k);
@@ -82,9 +87,6 @@ const encodeWalk = (spec: EncSpec): ArrayBuffer => {
       for (let c = 0; c < cells; c += 1) dv.setInt16(cursor + 2 * c, stored[c], true);
       cursor += cells * 2;
     }
-  });
-  layers.forEach((layer, i) => {
-    const at = WALK_HEADER_BYTES + WALK_LAYER_BYTES * i;
     const records = [...(layer.overflow ?? [])];
     if (layer.sortOverflow !== false) records.sort((a, b) => a[1] - b[1] || a[0] - b[0] || a[2] - b[2]);
     dv.setUint32(at + 20, records.length, true);
@@ -307,8 +309,128 @@ describe('SN5W v1 rasters', () => {
     expect(Array.from(walk.grid(2))).toEqual(Array.from(L3));
     expect(walk.decodeCount).toBe(5);
   });
+});
 
-  it.todo('decodes upstream tests/fixtures/web/sn5w_sample.bin (the golden file, when published) exactly');
+// ---- upstream's golden file --------------------------------------------------------
+
+// Bonsai-Estate tests/fixtures/web/sn5w_sample.bin (304 B, sha256 37456f6f…),
+// copied unchanged; .gitattributes keeps tests/fixtures/estate/** binary. Its
+// grid is test_web.py's sample_grid(): 4 × 3 cells of 0.2 m (the coarse
+// fallback flag set, so a reader must take the cell from the header), corner
+// of cell (0, 0) at block-local (−1.25, 2.5), four storeys, reference L2.
+describe("upstream's golden SN5W file (Bonsai-Estate tests/fixtures/web/sn5w_sample.bin)", () => {
+  const bytes = readFileSync(path.join(__dirname, 'fixtures', 'estate', 'sn5w_sample.bin'));
+  const golden = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  const G_L1 = [0, 10, 5, -100, -120, B, 175, B, B, B, 350, 1200];
+  const G_REF = [0, 0, 5, B, -120, 0, 175, B, B, B, 350, 1200];
+  const GOLDEN_SPEC: EncSpec = {
+    flags: 3, cell: 0.2, radius: 0.2, step: 0.4, origin: [-1.25, 2.5], nx: 4, ny: 3, ref: 1,
+    layers: [
+      { tag: 'L1', ffl: 0, mode: 'delta', heights: G_L1, overflow: [[2, 1, 2400], [0, 0, 2800]] },
+      { tag: 'L2', ffl: 3.5, heights: G_REF, overflow: [[1, 0, 2400], [1, 0, -250]] },
+      { tag: 'L12', ffl: 6.25, heights: new Array<number>(12).fill(B) },
+      { tag: 'RF', ffl: 9, mode: 'same', overflow: [[0, 2, 2000]] },
+    ],
+  };
+
+  it('is the sample grid as this file\'s writer encodes it, byte for byte (test_golden_file)', () => {
+    expect(golden.byteLength).toBe(304);
+    expect(Array.from(new Uint8Array(encodeWalk(GOLDEN_SPEC)))).toEqual(Array.from(new Uint8Array(golden)));
+  });
+
+  it('holds every field where the format puts it (test_layout_byte_for_byte)', () => {
+    const dv = new DataView(golden);
+    const u8 = new Uint8Array(golden);
+    const text = (o: number, n: number) => String.fromCharCode(...u8.subarray(o, o + n));
+    const i16s = (o: number, n: number) => Array.from({ length: n }, (_, k) => dv.getInt16(o + 2 * k, true));
+    expect(text(0, 4)).toBe('SN5W');
+    expect([dv.getUint16(4, true), dv.getUint16(6, true)]).toEqual([1, 3]); // version 1; flags: delta, coarse
+    const f = (o: number) => dv.getFloat32(o, true);
+    expect([f(20), f(24)]).toEqual([-1.25, 2.5]); // origin, exact in f32
+    expect([f(8), f(12), f(16)].map((v) => Number(v.toFixed(6)))).toEqual([0.2, 0.2, 0.4]); // cell, radius, step
+    expect([28, 30, 32, 34].map((o) => dv.getUint16(o, true))).toEqual([4, 3, 4, 1]); // nx, ny, layers, ref
+    expect(Array.from(u8.subarray(36, 64))).toEqual(new Array<number>(28).fill(0));
+    // Layer table, 32 B each: tag, f32 FFL, u8 mode, u8 + u16 reserved, raster offset and
+    // length, overflow count and offset, u32 reserved. RF (same) has no raster.
+    const table = [0, 1, 2, 3].map((i) => {
+      const at = WALK_HEADER_BYTES + WALK_LAYER_BYTES * i;
+      return [text(at, 4), f(at + 4), u8[at + 8], u8[at + 9], dv.getUint16(at + 10, true),
+        ...[12, 16, 20, 24, 28].map((o) => dv.getUint32(at + o, true))];
+    });
+    expect(table).toEqual([
+      ['L1\0\0', 0, 1, 0, 0, 192, 24, 2, 216, 0],
+      ['L2\0\0', 3.5, 0, 0, 0, 232, 24, 2, 256, 0],
+      ['L12\0', 6.25, 0, 0, 0, 272, 24, 0, 0, 0],
+      ['RF\0\0', 9, 2, 0, 0, 0, 0, 1, 296, 0],
+    ]);
+    // L1 is stored as (L1 − L2) mod 2^16: 32669 is −100 − 32767 wrapped, 32767 is
+    // 32767 − 0 (blocked over a walkable reference cell).
+    expect(i16s(192, 12)).toEqual([0, 10, 0, 32669, 0, 32767, 0, 0, 0, 0, 0, 0]);
+    expect(i16s(232, 12)).toEqual(G_REF);
+    expect(i16s(272, 12)).toEqual(new Array<number>(12).fill(B));
+    // Overflow records <u16 ix, u16 iy, i16 mm, u16 reserved>, sorted by (iy, ix, mm).
+    expect([216, 224, 256, 264, 296].map((o) => [dv.getUint16(o, true), dv.getUint16(o + 2, true), dv.getInt16(o + 4, true), dv.getUint16(o + 6, true)]))
+      .toEqual([[0, 0, 2800, 0], [2, 1, 2400, 0], [1, 0, -250, 0], [1, 0, 2400, 0], [0, 2, 2000, 0]]);
+  });
+
+  it('decodes to the sample grid, the delta wrap through the blocked value included (test_round_trip)', () => {
+    const walk = decodeWalk(golden);
+    expect(walk.header).toEqual({
+      version: 1, flags: 3, deltaLayers: true, coarse: true,
+      cell: 0.2, radius: 0.2, step: 0.4, originX: -1.25, originY: 2.5, nx: 4, ny: 3, refLayer: 1,
+    });
+    expect(walk.layers.map((l) => [l.tag, l.ffl, l.mode])).toEqual([
+      ['L1', 0, 'delta'], ['L2', 3.5, 'raw'], ['L12', 6.25, 'raw'], ['RF', 9, 'same'],
+    ]);
+    // −100 over a blocked reference cell and blocked over a walkable one: this
+    // decoder's reading of "value − ref, wrapping" is upstream's.
+    expect(Array.from(walk.grid(0))).toEqual(G_L1);
+    expect(Array.from(walk.grid(1))).toEqual(G_REF);
+    expect(Array.from(walk.grid(2))).toEqual(new Array<number>(12).fill(B));
+    expect(walk.grid(3)).toBe(walk.grid(1));
+    // Overflow as (cell key iy·nx + ix, mm), sorted by (iy, ix, mm).
+    expect(walk.layers.map((l) => [Array.from(l.overflowKeys), Array.from(l.overflowMm)])).toEqual([
+      [[0, 6], [2800, 2400]], [[1, 1], [-250, 2400]], [[], []], [[8], [2000]],
+    ]);
+    // Bands, in whole mm: storey s owns FFL_s − 250 ≤ floor < FFL_s+1 − 250 (L2's
+    // −250 sits on its lower edge), the lowest everything below, RF everything above.
+    expect(walk.layers.map((l) => [l.bandLo, l.bandHi])).toEqual([[-Infinity, 3.25], [3.25, 6], [6, 8.75], [8.75, Infinity]]);
+    const outside: string[] = [];
+    walk.layers.forEach((layer, i) => {
+      const ffl = Math.round(layer.ffl * 1000);
+      const lo = i === 0 ? -Infinity : ffl - 250;
+      const hi = i + 1 < walk.layers.length ? Math.round(walk.layers[i + 1].ffl * 1000) - 250 : Infinity;
+      for (const mm of [...Array.from(walk.grid(i)).filter((v) => v !== B), ...Array.from(layer.overflowMm)]) {
+        if (!(lo <= ffl + mm && ffl + mm < hi)) outside.push(`${layer.tag} ${mm}`);
+      }
+    });
+    expect(outside).toEqual([]);
+  });
+
+  it('answers floorAt and nearestWalkable as upstream\'s walkcheck reading does (test_floor_at_and_nearest)', () => {
+    const walk = decodeWalk(golden);
+    const hit: FloorHit = { z: NaN, layer: -1 };
+    // Cell (1, 0): L1 0.01; L2 3.5, 3.25 and 5.9; RF 9.0.
+    const x = -0.95, y = 2.6;
+    expect(floorAt(walk, x, y, 0.3, hit)).toBeCloseTo(0.01, 12);
+    expect(hit.layer).toBe(0);
+    expect(floorAt(walk, x, y, 3.4, hit)).toBeCloseTo(3.5, 12);
+    expect(hit.layer).toBe(1);
+    expect(floorAt(walk, x, y, 3.375, hit)).toBeCloseTo(3.5, 12); // 3.25 and 3.5 equally far: the higher
+    expect(hit.layer).toBe(1);
+    expect(floorAt(walk, x, y, 1.0)).toBeNull();
+    expect(floorAt(walk, -2.0, y, 0)).toBeNull(); // off the grid
+    // The cell is floor((x − origin) / cell) with the header's cell, 0.2 m here.
+    expect(floorAt(walk, -1.25 + 0.2 - 1e-9, 2.55, 0)).toBe(0);
+    expect(floorAt(walk, -1.25 + 0.2 + 1e-9, 2.55, 0)).toBeCloseTo(0.01, 12);
+    const out: WalkPose = pose(NaN, NaN);
+    expect(nearestWalkable(walk, x, y, 0, 0.25, out)).toBe(true);
+    expect([out.x, out.y]).toEqual([x, y]);
+    // Cell (1, 1) has no L1 floor; the centre of (1, 0) is the nearest that has one.
+    expect(nearestWalkable(walk, -0.95, 2.78, 0, 0.25, out)).toBe(true);
+    expect([out.x, out.y, out.z, out.layer].map((v) => Number(v.toFixed(6)))).toEqual([-0.95, 2.6, 0.01, 0]);
+    expect(nearestWalkable(walk, -0.95, 2.78, 0, 0.15, out)).toBe(false);
+  });
 });
 
 describe('SN5W v1 rejects what is not the format', () => {
@@ -351,8 +473,11 @@ describe('SN5W v1 rejects what is not the format', () => {
     // Without overflow the last raster ends the file; cut its last byte.
     const plain = encodeWalk({ nx: 3, ny: 2, layers: [{ tag: 'L1', ffl: 0, heights: fill(3, 2, 0) }] });
     formatError(() => decodeWalk(plain.slice(0, plain.byteLength - 1)), table(0) + 12);
-    // The overflow block runs past the end.
-    formatError(() => decodeWalk(sample.slice(0, sample.byteLength - 1)), table(2) + 24);
+    // RF's raster ends the sample; cut its last byte.
+    formatError(() => decodeWalk(sample.slice(0, sample.byteLength - 1)), table(4) + 12);
+    // A layer's overflow records follow its raster; the block runs past the end.
+    const tail = encodeWalk({ nx: 3, ny: 2, layers: [{ tag: 'L1', ffl: 0, heights: fill(3, 2, 0), overflow: [[1, 1, 100]] }] });
+    formatError(() => decodeWalk(tail.slice(0, tail.byteLength - 1)), table(0) + 24);
   });
 
   it('rejects overflow records off the grid, blocked or out of order', () => {

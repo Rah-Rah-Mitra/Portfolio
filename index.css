@@ -208,8 +208,12 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-rail-desk:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
 
 /* desk */
+/* isolation: every focus raises a window with ++z and nothing caps it, so without
+   its own stacking context a window passes the AI/FX docks (70) after a few
+   raises and the panel backdrop (85) after a few more. Contained here, window
+   z-indexes only order windows against each other. */
 .wb-desk {
-  flex: 1; position: relative; overflow: hidden; background-color: var(--color-bg);
+  flex: 1; position: relative; overflow: hidden; isolation: isolate; background-color: var(--color-bg);
   background-image:
     repeating-linear-gradient(0deg, rgba(29, 31, 32, 0.045) 0 1px, transparent 1px 24px),
     repeating-linear-gradient(90deg, rgba(29, 31, 32, 0.045) 0 1px, transparent 1px 24px),

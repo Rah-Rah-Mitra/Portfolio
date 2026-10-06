@@ -12,8 +12,8 @@ import { gzipSync } from 'node:zlib';
 // and its slow and failed interiors (13). P6's Plan (18: Blk 509 L5 from the
 // Overview strip, rooms cycled, the cut moved, walked into; 19: Esc leaves
 // Plan and the selection together), the assistant's focusEstate on the local
-// fallback (20) and the phone registry's Estate row (10). Context loss (9)
-// lands with P7.
+// fallback (20) and the phone registry's Estate row (10). P7's context loss
+// and the GPU claim (9), and release-and-reopen held to its plan wording (14).
 //
 // The tour moves with the HUD's step buttons (half a metre, 15°): they are
 // discrete, so a route of presses lands in the same place every run, where a
@@ -26,7 +26,9 @@ import { gzipSync } from 'node:zlib';
 // it picks for SwiftShader unasked; the caps checked are the top tier's (§7.11),
 // so a pass here says nothing about speed — only that the counts stay in bounds.
 
-const ENGINE_CHUNKS = /\/assets\/(?:estate-engine|EstateHud|announce)-[\w-]+\.js$/;
+// The Load click's chunks (the engine, its HUD and their shared chunk, vite.config.ts)
+// and the bench's, which only ?estate-bench=1 ever requests.
+const ENGINE_CHUNKS = /\/assets\/(?:estate-engine|estate-shared|estate-bench|EstateHud)-[\w-]+\.js$/;
 const ESTATE_FILES = /^\/estate\//;
 const LIVE_TIMEOUT = 30_000;
 
@@ -102,6 +104,18 @@ const enterFromRegistry = async (page: Page, name: RegExp, inside: RegExp) => {
   await expect(chip(page)).toHaveText(inside, { timeout: LIVE_TIMEOUT });
   await expect.poll(() => hud(page).getAttribute('data-flight')).toBeNull();
   await expect(page.locator('[data-estate-strip="walk"]')).toBeVisible({ timeout: LIVE_TIMEOUT });
+};
+
+/** Every value #world's data-estate-phase takes from now on, in order. */
+const watchPhases = async (page: Page): Promise<string[]> => {
+  const phases: string[] = [];
+  await page.exposeFunction('__estatePhase', (value: string) => { phases.push(value); });
+  await page.evaluate(() => {
+    const world = document.getElementById('world')!;
+    new MutationObserver(() => (window as Window & { __estatePhase?: (v: string) => void }).__estatePhase?.(world.dataset.estatePhase ?? ''))
+      .observe(world, { attributes: true, attributeFilter: ['data-estate-phase'] });
+  });
+  return phases;
 };
 
 /** Settled: nothing in flight, and the readouts written since. */
@@ -319,25 +333,59 @@ test.describe('estate window — live 3D view', () => {
     expect(errors).toEqual([]);
   });
 
+  test('9 · a lost GPU context is restored and goes live again; with FX smoke on, the backdrop yields while the Estate holds the GPU', async ({ page }) => {
+    const errors = collectErrors(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    await settle(page);
+    const phases = await watchPhases(page);
+    const tris = await readout(page, 'tris');
+
+    // A driver reset, as WEBGL_lose_context stages one: lost, then restored from the CPU copies.
+    await page.evaluate(() => {
+      const gl = document.querySelector<HTMLCanvasElement>('canvas[data-estate-canvas]')!.getContext('webgl2')!;
+      const lose = gl.getExtension('WEBGL_lose_context')!;
+      (window as Window & { __estateLose?: WEBGL_lose_context }).__estateLose = lose;
+      lose.loseContext();
+    });
+    await expect(phase(page)).toHaveAttribute('data-estate-phase', 'lost');
+    await page.waitForTimeout(500);
+    await page.evaluate(() => (window as Window & { __estateLose?: WEBGL_lose_context }).__estateLose!.restoreContext());
+    await expect(phase(page)).toHaveAttribute('data-estate-phase', 'live', { timeout: 15_000 });
+    // The same canvas, redrawn: one live reset is not two, so it never latched unavailable.
+    await expect(page.locator('canvas[data-estate-canvas]')).toHaveCount(1);
+    await expect.poll(() => readout(page, 'tris'), { timeout: 15_000 }).toBe(tris);
+    expect(phases).toEqual(['lost', 'live']);
+
+    // The FX smoke on: while the Estate is live, focused and under no panel, it holds the GPU and the smoke yields.
+    await page.getByRole('button', { name: 'FX, open optional effects lab' }).click();
+    const fx = page.getByRole('dialog', { name: 'Effects lab' });
+    await fx.getByRole('button', { name: /^Fluid smoke/ }).click();
+    const smoke = page.locator('.wb-backdrop-caption [data-backdrop-state]');
+    // The FX panel's backdrop over the desk releases the claim: the smoke runs.
+    await expect(smoke).toHaveAttribute('data-backdrop-state', 'running', { timeout: 15_000 });
+    await fx.getByRole('button', { name: 'Close' }).click();
+    await expect(win).toHaveAttribute('data-focused');
+    await expect(page.locator('[data-backdrop-state="yielded"]')).toHaveCount(1);
+    await expect(smoke).toContainText('HELD · ESTATE');
+    expect(errors).toEqual([]);
+  });
+
   test('14 · closed past its release hold, it disposes and comes back live on reopen', async ({ page }) => {
     const errors = collectErrors(page);
     const win = await openEstate(page, '?estate-quality=min&estate-release-ms=1000');
     await waitLive(page);
-    const phases: string[] = [];
-    await page.exposeFunction('__estatePhase', (value: string) => { phases.push(value); });
-    await page.evaluate(() => {
-      const world = document.getElementById('world')!;
-      new MutationObserver(() => (window as Window & { __estatePhase?: (v: string) => void }).__estatePhase?.(world.dataset.estatePhase ?? ''))
-        .observe(world, { attributes: true, attributeFilter: ['data-estate-phase'] });
-    });
+    const phases = await watchPhases(page);
     await page.getByRole('button', { name: 'Close Estate' }).click();
     await expect(win).toBeHidden();
     await expect(phase(page)).toHaveAttribute('data-estate-phase', 'frozen');
     await expect(page.locator('canvas[data-estate-canvas]')).toHaveCount(1);
-    // Past the hold the instance is released, and its canvas goes with it.
-    await expect(page.locator('canvas[data-estate-canvas]')).toHaveCount(0, { timeout: 5_000 });
+    // Closed 2 s, twice the 1 s hold: the instance is released, and its canvas goes with it.
+    await page.waitForTimeout(2_000);
+    await expect(page.locator('canvas[data-estate-canvas]')).toHaveCount(0);
     await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
     await expect(phase(page)).toHaveAttribute('data-estate-phase', 'live', { timeout: 10_000 });
+    await expect(page.locator('canvas[data-estate-canvas]')).toHaveCount(1);
     expect(phases).not.toContain('unavailable');
     expect(errors).toEqual([]);
   });

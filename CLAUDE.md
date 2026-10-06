@@ -216,8 +216,16 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        frames and probes back up. A window over half dropped closes after 1 s and
        20 frames instead of 2 s and 60 (once a calibration less than 10 s old says
        the scene, not the display, is slow); a pixel-ratio notch's buffer
-       reallocation waits for the first frame without motion (2 s at most), and
-       the calibration burst never runs under the visitor's hand. A boxless host
+       reallocation waits for the first frame without motion (2 s at most), then
+       for the GPU to drain (`engine/drain.ts`: a fence after the last frame, no
+       frames meanwhile, its status read between tasks): resizing a canvas makes
+       the browser wait on the main thread for every frame still queued, which on
+       SwiftShader was the notch's whole 72–402 ms long task, against 3–5 ms for
+       the same resize of a drained GPU. Never "fix" it with a `getParameter`:
+       every such read is the same wait. Without KHR_parallel_shader_compile
+       (SwiftShader) warm-up links each program in its idle slot (`getUniforms()`),
+       or three links it at its first draw, a 150 ms task mid-walk. The
+       calibration burst never runs under the visitor's hand. A boxless host
        (a closed window is `display:none`) keeps its last size, and `resume()`
        reads the size synchronously, so a reopen never draws at 1 × 1. The
        site's quadrants and trees have one material each (one may never serve a
@@ -411,14 +419,34 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        restyled the stage subtree, 3.4 ms a frame). `?estate-debug=1` adds the
        stats row. Its CSS is the `.wb-estate-hud*` block in `index.css`.
      Test seams: `?estate-quality=` and `?estate-release-ms=` (100 ms–30 s; only
-     ever shortens the 30 s release hold). `?estate-bench=1` turns on the debug
-     readouts only; the benchmark route is P7.
+     ever shortens the 30 s release hold).
+     **`?estate-bench=1`** (P7, plan §12.4) turns on the debug readouts and,
+     once live, runs the benchmark route by itself: `engine/bench.ts`, a chunk
+     of its own (`estate-bench-<hash>.js`) that `engine/index.ts` imports only
+     when the shell passed `bench`, so no visitor downloads it (never import it
+     statically; `tests/estate-bench.test.ts` checks). It drives the public
+     engine handle — S1 → an orbit sweep → BS1 → Enter Blk 509 → stair 5 to L2 →
+     the strip's lift to L5 → Plan L5 → walk into #05-105 → L12 → Esc → fly to
+     NC 514 → the hall → the car park's ramps L1 → L3, plus a 16 s
+     `bs1-recovery` leg — starting each walked leg from a named spawn
+     (`walkFrom`) so window size cannot change the route, and logs one JSON
+     report to `window.__estateBench` and the console: per segment dropped %
+     (the governor's own rule), interval p50/p99, CPU and GPU p95, draws,
+     triangles, GPU MB with the buffer, /estate/ bytes and requests, long tasks
+     (Chrome), long animation frames with their script, frame gaps over 50 ms
+     (Firefox's stand-in), programs and governor changes; and a verdict
+     (`lib/estate/bench.ts`: ≤ 2 changes a segment, 0 requests on stairs and
+     lifts). The render core feeds it through `core.probe` (null otherwise).
+     SwiftShader numbers are software-rendering numbers: the route, the byte
+     and governor checks hold there; the timings are for real GPUs.
   The GPU claim (`lib/gpuClaim.ts`, event `portfolio:gpu-claim`): while live,
   focused and under no `.panel-backdrop`, the controller holds
   `claimGpu('estate')`, and a mounted desk backdrop yields — it keeps its context
   and last frame, stops animating, and reads "HELD · ESTATE"
   (`desktopBackgroundPolicy` reason `yielded`, checked last, just before
-  `running`).
+  `running`). Each instance that goes live sends one `estate_live` analytics
+  event (`lib/analytics.ts`: tier, MSAA, ms from start() to live, lean,
+  resumed) from the controller chunk; the main bundle pays 8 B for it.
   The pack (`public/estate/v1.2/`, raw-content-hashed immutable names; P4b loads
   `poster`, `s0`, `f` and `d`, P5 adds `i`, `w`, `nav` and `ground`) comes only from the pack tool (see the
   Bonsai-Estate section). Until the v1.2 release is published, the window runs on
@@ -438,11 +466,13 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   interior, walk and nav file), checked by estate:check and
   `tests/estate-pack.test.ts`: the P5 real-data suites skip without them, so
   the gate is what fails. The engine pins are a tripwire at measured + 5 %
-  (942,000 / 265,000 B after P5; P6 measured 903,573 B for the engine chunk and
-  263,316 B gzip for the Load click, inside both); the plan's 950,000 / 307,200 B
-  are the hard ceiling. The chunk the engine shares with its HUD is named
+  (942,000 B for the engine chunk since P5, which measures 905,212 B after P7;
+  278,000 B gzip for the Load click since P7, which measures 263,917 B); the
+  plan's 950,000 / 307,200 B are the hard ceiling. The chunk the engine shares with its HUD is named
   `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
-  whichever pure module it lists first).
+  whichever pure module it lists first), and the engine chunk is found by the
+  module it holds, not by its facade, which Rollup drops once the bench chunk
+  imports from it. Main bundle after P7: 508,088 / 508,834 B.
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
   `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
   a focused HUD button, and the touch stick), the Estate cases in
@@ -473,7 +503,12 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   six programs, a clean axe scan, Enter walking into the bedroom with nothing of
   Blk 509 fetched again; 19: Esc out of Plan clears the selection, the next Esc
   minimises), the assistant's local fallback walking into the hawker centre
-  (20) and the phone's Estate row at 390 × 844 (10). The tour
+  (20) and the phone's Estate row at 390 × 844 (10), and P7's GPU reset (9:
+  WEBGL_lose_context lose → `lost` → restore → `live` on the same canvas with
+  the same triangles, never `unavailable`; then the FX smoke switched on runs
+  under the FX panel and reads `yielded` / "HELD · ESTATE" once the panel
+  closes) and release-and-reopen (14: `?estate-release-ms=1000`, closed 2 s,
+  the canvas gone, live again within 10 s, never `unavailable`). The tour
   moves by step buttons because they are discrete; its routes assume the
   entrance Enter's arc picks from a landed fly-to at 1280 × 720. Restated constants in
 
@@ -917,11 +952,12 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   Load click downloads (engine and HUD chunks plus what they import that the page
   has not loaded) within `engineGzip`, because the consent label counts that
   cap. Both budgets were re-pinned in P4b and again in P5 (interiors, Walk and
-  the Walk HUD) at the measured size + 5%; a re-pin may move them but never
-  above the plan's 307,200 B / 950,000 B. The main cap is NOT re-pinnable:
-  after P6 the main bundle is 508,080 B of 508,834 B (P6 spent ~1.3 KB: the
-  `focusEstate` check, routing and dispatch in AskThePage, the phone row, the
-  registry's Plan keys and the side slot), so **754 B are left** for P7 —
+  the Walk HUD) at the measured size + 5%, and `engineGzip` alone in P7
+  (278,000); a re-pin may move them but never above the plan's 307,200 B /
+  950,000 B. The main cap is NOT re-pinnable: after P7 the main bundle is
+  508,088 B of 508,834 B (P6 spent ~1.3 KB: the `focusEstate` check, routing
+  and dispatch in AskThePage, the phone row, the registry's Plan keys and the
+  side slot; P7 8 B, the `estate_live` export), so **746 B are left** —
   anything bigger goes into the controller, engine or HUD chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).

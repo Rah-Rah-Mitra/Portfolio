@@ -38,7 +38,11 @@ export type AnalyticsEvent =
   | { event: 'chatbot_command_submitted'; props: { used_model: string; command_count: string; status: string; fallback_reason?: string } }
   | { event: 'api_request_completed'; props: { route: string; status: number | 'network_error'; ok: boolean; duration_ms: number; response_source: string } }
   | { event: 'session_replay_triggered'; props: { reason: ReplayReason; source?: string } }
-  | { event: 'frontend_exception_captured'; props: { area: string; error_name: string } };
+  | { event: 'frontend_exception_captured'; props: { area: string; error_name: string } }
+  // The Estate window's 3D view went live (one per engine instance): the tier the
+  // engine started on, its MSAA, ms from start() to the first live frame, lean
+  // (Save-Data) mode, and whether it resumed a released instance's pose.
+  | { event: 'estate_live'; props: { tier: string; msaa: boolean; ms_to_live: number; lean: boolean; resumed: boolean } };
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST ?? 'https://us.i.posthog.com';

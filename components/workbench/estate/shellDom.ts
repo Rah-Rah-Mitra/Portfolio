@@ -51,6 +51,9 @@ export const debugFromSearch = (search: string): boolean => {
   return params.get('estate-debug') === '1' || params.get('estate-bench') === '1';
 };
 
+/** `?estate-bench=1`: the engine runs the §12.4 benchmark route by itself once live (engineApi `bench`). */
+export const benchFromSearch = (search: string): boolean => new URLSearchParams(search).get('estate-bench') === '1';
+
 /** The shortest and longest `?estate-release-ms=` honoured. */
 export const RELEASE_OVERRIDE_RANGE = [100, 30_000] as const;
 

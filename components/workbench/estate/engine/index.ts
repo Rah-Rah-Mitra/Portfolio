@@ -218,7 +218,13 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
       access.set({ lean });
     },
   };
-  return { engine, core: engineCore, navigation: nav };
+  const internals: EngineInternals = { engine, core: engineCore, navigation: nav };
+  // ?estate-bench=1: the §12.4 route runs itself, from a chunk only this downloads.
+  if (options.bench) {
+    const startedAt = performance.now();
+    import('./bench').then((bench) => bench.runBench(internals, startedAt)).catch((error: unknown) => console.warn('[estate-bench]', error));
+  }
+  return internals;
 };
 
 export const createEngine: CreateEngine = (options) => createEngineInternals(options).engine;

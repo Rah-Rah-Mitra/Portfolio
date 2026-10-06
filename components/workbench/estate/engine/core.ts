@@ -11,6 +11,7 @@ import type { EstateEngineOptions } from '../engineApi';
 import { applyClip, fogRange, type FogRange } from './clip';
 import { EngineGovernor, type GovernorChange } from './governor';
 import { ContextWatch, type EngineEmitter, runTeardown, TimerSet } from './lifecycle';
+import { whenGpuIdle } from './drain';
 import { claimDecoder, createGlbLoader, fetchBytes, isAbort, PackFetchError, readPayload } from './loaders';
 import { InteriorSystem, type InteriorStatus } from './interior';
 import { createMaterialKit, type MaterialKit } from './materials';
@@ -60,9 +61,10 @@ const FADE_MS = 200;
 const PACK_RETRIES = 2;
 const PACK_BACKOFF_MS = 1000;
 /**
- * A pixel-ratio notch reallocates the drawing buffer (setSize), which took
- * 56–437 ms on SwiftShader mid-orbit. While the visitor drives the camera it
- * waits for the first frame without motion, at most this long, ms.
+ * A pixel-ratio notch reallocates the drawing buffer (setSize). While the
+ * visitor drives the camera it waits for the first frame without motion, at
+ * most this long, ms; then for the GPU to drain (drain.ts), with no frames
+ * drawn meanwhile, so the reallocation never waits behind a backlog.
  */
 export const NOTCH_RESIZE_DEFER_MS = 2000;
 /** Fly below this eye height (m) is among the tree crowns, which are not boxes: the near plane stays ≤ FLY_TREE_NEAR_M. */
@@ -76,6 +78,16 @@ export interface CoreHooks {
   moving(moving: boolean): void;
   /** The interior status changed (building, storey, band, streaming or failed; interior.ts). */
   interior?(status: InteriorStatus): void;
+}
+
+/**
+ * A tap on every drawn frame and every notch change: the §12.4 bench's
+ * (engine/bench.ts, `?estate-bench=1` only). Null otherwise, and then it costs
+ * one property read a frame.
+ */
+export interface EngineProbe {
+  frame(time: number, continuous: boolean, cpuMs: number, stats: FrameStats, governor: EngineGovernor): void;
+  notch(change: GovernorChange): void;
 }
 
 type Phase = 'idle' | 'booting' | 'live' | 'failed' | 'disposed';
@@ -123,6 +135,7 @@ export class EstateCore {
   readonly camera = new PerspectiveCamera(45, 4 / 3, 1, 2000);
   readonly staticRig = new StaticRig(this.camera);
   private rig: CameraRig = this.staticRig;
+  probe: EngineProbe | null = null;
 
   // state
   tier: EstateTier = 'mid';
@@ -153,6 +166,10 @@ export class EstateCore {
   /** A governor notch's pixel ratio, waiting for a frame without motion (NOTCH_RESIZE_DEFER_MS), and since when. */
   private pendingRatio: number | null = null;
   private pendingRatioSince = 0;
+  /** That resize is waiting for the GPU to drain (drainForResize): the loop is stopped meanwhile. */
+  private draining = false;
+  /** Bumped by a context loss, which abandons a drain under way (its fence died with the context). */
+  private drainGeneration = 0;
   /** The timer that wakes the loop when a held level step comes due (lod.ts DWELL_MS), and when it fires. */
   private holdTimer: ReturnType<typeof setTimeout> | null = null;
   private holdDue = Infinity;
@@ -399,10 +416,10 @@ export class EstateCore {
   }
 
   /**
-   * Every program compiled before the first upload (§7.3): with
+   * Every program compiled and linked before the first upload (§7.3): with
    * KHR_parallel_shader_compile, compileAsync over one object per program;
    * otherwise one program per idle callback (100 ms timeout), so Firefox never
-   * sees one long compile task.
+   * sees one long compile task, each linked in its own slot.
    */
   private async warmUp(): Promise<void> {
     const created = this.created;
@@ -425,6 +442,11 @@ export class EstateCore {
         holder.add(object);
         renderer.compile(holder, camera, scene.root);
         holder.clear();
+        // Link it now, in this idle slot. Without the extension three links
+        // lazily, at a program's first draw (getUniforms → its first-use
+        // check), which on SwiftShader put a 150 ms link into whichever live
+        // frame first drew that program (P7 bench). Linked ones answer at once.
+        for (const program of renderer.info.programs ?? []) program.getUniforms();
       }
     }
     this.programs = renderer.info.programs?.length ?? 0;
@@ -552,14 +574,6 @@ export class EstateCore {
     fogRange(rig.mode, orbitDistance, this.fog);
     kit.setFog(this.fog.near, this.fog.far);
 
-    // A governor notch's resize, deferred while the camera moved (or overdue).
-    if (this.pendingRatio !== null && (!moving || now - this.pendingRatioSince >= NOTCH_RESIZE_DEFER_MS)) {
-      const ratio = this.pendingRatio;
-      this.pendingRatio = null;
-      // Two settle frames: this one's detail selection used the old buffer height.
-      if (this.applySize(false, ratio)) this.loop?.markChanged();
-    }
-
     // Draw, once stage 0 can.
     let drew = false;
     if (scheduler.stage0Ready()) {
@@ -596,9 +610,16 @@ export class EstateCore {
       const excluded = uploaded || compiled || this.resized || this.pendingRatio !== null;
       this.resized = false;
       const change = this.ready ? governor.sample(time, continuous, cpuMs, excluded) : null;
-      if (change) this.applyNotch(change, moving, now);
+      if (change) this.applyNotch(change, now);
+      this.probe?.frame(time, continuous, cpuMs, stats, governor);
       // The calibration burst draws nothing for 8 frames: never under the visitor's hand.
       if (governor.wantsCalibration && !moving) this.recalibrate();
+    }
+    // A governor notch's resize, deferred while the camera moved (or overdue),
+    // once this frame's commands are queued: drain, then resize.
+    if (this.pendingRatio !== null && !this.draining && (!moving || now - this.pendingRatioSince >= NOTCH_RESIZE_DEFER_MS)) {
+      this.draining = true;
+      queueMicrotask(this.drainForResize);
     }
     this.progress();
 
@@ -651,18 +672,19 @@ export class EstateCore {
 
   /**
    * A governor notch: the tier at once (detail selection, streaming, trees);
-   * the pixel ratio at once only while the camera is at rest, else on the
-   * first frame without motion (NOTCH_RESIZE_DEFER_MS at most), because the
-   * buffer reallocation is the one long task a notch costs.
+   * the pixel ratio on the first frame without motion (NOTCH_RESIZE_DEFER_MS at
+   * most), once the GPU has drained (drainForResize), because the buffer
+   * reallocation behind a GPU backlog was the one long task a notch cost.
    */
-  private applyNotch(change: GovernorChange, moving: boolean, now: number) {
+  private applyNotch(change: GovernorChange, now: number) {
     const { notch } = change;
+    this.probe?.notch(change);
     this.tier = notch.tier;
     this.streaming?.scheduler.setTier(notch.tier);
     if (shouldDropMsaa(this.msaa, notch.tier)) writeMsaaOff();
     const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
     const ratio = capPixelRatio(this.tier, this.cssWidth, this.cssHeight, dpr, notch.pixelRatio);
-    if (ratio !== this.appliedRatio && moving) {
+    if (ratio !== this.appliedRatio) {
       if (this.pendingRatio === null) this.pendingRatioSince = now;
       this.pendingRatio = notch.pixelRatio;
     } else {
@@ -672,6 +694,35 @@ export class EstateCore {
     this.scene?.invalidateTrees();
     this.loop?.markChanged();
   }
+
+  /**
+   * The pending notch's resize once the GPU has caught up (drain.ts): the loop
+   * stopped so nothing queues behind the fence, then the resize and two settle
+   * frames. A loss meanwhile drops the wait and leaves the ratio pending for
+   * after the restore; a freeze applies it without drawing.
+   */
+  private readonly drainForResize = (): void => {
+    const created = this.created;
+    if (!created || this.isDisposed || this.lost || this.pendingRatio === null) {
+      this.draining = false;
+      return;
+    }
+    this.loop?.stop();
+    const generation = this.drainGeneration;
+    whenGpuIdle(created.gl, {
+      after: (ms, run) => { this.timers.after(ms, run); },
+      now: () => this.loopHost.now(),
+      abandoned: () => this.isDisposed || this.lost || generation !== this.drainGeneration,
+    }, () => {
+      this.draining = false;
+      const ratio = this.pendingRatio;
+      this.pendingRatio = null;
+      if (ratio !== null) this.applySize(false, ratio);
+      if (!this.frozen && this.phase === 'live') this.loop?.start();
+      // Two settle frames: the last frame's detail selection used the old buffer height.
+      this.loop?.markChanged();
+    });
+  };
 
   /** Keeps one timeout armed for the earliest held level step (`due`, loop-host ms), replacing a later one. */
   private armHold(due: number, now: number) {
@@ -806,6 +857,9 @@ export class EstateCore {
   private onLost() {
     if (this.isDisposed) return;
     this.lost = true;
+    // A notch's drain is dropped with the context; its ratio stays pending for after the restore.
+    this.draining = false;
+    this.drainGeneration += 1;
     this.loop?.stop();
     this.governor?.rest();
     this.emitter.emit({ type: 'lost', frozen: this.frozen });
@@ -853,7 +907,8 @@ export class EstateCore {
       // first frame back is drawn at the right size, not 150 ms later.
       this.loop?.cancelResize();
       if (this.applySize(false)) this.loop?.markChanged();
-      this.loop?.start();
+      // A notch's drain under way restarts the loop itself once the GPU is idle.
+      if (!this.draining) this.loop?.start();
     }
   }
 

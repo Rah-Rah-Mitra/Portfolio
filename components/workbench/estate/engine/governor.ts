@@ -62,6 +62,9 @@ export class EngineGovernor {
     return decision === 'hold' ? null : { decision, notch: governorNotch(this.state) };
   }
 
+  /** The GPU ms the last sample read, NaN without a timer reading (the bench's frame tap, engine/bench.ts). */
+  get lastGpuMs(): number { return this.scratch.gpuMs ?? Number.NaN; }
+
   /** The governor asks for a calibration burst (a slow spell it cannot place). */
   get wantsCalibration(): boolean { return this.state.recalibrate; }
 

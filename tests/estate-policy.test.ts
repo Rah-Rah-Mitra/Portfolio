@@ -449,14 +449,14 @@ const tenthsOf = (label: string): number => {
 describe('estate consent label', () => {
   it('counts the engine at its gzip cap from packBudgets.json, not a measurement', () => {
     expect(ENGINE_GZIP_CAP).toBe(budgets.engineGzip);
-    // P4b, then P5, re-pinned it at the measured Load click + 5% (packBudgets.json units); never above the plan cap.
-    expect(ENGINE_GZIP_CAP).toBe(265_000);
+    // P4b, P5, then P7 re-pinned it at the measured Load click + 5% (packBudgets.json units); never above the plan cap.
+    expect(ENGINE_GZIP_CAP).toBe(278_000);
     expect(ENGINE_GZIP_CAP).toBeLessThanOrEqual(307_200);
   });
 
   it('labels a full load as engine cap + stage 0 + ΣF, and a lean one without ΣF', () => {
-    expect(consentBytes(EXPECTED, 'full')).toBe(265_000 + 140_000 + 1_650_000);
-    expect(consentBytes(EXPECTED, 'lean')).toBe(265_000 + 140_000);
+    expect(consentBytes(EXPECTED, 'full')).toBe(278_000 + 140_000 + 1_650_000);
+    expect(consentBytes(EXPECTED, 'lean')).toBe(278_000 + 140_000);
     expect(consentLabel(EXPECTED, 'full')).toBe('Load the 3D estate · 2.1 MB'); // plan: overview ≈ 2.1 MB
     expect(consentLabel(EXPECTED, 'lean')).toBe('Load the 3D estate · 0.5 MB'); // plan: lean ≈ 0.45 MB with the 300 KB cap
     expect(consentLabel(AT_CAPS, 'full')).toBe('Load the 3D estate · 3.5 MB');

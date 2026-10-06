@@ -1,6 +1,7 @@
 import React from 'react';
 import { useOptionalExperienceMode } from '../../../contexts/ExperienceModeContext';
 import { dispatchWorkbenchOpen } from '../../../lib/workbench';
+import { track } from '../../../lib/analytics';
 import { motionHalted } from '../../../lib/motion';
 import { claimGpu, releaseGpu } from '../../../lib/gpuClaim';
 import { ESTATE_CATALOGUE } from '../../../lib/estate/catalogue.generated';
@@ -24,7 +25,7 @@ import {
 import type { EstateEngine, EstateEngineEvent, EstateResume, EstateRuntime } from './engineApi';
 import { EstateLoadError, loadEngine } from './loadEngine';
 import { ESTATE_SECTION, ESTATE_STAGE, usePanePresence } from './usePanePresence';
-import { debugFromSearch, onDocumentComplete, qualityFromSearch, readTokenColours, releaseMsFromSearch, reloadPage, whenIdle } from './shellDom';
+import { benchFromSearch, debugFromSearch, onDocumentComplete, qualityFromSearch, readTokenColours, releaseMsFromSearch, reloadPage, whenIdle } from './shellDom';
 import type { EstateControllerProps, EstateModel, EstateModelAction, EstateModelHandlers, EstateModelRowAction } from './estateModel';
 
 // The Estate window's controller (WIN-07, #world): a lazy chunk the window
@@ -166,6 +167,8 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   const phaseRef = React.useRef(phase);
   phaseRef.current = phase;
   const resumeRef = React.useRef<EstateResume | undefined>(undefined);
+  /** When the current instance's start() was called (the estate_live event's ms_to_live). */
+  const startedAtRef = React.useRef(0);
   const heldRef = React.useRef<EstateFocusDetail | null>(pending);
   const lossTimesRef = React.useRef<number[]>([]);
   const restoreTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -258,6 +261,9 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
         loadingRef.current = false;
         setProgress(null);
         setEngineState('ready');
+        track('estate_live', {
+          tier: event.tier, msaa: event.msaa, ms_to_live: Math.round(performance.now() - startedAtRef.current), lean: result.lean, resumed: resumeRef.current !== undefined,
+        });
         break;
       case 'progress':
         if (event.stage === 'first-frame') setProgress(event.totalBytes > 0 ? Math.min(1, event.loadedBytes / event.totalBytes) : null);
@@ -334,6 +340,7 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
         colours: readTokenColours(),
         onEvent: (event) => onEventRef.current(event),
         debug: wantDebug,
+        bench: benchFromSearch(search),
         resume: resumeRef.current,
       });
     } catch (error) {
@@ -356,6 +363,7 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     if (result.startEngine) {
       if (startedRef.current === instance) return;
       startedRef.current = instance;
+      startedAtRef.current = performance.now();
       try { instance.start(); } catch (error) { fail('failed', error); }
     } else if (preloadedRef.current !== instance) {
       preloadedRef.current = instance;

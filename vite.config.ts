@@ -44,18 +44,24 @@ export default defineConfig(() => {
       build: {
         rollupOptions: {
           output: {
-            // The Estate engine's facade is estate/engine/index.ts, which Rollup
+            // The Estate engine's chunk holds estate/engine/index.ts, which Rollup
             // would name index-<hash>.js, the entry chunk's own pattern. Named for
             // what it is, it cannot be mistaken for the entry by anything globbing
-            // dist/assets. The chunk the engine shares with its HUD (pure
-            // lib/estate modules, no facade) would take the name of whichever
-            // module Rollup lists first, which moved from announce to plan in P6:
-            // it is estate-shared instead, whatever it holds. Every other chunk
-            // keeps Vite's default name.
+            // dist/assets. It is found by the module it holds, not by its facade:
+            // since P7's bench chunk imports from it, Rollup reports no facade for
+            // it. The chunk the engine shares with its HUD (pure lib/estate
+            // modules, no facade) would take the name of whichever module Rollup
+            // lists first, which moved from announce to plan in P6: it is
+            // estate-shared instead, whatever it holds. The §12.4 bench
+            // (engine/bench.ts, which the engine imports only under
+            // ?estate-bench=1) is estate-bench. Every other chunk keeps Vite's
+            // default name.
             chunkFileNames: (chunk) => (
-              /[\\/]estate[\\/]engine[\\/]index\.ts$/.test(chunk.facadeModuleId ?? '')
+              chunk.moduleIds.some((id) => /[\\/]estate[\\/]engine[\\/]index\.ts$/.test(id))
                 ? 'assets/estate-engine-[hash].js'
-                : !chunk.isEntry && !chunk.isDynamicEntry && chunk.moduleIds.some((id) => /[\\/]lib[\\/]estate[\\/]/.test(id))
+                : /[\\/]estate[\\/]engine[\\/]bench\.ts$/.test(chunk.facadeModuleId ?? '')
+                  ? 'assets/estate-bench-[hash].js'
+                  : !chunk.isEntry && !chunk.isDynamicEntry && chunk.moduleIds.some((id) => /[\\/]lib[\\/]estate[\\/]/.test(id))
                   ? 'assets/estate-shared-[hash].js'
                   : 'assets/[name]-[hash].js'
             ),

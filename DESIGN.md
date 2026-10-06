@@ -285,6 +285,14 @@ the FX "Pause all motion").
     square toggle buttons, the picked one with the selected row's accent-100
     fill and inset accent-700 border; it scrolls inside its own 260px box, and
     the side panel brings it into view when a plan opens;
+  - **quality changes are silent and never freeze the page** (P7): when the
+    governor lowers detail or resolution nothing announces it, and a
+    resolution step holds the last frame while the GPU catches up rather than
+    blocking input; a GPU reset shows the "lost" plate and comes back on its
+    own. While the Estate is in use (live, focused, no panel open) the desk
+    backdrops hold still and their caption says so ("HELD · ESTATE").
+    `?estate-bench=1` is a debug mode that drives the camera by itself and
+    shows the stats row; nothing in the UI links to it;
   - **one palette:** every 3D material role maps onto the design tokens
     (walls `--color-neutral-100`, slabs and paving `--color-neutral-300`, doors
     `--color-neutral-500`, asphalt `--color-neutral-700`, grass and foliage

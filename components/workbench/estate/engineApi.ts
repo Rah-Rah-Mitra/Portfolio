@@ -118,6 +118,13 @@ export interface EstateEngineOptions {
    */
   debug?: boolean;
   /**
+   * `?estate-bench=1` (P7, plan §12.4): once live, the engine runs the
+   * benchmark route by itself from a chunk of its own (engine/bench.ts) and
+   * logs JSON to `window.__estateBench` and the console. Implies the shell's
+   * debug. Default false; nothing else ever downloads that chunk.
+   */
+  bench?: boolean;
+  /**
    * Where a previous instance left off (getResume() before its dispose()): the
    * first live frame starts there instead of at the poster camera. Release after
    * 30 s closed keeps this in the shell's memory; reopening reuses it and the

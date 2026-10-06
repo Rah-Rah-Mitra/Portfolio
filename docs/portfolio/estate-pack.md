@@ -452,6 +452,37 @@ output, so the S1–S5 pins move with it):
   Drawing the stair one storey beyond the band would need stair triangles
   tagged apart from their storey.
 
+## The bench (plan §12.4, P7)
+
+`/?app=world-3d&estate-bench=1` runs the benchmark route by itself once the
+window is live (`components/workbench/estate/engine/bench.ts`, a chunk only that
+URL downloads) and logs one JSON report to the console and to
+`window.__estateBench`: per leg, dropped % by the governor's own rule, interval
+p50/p99, CPU and GPU p95, draws, triangles, GPU MB with the drawing buffer,
+`/estate/` bytes and requests, long tasks and long animation frames (Chrome),
+frame gaps over 50 ms (all browsers; Firefox's only signal), programs and
+governor changes, then a verdict. Add `&estate-quality=high` to start at the
+top tier. Run it in Chrome and Firefox, at the default size and maximised, and
+once under 4× CPU slowdown. A pack is fit when the verdict has `routeOk`,
+`governorOk` (≤ 2 notch changes in any leg) and an empty `bytesOnMoves` (the
+stairs and both lift legs request nothing).
+
+The walked legs reuse the e2e tour's step routes from named spawns (Blk 509's
+Void deck entrance E, the car park's Entrance E, the hawker centre's Entrance
+E 2), so a re-pack that moves a spawn, a doorway or a ramp shows up as a leg
+whose notes say what it could not do; re-record the route in `bench.ts` and in
+`tests/e2e/estate.spec.ts` together.
+
+Measured headless on SwiftShader (Chrome 151, 1280 × 720, 2026-10-06; software
+rendering, so only the counts and the governor's behaviour carry over to a real
+GPU): live 0.8–1.7 s after the engine is made; 0 requests on stairs and lifts;
+at most 2 notch changes in a leg (both in the orbit sweep from a forced high
+start, which settles at min × 0.75 by the stairs); no long task after live once
+a notch's resize waits for the GPU to drain and warm-up links every program;
+one ~1 s task before live at the default start, the GPU probe's context
+creation, which no browser API makes asynchronous. On Fast 4G the poster lands
+at 0.9 s and the first live frame at 2.9 s after navigation.
+
 ## Moving to a new version
 
 1. Upstream releases `vX.Y` (deterministic zips, `release_manifest.json`).
@@ -461,3 +492,5 @@ output, so the S1–S5 pins move with it):
 4. `git rm -r public/estate/v<old>`; exactly one version folder may exist.
 5. `npm run estate:check -- --provenance --zips <downloaded>`, then commit the
    pack, the catalogue and the gitlink together.
+6. Run the bench (above) and the e2e tour; re-pin S1–S5 in
+   `tests/estate-budget.test.ts` with a reason.

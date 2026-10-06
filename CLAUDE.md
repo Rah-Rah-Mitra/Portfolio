@@ -245,9 +245,39 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        live frame and Home are the poster camera with its Blender lens shift
        turned into the view direction (`engine/views.ts aerialPose`; a pack
        without views uses upstream's aerial_NE numbers). `engine/navigation.ts` and
-       `engine/rig.ts` are the seam P5's Walk, Enter and interiors and P6's Plan
-       extend: `features` names the live commands, and every other one returns
-       false rather than throwing.
+       `engine/rig.ts` are the seam P6's Plan extends: `features` names the live
+       commands, and every other one returns false rather than throwing.
+     - Walk (P5, `engine/controls/{walk,walkMode,arc}.ts` and `engine/lifts.ts`):
+       eye 1.6 m, 60°, 1.6 m/s (4.0 with Shift), ≤ 10 m/s² up and 12/s coasting
+       down, ←/→ 90°/s, drag looks, the wheel and step buttons take 0.5 m / 15°.
+       The floor is `core.interiors.floorQuery`: a building's walk grid inside
+       its walk bounds less 0.5 m (`moveWithCollision` in ≤ 0.1 m substeps; the
+       grid already has the walker's radius and the opened leaves blocked), else
+       the ground; a grid not yet here leaves the ground walkable but its
+       footprint blocks (`view.walk.preparing`, "PREPARING WALKWAY…"), and a grid
+       arriving under a walker takes it over (snapped within 1.5 m). The feet ride
+       a spring (snaps when `motionHalted()`). Ways in: `enter()` arcs 1.2 s to
+       the nearest entrance spawn (rise max(20 m, half the height), 45° → 60°,
+       its files at P0 from the start; refused with the reason once its entry
+       failed), 2 cuts to the entrance nearest the orbit target, 2 from Fly drops
+       to a floor within 3 m below, `walkFrom('BS1')` starts at the bus stop; out:
+       Esc or 1 is the 1.0 s reverse arc. Stairs climb for real, or PgUp/PgDn and
+       the stair chip follow the nav file's walking line at 2.0 m/s
+       (`lib/estate/climb.ts`; held keys chain storeys; a movement key, drag,
+       wheel, step or stick stops it there; Esc lands it at the nearer end).
+       Lifts: within 1.5 m of a landing `view.walk.lift` offers the served
+       levels; a ride is a 250 ms fade to paper and back (the engine's own
+       `[data-estate-fade]` layer between canvas and HUD), landing 1.2 m out of
+       the car snapped within 1.5 m, announced through `via: 'Lift n'`, 0 bytes.
+       The strip (`view.walk.levels`, `setStorey`) routes by Dijkstra over rides
+       and flights, so RF in a block is lift to L16 then the stair line, and a
+       level nothing reaches is disabled with "No lift or stair reaches RF". The
+       interior's band follows the walk layer underfoot, one storey up once the
+       eye stands 1 m over the next floor (`walkBandStorey`: the top treads of the
+       3.6 m void-deck flights). Pinned by `tests/estate-{walk-mode,walk-sweep,
+       spawns}.test.ts` (the sweep's leaf footprints are
+       `tests/fixtures/estate/walk_leaves.json`, from the release's web.json) and
+       the real-stair case in `tests/estate-storeys.test.ts`.
      - `live/EstateHud.tsx`: survey-annotation chips over the canvas — location
        (no live role; one visually hidden `role="status"` node speaks through
        `lib/estate/announce.ts`), selection with mirrored Fly to, OVERVIEW | FLY,

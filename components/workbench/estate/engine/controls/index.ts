@@ -1,28 +1,45 @@
 import { Box3, Vector3 } from 'three';
 import { threeToEstate, wrapAngle, type EstateViewMode, type Vec3 } from '../../../../../lib/estate/frames';
-import { ESTATE_SITE_IDS, type EstateSiteId } from '../../../../../lib/estate/ids';
-import { dragRole, HeldKeys, stageKey, type EscapeAction, type StageAction } from '../../../../../lib/estate/input';
+import { ESTATE_SITE_IDS, normaliseStoreyTag, type EstateSiteId, type EstateStoreyTag } from '../../../../../lib/estate/ids';
+import { cancelsClimb, dragRole, HeldKeys, stageKey, type EscapeAction, type StageAction } from '../../../../../lib/estate/input';
 import { ESTATE_VFOV_DEG } from '../../../../../lib/estate/lod';
-import type { EstateEngineFeatures, EstateFlyOptions, EstateWalkStep } from '../../engineApi';
+import type { PackSpawn } from '../../../../../lib/estate/schema';
+import { EYE_HEIGHT } from '../../../../../lib/estate/storeys';
+import type {
+  EstateEngineFeatures, EstateEnterOptions, EstateFlyOptions, EstateResume, EstateStep, EstateWalkStep,
+} from '../../engineApi';
+import type { FloorQuery, InteriorEntry } from '../interior';
 import type { EstateCore } from '../core';
 import type { EngineNavigation, NavigationFactory, ViewAccess } from '../navigation';
 import type { CameraRig } from '../rig';
+import { applyArc, arcDone, arcRise, endFromCamera, endFromLook, endLookingAt, ENTER_SECONDS, EXIT_SECONDS, planArc, type Arc } from './arc';
 import { FlyController, type Bounds2 } from './firstPerson';
 import { northRotation, wheelSteps } from './motion';
 import { OrbitController } from './orbit';
 import { buildPrisms, ClickTracker, pickPrism, siteAround, siteNear, type Prism } from './picking';
 import {
   blankPose, clampOrbit, FLY_TO_SECONDS, flightDone, flightPose, FOV_SECONDS, frameBuilding, HOME_SECONDS, ORBIT_LIMITS,
-  orbitFromLookAt, planFlight, type Flight, type OrbitPose,
+  orbitFromLookAt, planFlight, positionFromOrbit, type Flight, type OrbitPose,
 } from './tween';
+import { WalkMode, type WalkSpawn } from './walkMode';
 
-// The Estate viewer's controls (plan §8.1–§8.3, §8.7): what moves the camera
-// on request, plugged into the render core as its one CameraRig. P4b ships
-// Overview (camera-controls), Fly (our own first-person controller), fly-to,
-// Home and picking; P5 adds Walk, Enter, stairs and lifts beside them (a third
-// controller under the same rig, the same input layer, the same tween clock),
-// P6 Plan. engine/index.ts owns the handle and the view; this module answers
-// the navigation commands and reports through ViewAccess.
+// The Estate viewer's controls (plan §8.1–§8.5, §8.7): what moves the camera
+// on request, plugged into the render core as its one CameraRig. Overview
+// (camera-controls), Fly (our own first-person controller), fly-to, Home and
+// picking (P4b); Walk, Enter and Exit, stairs and lifts (P5: walk.ts is the
+// walker, walkMode.ts its session with climbs, rides and the HUD's offers,
+// arc.ts the Enter / Exit arcs, ../lifts.ts the stair and lift rules), all
+// under the same rig, input layer and tween clock; P6 adds Plan.
+// engine/index.ts owns the handle and the view; this module answers the
+// navigation commands and reports through ViewAccess.
+//
+// Walk's ways in (§8.1): Enter arcs 1.2 s to the building's nearest entrance
+// spawn (rising max(20 m, half its height), 45° → 60°, its files at P0 from
+// the start); 2 from Overview cuts to the entrance spawn nearest the orbit
+// target; 2 from Fly drops to the floor under the camera when it is within a
+// few metres of one, else the nearest entrance spawn; walkFrom('BS1') starts at
+// the bus stop. Out: Esc or 1 is the 1.0 s reverse arc to an overview of the
+// building (or of the walker's surroundings), 3 keeps the pose in Fly.
 //
 // Input, all on the engine's own elements and only once the first frame is up:
 //  - keys (scope 1, lib/estate/input.ts stageKey) on the stage, and only when
@@ -45,7 +62,9 @@ import {
 // At rest the rig reports nothing moving and the frame loop sleeps.
 
 /** What this build adds to the core's (all-false) features. */
-export const CONTROLS_FEATURES: Readonly<Partial<EstateEngineFeatures>> = Object.freeze({ overview: true, fly: true, flyTo: true });
+export const CONTROLS_FEATURES: Readonly<Partial<EstateEngineFeatures>> = Object.freeze({
+  overview: true, fly: true, flyTo: true, walk: true, enter: true,
+});
 
 /** The location chip's building is refreshed at most this often while the camera moves, ms. */
 export const SITE_CHECK_MS = 250;
@@ -76,7 +95,28 @@ const AHEAD_MIN = 30;
 const AHEAD_MAX = 600;
 const LEVEL_TILT = Math.tan((10 * Math.PI) / 180);
 
-type ControlMode = 'overview' | 'fly';
+type ControlMode = 'overview' | 'fly' | 'walk';
+
+/** Fly → Walk lands under the camera when a floor is within this below the feet, m; higher, at the nearest entrance. */
+export const DROP_REACH = 3;
+/** An exit arc from the open estate lands on an orbit this far from the walker, m, this far from straight down. */
+const EXIT_DISTANCE = 90;
+const EXIT_POLAR = (55 * Math.PI) / 180;
+/** A storey other than this needs a lift after Enter's arc. */
+const GROUND_STOREY: EstateStoreyTag = 'L1';
+
+interface ActiveArc {
+  arc: Arc;
+  startMs: number;
+  kind: 'enter' | 'exit';
+  /** Index of the building it enters or leaves, or −1. */
+  site: number;
+  /** enter: where the walk starts, and a storey to ride to then. */
+  spawn: WalkSpawn | null;
+  storey: EstateStoreyTag | null;
+  /** exit: the orbit pose it lands on. */
+  orbit: OrbitPose | null;
+}
 
 interface ActiveFlight {
   flight: Flight;
@@ -88,6 +128,11 @@ interface ActiveFlight {
 interface FovTween { from: number; to: number; startMs: number }
 
 interface Drag { id: number; role: 'look' | 'strafe'; x: number; y: number }
+
+/** A pack spawn (estate frame, facing a unit plan direction) as where a walk starts: the three yaw that looks along its facing. */
+const spawnOf = (s: PackSpawn): WalkSpawn => ({
+  x: s.pos[0], y: s.pos[1], z: s.pos[2], yaw: Math.atan2(-s.facing[0], s.facing[1]), name: s.name,
+});
 
 const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 const isMac = (): boolean => /Mac/.test(globalThis.navigator?.platform ?? '');
@@ -102,6 +147,9 @@ class EstateControls implements EngineNavigation {
   private canvas: HTMLCanvasElement | null = null;
   private orbit: OrbitController | null = null;
   private fly: FlyController | null = null;
+  /** Walk's session; null before the first frame or with no interiors (a harness without a pack). */
+  private walk: WalkMode | null = null;
+  private arc: ActiveArc | null = null;
   private prisms: Prism[] = [];
   private mode: ControlMode = 'overview';
   private flight: ActiveFlight | null = null;
@@ -109,6 +157,8 @@ class EstateControls implements EngineNavigation {
   private overviewFov: number = ESTATE_VFOV_DEG.overview;
   private boundary = new Box3();
   private drag: Drag | null = null;
+  /** Walk's wheel: notches not yet stepped. */
+  private wheelAcc = 0;
   private unbind: Array<() => void> = [];
   private isReady = false;
   private disposed = false;
@@ -126,6 +176,10 @@ class EstateControls implements EngineNavigation {
   private readonly v2 = new Vector3();
   private readonly e1: Vec3 = [0, 0, 0];
   private readonly e2: Vec3 = [0, 0, 0];
+  private readonly exitPose: OrbitPose = blankPose();
+  private readonly query: FloorQuery = { kind: 'none', z: Number.NaN, site: null, layer: -1 };
+  private readonly entry: InteriorEntry = { state: 'absent', reason: null };
+  private readonly walkTarget = { x: 0, y: 0, z: 0 };
 
   /** The CameraRig the core draws through: whichever controller is active, plus the transitions. */
   readonly rig: CameraRig;
@@ -136,8 +190,9 @@ class EstateControls implements EngineNavigation {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     this.rig = {
-      get mode(): EstateViewMode { return self.mode; },
-      get busy(): boolean { return self.flight !== null || self.fovTween !== null; },
+      // An Enter or Exit arc clips, fogs and selects detail as Fly does (a 60° eye in the open).
+      get mode(): EstateViewMode { return self.arc ? 'fly' : self.mode; },
+      get busy(): boolean { return self.flight !== null || self.fovTween !== null || self.arc !== null || (self.walk?.busy ?? false); },
       update: (dt) => self.update(dt),
       getTarget: (out) => self.getTarget(out),
       dispose: () => self.dispose(),
@@ -175,11 +230,23 @@ class EstateControls implements EngineNavigation {
     });
     orbit.setPose(camera.position.toArray(this.e1), target.toArray(this.e2));
     this.orbit = orbit;
-    this.fly = new FlyController(camera, { bounds: roam });
-    if (core.options.resume?.mode === 'fly') {
+    this.fly = new FlyController(camera, { bounds: roam, groundAt: (x, z) => this.groundY(x, z) });
+    if (core.interiors) this.walk = new WalkMode(core, this.view, host);
+    const resume = core.options.resume;
+    if (resume?.mode === 'fly') {
       orbit.enabled = false;
       this.fly.activate();
       this.mode = 'fly';
+    } else if (resume?.mode === 'walk' && this.walk) {
+      // Back where the last instance walked: feet under the eye, held for the
+      // building's grid when it stood inside one (resume.inside).
+      orbit.enabled = false;
+      this.mode = 'walk';
+      const p = resume.position;
+      const yaw = Math.atan2(-(resume.target[0] - p[0]), resume.target[1] - p[1]);
+      const inside = resume.inside ? this.core.interiors?.indexOf(resume.inside.site) ?? -1 : -1;
+      this.applyFov(ESTATE_VFOV_DEG.walk);
+      this.walk.startAt(p[0], p[1], p[2] - EYE_HEIGHT, yaw, 0, inside);
     } else {
       // Overview keeps the lens it went live with (the poster's, or a resumed 45°).
       this.overviewFov = camera.fov;
@@ -187,7 +254,7 @@ class EstateControls implements EngineNavigation {
     this.bind(host, canvas);
     this.isReady = true;
     core.setRig(this.rig);
-    this.view.set({ location: { mode: this.mode, site: this.siteId(this.siteFor()) } });
+    if (this.mode !== 'walk') this.view.set({ location: { mode: this.mode, site: this.siteId(this.siteFor()) } });
   }
 
   freeze(): void {
@@ -195,7 +262,9 @@ class EstateControls implements EngineNavigation {
     this.endDrag();
     this.clicks.cancel();
     if (this.flight) this.finishFlight();
+    if (this.arc) this.landArc();
     if (this.fovTween) this.finishFov();
+    this.walk?.freeze();
     this.orbit?.cancel();
     this.orbit?.settle();
     this.fly?.stop();
@@ -212,6 +281,8 @@ class EstateControls implements EngineNavigation {
     this.orbit?.dispose();
     this.orbit = null;
     this.fly = null;
+    this.walk?.dispose();
+    this.walk = null;
     this.host?.style.removeProperty(NORTH_PROPERTY);
     this.host = null;
     this.canvas = null;
@@ -233,7 +304,15 @@ class EstateControls implements EngineNavigation {
       this.stepFov(t, halted);
       moving = true;
     }
-    if (this.mode === 'overview' && this.orbit) {
+    if (this.arc) {
+      const active = this.arc;
+      const elapsed = halted ? Infinity : (t - active.startMs) / 1000;
+      applyArc(active.arc, elapsed, this.core.camera);
+      if (arcDone(active.arc, elapsed)) this.landArc();
+      moving = true;
+    } else if (this.mode === 'walk' && this.walk) {
+      if (this.walk.update(dt, this.held, halted)) moving = true;
+    } else if (this.mode === 'overview' && this.orbit) {
       if (this.flight) {
         const { flight, startMs } = this.flight;
         const elapsed = halted ? Infinity : (t - startMs) / 1000;
@@ -251,6 +330,15 @@ class EstateControls implements EngineNavigation {
   }
 
   private getTarget(out: Vector3): Vector3 {
+    if (this.arc) {
+      const p = this.core.camera.position;
+      return out.set(0, 0, -10).applyQuaternion(this.core.camera.quaternion).add(p);
+    }
+    if (this.mode === 'walk' && this.walk?.active) {
+      const t = this.walkTarget;
+      this.walk.target(t);
+      return out.set(t.x, t.z, -t.y);
+    }
     if (this.mode === 'fly' && this.fly) return this.fly.getTarget(out);
     if (this.orbit) return this.orbit.getTarget(out);
     return this.core.staticRig.getTarget(out);
@@ -324,7 +412,8 @@ class EstateControls implements EngineNavigation {
 
   /** Refresh the chip's building: every SITE_CHECK_MS while moving, and once on coming to rest. Not mid-flight. */
   private trackSite(moving: boolean, t: number) {
-    if (this.flight) return;
+    // Walk names its own place (walkMode.ts publish); an arc lands with one.
+    if (this.flight || this.arc || this.mode === 'walk') return;
     if (moving) {
       this.siteDirty = true;
       if (t - this.lastSiteCheck < SITE_CHECK_MS) return;
@@ -428,11 +517,12 @@ class EstateControls implements EngineNavigation {
     const building = index >= 0 ? this.core.pack?.sites[index] : undefined;
     if (!building) return false;
     const halted = this.core.options.motionHalted();
+    this.abandonArc();
     if (this.mode !== 'overview') this.switchMode('overview', halted);
     const camera = this.core.camera;
     const from = this.orbit.currentOrbit(this.fromPose);
     const to = frameBuilding(building.bounds, building.radius, building.roofTop, from, this.overviewFov, camera.aspect, ORBIT_LIMITS, this.toPose);
-    // P0 for its facade, detail (and P5's interior) from the start (§7.5).
+    // P0 for its facade, detail and interior from the start (§7.5).
     this.core.setFocus(site);
     this.startFlight(to, FLY_TO_SECONDS, index, options?.instant === true || halted, { selection: site });
     return true;
@@ -440,9 +530,11 @@ class EstateControls implements EngineNavigation {
 
   home(): boolean {
     if (!this.live || !this.orbit) return false;
+    if (this.mode === 'walk' && !this.arc && this.walk?.active) return this.walk.respawn();
     const pose = this.core.posterPose();
     if (!pose) return false;
     const halted = this.core.options.motionHalted();
+    this.abandonArc();
     if (this.mode !== 'overview') this.switchMode('overview', halted);
     this.overviewFov = pose.fovDeg;
     this.fovTo(pose.fovDeg, halted);
@@ -453,16 +545,22 @@ class EstateControls implements EngineNavigation {
 
   setMode(mode: EstateViewMode): boolean {
     if (!this.live) return false;
-    if (mode !== 'overview' && mode !== 'fly') return false; // Walk is P5, Plan P6
+    if (mode !== 'overview' && mode !== 'fly' && mode !== 'walk') return false; // Plan is P6
     if (mode === this.mode) return false;
-    this.switchMode(mode, this.core.options.motionHalted());
+    if (mode === 'walk' && !this.walk) return false;
+    const halted = this.core.options.motionHalted();
+    // Out of Walk to Overview is the reverse arc (§8.1); an Enter arc still running turns back.
+    if (mode === 'overview' && this.mode === 'walk') return this.exitWalk(halted);
+    this.abandonArc();
+    this.switchMode(mode, halted);
     return true;
   }
 
   escape(action: EscapeAction): boolean {
     if (!this.live) return false;
+    if (action === 'cancel-transition') return this.walk?.cancelTransition() ?? false;
     if (action === 'overview') return this.setMode('overview');
-    return false; // cancel-transition (climbs, fades) is P5; exit-plan P6
+    return false; // exit-plan is P6
   }
 
   capture(): boolean {
@@ -484,18 +582,284 @@ class EstateControls implements EngineNavigation {
 
   /**
    * A step button (§8.6), for pointer and touch alike, in every mode: Overview
-   * zooms in or out and orbits 15°; Fly moves half a second's travel or turns
-   * 15° (P5's Walk: 0.5 m and 15°).
+   * zooms, orbits, tilts and pans; Fly moves half a second's travel or turns
+   * 15°; Walk takes a 0.5 m step or a 15° turn (and stops a climb there).
    */
   walkStep(step: EstateWalkStep): boolean {
-    if (!this.live) return false;
+    if (!this.live || this.arc) return false;
     const halted = this.core.options.motionHalted();
     this.cancelFlightHere();
     if (this.mode === 'overview' && this.orbit) this.orbit.step(step, halted);
     else if (this.mode === 'fly' && this.fly) this.fly.step(step);
+    else if (this.mode === 'walk' && this.walk) return this.walk.step(step);
     else return false;
     this.core.invalidate();
     return true;
+  }
+
+  setStick(x: number, y: number): boolean {
+    if (!this.live || this.mode !== 'walk' || this.arc || !this.walk) return false;
+    return this.walk.setStick(x, y);
+  }
+
+  setStorey(target: EstateStep | EstateStoreyTag): boolean {
+    if (!this.live || this.mode !== 'walk' || this.arc || !this.walk) return false;
+    return this.walk.setStorey(target);
+  }
+
+  takeLift(level: EstateStoreyTag): boolean {
+    if (!this.live || this.mode !== 'walk' || this.arc || !this.walk) return false;
+    return this.walk.takeLift(level);
+  }
+
+  takeStairs(direction: EstateStep): boolean {
+    if (!this.live || this.mode !== 'walk' || this.arc || !this.walk) return false;
+    return this.walk.takeStairs(direction);
+  }
+
+  /**
+   * Enter (§8.1): the 1.2 s arc to the building's entrance spawn nearest the
+   * camera (a cut when `instant` or halted), into Walk; its interior, walk grid
+   * and nav file load at P0 from the start. With `storey`, a lift ride there
+   * once the walker stands on its grid. Refused, with the reason spoken, when
+   * entering it failed for good or the pack has no interior for it.
+   */
+  enter(site: EstateSiteId, options?: EstateEnterOptions): boolean {
+    if (!this.live || !this.walk || !this.core.pack || !this.core.interiors) return false;
+    const index = ESTATE_SITE_IDS.indexOf(site);
+    const building = index >= 0 ? this.core.pack.sites[index] : undefined;
+    if (!building) return false;
+    const entry = this.core.interiors.entry(index, this.entry);
+    if (entry.state === 'failed' || entry.state === 'absent') {
+      if (entry.reason) this.view.announce(false, entry.reason);
+      return false;
+    }
+    const camera = this.core.camera;
+    const spawn = this.nearestSpawn(building.spawns, camera.position.x, -camera.position.z);
+    if (!spawn) return false;
+    const halted = this.core.options.motionHalted();
+    const storeyTag = options?.storey ? normaliseStoreyTag(options.storey) : null;
+    const storey = storeyTag && storeyTag !== GROUND_STOREY && building.storeys.some((s) => s.tag === storeyTag) ? storeyTag : null;
+    this.cancelFlightHere();
+    this.abandonArc();
+    this.releaseKeys();
+    this.endDrag();
+    this.core.setFocus(site);
+    if (options?.instant === true || halted) {
+      this.leaveFor('walk');
+      this.mode = 'walk';
+      this.applyFov(ESTATE_VFOV_DEG.walk);
+      this.view.set({ selection: site, flight: false });
+      this.walk.start(spawn, storey ? { site: index, tag: storey } : undefined);
+      this.core.invalidate();
+      return true;
+    }
+    const from = endFromCamera(camera);
+    const to = endFromLook([spawn.x, spawn.z + EYE_HEIGHT, -spawn.y], spawn.yaw, 0, ESTATE_VFOV_DEG.walk);
+    this.leaveFor('walk');
+    // From another building's walk: that walk ends where the arc begins (its storey hint, its offers).
+    this.walk.stop();
+    this.mode = 'walk';
+    this.arc = {
+      arc: planArc(from, to, arcRise(building.roofTop), ENTER_SECONDS), startMs: now(), kind: 'enter', site: index, spawn, storey, orbit: null,
+    };
+    this.view.set({
+      selection: site, flight: true, walk: null,
+      location: { mode: 'walk', site, storey: null, unit: null, room: null },
+    });
+    this.core.invalidate();
+    return true;
+  }
+
+  /** "Start at BS1": Walk from a named spawn, a cut (engineApi walkFrom). */
+  walkFrom(name = 'BS1'): boolean {
+    if (!this.live || !this.walk || !this.core.pack) return false;
+    const pack = this.core.pack;
+    const want = name.trim();
+    let found: PackSpawn | null = null;
+    let site = -1;
+    for (const s of pack.site?.spawns ?? []) if (s.name === want || s.name.endsWith(` ${want}`)) { found = s; break; }
+    if (!found) {
+      pack.sites.forEach((b, i) => {
+        for (const s of b.spawns) if (!found && (`${b.id} ${s.name}` === want || s.name === want)) { found = s; site = i; }
+      });
+    }
+    if (!found) return false;
+    const spawn = spawnOf(found);
+    this.cancelFlightHere();
+    this.abandonArc();
+    this.releaseKeys();
+    this.endDrag();
+    if (site >= 0) this.core.setFocus(ESTATE_SITE_IDS[site]);
+    this.leaveFor('walk');
+    this.mode = 'walk';
+    this.fovTo(ESTATE_VFOV_DEG.walk, this.core.options.motionHalted());
+    this.walk.start(spawn);
+    this.core.invalidate();
+    return true;
+  }
+
+  /** getResume's `inside` (Walk on a building's grid), else null. */
+  resumeInside(): EstateResume['inside'] {
+    const walk = this.walk;
+    if (this.mode !== 'walk' || !walk?.active || walk.walker.site < 0) return null;
+    const tag = this.core.interiors?.table(walk.walker.site)?.tags[walk.walker.layer];
+    return tag ? { site: ESTATE_SITE_IDS[walk.walker.site], storey: tag } : null;
+  }
+
+  // ---- Walk's ways in and out ------------------------------------------------------------------
+
+  /** The entrance spawn nearest estate plan point (x, y), as a WalkSpawn. */
+  private nearestSpawn(spawns: readonly PackSpawn[], x: number, y: number): WalkSpawn | null {
+    let best: PackSpawn | null = null;
+    let bestD = Infinity;
+    for (const s of spawns) {
+      if (s.kind !== 'entrance') continue;
+      const d = Math.hypot(s.pos[0] - x, s.pos[1] - y);
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    return best ? spawnOf(best) : null;
+  }
+
+  /** Every building's entrance spawn nearest (x, y) (the 2 key), with its building. */
+  private nearestEntrance(x: number, y: number): { spawn: WalkSpawn; site: number } | null {
+    const pack = this.core.pack;
+    if (!pack) return null;
+    let best: PackSpawn | null = null;
+    let site = -1;
+    let bestD = Infinity;
+    pack.sites.forEach((b, i) => {
+      for (const s of b.spawns) {
+        if (s.kind !== 'entrance') continue;
+        const d = Math.hypot(s.pos[0] - x, s.pos[1] - y);
+        if (d < bestD) { bestD = d; best = s; site = i; }
+      }
+    });
+    return best ? { spawn: spawnOf(best), site } : null;
+  }
+
+  /**
+   * The floor under the camera for Fly → Walk: the one the feet are on, or the
+   * highest within DROP_REACH below them (a building's grid, or the ground);
+   * null when none is that close (high up, or over a footprint whose grid is
+   * still on its way).
+   */
+  private floorBelow(x: number, y: number, feet: number): number | null {
+    const interiors = this.core.interiors;
+    if (!interiors) return null;
+    const q = this.query;
+    for (let dz = 0; dz <= DROP_REACH + 1e-9; dz += 0.3) {
+      interiors.floorQuery(x, y, feet - dz, q);
+      if (q.kind === 'building') return q.z;
+      if (q.kind === 'ground') return feet - q.z <= DROP_REACH + 0.4 && feet - q.z >= -0.4 ? q.z : null;
+      if (q.kind === 'none') return feet <= DROP_REACH ? 0 : null;
+      if (q.kind === 'pending') return null;
+    }
+    return null;
+  }
+
+  /** The mode the camera is leaving gives it up: Overview's controls off, Fly stopped, Walk's session ended. */
+  private leaveFor(next: ControlMode) {
+    if (this.mode === 'overview' && next !== 'overview' && this.orbit) this.orbit.enabled = false;
+    if (this.mode === 'fly' && next !== 'fly') this.fly?.stop();
+    if (this.mode === 'walk' && next !== 'walk') this.walk?.stop();
+    if (next === 'overview') this.exitLock();
+  }
+
+  /** Walk → Overview: the 1.0 s reverse arc to an overview of the building underfoot, or of the walker's surroundings. */
+  private exitWalk(halted: boolean): boolean {
+    const orbit = this.orbit;
+    const walk = this.walk;
+    const pack = this.core.pack;
+    if (!orbit || !walk || !pack) return false;
+    const camera = this.core.camera;
+    const enter = this.arc?.kind === 'enter' ? this.arc : null;
+    let site = enter ? enter.site : walk.active ? walk.walker.site : -1;
+    if (site < 0) {
+      const named = this.view.get().location.site;
+      site = named ? ESTATE_SITE_IDS.indexOf(named) : -1;
+    }
+    const yaw = enter ? enter.spawn?.yaw ?? 0 : walk.walker.look.yaw;
+    const current = this.exitPose;
+    current.azimuth = yaw;
+    current.polar = EXIT_POLAR;
+    const building = site >= 0 ? pack.sites[site] : undefined;
+    const to = blankPose();
+    if (building) {
+      frameBuilding(building.bounds, building.radius, building.roofTop, current, this.overviewFov, camera.aspect, ORBIT_LIMITS, to);
+    } else {
+      const w = walk.walker;
+      to.target[0] = w.x; to.target[1] = Math.max(0, w.z); to.target[2] = -w.y;
+      to.distance = EXIT_DISTANCE;
+      to.azimuth = yaw;
+      to.polar = EXIT_POLAR;
+      clampOrbit(to);
+    }
+    this.releaseKeys();
+    this.endDrag();
+    this.arc = null;
+    this.leaveFor('overview');
+    this.mode = 'overview';
+    const position = positionFromOrbit(to, [0, 0, 0]);
+    const end = endLookingAt(position, to.target, this.overviewFov);
+    this.arc = {
+      arc: planArc(endFromCamera(camera), end, halted ? 0 : arcRise(building?.roofTop ?? 0), halted ? 0 : EXIT_SECONDS),
+      startMs: now(), kind: 'exit', site, spawn: null, storey: null, orbit: to,
+    };
+    this.view.set({ flight: true, walk: null, transition: null, location: { mode: 'overview', storey: null, unit: null, room: null } });
+    if (halted) this.landArc();
+    this.core.invalidate();
+    return true;
+  }
+
+  /** An arc reaches its end (or is cut there): Walk starts at the spawn, or Overview takes over at the orbit pose. */
+  private landArc() {
+    const active = this.arc;
+    if (!active) return;
+    this.arc = null;
+    const camera = this.core.camera;
+    applyArc(active.arc, Infinity, camera);
+    if (active.kind === 'enter' && active.spawn && this.walk) {
+      this.walk.start(active.spawn, active.storey && active.site >= 0 ? { site: active.site, tag: active.storey } : undefined);
+      this.view.set({ flight: false });
+      return;
+    }
+    const orbit = this.orbit;
+    if (!orbit) return;
+    orbit.enabled = true;
+    if (active.orbit) orbit.setOrbit(active.orbit);
+    else orbit.setPose(camera.position.toArray(this.e1), this.groundAhead(this.v2).toArray(this.e2));
+    this.applyFov(this.overviewFov);
+    if (active.orbit && active.site >= 0) this.noteLanding(active.site, active.orbit.target);
+    this.siteDirty = false;
+    this.view.set({
+      flight: false,
+      location: { mode: 'overview', site: this.siteId(active.site >= 0 ? active.site : this.siteFor()), storey: null, unit: null, room: null },
+    });
+  }
+
+  /** A command that moves the camera elsewhere drops a running arc where it is (Enter: back to Overview there). */
+  private abandonArc() {
+    const active = this.arc;
+    if (!active) return;
+    if (active.kind === 'exit') { this.landArc(); return; }
+    this.arc = null;
+    this.walk?.stop();
+    const orbit = this.orbit;
+    const camera = this.core.camera;
+    this.mode = 'overview';
+    if (orbit) {
+      orbit.enabled = true;
+      orbit.setPose(camera.position.toArray(this.e1), this.groundAhead(this.v2).toArray(this.e2));
+    }
+    this.view.set({ flight: false, location: { mode: 'overview', storey: null, unit: null, room: null } });
+  }
+
+  /** Ground height (three Y) under three (x, z): Fly's clearance once the ground heights have arrived. */
+  private groundY(x: number, z: number): number {
+    const walk = this.walk;
+    const g = walk ? walk.walker.groundZ(x, -z) : null;
+    return g ?? 0;
   }
 
   // ---- mode switches -------------------------------------------------------------------------
@@ -509,22 +873,51 @@ class EstateControls implements EngineNavigation {
     this.clicks.cancel();
     this.cancelFlightHere();
     const camera = this.core.camera;
+    const from = this.mode;
     if (mode === 'fly') {
-      orbit.enabled = false;
+      this.leaveFor('fly');
       fly.activate(); // keeps the pose drawn now
       this.mode = 'fly';
       this.fovTo(ESTATE_VFOV_DEG.fly, halted);
+    } else if (mode === 'walk') {
+      const walk = this.walk;
+      if (!walk) return;
+      if (from === 'fly') {
+        // Down onto the floor under the camera when it is close; else the nearest entrance.
+        const p = threeToEstate(camera.position.toArray(this.e1), this.e1);
+        const floor = this.floorBelow(p[0], p[1], p[2] - EYE_HEIGHT);
+        if (floor !== null) {
+          const yaw = fly.look.yaw;
+          this.leaveFor('walk');
+          this.mode = 'walk';
+          this.fovTo(ESTATE_VFOV_DEG.walk, halted);
+          walk.startAt(p[0], p[1], floor, yaw, 0);
+          this.core.invalidate();
+          return;
+        }
+      }
+      // From Overview (or high in Fly): a cut to the entrance spawn nearest the orbit target (or the camera's ground point).
+      const target = from === 'overview' ? orbit.getTarget(this.v2) : this.v2.copy(camera.position);
+      const near = this.nearestEntrance(target.x, -target.z);
+      if (!near) return;
+      this.leaveFor('walk');
+      this.mode = 'walk';
+      this.core.setFocus(ESTATE_SITE_IDS[near.site]);
+      this.fovTo(ESTATE_VFOV_DEG.walk, halted);
+      walk.start(near.spawn);
+      this.core.invalidate();
+      return;
     } else {
-      this.exitLock();
-      fly.stop();
+      // Instant to Overview (a fly-to or Home from Walk or Fly): orbit about the ground ahead.
       const target = this.groundAhead(this.v2);
+      this.leaveFor('overview');
       orbit.enabled = true;
       orbit.setPose(camera.position.toArray(this.e1), target.toArray(this.e2));
       this.mode = 'overview';
       this.fovTo(this.overviewFov, halted);
     }
     this.siteDirty = false;
-    this.view.set({ location: { mode: this.mode, site: this.siteId(this.siteFor()) } });
+    this.view.set({ location: { mode: this.mode, site: this.siteId(this.siteFor()), storey: null, unit: null, room: null } });
     this.core.invalidate();
   }
 
@@ -617,6 +1010,11 @@ class EstateControls implements EngineNavigation {
       case 'hold':
         if (this.held.press(code, action.hold)) {
           if (action.hold !== 'boost') this.cancelFlightHere();
+          // Walk: any movement key stops a climb where it is (§8.5); PgUp / PgDn take the offered lift or stair.
+          if (this.mode === 'walk' && this.walk && !this.arc) {
+            if (cancelsClimb(action)) this.walk.interrupt();
+            else if (action.hold === 'storey-up' || action.hold === 'storey-down') this.walk.storeyKey(action.hold === 'storey-up' ? 1 : -1);
+          }
           this.core.invalidate();
         }
         return;
@@ -624,16 +1022,28 @@ class EstateControls implements EngineNavigation {
         this.setMode(action.mode);
         return;
       case 'activate': {
-        // Overview: fly to the selected building (P5: and then Enter it).
+        if (this.mode === 'walk') {
+          // Walk: the offered lift opens its popover, else the offered stair.
+          const done = this.walk && !this.arc ? this.walk.activate() : false;
+          if (done === 'lift') this.view.set({ popover: 'lift' });
+          return;
+        }
+        // Overview: fly to the selected building; resting on it already, Enter it.
         const selection = this.view.get().selection;
-        if (selection) this.flyTo(selection);
+        if (!selection) return;
+        const index = ESTATE_SITE_IDS.indexOf(selection);
+        if (this.landed && this.landed.site === index && !this.flight && this.mode === 'overview') this.enter(selection);
+        else this.flyTo(selection);
         return;
       }
       case 'aerial':
         // Overview and (now) Fly: the aerial view, as the HUD's Home does.
         this.home();
         return;
-
+      case 'respawn':
+        // Walk: back to where this walk began.
+        this.home();
+        return;
       case 'capture':
         this.capture();
         return;
@@ -641,12 +1051,15 @@ class EstateControls implements EngineNavigation {
         this.view.announce(true, null);
         return;
       default:
-        // cycle-room, storey, cut (P6), respawn (P5).
+        // cycle-room, storey, cut (P6).
     }
   }
 
   private readonly onKeyUp = (event: KeyboardEvent) => {
-    if (this.held.release(event.code) !== null) this.core.invalidate();
+    const released = this.held.release(event.code);
+    if (released === null) return;
+    if ((released === 'storey-up' || released === 'storey-down') && !this.held.has(released)) this.walk?.storeyKeyUp();
+    this.core.invalidate();
   };
 
   private readonly onBlur = () => {
@@ -668,20 +1081,26 @@ class EstateControls implements EngineNavigation {
       this.orbit?.setShiftPan(event.shiftKey);
       return;
     }
-    if (locked || this.drag) return;
-    const role = dragRole('fly', event.button, event.shiftKey);
+    if (locked || this.drag || this.arc) return;
+    const role = dragRole(this.mode, event.button, event.shiftKey);
     if (role !== 'look' && role !== 'strafe') return;
     this.drag = { id: event.pointerId, role, x: event.clientX, y: event.clientY };
     try { canvas?.setPointerCapture(event.pointerId); } catch { /* not capturable (synthetic) */ }
     this.cancelFlightHere();
+    // A drag stops a climb where it is (§8.5).
+    if (this.mode === 'walk') this.walk?.interrupt();
   };
 
   private readonly onPointerMove = (event: PointerEvent) => {
     this.clicks.move(event.pointerId, event.clientX, event.clientY);
-    if (this.mode !== 'fly' || !this.fly || !this.live) return;
+    if (!this.live || this.arc) return;
+    const walk = this.mode === 'walk' ? this.walk : null;
+    const fly = this.mode === 'fly' ? this.fly : null;
+    if (!walk && !fly) return;
     if (this.canvas && document.pointerLockElement === this.canvas) {
       if (event.movementX || event.movementY) {
-        this.fly.dragLook(event.movementX, event.movementY);
+        if (walk) walk.dragLook(event.movementX, event.movementY);
+        else fly!.dragLook(event.movementX, event.movementY);
         this.core.invalidate();
       }
       return;
@@ -693,15 +1112,19 @@ class EstateControls implements EngineNavigation {
     drag.x = event.clientX;
     drag.y = event.clientY;
     if (dx === 0 && dy === 0) return;
-    if (drag.role === 'look') this.fly.dragLook(dx, dy);
-    else this.fly.dragStrafe(dx, dy, this.canvas?.clientHeight ?? 600);
+    if (walk) {
+      if (drag.role === 'look') walk.dragLook(dx, dy);
+      else walk.dragStrafe(dx, dy);
+    } else if (drag.role === 'look') fly!.dragLook(dx, dy);
+    else fly!.dragStrafe(dx, dy, this.canvas?.clientHeight ?? 600);
     this.core.invalidate();
   };
 
   private readonly onPointerUp = (event: PointerEvent) => {
     const kind = this.clicks.up(event.pointerId, event.clientX, event.clientY, event.timeStamp);
     if (this.drag && this.drag.id === event.pointerId) this.endDrag();
-    if (!kind || !this.live) return;
+    // Walk picks nothing: a press there is a look.
+    if (!kind || !this.live || this.mode === 'walk' || this.arc) return;
     const index = this.pickAt(event.clientX, event.clientY);
     if (index === null) return; // released off the stage
     if (kind === 'click') this.selectIndex(index);
@@ -728,6 +1151,14 @@ class EstateControls implements EngineNavigation {
       this.fly.wheel(steps);
       // The HUD's prompt shows the speed: the wheel's only visible effect.
       this.view.set({ flySpeed: this.fly.multiplier });
+    } else if (this.mode === 'walk' && this.walk && !this.arc) {
+      // ±0.5 m a notch (§8.2), whole notches only, so a trackpad's trickle does not creep.
+      this.wheelAcc += steps;
+      const whole = Math.trunc(this.wheelAcc);
+      if (whole !== 0) {
+        this.wheelAcc -= whole;
+        this.walk.wheel(whole);
+      }
     }
     this.core.invalidate();
   };

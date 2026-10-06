@@ -34,10 +34,11 @@ import type { EstateTier } from '../../../lib/estate/tiers';
 //   4. The shell renders <EstateHud engine={…}/> inside the stage once the
 //      engine is ready; the HUD calls engine commands directly.
 //
-// Phases. P4b ships Overview, Fly, fly-to, picking and the HUD. Walk, Enter,
-// interiors, stairs and lifts are P5 and Plan is P6: their commands exist now
-// so the shell, the HUD and the assistant are written once, return false (not
-// done) until their phase, and `features` says which are live.
+// Phases. P4b shipped Overview, Fly, fly-to, picking and the HUD; P5 Walk,
+// Enter and Exit, interiors, stairs and lifts (EstateView.interior and .walk
+// carry what the HUD shows for them). Plan is P6: its commands exist so the
+// shell, the HUD and the assistant are written once, return false until then,
+// and `features` says which are live.
 
 // ---- options ------------------------------------------------------------------------------
 
@@ -270,18 +271,23 @@ export interface EstateEngine {
    */
   flyTo(site: EstateSiteId, options?: EstateFlyOptions): boolean;
   /**
-   * P5. The 1.2 s arc to the nearest entrance spawn (void deck 1.5 m out; MSCP
-   * Entrance E; NC the nearest of its 8), rising by max(20 m, half the height),
-   * FOV 45° → 60°, into Walk; with `storey`, then a lift to that storey. Refused
-   * (false, and an `announce` with the reason) while the building's interior has
-   * failed permanently (§7.5). Returns false in P4b.
+   * P5. The 1.2 s arc to the building's entrance spawn nearest the camera
+   * (void deck 1.5 m out; MSCP Entrance E; NC the nearest of its 8), rising by
+   * max(20 m, half the height), FOV 45° → 60°, into Walk (a cut when `instant`
+   * or halted); its interior, walk grid and nav load at P0 from the start, and
+   * the view says `walk` mode with `flight` true until it lands. With `storey`,
+   * the strip's route there once the walker stands on its grid. Refused (false,
+   * and an `announce` with the reason) while the building's interior has
+   * failed permanently (§7.5) or the pack has none for it.
    */
   enter(site: EstateSiteId, options?: EstateEnterOptions): boolean;
   /**
    * Switch mode. 'overview' ↔ 'fly' keep the pose (Fly → Overview orbits about a
    * point ahead). 'walk' (P5) from Overview cuts to the entrance spawn nearest the
-   * orbit target. 'plan' (P6) needs a selected building; use planView(). Returns
-   * false for a mode not in `features`, or the mode already on.
+   * orbit target; from Fly it drops to a floor within 3 m below the camera, else
+   * the same cut. Walk → 'overview' is the 1.0 s reverse arc (as Esc), Walk →
+   * 'fly' keeps the pose. 'plan' (P6) needs a selected building; use
+   * planView(). Returns false for a mode not in `features`, or the mode already on.
    */
   setMode(mode: EstateViewMode): boolean;
   /**
@@ -290,9 +296,18 @@ export interface EstateEngine {
    * an `announce` reason when nothing reaches the tag. False in Overview and Fly.
    */
   setStorey(target: EstateStep | EstateStoreyTag): boolean;
-  /** P5, Walk, within 1.5 m of a landing: the 250 ms fade ride to `level` (0 bytes downloaded; a cut when halted). */
+  /**
+   * P5, Walk, within 1.5 m of a landing (view.walk.lift): the ride to one of its
+   * served `level`s — 250 ms to paper, the cut, 250 ms back (transition 'fade';
+   * 0 bytes downloaded; one cut when halted), landing 1.2 m out of the car and
+   * announced with `via` 'Lift n'. Closes the lift popover.
+   */
   takeLift(level: EstateStoreyTag): boolean;
-  /** P5, Walk, in a stair room: follow the stair path one storey up or down at 2.0 m/s (a cut when halted). */
+  /**
+   * P5, Walk, in a stair core (view.walk.stair): follow its walking line one
+   * storey up (1) or down (-1) at 2.0 m/s (transition 'climb'; a cut when
+   * halted). PgUp / PgDn held keep climbing storey by storey.
+   */
   takeStairs(direction: EstateStep): boolean;
   /** P6: the 55° plan view of `site` cut at `storey` floor + 1.2 m. False in P4b and P5. */
   planView(site: EstateSiteId, storey: EstateStoreyTag): boolean;
@@ -301,13 +316,21 @@ export interface EstateEngine {
    * alike, in every mode that moves: Overview dollies ×0.8 in or out, orbits
    * 15°, tilts 10° or pans 15 % of the distance; Fly moves half a second's
    * travel along the view, sideways or up and down, turns 15° or looks 10° up
-   * or down (P4b); Walk takes a 0.5 m step or a 15° turn (P5). Cancels a
-   * running fly-to where it is. False in a mode without steps.
+   * or down (P4b); Walk takes a 0.5 m step (forward, back, left, right) or a
+   * 15° turn, looks 10° up or down, and stops a stair climb there (P5; 'up'
+   * and 'down' do nothing in Walk). Cancels a running fly-to where it is.
+   * False in a mode without steps.
    */
-
   walkStep(step: EstateWalkStep): boolean;
   /** P5: the touch stick's deflection, each axis −1…1 (x strafe, y forward); 0, 0 releases it. */
   setStick(x: number, y: number): boolean;
+  /**
+   * P5, "Start at BS1" (§8.1): Walk from a named spawn, a cut. `spawn` is a
+   * bus stop's short name ('BS1'…'BS4', pack site.spawns) or an entrance's
+   * full name as the pack spells it ('BLK_509 Void deck entrance S'); BS1 when
+   * omitted. False when the pack has no such spawn.
+   */
+  walkFrom(spawn?: string): boolean;
   /**
    * Highlight a building (registry row, HUD, a click on the stage) or clear the
    * selection with null. No camera move. Emits `location`. Works in every
@@ -375,6 +398,8 @@ export interface EstateView {
    * A new object only when a field changes. Absent before P5.
    */
   readonly interior?: EstateInteriorView | null;
+  /** P5: Walk's offers where the walker stands (lift, stair, preparing, the ride caption, the strip); null outside Walk. */
+  readonly walk?: EstateWalkView | null;
 }
 
 /** EstateView.interior (P5). */
@@ -392,6 +417,78 @@ export interface EstateInteriorView {
   /** storeys.ts bandLabel ('L4–L6') while the band is open, else null. */
   readonly band: string | null;
   /** Why entering failed ('failed' only): a sentence for the HUD and the announcer. */
+  readonly reason: string | null;
+}
+
+/**
+ * EstateView.walk (P5): what Walk offers where the walker stands (§8.4, §8.5),
+ * for the HUD's chips, lift popover and storey strip. Present only in Walk
+ * (null otherwise); a new frozen object only when a field changes. Every
+ * string is the chip text as drawn (survey capitals), so the HUD renders them
+ * as they are.
+ */
+export interface EstateWalkView {
+  /** The building whose walk grid is underfoot, or null on the open estate (ground heights). */
+  readonly site: EstateSiteId | null;
+  /** Its storey underfoot (the walk layer), or null outdoors. */
+  readonly storey: EstateStoreyTag | null;
+  /**
+   * The walker stands within a building's walk bounds before its walk grid has
+   * arrived: its footprint blocks, and the HUD shows "PREPARING WALKWAY…".
+   */
+  readonly preparing: boolean;
+  /** Within 1.5 m of a lift landing: the chip, and the popover's level buttons. Null elsewhere or mid-transition. */
+  readonly lift: EstateLiftOffer | null;
+  /** In a stair room (within 1.5 m of a stair's walking line): the chip and its ▲ ▼ buttons. Null elsewhere or mid-transition. */
+  readonly stair: EstateStairOffer | null;
+  /**
+   * A lift ride (or a routed cut to a stair) under way: its caption over the
+   * fade, 'LIFT 2 · L5 → L12'. Null otherwise. The engine draws the fade itself
+   * (an opaque paper layer between its canvas and the HUD).
+   */
+  readonly ride: string | null;
+  /**
+   * The storey strip in Walk, bottom-up: every storey of the building underfoot
+   * and how the strip's button for it gets there (setStorey). Empty outdoors.
+   */
+  readonly levels: readonly EstateWalkLevel[];
+}
+
+/** EstateWalkView.lift: "LIFT 2 · CHOOSE A LEVEL" and the levels it serves. */
+export interface EstateLiftOffer {
+  /** As the data names it: 'Lift 2'. */
+  readonly name: string;
+  /** The chip: 'LIFT 2 · CHOOSE A LEVEL'. */
+  readonly text: string;
+  /** The storey the walker is on (its button is disabled). */
+  readonly current: EstateStoreyTag;
+  /** Served storeys with a landing, bottom-up: one takeLift(level) button each. */
+  readonly served: readonly EstateStoreyTag[];
+}
+
+/** EstateWalkView.stair: "STAIR 2 · ▲ L6 · ▼ L4"; takeStairs(1) climbs to `up`, takeStairs(-1) to `down`. */
+export interface EstateStairOffer {
+  /** The chip: 'STAIR 2 · ▲ L6 · ▼ L4' (a missing direction left out). */
+  readonly text: string;
+  /** 'STAIR 2'. */
+  readonly label: string;
+  readonly up: EstateStoreyTag | null;
+  readonly down: EstateStoreyTag | null;
+}
+
+/** One storey on Walk's strip. */
+export interface EstateWalkLevel {
+  readonly tag: EstateStoreyTag;
+  /** FFL above L1, m (the strip prints 'RF +45.60 … L1 ±0.00'). */
+  readonly ffl: number;
+  /**
+   * here: the walker's storey (disabled, current); lift: one ride; stairs: the
+   * stair path (adjacent storeys with no lift); lift+stairs: by lift to the
+   * highest served level, then the stair path (RF in every block); null: no
+   * route, `reason` says why and the button is disabled.
+   */
+  readonly route: 'here' | 'lift' | 'stairs' | 'lift+stairs' | null;
+  /** 'No lift or stair reaches RF' when route is null, else null. */
   readonly reason: string | null;
 }
 

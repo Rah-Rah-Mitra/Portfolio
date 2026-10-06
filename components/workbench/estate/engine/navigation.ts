@@ -2,7 +2,7 @@ import type { EstateViewMode } from '../../../../lib/estate/frames';
 import type { EstateSiteId, EstateStoreyTag } from '../../../../lib/estate/ids';
 import type { EscapeAction } from '../../../../lib/estate/input';
 import type {
-  EstateEngineFeatures, EstateEnterOptions, EstateFlyOptions, EstateStep, EstateView, EstateWalkStep,
+  EstateEngineFeatures, EstateEnterOptions, EstateFlyOptions, EstateResume, EstateStep, EstateView, EstateWalkStep,
 } from '../engineApi';
 import type { EstateCore } from './core';
 
@@ -40,6 +40,10 @@ export interface EngineNavigation {
   planView?(site: EstateSiteId, storey: EstateStoreyTag): boolean;
   walkStep?(step: EstateWalkStep): boolean;
   setStick?(x: number, y: number): boolean;
+  /** "Start at BS1" (engineApi walkFrom). */
+  walkFrom?(spawn?: string): boolean;
+  /** getResume's `inside`: the building and storey Walk stands in, or null. */
+  resumeInside?(): EstateResume['inside'];
   /** Home: Overview and Plan → the aerial view; Walk → its spawn. Missing: the core's cut to the poster camera. */
   home?(): boolean;
   /** One Esc layer beyond the popover and selection ones index.ts handles. */

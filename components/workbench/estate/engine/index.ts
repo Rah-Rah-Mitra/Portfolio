@@ -42,7 +42,7 @@ const sameView = (a: EstateView, b: EstateView): boolean =>
   sameLocation(a.location, b.location) && a.selection === b.selection && a.transition === b.transition
   && a.flight === b.flight && a.popover === b.popover && a.moving === b.moving && a.pointerLocked === b.pointerLocked
   && a.pointerUnlockedAtMs === b.pointerUnlockedAtMs && a.lean === b.lean && a.flySpeed === b.flySpeed
-  && (a.interior ?? null) === (b.interior ?? null);
+  && (a.interior ?? null) === (b.interior ?? null) && (a.walk ?? null) === (b.walk ?? null);
 
 const sameInterior = (a: EstateInteriorView | null, b: EstateInteriorView | null): boolean =>
   a === b || (a !== null && b !== null && a.site === b.site && a.state === b.state && a.storey === b.storey
@@ -53,6 +53,8 @@ const sameInterior = (a: EstateInteriorView | null, b: EstateInteriorView | null
 export interface EngineInternals {
   engine: EstateEngine;
   core: EstateCore;
+  /** The navigation module (controls/index.ts): what moves the camera. Harnesses pose the walker through it. */
+  navigation: EngineNavigation;
 }
 
 export const createEngineInternals = (options: EstateEngineOptions): EngineInternals => {
@@ -155,7 +157,7 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
         return options.resume ?? { mode: 'overview', selection: view.selection, position: [0, 0, 0], target: [0, 0, 0] };
       }
       const { position, target } = engineCore.cameraEstate();
-      return { mode: view.location.mode, selection: view.selection, position, target, inside: null };
+      return { mode: view.location.mode, selection: view.selection, position, target, inside: nav.resumeInside?.() ?? null };
     },
     getView: () => view,
     subscribe: (listener) => emitter.subscribe(listener),
@@ -169,6 +171,7 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
     planView: (site, storey) => live() && nav.planView !== undefined && nav.planView(site, storey),
     walkStep: (step) => live() && nav.walkStep !== undefined && nav.walkStep(step),
     setStick: (x, y) => live() && nav.setStick !== undefined && nav.setStick(x, y),
+    walkFrom: (spawn) => live() && nav.walkFrom !== undefined && nav.walkFrom(spawn),
     select,
     home: () => {
       if (!live()) return false;
@@ -199,7 +202,7 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
       access.set({ lean });
     },
   };
-  return { engine, core: engineCore };
+  return { engine, core: engineCore, navigation: nav };
 };
 
 export const createEngine: CreateEngine = (options) => createEngineInternals(options).engine;

@@ -94,6 +94,7 @@ const createFake = (options: EstateEngineOptions): FakeEngine => {
     planView: vi.fn(() => false),
     walkStep: vi.fn(() => false),
     setStick: vi.fn(() => false),
+    walkFrom: vi.fn(() => false),
     select: vi.fn((site) => {
       fake.setView({ selection: site });
       return true;

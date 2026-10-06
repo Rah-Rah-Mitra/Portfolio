@@ -1,4 +1,12 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
+import { parseNav } from '../lib/estate/nav';
+import { parsePack } from '../lib/estate/schema';
+import { decodeWalk, floorAt, WALK_BLOCKED, type FloorHit } from '../lib/estate/walk';
+import { walkBandStorey } from '../components/workbench/estate/engine/controls/walk';
 import budgets from '../lib/estate/packBudgets.json';
 import { ESTATE_SITE_IDS, ESTATE_SITE_STOREYS, ESTATE_STOREY_FFL, siteKindOf, type EstateSiteId } from '../lib/estate/ids';
 import { ESTATE_TIERS } from '../lib/estate/tiers';
@@ -582,5 +590,100 @@ describe('inside and peeking', () => {
       expect(interiorActive(access, true, true)).toBe(true);
       expect(interiorActive(access, false, true)).toBe(access !== 'outside');
     }
+  });
+});
+
+// ---- the stair case on the real walking lines (§10.2, P5) ---------------------------------
+//
+// The same property as the synthetic stair band above, on every stair of the
+// real pack: walk each upstream walking line (nav file) both ways, the feet on
+// the walk grid's treads (as Walk does) and on the line's own pitch (as Take
+// stairs does), with S Walk's band storey (the walk grid's layer underfoot,
+// one up once the eye stands a metre over the next floor: walkBandStorey, the
+// engine's storey hint while walking). The eye rule alone (storeyFromEye, which
+// Fly and peeking use) misses one tread per block: the second-last of L1 → L2
+// on the 3.6 m void-deck storey, eye 1.26 m over L2 with only L3 overhead; a
+// walker never uses it there. At every point the floor underfoot and the first floor
+// overhead in that cell (any storey's raster or overflow: the next flight, a
+// landing, the next slab) must both be in the band, on every tier and peeking.
+// Skipped without a pack carrying walk grids and nav files.
+
+const realPackDir = (() => {
+  const dir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'estate', 'v1.2');
+  const file = existsSync(dir) ? readdirSync(dir).find((f) => /^pack\.[0-9a-f]{8}\.json$/.test(f)) : undefined;
+  if (!file) return null;
+  const json = JSON.parse(readFileSync(join(dir, file), 'utf8')) as { classes: string[]; source?: { dev?: boolean } };
+  return json.classes.includes('w') && json.classes.includes('nav') && json.source?.dev !== true ? { dir, file } : null;
+})();
+
+describe.skipIf(realPackDir === null)('stair band on the real walking lines (§10.2)', () => {
+  it('keeps the floor underfoot and the floor overhead in the band on every stair of every building, both ways, every tier', () => {
+    const { dir, file } = realPackDir!;
+    const pack = parsePack(JSON.parse(readFileSync(join(dir, file), 'utf8')));
+    const read = (rel: string) => gunzipSync(readFileSync(join(dir, ...rel.split('/'))));
+    const hit: FloorHit = { z: 0, layer: -1 };
+    const bad: string[] = [];
+    let stairs = 0;
+    let samples = 0;
+    for (const site of pack.sites) {
+      const walk = decodeWalk(read(site.walk!.path), site.id);
+      const nav = parseNav(JSON.parse(read(site.nav!.path).toString('utf8')), site.id);
+      const table = storeyTable(site.storeys);
+      const h = walk.header;
+      // The lowest walkable floor above `eye` in the cell under (x, y), and the storey that draws it; −1 for open sky.
+      const overhead = (x: number, y: number, eye: number): number => {
+        const ix = Math.floor((x - h.originX) / h.cell), iy = Math.floor((y - h.originY) / h.cell);
+        if (ix < 0 || iy < 0 || ix >= h.nx || iy >= h.ny) return -1;
+        const key = iy * h.nx + ix;
+        let best = Infinity, owner = -1;
+        walk.layers.forEach((layer, i) => {
+          const v = walk.grid(i)[key];
+          const floors: number[] = v === WALK_BLOCKED ? [] : [layer.ffl + v / 1000];
+          for (let j = 0; j < layer.overflowKeys.length; j += 1) if (layer.overflowKeys[j] === key) floors.push(layer.ffl + layer.overflowMm[j] / 1000);
+          // A floor stored just below its storey's FFL is the top of a flight
+          // rising from the storey below (the walk grid hands it up at FFL −
+          // 0.25); F and the interior draw it with the storey it rises from.
+          for (const f of floors) if (f > eye && f < best) { best = f; owner = f < layer.ffl - 1e-6 && i > 0 ? i - 1 : i; }
+        });
+        return owner;
+      };
+      for (const stair of nav.stairs) {
+        if (stair.path.length < 2) continue;
+        stairs += 1;
+        for (const profile of ['tread', 'pitch'] as const) {
+          for (const down of [false, true]) {
+            const pts = down ? [...stair.path].reverse() : stair.path;
+            let feet = pts[0][2];
+            for (let p = 0; p + 1 < pts.length; p += 1) {
+              const [ax, ay, az] = pts[p];
+              const [bx, by, bz] = pts[p + 1];
+              const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 0.05));
+              for (let i = p === 0 ? 0 : 1; i <= n; i += 1) {
+                const t = i / n;
+                const x = ax + (bx - ax) * t, y = ay + (by - ay) * t;
+                const probe = profile === 'pitch' ? az + (bz - az) * t : feet;
+                const f = floorAt(walk, x, y, probe, hit);
+                if (f === null) { bad.push(`${site.id} ${stair.name} ${profile}: no floor at (${x.toFixed(2)}, ${y.toFixed(2)}, ${probe.toFixed(2)})`); continue; }
+                if (profile === 'tread') feet = f; else feet = probe;
+                samples += 1;
+                const under = hit.layer;
+                const above = overhead(x, y, feet + EYE_HEIGHT);
+                for (const [rule, s] of [['walk', walkBandStorey(table.ffl, under, feet)]] as const) {
+                  for (const { label, k } of TIER_CASES) {
+                    const band = storeyBand(table, s, k);
+                    if (inRange(band, under) && (above < 0 || inRange(band, above))) continue;
+                    if (bad.length < 8) bad.push(`${site.id} ${stair.name} ${profile} ${down ? 'down' : 'up'} S(${rule})=${table.tags[s]} ${label}: (${x.toFixed(2)}, ${y.toFixed(2)}) feet ${feet.toFixed(3)} under ${table.tags[under]} above ${above < 0 ? '—' : table.tags[above]}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+    // Every storey pair of every building has its stairs (five cores in a slab block, three in the car park, two at the NC).
+    expect(stairs).toBeGreaterThan(14 * 2);
+    expect(samples).toBeGreaterThan(stairs * 4 * 100);
   });
 });

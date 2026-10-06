@@ -250,13 +250,21 @@ button { font-family: var(--font-body); color: inherit; }
   width: min(900px, calc(100vw - 160px)); height: min(620px, calc(100dvh - 100px));
 }
 .wb-win[data-focused] { box-shadow: var(--shadow-lg); }
-.wb-win-home { left: 150px; top: 48px; }
+/* In front of the Estate (later in the DOM) before hydration raises it, and
+   without JavaScript; every focus then sets an inline z-index above this. */
+.wb-win-home { left: 150px; top: 48px; z-index: 1; }
 .wb-win-selected-work { left: 420px; top: 96px; }
 .wb-win-experience { left: 230px; top: 80px; }
 .wb-win-project-archive { left: 280px; top: 60px; }
 .wb-win-systems-lab { left: 300px; top: 88px; }
 .wb-win-camera-lab { left: 330px; top: 100px; }
-.wb-win-world-3d { left: 140px; top: 40px; }
+/* A boot window (behind Home), so its first paint is FieldWorkbench's own
+   clamp of [420, 96, 1040, 640] (applyBounds) and hydration moves nothing. */
+.wb-win-world-3d {
+  width: min(1040px, 100% - 24px); height: min(640px, 100% - 24px);
+  left: max(0px, min(420px, 100% - 24px - min(1040px, 100% - 24px)));
+  top: max(0px, min(96px, 100% - 24px - min(640px, 100% - 24px)));
+}
 .wb-win-capabilities { left: 250px; top: 70px; }
 .wb-win-proof-vault { left: 290px; top: 90px; }
 .wb-win-resumes-contact { left: 320px; top: 80px; }

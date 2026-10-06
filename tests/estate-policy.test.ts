@@ -11,12 +11,12 @@ import { resolveExperiencePolicy, type ExperienceMode, type ExperiencePolicy } f
 
 // The Estate window's load policy, plan §9.3, with the lifecycle rows of §7.10
 // and the generated consent label of §6.5. Three layers: named rows (one per
-// sentence of the plan), every combination of the fifteen spec'd inputs checked
+// sentence of the plan), every combination of the sixteen spec'd inputs checked
 // against the plan's invariants, and short sequences the shell walks through.
 
 /** Loaded, open, visible and focused on a capable page that has resolved. */
 const BASE: EstatePolicyInput = {
-  open: true, focused: true, onscreen: true, hidden: false, halted: false,
+  open: true, focused: true, raised: true, onscreen: true, hidden: false, halted: false,
   allowHeavyAssets: true, policyResolved: true, saveData: false, userRequested: false,
   engine: 'ready', contextLost: false, lostWhileFrozen: false, closedMs: 0, mounted: true, docReady: true,
 };
@@ -38,6 +38,7 @@ describe('estate load policy: the §9.3 table, row by row', () => {
     ['deep link before resolve on a Data Saver device: poster, never consent', { ...FRESH, policyResolved: false, allowHeavyAssets: false, saveData: true }, want('poster', { lean: true })],
     ['allowed, but readyState is not complete yet', { ...FRESH, docReady: false }, want('poster')],
     ['asked, then closed before anything started', { ...FRESH, open: false, userRequested: true }, want('poster')],
+    ['open behind another window, never in front (the boot layout)', { ...FRESH, focused: false, raised: false }, want('poster')],
     // consent
     ['Save-Data: the lean label and the Data Saver line', { ...FRESH, ...SAVE_DATA_HELD }, want('consent', { lean: true, reason: 'held: Data Saver is on', action: 'load' })],
     ['reduced motion: the full label', { ...FRESH, allowHeavyAssets: false, policyReason: 'reduced-motion' }, want('consent', { reason: 'held: your system asks for reduced motion', action: 'load' })],
@@ -48,12 +49,15 @@ describe('estate load policy: the §9.3 table, row by row', () => {
     ['a hold it cannot name gets no line, not a guess', { ...FRESH, allowHeavyAssets: false }, want('consent', { action: 'load' })],
     ['consent does not wait for the document', { ...FRESH, ...SAVE_DATA_HELD, docReady: false }, want('consent', { lean: true, reason: 'held: Data Saver is on', action: 'load' })],
     ['consent shows hidden or off screen too', { ...FRESH, ...SAVE_DATA_HELD, hidden: true, onscreen: false }, want('consent', { lean: true, reason: 'held: Data Saver is on', action: 'load' })],
+    ['consent shows on a window never in front: it downloads nothing', { ...FRESH, ...SAVE_DATA_HELD, focused: false, raised: false }, want('consent', { lean: true, reason: 'held: Data Saver is on', action: 'load' })],
     // loading
     ['allowed and the document complete: automatic, after idle', FRESH, want('loading', { autoLoad: true, startEngine: true })],
     ['asked from consent: starts now, no idle wait', { ...FRESH, allowHeavyAssets: false, policyReason: 'reduced-motion', userRequested: true }, want('loading', { startEngine: true })],
     ['asked under Save-Data: lean', { ...FRESH, ...SAVE_DATA_HELD, userRequested: true }, want('loading', { lean: true, startEngine: true })],
     ['asked before the document is complete', { ...FRESH, allowHeavyAssets: false, userRequested: true, docReady: false }, want('loading', { startEngine: true })],
     ['an explicit request needs no resolved policy', { ...FRESH, policyResolved: false, allowHeavyAssets: false, userRequested: true }, want('loading', { startEngine: true })],
+    ['an explicit request needs no raise', { ...FRESH, focused: false, raised: false, allowHeavyAssets: false, policyReason: 'reduced-motion', userRequested: true }, want('loading', { startEngine: true })],
+    ['in front once, behind again: still automatic', { ...FRESH, focused: false, raised: true }, want('loading', { autoLoad: true, startEngine: true })],
     ['in flight, open', { engine: 'loading' }, want('loading', { startEngine: true })],
     ['closed during loading: downloads finish, no renderer', { engine: 'loading', open: false, closedMs: 1_000 }, want('loading')],
     ['closed during loading, past the release delay: still finishing', { engine: 'loading', open: false, closedMs: 120_000 }, want('loading')],
@@ -125,13 +129,13 @@ describe('estate load policy: the §9.3 table, row by row', () => {
 // ---- every combination ----------------------------------------------------------
 
 const FLAGS = [
-  'open', 'focused', 'onscreen', 'hidden', 'halted', 'allowHeavyAssets', 'policyResolved', 'saveData',
+  'open', 'focused', 'raised', 'onscreen', 'hidden', 'halted', 'allowHeavyAssets', 'policyResolved', 'saveData',
   'userRequested', 'contextLost', 'lostWhileFrozen', 'mounted', 'docReady',
 ] as const;
 const CLOSED_MS = [0, RELEASE_AFTER_MS - 1, RELEASE_AFTER_MS];
 const SPACE = 2 ** FLAGS.length * ESTATE_ENGINE_STATES.length * CLOSED_MS.length;
 
-/** Every combination of the fifteen spec'd inputs (optional ones left out), through one reused object. */
+/** Every combination of the sixteen spec'd inputs (optional ones left out), through one reused object. */
 const forEveryInput = (visit: (input: EstatePolicyInput) => void) => {
   const input: EstatePolicyInput = { ...BASE };
   for (let mask = 0; mask < 2 ** FLAGS.length; mask += 1) {
@@ -188,10 +192,21 @@ describe(`estate load policy: all ${SPACE.toLocaleString('en')} input combinatio
       || (out.phase === 'poster' && !out.autoLoad && !out.startEngine));
   });
 
-  it('starts automatically only after resolve, with heavy assets allowed and the document complete', () => {
+  it('starts automatically only after resolve, with heavy assets allowed, the document complete and the window once in front', () => {
     holdsEverywhere((i, out) => iff(out.autoLoad,
-      i.mounted && i.open && i.engine === 'none' && i.policyResolved && i.allowHeavyAssets && i.docReady && !i.userRequested));
+      i.mounted && i.open && i.engine === 'none' && i.policyResolved && i.allowHeavyAssets && i.docReady && i.raised && !i.userRequested));
     holdsEverywhere((_i, out) => !out.autoLoad || out.phase === 'loading');
+  });
+
+  it('reads raised only to hold an automatic start: a window never in front stays on its poster', () => {
+    holdsEverywhere((i, out) => {
+      const flipped = resolveEstatePhase({ ...i, raised: !i.raised });
+      const held = i.mounted && i.open && i.engine === 'none' && i.policyResolved && i.allowHeavyAssets && i.docReady && !i.userRequested;
+      if (!held) return JSON.stringify(flipped) === JSON.stringify(out);
+      const [up, down] = i.raised ? [out, flipped] : [flipped, out];
+      return up.phase === 'loading' && up.autoLoad && up.startEngine
+        && down.phase === 'poster' && !down.autoLoad && !down.startEngine && down.action === undefined;
+    });
   });
 
   it('never auto-loads before readyState is complete', () => {
@@ -299,6 +314,18 @@ describe('estate load policy: sequences', () => {
       { engine: 'ready' },
     ]);
     expect(trace.map(brief)).toEqual(['poster', 'poster', 'loading auto start', 'loading start', 'live']);
+  });
+
+  it('the boot layout: open behind Home on its poster, then brought forward, one automatic load', () => {
+    const trace = walk({ engine: 'none', focused: false, raised: false, policyResolved: false, allowHeavyAssets: false, docReady: false, policyReason: 'default' }, [
+      { policyResolved: true, allowHeavyAssets: true },
+      { docReady: true },
+      { focused: true, raised: true },
+      { engine: 'loading' },
+      { focused: false },
+      { engine: 'ready' },
+    ]);
+    expect(trace.map(brief)).toEqual(['poster', 'poster', 'poster', 'loading auto start', 'loading start', 'loading start', 'live']);
   });
 
   it('a deep link under Save-Data: consent with the lean label, a click, a lean load, then full detail on request', () => {

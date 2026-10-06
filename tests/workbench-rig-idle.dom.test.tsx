@@ -64,4 +64,22 @@ describe('field workbench — idle rig loop', () => {
     expect(frames.length).toBeGreaterThan(0);
     expect(drain()).toBe(true);
   });
+
+  // The boot layout lays out every boot window, and each layout caches its own
+  // window's hoists: the deep-linked window has to take them back after.
+  it('drives the deep-linked window’s hoisted cards, not the last boot window’s', () => {
+    window.history.replaceState(null, '', '/?app=selected-work');
+    try {
+      const { container } = render(<FieldWorkbench />);
+      expect(drain()).toBe(true);
+      fireEvent.scroll(container.querySelector<HTMLElement>('[data-scroll="selected-work"]')!);
+      expect(drain()).toBe(true);
+
+      fireEvent.pointerDown(container.querySelector('[data-win="selected-work"] [data-hoist]')!, { clientX: 1 });
+      expect(frames.length).toBeGreaterThan(0);
+      expect(drain()).toBe(true);
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
 });

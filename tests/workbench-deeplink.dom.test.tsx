@@ -94,7 +94,7 @@ describe('field workbench — deep links', () => {
     expect(container.querySelector('[data-win="home"]')?.hasAttribute('data-focused')).toBe(false);
   });
 
-  it('raises Home above Selected Work on a plain visit', () => {
+  it('raises Home above the Estate on a plain visit', () => {
     setup('/');
     const frames: FrameRequestCallback[] = [];
     vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
@@ -102,14 +102,18 @@ describe('field workbench — deep links', () => {
     act(() => { for (let i = 0; i < frames.length && i < 50; i += 1) frames[i]!(16 * i); });
     const z = (id: string) => Number(container.querySelector<HTMLElement>(`[data-win="${id}"]`)?.style.zIndex || 0);
     expect(container.querySelector('[data-win="home"]')?.hasAttribute('data-focused')).toBe(true);
-    expect(z('home')).toBeGreaterThan(z('selected-work'));
+    expect(container.querySelector('[data-win="world-3d"]')?.hasAttribute('data-focused')).toBe(false);
+    expect(z('home')).toBeGreaterThan(z('world-3d'));
   });
 
-  it('leaves the boot state alone when there is no deep link', () => {
+  it('leaves the boot state alone when there is no deep link: Home and the Estate open, Selected Work a click away', () => {
     setup('/');
     const { container } = render(<FieldWorkbench />);
-    expect(container.querySelector<HTMLElement>('[data-win="home"]')?.style.display).toBe('flex');
-    expect(container.querySelector<HTMLElement>('[data-win="project-archive"]')?.style.display).toBe('none');
+    const display = (id: string) => container.querySelector<HTMLElement>(`[data-win="${id}"]`)?.style.display;
+    expect(display('home')).toBe('flex');
+    expect(display('world-3d')).toBe('flex');
+    expect(display('selected-work')).toBe('none');
+    expect(display('project-archive')).toBe('none');
     expect(scrolls).toEqual([]);
   });
 });
@@ -159,7 +163,7 @@ describe('dossier — graduation date', () => {
   });
 });
 
-describe('Estate window — deep links (?app=world-3d)', () => {
+describe('Estate window — the boot layout and deep links (?app=world-3d)', () => {
   // Microtasks: the window reads its section's display through a MutationObserver.
   // The window imports its controller chunk when it first opens; awaiting the
   // same import means the window's has settled too.
@@ -205,12 +209,16 @@ describe('Estate window — deep links (?app=world-3d)', () => {
   it('(b) allowed heavy assets load once, only after readyState is complete and the page is idle, never via consent', async () => {
     setup('/?app=world-3d');
     stubIdle();
+    // The deep link focuses its window on the next frame, which brings it forward.
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
     let readyState: DocumentReadyState = 'interactive';
     vi.spyOn(document, 'readyState', 'get').mockImplementation(() => readyState);
     const { container } = render(
       <ExperienceModeProvider capabilities={{ saveData: false, reducedMotion: false }}><FieldWorkbench /></ExperienceModeProvider>,
     );
     const phases = watchPhases(container);
+    act(() => { for (let i = 0; i < frames.length && i < 50; i += 1) frames[i]!(16 * i); frames.length = 0; });
     await flush();
     expect(phaseOf(container)).toBe('poster');
     expect(idle).toHaveLength(0);
@@ -230,12 +238,77 @@ describe('Estate window — deep links (?app=world-3d)', () => {
     expect(phases.seen).not.toContain('consent');
   });
 
+  it('(d) a plain visit opens it behind Home on its poster; allowed, it loads once only when brought forward', async () => {
+    setup('/');
+    stubIdle();
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
+    const runFrames = () => act(() => { for (let i = 0; i < frames.length && i < 50; i += 1) frames[i]!(16 * i); frames.length = 0; });
+    const runIdle = () => act(() => { idle.splice(0).forEach((callback) => callback()); });
+    const { container } = render(
+      <ExperienceModeProvider capabilities={{ saveData: false, reducedMotion: false }}><FieldWorkbench /></ExperienceModeProvider>,
+    );
+    runFrames();
+    await flush();
+    runIdle();
+    await flush();
+    const estate = container.querySelector<HTMLElement>('[data-win="world-3d"]')!;
+    expect(estate.style.display).toBe('flex');
+    expect(container.querySelector('[data-win="home"]')?.hasAttribute('data-focused')).toBe(true);
+    expect(phaseOf(container)).toBe('poster');
+    expect(loadEngine).not.toHaveBeenCalled();
+    expect(estateFetches()).toEqual([]);
+
+    // The rail, a press inside it, the assistant: every way forward focuses it.
+    act(() => { dispatchWorkbenchOpen({ appId: 'world-3d' }); });
+    runFrames();
+    await flush();
+    runIdle();
+    await flush();
+    expect(estate.hasAttribute('data-focused')).toBe(true);
+    expect(loadEngine).toHaveBeenCalledTimes(1);
+  });
+
+  it('(e) the boot layout’s open Estate takes its controller on a desktop, never on a phone', async () => {
+    const mount = () => {
+      stubIdle();
+      return render(
+        <ExperienceModeProvider capabilities={{ saveData: true, reducedMotion: false }}><FieldWorkbench /></ExperienceModeProvider>,
+      );
+    };
+    setup('/');
+    const desktop = mount();
+    await flush();
+    // The controller's own phase: Save-Data shows consent, even behind Home…
+    expect(phaseOf(desktop.container)).toBe('consent');
+    // …its Load button, and a status line that says nothing until the window comes forward.
+    expect(desktop.container.querySelector('[data-estate-action]')?.textContent).toMatch(/^Load the 3D estate · \d+\.\d MB$/);
+    expect(desktop.container.querySelector('#world .wb-estate-state')?.textContent).toBe('');
+    cleanup();
+
+    setup('/');
+    vi.stubGlobal('matchMedia', vi.fn((query: string) => ({
+      matches: query === '(max-width: 880px)', addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    })));
+    const phone = mount();
+    await flush();
+    act(() => { idle.splice(0).forEach((callback) => callback()); });
+    await flush();
+    // App drops this surface on a phone: no controller, so the prerender's poster stands.
+    expect(phaseOf(phone.container)).toBe('poster');
+    expect(loadEngine).not.toHaveBeenCalled();
+    expect(estateFetches()).toEqual([]);
+  });
+
   it('(c) under Save-Data it waits for consent and requests nothing', async () => {
     setup('/?app=world-3d');
     stubIdle();
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
     const { container } = render(
       <ExperienceModeProvider capabilities={{ saveData: true, reducedMotion: false }}><FieldWorkbench /></ExperienceModeProvider>,
     );
+    act(() => { for (let i = 0; i < frames.length && i < 50; i += 1) frames[i]!(16 * i); frames.length = 0; });
     await flush();
     act(() => { idle.splice(0).forEach((callback) => callback()); });
     await flush();

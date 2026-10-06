@@ -196,13 +196,21 @@ test.describe('estate window — live 3D view', () => {
     await page.route('**/api/resume*', (route) => route.fulfill({ status: 200, contentType: 'text/plain', body: 'estate.spec: the résumé preview is stubbed' }));
   });
 
-  test('1 · boot fetches nothing of the estate or its engine', async ({ page }) => {
+  test('1 · boot opens the Estate behind Home on its poster, fetching nothing else of it until it is brought forward', async ({ page }) => {
     const errors = collectErrors(page);
     const paths = collectPaths(page);
-    await page.goto('/');
+    await page.goto('/?estate-quality=min');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1_000);
-    expect(paths.filter((path) => ESTATE_FILES.test(path) || ENGINE_CHUNKS.test(path) || /EstateController-/.test(path))).toEqual([]);
+    await expect(page.getByRole('dialog', { name: 'Estate' })).toBeVisible();
+    await expect(page.locator('[data-win="home"]')).toHaveAttribute('data-focused', 'true');
+    await expect(phase(page)).toHaveAttribute('data-estate-phase', 'poster');
+    expect(paths.filter((path) => ESTATE_FILES.test(path)).every((path) => /^\/estate\/v\d+\.\d+\/poster\//.test(path)), 'only the poster').toBe(true);
+    expect(paths.filter((path) => ENGINE_CHUNKS.test(path)), 'no engine').toEqual([]);
+
+    await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
+    await waitLive(page);
+    expect(paths.some((path) => ENGINE_CHUNKS.test(path))).toBe(true);
     expect(errors).toEqual([]);
   });
 

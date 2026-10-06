@@ -38,8 +38,9 @@ import type { EstateControllerProps, EstateModel, EstateModelAction, EstateModel
 //  - the phase is lib/estate/policy.ts resolveEstatePhase(), recomputed every
 //    render from what has been observed (usePanePresence, the experience
 //    policy, the engine's events); the effects below carry out what it says;
-//  - an automatic load waits for readyState 'complete' and then idle, and a
-//    deep link never shows consent before the policy has resolved;
+//  - an automatic load waits for readyState 'complete' and then idle, and for
+//    the window to have been in front once (the boot layout opens it behind
+//    Home); a deep link never shows consent before the policy has resolved;
 //  - the engine's host is found by DOM scan ('[data-estate-stage]'), never a
 //    ref, and every instance gets a fresh token; events carrying any other
 //    token are dropped, so a disposed engine can never move the window;
@@ -96,6 +97,9 @@ const plateText = (phase: EstatePhase, reason: string | undefined): string | nul
 
 const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onModel, takePending }) => {
   const presence = usePanePresence(rootRef);
+  // Latched the first time the window is in front: the policy's `raised`.
+  const [raised, setRaised] = React.useState(false);
+  if (!raised && presence.open && presence.focused) setRaised(true);
   const experience = useOptionalExperienceMode();
   const policyResolved = experience?.resolved === true;
   const policy = policyResolved ? experience?.policy : undefined;
@@ -134,6 +138,7 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   const result = resolveEstatePhase({
     open: presence.open,
     focused: presence.focused,
+    raised,
     onscreen: presence.onscreen,
     hidden: presence.hidden,
     halted: presence.halted,
@@ -638,6 +643,10 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   else if (phase === 'frozen') stateText = beenLive ? LIVE_TEXT : '3D view paused while the window is closed or off screen.';
   const reason = reloadOnly ? MODULE_FAILED : phase === 'unavailable' && latchedReason ? latchedReason : result.reason;
   if (!stateText && reason) stateText = reason;
+  // Consent behind Home (the boot layout) says nothing until the window comes
+  // forward, or the line would be read out at page load for a window nobody
+  // has looked at. Its Load button stands.
+  if (phase === 'consent' && !raised) stateText = '';
 
   // The view's handlers stay the same functions for this controller's life and
   // call the latest closures.

@@ -8,8 +8,10 @@ import budgets from './packBudgets.json';
 //
 // What each phase asks of the shell:
 //  - poster       nothing downloads: prerender, never opened, closed with nothing
-//                 loaded, or open before the policy resolves (so a deep link never
-//                 flashes consent and then auto-loads);
+//                 loaded, open before the policy resolves (so a deep link never
+//                 flashes consent and then auto-loads), or open but never raised
+//                 (the boot layout's Estate behind Home: a visit that never looks
+//                 at it downloads nothing);
 //  - consent      poster plus the Load button: open, resolved, heavy assets not
 //                 allowed, not asked yet;
 //  - loading      the engine chunk and the first frame download. `autoLoad` says
@@ -73,6 +75,13 @@ export interface EstatePolicyInput {
   open: boolean;
   /** It is the focused window. Only the GPU claim reads this. */
   focused: boolean;
+  /**
+   * It has been the focused window at least once (the shell latches it). Only
+   * an automatic start waits for it: the boot layout opens the Estate behind
+   * Home, and every other way in (rail, deep link, assistant, a press inside
+   * it) focuses it. Consent shows without it; a Load click needs none.
+   */
+  raised: boolean;
   /** The stage intersects the viewport. */
   onscreen: boolean;
   /** document.hidden. */
@@ -203,7 +212,7 @@ export const resolveEstatePhase = (input: EstatePolicyInput): EstatePhaseResult 
       if (input.userRequested) return result('loading', lean, undefined, { startEngine: true });
       if (!input.policyResolved) return result('poster', lean);
       if (input.allowHeavyAssets) {
-        return input.docReady ? result('loading', lean, undefined, { autoLoad: true, startEngine: true }) : result('poster', lean);
+        return input.docReady && input.raised ? result('loading', lean, undefined, { autoLoad: true, startEngine: true }) : result('poster', lean);
       }
       return result('consent', lean, describeEstateHold(input.policyReason, input.saveData));
     }

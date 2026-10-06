@@ -20,7 +20,8 @@ const DEFAULT_BOUNDS: Record<DesktopAppId, Bounds> = {
   'project-archive': [280, 60, 940, 640],
   'systems-lab': [300, 88, 860, 610],
   'camera-lab': [330, 100, 840, 640],
-  'world-3d': [140, 40, 1040, 640],
+  // A boot window, in the slot Selected Work had: behind Home, offset right.
+  'world-3d': [420, 96, 1040, 640],
   'capabilities': [250, 70, 900, 620],
   'proof-vault': [290, 90, 880, 600],
   'resumes-contact': [320, 80, 880, 600],
@@ -49,11 +50,14 @@ const MEMO_BODIES: Record<string, React.ComponentType> = Object.fromEntries(
   Object.entries(WINDOW_BODIES).map(([id, Body]) => [id, React.memo(Body)]),
 );
 
+// Home in front with the Estate behind it. The Estate downloads nothing heavy
+// until a visitor brings it forward (lib/estate/policy.ts `raised`).
 const INITIAL_OPEN: Record<DesktopAppId, boolean> = {
-  'home': true, 'selected-work': true, 'experience': false, 'project-archive': false,
-  'systems-lab': false, 'camera-lab': false, 'world-3d': false, 'capabilities': false,
+  'home': true, 'selected-work': false, 'experience': false, 'project-archive': false,
+  'systems-lab': false, 'camera-lab': false, 'world-3d': true, 'capabilities': false,
   'proof-vault': false, 'resumes-contact': false, 'resume-builder': false,
 };
+const BOOT_WINDOWS = (Object.keys(INITIAL_OPEN) as DesktopAppId[]).filter((id) => INITIAL_OPEN[id]);
 
 interface ScrollState { el: HTMLElement | null; st: number; prev: number; vel: number; max: number }
 interface HoistState { el: HTMLElement; y: number; v: number; a: number; av: number }
@@ -365,13 +369,14 @@ const FieldWorkbench: React.FC = () => {
   React.useEffect(() => {
     const engine = engineRef.current;
     requestAnimationFrame(() => {
-      (['home', 'selected-work'] as DesktopAppId[]).forEach((id) => {
+      BOOT_WINDOWS.forEach((id) => {
         applyBounds(id);
         layoutRig(id);
       });
       // A deep link (?app=, #anchor) has already focused its window by now;
-      // Home only takes focus on a plain visit.
-      if (!engine.focused) focusWin('home');
+      // Home only takes focus on a plain visit. Either way the focused window
+      // takes the hoists back: each layoutRig above cached its own window's.
+      focusWin(engine.focused ?? 'home');
     });
 
     let raf = 0;

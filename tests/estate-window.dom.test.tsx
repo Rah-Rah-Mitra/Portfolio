@@ -252,6 +252,44 @@ describe('Estate window — loading', () => {
     expect(document.activeElement).toBe(document.body);
   });
 
+  it('open behind another window and never in front (the boot layout): the poster and nothing fetched until it comes forward, then one load that goes on behind again', async () => {
+    loadMock.mockResolvedValue(runtime);
+    const { container, rerender } = render(<Desk focused={false} />);
+    await flush();
+    runIdle();
+    await flush();
+    expect(phaseOf(container)).toBe('poster');
+    expect(loadMock).not.toHaveBeenCalled();
+
+    rerender(<Desk />);
+    await flush();
+    runIdle();
+    await flush();
+    expect(loadMock).toHaveBeenCalledTimes(1);
+    rerender(<Desk focused={false} />);
+    await flush();
+    instances[0].emit({ type: 'ready', tier: 'mid', msaa: false, programs: 6 });
+    await flush();
+    expect(phaseOf(container)).toBe('live');
+    expect(loadMock).toHaveBeenCalledTimes(1);
+    // An automatic load never moves focus.
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('consent behind another window offers Load but says nothing aloud until the window comes forward', async () => {
+    loadMock.mockResolvedValue(runtime);
+    const { container, rerender } = render(<Desk device={SAVE_DATA} focused={false} />);
+    await flush();
+    runIdle();
+    expect(phaseOf(container)).toBe('consent');
+    expect(actionButton(container)?.textContent).toMatch(/^Load the 3D estate · \d+\.\d MB$/);
+    expect(stateText(container)).toBe('');
+    rerender(<Desk device={SAVE_DATA} />);
+    await flush();
+    expect(stateText(container)).toBe('Still render · held: Data Saver is on.');
+    expect(loadMock).not.toHaveBeenCalled();
+  });
+
   it('waits for consent under Save-Data, then loads on the click and focuses the stage', async () => {
     loadMock.mockResolvedValue(runtime);
     const { container } = render(<Desk device={SAVE_DATA} />);

@@ -25,9 +25,13 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 
 - Desktop ≥881px: `components/workbench/FieldWorkbench.tsx` — a windowed
   drawing set (11 draggable windows over a blueprint desk, crane-rig physics
-  from `lib/rig.ts`). App registry/data adapters: `lib/workbench.ts` (ids
-  reuse `lib/workstation.ts` so the AI assistant + `server/pageAgent.mjs`
-  command contract stay valid). Window sections keep their anchors (`#home
+  from `lib/rig.ts`). It boots (`INITIAL_OPEN`) with Home / Dossier focused in
+  front of the Estate, which sits in Selected Work's old slot (420, 96; its CSS
+  restates applyBounds' clamp, so hydration moves nothing); Selected Work is a
+  click away on the rail and the dossier's own button. App registry/data
+  adapters: `lib/workbench.ts` (ids reuse `lib/workstation.ts` so the AI
+  assistant + `server/pageAgent.mjs` command contract stay valid). Window
+  sections keep their anchors (`#home
   #work #experience #all-work #systems-lab #technical-lab #world #domains #proof
   #resumes #contact #resume-builder`, `experience-<id>`, `project-<id>`) — the
   assistant cites them (`allowedLinks` in `lib/askPageState.ts`, pinned against
@@ -117,13 +121,16 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      live or frozen — never on the figure (axe `aria-allowed-role`). Its
      `aria-describedby` is the HUD's short per-mode summary `#estate-keys-desc`
      (`hidden`, always in the tree): `#estate-keys` sits in a closed `<details>`,
-     which Chrome keeps out of the accessibility tree. Without JavaScript the
-     poster in the closed window downloads anyway (browsers ignore
-     `loading="lazy"` with scripting off; ~50–70 KB per no-JS desktop visit) —
+     which Chrome keeps out of the accessibility tree. The window boots open
+     behind Home, so its lazy poster is part of every desktop visit's first
+     view; on a phone the hidden surface keeps it unloaded, except without
+     JavaScript, where browsers ignore `loading="lazy"` (~50–70 KB) —
      accepted: §9.2 pins the prerendered `src`.
   2. **Controller** (`estate/EstateController.tsx`, a lazy chunk the bootstrap
-     imports the first time the window is open, or when a focus request or row
-     press comes first): renders nothing, reports an `EstateModel`
+     imports the first time the window is open — at boot on a desktop, never on
+     a phone, where App drops the desktop surface right after hydration (the
+     bootstrap reads App's `(max-width: 880px)` query) — or when a focus request
+     or row press comes first): renders nothing, reports an `EstateModel`
      (`estate/estateModel.ts`, types only) to the view. It exists because the
      main bundle may grow by at most 12,000 B for the Estate; policy, presence,
      Esc and the engine lifecycle do not fit in that and decide nothing before
@@ -136,7 +143,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      resolved, so a deep link never flashes consent. Phases: poster, consent
      (Save-Data, reduced motion, `?mode=scan`; the Load label is generated from
      the catalogue and never understates the download; Save-Data loads lean),
-     loading (automatic loads wait for `readyState` complete, then idle),
+     loading (automatic loads wait for `readyState` complete, then idle, and
+     for the window to have been in front once — the policy's `raised`, which
+     the controller latches: the boot layout opens it behind Home, so a visit
+     that never brings it forward fetches only the poster and the controller;
+     the rail, a deep link, the assistant and any press inside it focus it),
      live, frozen (closed, hidden, off screen), released (closed 30 s, or the
      rail's DESK — a close counts as DESK only when `.wb-rail-desk` was pressed
      within a second and every window is closed; closing the last window by hand
@@ -544,8 +555,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
   whichever pure module it lists first), and the engine chunk is found by the
   module it holds, not by its facade, which Rollup drops once the bench chunk
-  imports from it. Main bundle after the P6/P7 review: 508,174 / 508,834 B (the
-  release round left it unchanged).
+  imports from it. Main bundle: 508,334 / 508,834 B since the Estate became a
+  boot window (+160 B; the P6/P7 review left it at 508,174 and the release
+  round unchanged).
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
   `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
   a focused HUD button, and the touch stick), the Estate cases in
@@ -1028,9 +1040,9 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   each new flake has already cost someone a red run. Nothing is weakened — a
   genuinely broken assertion still fails. Adding DOM test files raises load for
   every other file, so re-run the full suite a few times after you do.
-- `tests/e2e/quality.spec.ts` pins the workbench boot state (Home + Selected
-  Work open), the 10/29 no-JS evidence counts, and zero serious axe violations
-  on both surfaces.
+- `tests/e2e/quality.spec.ts` pins the workbench boot state (Home / Dossier
+  focused in front of the Estate, Selected Work closed), the 10/29 no-JS
+  evidence counts, and zero serious axe violations on both surfaces.
 - All public asset paths (`/images`, `/resume`, ...) must exist on disk under
   `public/` — no speculative references.
 - `.gitattributes` marks `public/estate/**` and `tests/fixtures/estate/**`
@@ -1053,10 +1065,11 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   the Walk HUD) at the measured size + 5%, and `engineGzip` alone in P7
   (278,000); a re-pin may move them but never above the plan's 307,200 B /
   950,000 B. The main cap is NOT re-pinnable: after the P6/P7 review the main
-  bundle is 508,174 B of 508,834 B (P6 spent ~1.3 KB: the `focusEstate` check,
+  bundle is 508,334 B of 508,834 B (P6 spent ~1.3 KB: the `focusEstate` check,
   routing and dispatch in AskThePage, the phone row, the registry's Plan keys and
   the side slot; P7 8 B, the `estate_live` export; the review 86 B, the wider
-  local routing and the phone's assistant row), so **660 B are left** —
+  local routing and the phone's assistant row; the boot layout 160 B, the
+  Estate open at boot and its controller's phone guard), so **500 B are left** —
   anything bigger goes into the controller, engine or HUD chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).

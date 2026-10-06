@@ -5,11 +5,18 @@ import AxeBuilder from '@axe-core/playwright';
 // "Field Index" registry (mobile). Runs against the prerendered production build.
 
 test.describe('field workbench — desktop', () => {
-  test('boots the drawing set with Home and Selected Work open', async ({ page }) => {
+  test('boots the drawing set with Home in front of the Estate', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByText('RM · FIELD WORKBENCH')).toBeVisible();
-    await expect(page.getByRole('dialog', { name: 'Home / Dossier' })).toBeVisible();
-    await expect(page.getByRole('dialog', { name: 'Selected Work' })).toBeVisible();
+    const home = page.getByRole('dialog', { name: 'Home / Dossier' });
+    const estate = page.getByRole('dialog', { name: 'Estate' });
+    await expect(home).toBeVisible();
+    await expect(estate).toBeVisible();
+    // Selected Work is a click away (the rail, or the dossier's own button).
+    await expect(page.getByRole('dialog', { name: 'Selected Work' })).toBeHidden();
+    await expect(home).toHaveAttribute('data-focused', 'true');
+    const z = (id: string) => page.locator(`[data-win="${id}"]`).evaluate((node) => Number(getComputedStyle(node).zIndex) || 0);
+    expect(await z('home')).toBeGreaterThan(await z('world-3d'));
     await expect(page.getByRole('heading', { level: 1, name: 'Rahul Mitra' })).toBeVisible();
     const rail = page.getByRole('navigation', { name: 'Tool rail' });
     await expect(rail.getByRole('button')).toHaveCount(12); // 11 modules + DESK
@@ -148,8 +155,8 @@ test.describe('field workbench — desktop', () => {
   });
 
   test('prerendered document keeps the semantic evidence without JavaScript', async ({ browser }) => {
-    // DOM presence, not visibility: on desktop every window but Home and Selected
-    // Work is display:none until JS runs, so these counts include hidden nodes.
+    // DOM presence, not visibility: on desktop every window but Home and the
+    // Estate is display:none until JS runs, so these counts include hidden nodes.
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto('/');
@@ -205,10 +212,11 @@ test.describe('field workbench — desktop', () => {
     expect(errors).toEqual([]);
   });
 
-  // The Estate window's shell (WIN-07). Reduced motion holds the 3D view behind
-  // its consent button (allowHeavyAssets is false), so what runs here is only the
-  // prerendered poster, the side panel and the load policy: no engine chunk and
-  // no WebGL, which tests/e2e/estate.spec.ts covers in its own project.
+  // The Estate window's shell (WIN-07), open at boot behind Home. Reduced motion
+  // holds the 3D view behind its consent button (allowHeavyAssets is false), so
+  // what runs here is only the prerendered poster, the side panel and the load
+  // policy: no engine chunk and no WebGL, which tests/e2e/estate.spec.ts covers
+  // in its own project.
   for (const size of [{ width: 1280, height: 720 }, { width: 881, height: 700 }]) {
     test(`estate window opens on its still render, accessible, with the licence in reach (${size.width}×${size.height})`, async ({ page }) => {
       test.setTimeout(60_000);
@@ -225,11 +233,13 @@ test.describe('field workbench — desktop', () => {
 
       await page.goto('/');
       await page.waitForLoadState('networkidle');
-      expect(estate, 'nothing from /estate/ before the window opens').toEqual([]);
-
-      await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
       const win = page.getByRole('dialog', { name: 'Estate' });
       await expect(win).toBeVisible();
+      expect(estate.filter((path) => !/^\/estate\/v\d+\.\d+\/poster\//.test(path)), 'nothing but the poster at boot').toEqual([]);
+
+      // Brought forward from the rail; still held for consent.
+      await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
+      await expect(win).toHaveAttribute('data-focused', 'true');
       const poster = win.locator('[data-estate-stage] img');
       await expect.poll(() => poster.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
       await expect(win.locator('#world')).toHaveAttribute('data-estate-phase', 'consent');

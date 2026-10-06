@@ -158,11 +158,13 @@ export const EstateWindow: React.FC = () => {
   }, []);
 
   // Wake the controller the first time the window is open (FieldWorkbench
-  // opens it by its section's inline display), or on a focus request.
+  // opens it by its section's inline display), or on a focus request. Not on a
+  // phone: the window boots open, but App drops this whole surface there right
+  // after hydration (its query, App.tsx useActiveSurface).
   React.useEffect(() => {
     mountedRef.current = true;
     const section = rootRef.current?.closest<HTMLElement>('section[data-win="world-3d"]') ?? null;
-    const open = () => section === null || section.style.display !== 'none';
+    const open = () => (section === null || section.style.display !== 'none') && window.matchMedia?.('(max-width: 880px)').matches !== true;
     const observer = new MutationObserver(() => {
       if (!open()) return;
       observer.disconnect();

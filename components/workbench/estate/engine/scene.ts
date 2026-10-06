@@ -7,7 +7,10 @@ import { LOD_DETAIL, LOD_FACADE, LOD_MASSING } from '../../../../lib/estate/lod'
 import type { EstateScheduler, Eviction } from '../../../../lib/estate/scheduler';
 import type { EstatePack, PackBuilding } from '../../../../lib/estate/schema';
 import { createStoreyUniforms, setMassingLines, setStoreyMask, type MaterialKit, type StoreyUniforms } from './materials';
-import type { DecodedParts, DetailParts, FacadeParts, MassingNode, Part, SiteParts, SiteSpecies } from './parts';
+import {
+  isGlass, type DecodedParts, type DetailParts, type FacadeParts, type InteriorParts, type MassingNode, type Part, type SiteParts,
+  type SiteSpecies,
+} from './parts';
 import { createTreePartition, gatherMatrices, partitionTrees, TREE_REPARTITION_M, type TreePartition } from './trees';
 
 // The scene graph (plan §7.2). Every object has matrixAutoUpdate = false and
@@ -20,7 +23,8 @@ import { createTreePartition, gatherMatrices, partitionTrees, TREE_REPARTITION_M
 //             ├ massing  Mesh                         (stage 0)
 //             ├ facade   node (dequant TRS) › Mesh + edges LineSegments
 //             ├ detail   InstancedMesh per kit (_STOREY)
-//             └ interior (P5: resident and active only)
+//             └ interior Group (P5: shown only while resident and active,
+//                 interior.ts): T InstancedMesh ×2 · R · specials · furniture
 //
 // Culling is the engine's own, by bounding spheres from pack.json (§7.2), so
 // three's per-object frustum test is off everywhere (and no geometry ever pays
@@ -44,8 +48,17 @@ export interface BuildingNode {
   /** Shared by the building's F, D and edge materials (and P5's interior). */
   readonly storey: StoreyUniforms;
   readonly materials: { massing: Material; facade: Material; detail: Material; edge: Material };
-  /** P5's interior goes here (resident and active only); empty and hidden in P4b. */
+  /** The interior's objects (P5): hidden unless interior.ts says it is resident and active. */
   readonly interior: Group;
+  /**
+   * The interior's own uniforms: uStoreyMask stays MASK_OFF (the interior is
+   * never masked) and uBand is the band, so R's other storeys collapse and T's
+   * and furniture's instances read their own storeys.
+   */
+  readonly interiorUniforms: StoreyUniforms;
+  /** Its interior file's objects, once decoded and attached (interior.ts draws them). */
+  interiorParts: InteriorParts | null;
+  interiorId: string | null;
   massing: MassingNode | null;
   facade: FacadeParts | null;
   detail: DetailParts | null;
@@ -140,6 +153,7 @@ export class EstateScene {
       );
       const storey = createStoreyUniforms();
       const massingStorey = createStoreyUniforms();
+      const interiorUniforms = createStoreyUniforms();
       const interior = new Group();
       interior.name = 'interior';
       interior.visible = false;
@@ -152,6 +166,9 @@ export class EstateScene {
         sphere,
         storey,
         interior,
+        interiorUniforms,
+        interiorParts: null,
+        interiorId: site.interior?.path ?? null,
         materials: {
           massing: kit.opaque(massingStorey, massingFloors(site)),
           facade: kit.opaque(storey),
@@ -222,8 +239,54 @@ export class EstateScene {
         building.detail = decoded;
         return;
       }
+      case 'interior': {
+        const building = siteIndex === null ? null : this.buildings[siteIndex];
+        if (building) this.attachInterior(building, decoded);
+        return;
+      }
       default:
+        // Walk grids, nav files and the ground are CPU data: interior.ts keeps them.
     }
+  }
+
+  /**
+   * An interior file's objects go under the building's interior group, hidden.
+   * Four materials over the interior's uniforms, one per program (a material
+   * never serves both a Mesh and an InstancedMesh): opaque and glass, plain and
+   * instanced. Nodes keep their TRS (the dequantisation); T's InstancedMeshes
+   * sit at identity, their instances carrying T(0, FFL, 0) · base.
+   */
+  private attachInterior(building: BuildingNode, decoded: InteriorParts) {
+    if (building.interiorParts) return;
+    const u = building.interiorUniforms;
+    const opaque = this.kit.opaque(u);
+    const opaqueInstanced = this.kit.opaque(u);
+    const glass = this.kit.glass(u);
+    const glassInstanced = this.kit.glass(u);
+    const group = building.interior;
+    for (const p of decoded.parts) {
+      const object = p.object as Mesh | InstancedMesh;
+      const instanced = (object as InstancedMesh).isInstancedMesh === true;
+      const clear = isGlass(object);
+      replaceMaterial(object, clear ? (instanced ? glassInstanced : glass) : (instanced ? opaqueInstanced : opaque));
+      object.visible = false;
+    }
+    // T and furniture are added as they are; R and the specials by their node (its TRS).
+    const add = (object: Object3D) => {
+      object.removeFromParent();
+      group.add(object);
+      freeze(object);
+    };
+    for (const p of decoded.typical?.meshes ?? []) add(p.object);
+    if (decoded.residual) add(decoded.residual.node);
+    for (const special of decoded.specials) add(special.node);
+    for (const f of decoded.furniture) {
+      if (f.full) add(f.full.object);
+      if (f.proxy) add(f.proxy.object);
+    }
+    group.visible = false;
+    building.group.updateMatrixWorld(true);
+    building.interiorParts = decoded;
   }
 
   private attachSite(decoded: SiteParts) {
@@ -445,7 +508,10 @@ export class EstateScene {
   /** The context was lost: nothing is on the GPU any more. */
   markAllNotUploaded(all: Iterable<readonly Part[]>): void {
     for (const parts of all) for (const p of parts) { p.uploaded = false; p.object.visible = false; }
-    for (const b of this.buildings) b.shown = LEVEL_NONE;
+    for (const b of this.buildings) {
+      b.shown = LEVEL_NONE;
+      b.interior.visible = false;
+    }
     this.invalidateTrees();
   }
 }

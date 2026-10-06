@@ -206,6 +206,32 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        twice (`maskCoverage`; docs/portfolio/estate-pack.md "Façade storeys").
        Never re-tag F by height. Every F panel is two-sided in the pack, so F's
        one front-faces-only material still draws glass from indoors.
+     - `engine/interior.ts` (P5, owned by the core as `core.interiors`): the
+       building the camera is inside (footprint + 0.5 m) or peeking at (within
+       6 m), its storey S (eye − 1.6 m with 0.25 m hysteresis, or Walk's floor
+       through `setStoreyHint`), and the band [S − k, S + k] from
+       `lib/estate/storeys.ts` — k ≥ 1 on every tier, 1 when peeking. The band
+       opens only once the interior file is fully on the GPU (and, peeking, the
+       façade is resident): T as two InstancedMeshes (opaque, glass; ≤ 5
+       instances at T(0, FFL, 0) · the node TRS, storey written to `_STOREY`),
+       R and furniture gated by the interior's own `uBand`, specials per storey,
+       and the building's F/D/edges hiding exactly the band through their shared
+       `uStoreyMask` (F's slab of S + k + 1 stays as the ceiling). A band change
+       writes instances and uniforms only — 0 bytes. Until resident, F and D stay
+       whole and `EstateView.interior.state` reads `streaming`; an interior, walk
+       or nav file that fails its 2 retries makes it `failed` with a reason
+       (Enter, Plan and walk-in off for that building). The building the camera
+       is inside is held at F (lod `maxLevel`), and the interior's triangles and
+       draws are booked as the reserve before any building. Furniture: full kits
+       within the tier's radius, 12-triangle boxes beyond, band storeys only.
+       Walk grids (`lib/estate/walk.ts`, released on leaving the building), nav
+       files (`lib/estate/nav.ts`: rooms with `{S}`/`{SS}` templates expanded,
+       lifts, doors, stairs, spawns) and the SN5G ground (`lib/estate/ground.ts`)
+       live there too, with the Walk controls' queries: `floorQuery` (building
+       grid inside its walk bounds less 0.5 m, else the ground), `locate`
+       (building, storey, flat, room), `entry` (ready / streaming / failed).
+       Pinned by `tests/estate-{interior,nav,ground}.test.ts` and the S4–S5 rows
+       of `tests/estate-budget.test.ts`.
      - `engine/controls/`: Overview (camera-controls with its own wheel handler
        off; the stage's non-passive wheel dollies at the cursor, so the sheet
        never scrolls; A/D and Shift+arrows pan), Fly (WASD, E/Space up, Q/C

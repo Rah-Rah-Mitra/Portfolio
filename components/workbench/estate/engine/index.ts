@@ -1,6 +1,7 @@
 import type { EstateLocation } from '../../../../lib/estate/announce';
 import type {
-  CreateEngine, EstateEngine, EstateEngineFeatures, EstateEngineOptions, EstatePopover, EstateResume, EstateView,
+  CreateEngine, EstateEngine, EstateEngineFeatures, EstateEngineOptions, EstateInteriorView, EstatePopover, EstateResume,
+  EstateView,
 } from '../engineApi';
 import { CONTROLS_FEATURES, createControls } from './controls';
 import { EstateCore } from './core';
@@ -27,7 +28,8 @@ const CORE_FEATURES: EstateEngineFeatures = Object.freeze({
   flyTo: false,
   walk: false,
   enter: false,
-  interiors: false,
+  // Interiors stream and the façade mask runs in the core itself (interior.ts, P5).
+  interiors: true,
   plan: false,
 });
 
@@ -39,7 +41,12 @@ const sameLocation = (a: EstateLocation, b: EstateLocation): boolean =>
 const sameView = (a: EstateView, b: EstateView): boolean =>
   sameLocation(a.location, b.location) && a.selection === b.selection && a.transition === b.transition
   && a.flight === b.flight && a.popover === b.popover && a.moving === b.moving && a.pointerLocked === b.pointerLocked
-  && a.pointerUnlockedAtMs === b.pointerUnlockedAtMs && a.lean === b.lean && a.flySpeed === b.flySpeed;
+  && a.pointerUnlockedAtMs === b.pointerUnlockedAtMs && a.lean === b.lean && a.flySpeed === b.flySpeed
+  && (a.interior ?? null) === (b.interior ?? null);
+
+const sameInterior = (a: EstateInteriorView | null, b: EstateInteriorView | null): boolean =>
+  a === b || (a !== null && b !== null && a.site === b.site && a.state === b.state && a.storey === b.storey
+    && a.band === b.band && a.reason === b.reason);
 
 
 /** The handle and the render core behind it. The shell only ever sees the handle (createEngine); harnesses, benches and tests may drive the core directly. */
@@ -96,6 +103,13 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
       if (locations === before) emitLocation();
     },
     moving: (moving) => { access.set({ moving }); },
+    interior: (status) => {
+      const next: EstateInteriorView | null = status.site === null || status.state === 'none' ? null : Object.freeze({
+        site: status.site, state: status.state, storey: status.storeyTag, band: status.band, reason: status.reason,
+      });
+      if (sameInterior(view.interior ?? null, next)) return;
+      access.set({ interior: next });
+    },
   });
   core = engineCore;
   if (view.selection) engineCore.setFocus(view.selection);

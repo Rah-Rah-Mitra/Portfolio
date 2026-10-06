@@ -12,6 +12,7 @@ import { applyClip, fogRange, type FogRange } from './clip';
 import { EngineGovernor, type GovernorChange } from './governor';
 import { ContextWatch, type EngineEmitter, runTeardown, TimerSet } from './lifecycle';
 import { claimDecoder, createGlbLoader, fetchBytes, isAbort, PackFetchError, readPayload } from './loaders';
+import { InteriorSystem, type InteriorStatus } from './interior';
 import { createMaterialKit, type MaterialKit } from './materials';
 import { createPalette } from './palette';
 import type { Part } from './parts';
@@ -40,10 +41,12 @@ import { posterPose, resumePose, type ThreePose } from './views';
 // display-calibration burst → frames that upload stage 0, one geometry each →
 // the first live frame, faded in over 200 ms, then `ready`.
 //
-// Each frame: rig → frustum → trees → detail selection → plan downloads →
-// ≤ 1 upload → eviction → levels → clip planes and fog → draw → readouts →
-// governor sample. Frames continue only while the rig moves, uploads wait or
-// settle frames are owed (loop.ts); at rest none is requested.
+// Each frame: rig → ≤ 1 upload → eviction → frustum → trees → interiors
+// (current building and storey, band, façade mask, the interior's reserve;
+// interior.ts) → detail selection → plan downloads → levels → clip planes and
+// fog → draw → readouts → governor sample. Frames continue only while the rig
+// moves, uploads wait or settle frames are owed (loop.ts); at rest none is
+// requested.
 
 const PROGRESS_INTERVAL_MS = 250;
 /**
@@ -71,6 +74,8 @@ export interface CoreHooks {
   beforeReady(): void;
   /** The camera started or stopped moving (the view's `moving`). */
   moving(moving: boolean): void;
+  /** The interior status changed (building, storey, band, streaming or failed; interior.ts). */
+  interior?(status: InteriorStatus): void;
 }
 
 type Phase = 'idle' | 'booting' | 'live' | 'failed' | 'disposed';
@@ -91,6 +96,12 @@ export class EstateCore {
   private preloadPromise: Promise<void> | null = null;
   pack: EstatePack | null = null;
   streaming: Streaming | null = null;
+  /**
+   * Interiors, walk grids, nav files and the ground (§7.5, §8.4), from the
+   * moment pack.json is read: the Walk controls' floor, location and entry
+   * queries (interior.ts). null before then.
+   */
+  interiors: InteriorSystem | null = null;
   private loader: GLTFLoader | null = null;
   private releaseDecoder: (() => void) | null = null;
   private packAbort: AbortController | null = null;
@@ -159,8 +170,9 @@ export class EstateCore {
   private readonly activity: FrameActivity = { controls: false, keys: false, tweens: false, uploads: false };
   private readonly eyeScratch: Vec3 = [0, 0, 0];
   private readonly levelFrame: LevelFrame = {
-    now: 0, k: 1, tier: ESTATE_TIER_TABLE.mid, lean: false, focus: -1, eye: this.eye, visible: this.visible, reserveTris: 0, reserveDraws: 0,
+    now: 0, k: 1, tier: ESTATE_TIER_TABLE.mid, lean: false, focus: -1, inside: -1, eye: this.eye, visible: this.visible, reserveTris: 0, reserveDraws: 0,
   };
+  private readonly interiorFrame = { now: 0, eye: this.eye, tier: 'mid' as EstateTier, furnitureRadius: 0 };
   private readonly partsOf = (id: string): readonly Part[] | null => this.streaming?.partsOf(id) ?? null;
   private readonly stats: FrameStats = {
     draws: 0, tris: 0, programs: 0, frameMs: 0, tier: 'mid', pixelRatio: 1, band: null, gpuBytes: 0,
@@ -217,6 +229,7 @@ export class EstateCore {
     this.loader = createGlbLoader();
     this.releaseDecoder = claimDecoder();
     const scheduler = new EstateScheduler({ tier: this.tier });
+    this.interiors = new InteriorSystem(pack, scheduler, (status) => { if (!this.isDisposed) this.hooks.interior?.(status); });
     this.streaming = new Streaming({
       pack,
       base: packBase(url),
@@ -231,6 +244,7 @@ export class EstateCore {
         fatal: (message) => this.fail(new Error(message)),
         stale: (staleUrl) => this.stale(staleUrl),
         progress: () => this.progress(),
+        entryBlocked: (site, message) => this.interiors?.markFailed(site, message),
       },
     });
     // Stage 0 only until the first frame plans the rest (frozen keeps P0 and P1;
@@ -239,8 +253,13 @@ export class EstateCore {
   }
 
   private attach(file: DecodedFile) {
+    const decoded = file.decoded;
+    // CPU data goes to the interiors at once (no scene needed); geometry to the scene.
+    if (decoded.kind === 'walk') { this.interiors?.addWalk(file.info.siteIndex, decoded.walk); return; }
+    if (decoded.kind === 'nav') { this.interiors?.addNav(file.info.siteIndex, decoded.nav); return; }
+    if (decoded.kind === 'ground') { this.interiors?.addGround(decoded.ground); return; }
     if (!this.scene) return; // attached in bulk once the scene exists
-    this.scene.attach(file.info.id, file.decoded, file.info.siteIndex >= 0 ? file.info.siteIndex : null);
+    this.scene.attach(file.info.id, decoded, file.info.siteIndex >= 0 ? file.info.siteIndex : null);
   }
 
   private wake() {
@@ -330,6 +349,7 @@ export class EstateCore {
     this.kit = kit;
     const scene = new EstateScene(pack, kit);
     this.scene = scene;
+    this.interiors?.bindScene(scene.buildings);
     for (const file of streaming.decoded.values()) this.attach(file);
     this.uploader = new GeometryUploader(created.renderer, kit.fog);
     this.levels = new LevelWiring(pack.sites);
@@ -450,6 +470,7 @@ export class EstateCore {
     // (the first frame shows the massing it just finished uploading).
     scheduler.beginFrame();
     scene.markSeen(scheduler, now);
+    this.interiors?.markSeen(now);
     let uploaded = false;
     const ticket = scheduler.takeUpload(now);
     if (ticket) {
@@ -470,6 +491,20 @@ export class EstateCore {
     scene.updateTrees(camera.position.x, camera.position.z, tier.treeRadiusM);
     scene.reserve(this.reserve);
 
+    // Interiors: the current building and storey, the band and the façade mask,
+    // and what the active interior draws, booked before any building (§7.4).
+    const interiors = this.interiors;
+    let interiorChanged = false;
+    if (interiors) {
+      const fi = this.interiorFrame;
+      fi.now = now;
+      fi.tier = this.tier;
+      fi.furnitureRadius = tier.furnitureRadiusM;
+      interiorChanged = interiors.update(fi);
+      this.reserve.tris += interiors.reserveTris;
+      this.reserve.draws += interiors.reserveDraws;
+    }
+
     // Detail selection, then downloads planned from the same numbers.
     const bufferHeight = Math.floor(this.cssHeight * this.pixelRatio);
     const k = sseScale(bufferHeight, ESTATE_VFOV_DEG[rig.mode]);
@@ -478,7 +513,8 @@ export class EstateCore {
     lf.k = k;
     lf.tier = tier;
     lf.lean = this.lean;
-    lf.focus = this.focusIndex;
+    lf.focus = this.planFocus();
+    lf.inside = interiors?.insideIndex ?? -1;
     lf.reserveTris = this.reserve.tris;
     lf.reserveDraws = this.reserve.draws;
     const selector = levels.update(lf, scheduler);
@@ -491,6 +527,8 @@ export class EstateCore {
     // Levels, then the planes and fog for this pose.
     const edgeReach = (TYPICAL_STOREY_M * k) / (EDGE_MIN_STOREY_PX * this.pixelRatio);
     if (scene.applyLevels(selector.level, tier.edges, this.distances(levels), edgeReach) > 0 && this.ready) this.loop?.markChanged();
+    // A band change, the interior turning on or off, furniture re-partitioned: two settle frames (§7.8).
+    if (interiorChanged && this.ready) this.loop?.markChanged();
     let nearest = Infinity;
     for (let i = 0; i < this.visible.length; i += 1) {
       if (this.visible[i] && levels.inputs[i].distance < nearest) nearest = levels.inputs[i].distance;
@@ -537,7 +575,7 @@ export class EstateCore {
       stats.frameMs = cpuMs;
       stats.tier = this.tier;
       stats.pixelRatio = this.pixelRatio;
-      stats.band = null;
+      stats.band = interiors?.getStatus().band ?? null;
       stats.gpuBytes = scheduler.usedBytes();
       if (!this.ready) this.firstFrame();
       else if (this.restoring) {
@@ -570,9 +608,22 @@ export class EstateCore {
     return this.distanceOut;
   }
 
+  /**
+   * The building downloads put first (P0) and lean mode details: the one the
+   * camera is inside, else the selected or targeted one (fly-to, Enter), else
+   * the one it is peeking at (§7.6 "current or targeted building").
+   */
+  private planFocus(): number {
+    const interiors = this.interiors;
+    if (interiors && interiors.insideIndex >= 0) return interiors.insideIndex;
+    if (this.focusIndex >= 0) return this.focusIndex;
+    return interiors?.currentIndex ?? -1;
+  }
+
   private planFor(frozen: boolean) {
     const ctx = this.planContext;
-    ctx.focus = this.focusIndex >= 0 ? ESTATE_SITE_IDS[this.focusIndex] : null;
+    const focus = this.planFocus();
+    ctx.focus = focus >= 0 ? ESTATE_SITE_IDS[focus] : null;
     ctx.mode = this.rig.mode;
     ctx.lean = this.lean;
     ctx.frozen = frozen || this.frozen;
@@ -762,6 +813,7 @@ export class EstateCore {
       this.scene.markAllNotUploaded([...streaming.decoded.values()].map((file) => file.parts));
     }
     this.levels?.reset();
+    this.interiors?.reset();
     this.gpuTimer?.reset();
     this.programs = 0;
     this.restoring = this.ready;

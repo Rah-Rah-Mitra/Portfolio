@@ -146,7 +146,8 @@ earlier classes byte for byte. `ground` lives in the site layer, so it needs `s0
 Every streamed file is gzip (the nav files too: with upstream's stairs a plain
 nav file ran to 101 KB against the 48 KB cap), so plan §7.6's sniff list
 (`1F8B | glTF | SN5W`) applies to the stored bytes; after gunzip a nav file is
-JSON and `site/ground` is **SN5G**, which the P5 reader must add to the list.
+JSON and `site/ground` is **SN5G**, both on the engine's sniff list
+(`engine/loaders.ts`).
 
 ## What the files hold (the runtime's side of the contract)
 
@@ -206,8 +207,9 @@ grouped like the rooms), `spawns`, and `stairs` from `<ID>_web.json` (0.001 m).
 `site/ground.bin` is **SN5G** v1 (`lib/pure/sn5w.mjs`): 32-byte header
 (`SN5G`, version 1, f32 cell 0.5, f32 lo x/y estate frame, u16 nx/ny, i16 nodata
 0x7FFF) then int16 cm per cell, row-major from the south-west, the top height of
-the SITE ground surfaces at each cell centre. Only the `.mjs` reads it today; P5
-adds the TypeScript reader beside `lib/estate/walk.ts`, with a parity test. The
+the SITE ground surfaces at each cell centre. The runtime reads it with
+`lib/estate/ground.ts` (`decodeGround`, `groundAt`, `nearestGround`), which
+`tests/estate-ground.test.ts` holds byte for byte to the `.mjs`. The
 ground surfaces stop short of the building aprons, so 33 of the 45 entrance
 spawns sit on nodata cells: outdoors near an entrance, Walk (P5) must take the
 building's L1 walk grid, which covers them (`tests/estate-walk-realdata.test.ts`).

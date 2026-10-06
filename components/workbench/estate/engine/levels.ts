@@ -1,7 +1,7 @@
 import { pointBoxDistance } from '../../../../lib/estate/frames';
 import { ESTATE_SITE_IDS } from '../../../../lib/estate/ids';
 import {
-  LOD_DETAIL, LodSelector, type LodBuildingInput, type LodFrame, type LodLevel,
+  LOD_DETAIL, LOD_FACADE, LodSelector, type LodBuildingInput, type LodFrame, type LodLevel,
 } from '../../../../lib/estate/lod';
 import { buildingViews, type BuildingView, type EstateScheduler } from '../../../../lib/estate/scheduler';
 import type { PackBuilding } from '../../../../lib/estate/schema';
@@ -59,6 +59,12 @@ export interface LevelFrame {
   lean: boolean;
   /** Index of the selected or targeted building, or −1. */
   focus: number;
+  /**
+   * Index of the building the camera is inside, or −1: its exterior is held at
+   * F (§7.5), so D never draws over the open band and the interior's reserve
+   * pays for it. Default −1.
+   */
+  inside?: number;
   /** Camera position, estate frame. */
   eye: ArrayLike<number>;
   /** Per building: inside the view frustum this frame. */
@@ -112,7 +118,8 @@ export class LevelWiring {
       input.visible = frame.visible[i] === true;
       input.distance = pointBoxDistance(frame.eye, site.bounds[0], site.bounds[1]);
       input.resident = scheduler.residentMask(site.id);
-      input.maxLevel = scheduler.levelCap(site.id);
+      const cap = scheduler.levelCap(site.id);
+      input.maxLevel = i === frame.inside && cap > LOD_FACADE ? LOD_FACADE : cap;
       input.focus = i === frame.focus;
     }
     const f = this.frame;

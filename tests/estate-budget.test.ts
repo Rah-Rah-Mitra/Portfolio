@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 import { Frustum, Matrix4, PerspectiveCamera, Sphere, Vector3, type InstancedMesh } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { estateToThree, pointBoxDistance } from '../lib/estate/frames';
@@ -9,11 +10,17 @@ import {
   ESTATE_VFOV_DEG, LOD_FACADE, LodSelector, RESIDENT_ALL, RESIDENT_FACADE, RESIDENT_MASSING, sseScale,
   type LodBuildingInput,
 } from '../lib/estate/lod';
+import { parseNav } from '../lib/estate/nav';
 import { parsePack, type EstatePack } from '../lib/estate/schema';
+import { EYE_HEIGHT } from '../lib/estate/storeys';
 import { ESTATE_TIERS, ESTATE_TIER_TABLE, type EstateTier } from '../lib/estate/tiers';
+import { InteriorSystem, type InteriorScheduler } from '../components/workbench/estate/engine/interior';
 import { levelCosts, type LevelCosts } from '../components/workbench/estate/engine/levels';
 import { createGlbLoader, parseGlb, readPayload } from '../components/workbench/estate/engine/loaders';
-import { siteParts } from '../components/workbench/estate/engine/parts';
+import { createMaterialKit } from '../components/workbench/estate/engine/materials';
+import { createPalette } from '../components/workbench/estate/engine/palette';
+import { interiorParts, siteParts } from '../components/workbench/estate/engine/parts';
+import { EstateScene } from '../components/workbench/estate/engine/scene';
 import { createTreePartition, partitionTrees } from '../components/workbench/estate/engine/trees';
 import { fallbackAerialPose, posterPose } from '../components/workbench/estate/engine/views';
 
@@ -34,9 +41,12 @@ import { fallbackAerialPose, posterPose } from '../components/workbench/estate/e
 // down. The buffer is the tier's own pixel cap on the default 1.36 stage, the
 // most pixels (largest K, most detail wanted) the tier ever draws.
 //
-// S1–S3 (§7.11) are pinned per pack: a re-pack moves them, and the pin moves
-// only with a written reason beside it. S4, S4-min and S5 are inside buildings,
-// which only P5's interiors can draw; they join with P5.
+// S1–S5 (§7.11) are pinned per pack: a re-pack moves them, and the pin moves
+// only with a written reason beside it. S4, S4-min and S5 stand inside a
+// building: the engine's own InteriorSystem (engine/interior.ts) opens the band
+// on the decoded interior file and reports what it draws, which is booked as
+// the reserve before any building (§7.4 step 1), and the building itself is
+// held at F (§7.5) — the same path the engine's frame takes.
 //
 // Runs on whatever pack sits under public/estate/v1.2 (a local, uncommitted
 // copy of the candidate pack while v1.2 is unpublished, the committed pack once
@@ -77,6 +87,29 @@ const STEP_M = 20;
 const PINNED: Readonly<Record<string, Readonly<Record<'S1' | 'S2' | 'S3', readonly [number, number]>>>> = {
   'pack.fd986442.json': { S1: [34_817, 24], S2: [549_957, 38], S3: [541_489, 60] },
   'pack.82695419.json': { S1: [37_929, 24], S2: [572_413, 38], S3: [558_929, 60] },
+};
+
+/**
+ * §7.11's inside scenarios (triangles, draws), the worst of 8 level headings at
+ * each pose, everything resident, the interior's reserve from InteriorSystem:
+ * S4 BLK 509 at its L5 lift landing nearest the block's root, eye height, high
+ * tier (band L3–L7); S4-min the same pose at the min tier (band L4–L6, k = 1);
+ * S5 NC 514's hall at its root, eye height on L1, high tier (band L1–RF).
+ *  - pack.fd986442.json (rc2, measured 2026-10-06, first pinned with P5):
+ *    S4 708,317 / 46 against §7.11's ~716 k / ~46; S4-min 286,999 / 27
+ *    against ≤ 0.3 M / ≤ 60; S5 647,353 / 54 against ~690 k / ~70. The plan
+ *    summed every building at F plus near D; the selector draws what the
+ *    frustum holds (worst heading kept), within the tier's caps.
+ *  - pack.82695419.json (rc2b, the same zips with P5's pack fixes, measured
+ *    2026-10-06): S4 730,461 / 46 (+22,144), S4-min 295,749 / 27 (+8,750),
+ *    S5 669,561 / 54 (+22,208). The rise is the F windows' back pairs on
+ *    every building drawn at F and the far trees' trunk stubs; draws
+ *    unchanged, S4-min still under the min tier's 0.3 M.
+ */
+type InsideId = 'S4' | 'S4-min' | 'S5';
+const PINNED_INSIDE: Readonly<Record<string, Readonly<Record<InsideId, readonly [number, number]>>>> = {
+  'pack.fd986442.json': { S4: [708_317, 46], 'S4-min': [286_999, 27], S5: [647_353, 54] },
+  'pack.82695419.json': { S4: [730_461, 46], 'S4-min': [295_749, 27], S5: [669_561, 54] },
 };
 
 interface SpeciesCost { centres: Float32Array; count: number; fullTris: number; crownTris: number }
@@ -153,7 +186,11 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
    */
   const pose = (
     x: number, y: number, h: number, heading: number, pitchDeg: number, tier: EstateTier,
-    options: { resident?: number; fullTrees?: boolean; force?: number; vfov?: number; position?: readonly number[]; target?: readonly number[]; fov?: number } = {},
+    options: {
+      resident?: number; fullTrees?: boolean; force?: number; vfov?: number; position?: readonly number[]; target?: readonly number[]; fov?: number;
+      /** The active interior's reserve (InteriorSystem.reserveTris/-Draws) and the building the camera is inside (held at F). */
+      interior?: { tris: number; draws: number; inside: number };
+    } = {},
   ): PoseResult => {
     const row = ESTATE_TIER_TABLE[tier];
     const vfov = options.fov ?? options.vfov ?? (h <= 12 ? ESTATE_VFOV_DEG.fly : ESTATE_VFOV_DEG.overview);
@@ -185,6 +222,10 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
       if (s.far > 0) { reserveTris += s.far * species[i].crownTris; reserveDraws += 1; }
     });
 
+    if (options.interior) {
+      reserveTris += options.interior.tris;
+      reserveDraws += options.interior.draws;
+    }
     const eye = [camera.position.x, -camera.position.z, camera.position.y];
     const k = sseScale(Math.floor(Math.sqrt(row.pixelCap / STAGE_ASPECT)), vfov);
     const tierCosts = costs[tier];
@@ -207,6 +248,7 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
       resident: options.resident ?? RESIDENT_ALL,
       tris: tierCosts[i].tris,
       draws: tierCosts[i].draws,
+      ...(options.interior?.inside === i ? { maxLevel: LOD_FACADE as 1 } : {}),
     }));
     selector.reset();
     selector.select(inputs, { now: Number.NaN, k, tier: row, reserveTris, reserveDraws });
@@ -282,7 +324,59 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
     expect(got.s3Level).toBe(2);
   });
 
-  it.todo('S4 inside BLK_509 L5 (band L3–L7), S4-min (band L4–L6) and S5 the hawker hall: P5, with the interior reserve');
+  it('pins S4, S4-min and S5 inside BLK 509 and the hawker hall, with the interior’s own reserve, each inside its budget', async () => {
+    const loader = createGlbLoader();
+    const scene = new EstateScene(pack, createMaterialKit(createPalette(new Proxy({}, { get: () => 'rgb(140, 150, 160)' }) as Record<string, string>)));
+    const resident: InteriorScheduler = { isResident: () => true, residentMask: () => RESIDENT_ALL, entryBlocked: () => false, seen: () => undefined };
+    const interiors = new InteriorSystem(pack, resident);
+    interiors.bindScene(scene.buildings);
+    const B509 = ESTATE_SITE_IDS.indexOf('BLK_509');
+    const NC = ESTATE_SITE_IDS.indexOf('NC_514');
+    for (const index of [B509, NC]) {
+      const site = pack.sites[index];
+      const payload = await readPayload(new Uint8Array(readFileSync(join(packDir, site.interior!.path))), site.interior!.path);
+      const decoded = interiorParts((await parseGlb(loader, payload.bytes)).scene, site.storeys);
+      for (const p of decoded.parts) p.uploaded = true;
+      scene.attach(site.interior!.path, decoded, index);
+    }
+    const inside = (index: number, eye: [number, number, number], tier: EstateTier) => {
+      interiors.update({ now: 0, eye, tier, furnitureRadius: ESTATE_TIER_TABLE[tier].furnitureRadiusM });
+      const status = interiors.getStatus();
+      expect(status.active, `${ESTATE_SITE_IDS[index]} ${tier}`).toBe(true);
+      const interior = { tris: interiors.reserveTris, draws: interiors.reserveDraws, inside: interiors.insideIndex };
+      expect(interior.inside).toBe(index);
+      let worst = { tris: 0, draws: 0, overBudget: false };
+      for (let a = 0; a < HEADINGS; a += 1) {
+        const r = pose(eye[0], eye[1], eye[2], (a * 2 * Math.PI) / HEADINGS, 0, tier, { fov: ESTATE_VFOV_DEG.walk, interior });
+        expect(r.levels[index], 'the building the camera is in is held at F or below').toBeLessThanOrEqual(LOD_FACADE);
+        if (r.tris > worst.tris) worst = { tris: r.tris, draws: Math.max(worst.draws, r.draws), overBudget: r.overBudget };
+        else worst.draws = Math.max(worst.draws, r.draws);
+      }
+      return { ...worst, band: status.band };
+    };
+    // S4 / S4-min: BLK 509's L5 lift landing nearest the block's root, eye height.
+    const b509 = pack.sites[B509];
+    const nav = parseNav(JSON.parse(gunzipSync(readFileSync(join(packDir, b509.nav!.path))).toString('utf8')), b509.id);
+    const landing = nav.lifts.map((l) => l.landings.L5?.xy).filter((xy): xy is [number, number] => xy !== undefined)
+      .sort((p, q) => Math.hypot(p[0], p[1]) - Math.hypot(q[0], q[1]))[0];
+    const l5 = b509.storeys.find((x) => x.tag === 'L5')!.ffl;
+    const p4: [number, number, number] = [b509.at[0] + landing[0], b509.at[1] + landing[1], l5 + EYE_HEIGHT];
+    const s4 = inside(B509, p4, 'high');
+    const s4min = inside(B509, p4, 'min');
+    // S5: NC 514's hall at its root, eye height on L1.
+    const nc = pack.sites[NC];
+    const s5 = inside(NC, [nc.at[0], nc.at[1], nc.storeys[0].ffl + EYE_HEIGHT], 'high');
+    expect([s4.band, s4min.band, s5.band]).toEqual(['L3–L7', 'L4–L6', 'L1–RF']);
+    const got = { S4: [s4.tris, s4.draws], 'S4-min': [s4min.tris, s4min.draws], S5: [s5.tris, s5.draws] };
+    for (const [id, r, tier] of [['S4', s4, 'high'], ['S4-min', s4min, 'min'], ['S5', s5, 'high']] as const) {
+      expect(r.overBudget, id).toBe(false);
+      expect(r.tris, id).toBeLessThanOrEqual(ESTATE_TIER_TABLE[tier].maxTris);
+      expect(r.draws, id).toBeLessThanOrEqual(ESTATE_TIER_TABLE[tier].maxDraws);
+    }
+    const pinned = PINNED_INSIDE[packFile as string];
+    expect(pinned, `no S4/S5 pin for ${packFile}: pin ${JSON.stringify(got)} in PINNED_INSIDE with a reason`).toBeDefined();
+    expect(got).toEqual(pinned);
+  }, 60_000);
 
   it('agrees with the fallback poster pose the dev pack starts from', () => {
     // A pack without views.aerialNE (the dev pack) starts from upstream's own aerial_NE.

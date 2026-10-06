@@ -1,14 +1,17 @@
 import type { Group } from 'three';
 import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { siteChipLabel } from '../../../../lib/estate/announce';
+import { decodeGround } from '../../../../lib/estate/ground';
+import { parseNav } from '../../../../lib/estate/nav';
+import { decodeWalk } from '../../../../lib/estate/walk';
 import type { EstateSiteId } from '../../../../lib/estate/ids';
 import {
   EstateScheduler, fetchPriority, planWants, streamCatalogue,
   type BuildingView, type PlanContext, type StreamCatalogue, type StreamClass, type StreamWant,
 } from '../../../../lib/estate/scheduler';
 import type { EstatePack } from '../../../../lib/estate/schema';
-import { fetchBytes, isAbort, PackFetchError, parseGlb, readPayload } from './loaders';
-import { detailParts, facadeParts, massingParts, siteParts, type DecodedParts, type Part } from './parts';
+import { fetchBytes, isAbort, PackFetchError, parseGlb, readPayload, type Payload } from './loaders';
+import { detailParts, facadeParts, interiorParts, massingParts, siteParts, type DecodedParts, type Part } from './parts';
 
 // Streaming (plan §7.6): the engine side of lib/estate/scheduler.ts. The
 // scheduler decides what to fetch, upload and free; this executes: one fetch
@@ -17,8 +20,13 @@ import { detailParts, facadeParts, massingParts, siteParts, type DecodedParts, t
 // callback from a superseded fetch is never booked against a restart.
 //
 // Decoded files are kept whole on the CPU for the engine's life (re-uploads
-// after an eviction or a context reset never re-download). P4b streams s0, f
-// and d; i, w, nav and ground are P5's, which adds their decoders here.
+// after an eviction or a context reset never re-download). Every class decodes
+// here: s0, f, d and i are GLBs (parts the scheduler uploads one at a time);
+// w (SN5W walk grids, lib/estate/walk.ts), nav (JSON, lib/estate/nav.ts) and
+// ground (SN5G, lib/estate/ground.ts) are CPU data with no parts. A file whose
+// payload is not what its class must be (a GLB where a walk grid belongs) is a
+// decode failure: retried like a network one, then permanent, which for an
+// interior, walk or nav file disables entering that building (§7.5).
 
 export interface FileInfo {
   id: string;
@@ -50,6 +58,12 @@ export interface StreamingHooks {
   stale(url: string): void;
   /** Bytes arrived (for the progress line). */
   progress(): void;
+  /**
+   * A building's interior, walk grid or nav file failed for good (§7.5): Enter,
+   * Plan and walk-in for it are off from now on; F stays whole. `message` is
+   * the last failure's.
+   */
+  entryBlocked?(site: EstateSiteId, message: string): void;
 }
 
 export interface StreamingOptions {
@@ -90,8 +104,13 @@ export const fileIndex = (pack: EstatePack): Map<string, FileInfo> => {
   return index;
 };
 
-/** The classes this build decodes. P5 adds i, w, nav and ground. */
-export const DECODED_CLASSES: ReadonlySet<StreamClass> = new Set<StreamClass>(['s0', 'f', 'd']);
+/** The classes this build decodes: all of them (P5 added i, w, nav and ground). */
+export const DECODED_CLASSES: ReadonlySet<StreamClass> = new Set<StreamClass>(['s0', 'f', 'd', 'i', 'w', 'nav', 'ground']);
+
+/** What each class's payload must sniff as, after any gunzip. */
+const PAYLOAD_KIND: Readonly<Record<StreamClass, Payload['kind']>> = {
+  s0: 'gltf', f: 'gltf', d: 'gltf', i: 'gltf', w: 'sn5w', nav: 'json', ground: 'sn5g',
+};
 
 interface Flight { controller: AbortController; token: number }
 
@@ -184,10 +203,10 @@ export class Streaming {
       this.receivedBytes += info.bytes;
       if (info.klass === 's0') this.stage0Received += info.bytes;
       const payload = await readPayload(stored, url);
-      if (payload.kind !== 'gltf') throw new PackFetchError(url, null, `${url}: expected a GLB, got ${payload.kind}`);
-      const gltf = await parseGlb(options.loader, payload.bytes);
+      const want = PAYLOAD_KIND[info.klass];
+      if (payload.kind !== want) throw new PackFetchError(url, null, `${url}: expected ${want}, got ${payload.kind}`);
+      const decoded = await this.decodePayload(info, payload);
       if (this.closed) return;
-      const decoded = decode(info, gltf.scene);
       const parts = decoded.parts;
       if (this.flights.get(info.id)?.token === token) this.flights.delete(info.id);
       if (!this.scheduler.complete(info.id, parts.map((p) => ({ bytes: p.bytes, role: p.role })), token)) return;
@@ -214,8 +233,35 @@ export class Streaming {
           this.armRetry(options.now());
           return;
         default:
-          // A coarser level from now on (lod reads levelCap); nothing to tell.
+          // A coarser level from now on (lod reads levelCap); for an interior,
+          // walk or nav file, entering that building is off from now on.
+          if (outcome.entryBlocked && info.site !== null) {
+            options.hooks.entryBlocked?.(info.site, error instanceof Error ? error.message : String(error));
+          }
           options.hooks.wake();
+      }
+    }
+  }
+
+  /** A payload of the right kind → its decoded form. Throws on a malformed one (a decode failure, retried). */
+  private async decodePayload(info: FileInfo, payload: Payload): Promise<DecodedParts> {
+    const site = info.siteIndex >= 0 ? this.options.pack.sites[info.siteIndex] : null;
+    switch (info.klass) {
+      case 'w':
+        if (!site) throw new Error(`${info.id}: a walk grid belongs to a site`);
+        return { kind: 'walk', parts: [], walk: decodeWalk(payload.bytes, site.id) };
+      case 'nav':
+        if (!site) throw new Error(`${info.id}: a nav file belongs to a site`);
+        return { kind: 'nav', parts: [], nav: parseNav(JSON.parse(new TextDecoder().decode(payload.bytes)), site.id) };
+      case 'ground':
+        return { kind: 'ground', parts: [], ground: decodeGround(payload.bytes) };
+      default: {
+        const gltf = await parseGlb(this.options.loader, payload.bytes);
+        if (info.klass === 'i') {
+          if (!site) throw new Error(`${info.id}: an interior belongs to a site`);
+          return interiorParts(gltf.scene, site.storeys);
+        }
+        return decode(info, gltf.scene);
       }
     }
   }

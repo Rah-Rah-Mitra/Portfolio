@@ -368,6 +368,31 @@ export interface EstateView {
   readonly lean: boolean;
   /** Fly's wheel speed multiplier (1 by default; 0.25–4), shown in the HUD's prompt. Absent before Fly is used. */
   readonly flySpeed?: number;
+  /**
+   * P5: the interior of the building the camera is inside or peeking at (§7.5),
+   * or null on the open estate. The HUD's "STREAMING INTERIOR…" chip reads
+   * `state` (F stays whole until 'ready'), Enter's refusal reads `reason`.
+   * A new object only when a field changes. Absent before P5.
+   */
+  readonly interior?: EstateInteriorView | null;
+}
+
+/** EstateView.interior (P5). */
+export interface EstateInteriorView {
+  readonly site: EstateSiteId;
+  /**
+   * streaming: its interior file is still downloading or uploading, so F and D
+   * stay whole and no band opens; ready: on the GPU (the band opens while the
+   * camera is inside or peeking); failed: its interior, walk grid or nav file
+   * failed for good — Enter, Plan and walk-in are off for it.
+   */
+  readonly state: 'streaming' | 'ready' | 'failed';
+  /** The storey under the camera (eye height − 1.6 m, or Walk's floor), or null. */
+  readonly storey: EstateStoreyTag | null;
+  /** storeys.ts bandLabel ('L4–L6') while the band is open, else null. */
+  readonly band: string | null;
+  /** Why entering failed ('failed' only): a sentence for the HUD and the announcer. */
+  readonly reason: string | null;
 }
 
 

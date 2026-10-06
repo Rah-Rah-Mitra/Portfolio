@@ -236,11 +236,16 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     });
   }, []);
 
-  /** Carry out a focus request (the assistant's focusEstate, or a row pressed before live). Never moves DOM focus. */
+  /**
+   * Carry out a focus request (the assistant's focusEstate, or a row pressed
+   * before live): enter walks in (to the storey, by lift, when one is named); a
+   * storey without enter opens Plan there; else a fly-to. Never moves DOM focus.
+   */
   const applyFocus = (instance: EstateEngine, request: EstateFocusDetail): boolean => {
     const site = request.site;
     if (!site) return false;
     if (request.enter === true && instance.features.enter && instance.enter(site, request.storey ? { storey: request.storey } : undefined)) return true;
+    if (request.enter !== true && request.storey && instance.features.plan && instance.planView(site, request.storey)) return true;
     if (instance.features.flyTo && instance.flyTo(site)) return true;
     return instance.select(site);
   };
@@ -650,11 +655,14 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   );
 
   const Hud = runtime?.EstateHud;
+  const Rooms = runtime?.EstatePlanRooms;
   const hudEngine = engine && HUD_PHASES.has(phase) ? engine : null;
   const hud = React.useMemo(
     () => (Hud && hudEngine ? { Hud, props: { engine: hudEngine, phase, fullDetail: fullDetailOffer, debug } } : null),
     [Hud, hudEngine, phase, fullDetailOffer, debug],
   );
+  // Plan's room list in the side panel (P6): same engine and phase as the HUD.
+  const side = React.useMemo(() => (Rooms && hud ? { Hud: Rooms, props: hud.props } : null), [Rooms, hud]);
   const model: EstateModel = {
     phase,
     stateText,
@@ -669,6 +677,7 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     rowsFly: phase === 'live' && engine?.features.flyTo === true,
     rowAction,
     hud,
+    side,
   };
   // Before paint, so a phase change and its focus move land in one frame.
   React.useLayoutEffect(() => { onModel(model, handlers); });

@@ -3,10 +3,15 @@ import { threeToEstate, wrapAngle, type EstateViewMode, type Vec3 } from '../../
 import { ESTATE_SITE_IDS, normaliseStoreyTag, type EstateSiteId, type EstateStoreyTag } from '../../../../../lib/estate/ids';
 import { cancelsClimb, dragRole, HeldKeys, stageKey, type EscapeAction, type StageAction } from '../../../../../lib/estate/input';
 import { ESTATE_VFOV_DEG } from '../../../../../lib/estate/lod';
+import { roomAt } from '../../../../../lib/estate/nav';
+import {
+  cutSpoken, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_POLAR, rayFloor, roomSpoken, roomText, stepCut, walkInPoint,
+} from '../../../../../lib/estate/plan';
 import type { PackSpawn } from '../../../../../lib/estate/schema';
 import { EYE_HEIGHT } from '../../../../../lib/estate/storeys';
+import type { WalkPose } from '../../../../../lib/estate/walk';
 import type {
-  EstateEngineFeatures, EstateEnterOptions, EstateFlyOptions, EstateResume, EstateStep, EstateWalkStep,
+  EstateEngineFeatures, EstateEnterOptions, EstateFlyOptions, EstatePlanView, EstateResume, EstateStep, EstateWalkStep,
 } from '../../engineApi';
 import type { FloorQuery, InteriorEntry } from '../interior';
 import type { EstateCore } from '../core';
@@ -17,9 +22,10 @@ import { FlyController, type Bounds2 } from './firstPerson';
 import { northRotation, wheelSteps } from './motion';
 import { OrbitController } from './orbit';
 import { buildPrisms, ClickTracker, pickPrism, siteAround, siteNear, type Prism } from './picking';
+import { PlanMarker, planRooms } from './plan';
 import {
   blankPose, clampOrbit, FLY_TO_SECONDS, flightDone, flightPose, FOV_SECONDS, frameBuilding, HOME_SECONDS, ORBIT_LIMITS,
-  orbitFromLookAt, planFlight, positionFromOrbit, type Flight, type OrbitPose,
+  orbitFromLookAt, planFlight, planFrame, PLAN_STOREY_SECONDS, positionFromOrbit, type Flight, type OrbitPose,
 } from './tween';
 import { WalkMode, type WalkSpawn } from './walkMode';
 
@@ -29,7 +35,11 @@ import { WalkMode, type WalkSpawn } from './walkMode';
 // picking (P4b); Walk, Enter and Exit, stairs and lifts (P5: walk.ts is the
 // walker, walkMode.ts its session with climbs, rides and the HUD's offers,
 // arc.ts the Enter / Exit arcs, ../lifts.ts the stair and lift rules), all
-// under the same rig, input layer and tween clock; P6 adds Plan.
+// under the same rig, input layer and tween clock; P6's Plan (one storey of
+// one building from 55 degrees above the horizon, cut at its floor + 1.2 m:
+// Overview's orbit controls over it, its rooms picked by a click, the up and
+// down arrows or the side panel's list, and walked into with Enter, a
+// double-click or Walk in).
 // engine/index.ts owns the handle and the view; this module answers the
 // navigation commands and reports through ViewAccess.
 //
@@ -63,7 +73,7 @@ import { WalkMode, type WalkSpawn } from './walkMode';
 
 /** What this build adds to the core's (all-false) features. */
 export const CONTROLS_FEATURES: Readonly<Partial<EstateEngineFeatures>> = Object.freeze({
-  overview: true, fly: true, flyTo: true, walk: true, enter: true,
+  overview: true, fly: true, flyTo: true, walk: true, enter: true, plan: true,
 });
 
 /** The location chip's building is refreshed at most this often while the camera moves, ms. */
@@ -95,7 +105,10 @@ const AHEAD_MIN = 30;
 const AHEAD_MAX = 600;
 const LEVEL_TILT = Math.tan((10 * Math.PI) / 180);
 
-type ControlMode = 'overview' | 'fly' | 'walk';
+type ControlMode = 'overview' | 'fly' | 'walk' | 'plan';
+
+/** Plan's state: the building and storey (indices), the cut above its floor (m), the picked room (index into its rooms, or -1). */
+interface PlanState { site: number; storey: number; cut: number; room: number }
 
 /** Fly → Walk lands under the camera when a floor is within this below the feet, m; higher, at the nearest entrance. */
 export const DROP_REACH = 3;
@@ -116,6 +129,8 @@ interface ActiveArc {
   storey: EstateStoreyTag | null;
   /** exit: the orbit pose it lands on. */
   orbit: OrbitPose | null;
+  /** enter from Plan (walking into a room): the cut stays on until it lands, so the camera descends through open air. */
+  plan?: boolean;
 }
 
 interface ActiveFlight {
@@ -135,6 +150,7 @@ const spawnOf = (s: PackSpawn): WalkSpawn => ({
 });
 
 const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+const NO_ROOMS: readonly never[] = Object.freeze([]);
 const isMac = (): boolean => /Mac/.test(globalThis.navigator?.platform ?? '');
 
 class EstateControls implements EngineNavigation {
@@ -149,6 +165,11 @@ class EstateControls implements EngineNavigation {
   private fly: FlyController | null = null;
   /** Walk's session; null before the first frame or with no interiors (a harness without a pack). */
   private walk: WalkMode | null = null;
+  /** Plan's state while in Plan (P6), and the marker on the picked room's floor. */
+  private plan: PlanState | null = null;
+  private marker: PlanMarker | null = null;
+  private readonly floorHit: [number, number] = [0, 0];
+  private readonly walkInPose: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
   private arc: ActiveArc | null = null;
   private prisms: Prism[] = [];
   private mode: ControlMode = 'overview';
@@ -232,6 +253,8 @@ class EstateControls implements EngineNavigation {
     this.orbit = orbit;
     this.fly = new FlyController(camera, { bounds: roam, groundAt: (x, z) => this.groundY(x, z) });
     if (core.interiors) this.walk = new WalkMode(core, this.view, host);
+    const kit = core.materialKit;
+    if (kit && core.scene) this.marker = new PlanMarker(kit, core.scene.root);
     const resume = core.options.resume;
     if (resume?.mode === 'fly') {
       orbit.enabled = false;
@@ -283,6 +306,9 @@ class EstateControls implements EngineNavigation {
     this.fly = null;
     this.walk?.dispose();
     this.walk = null;
+    this.marker?.dispose();
+    this.marker = null;
+    this.plan = null;
     this.host?.style.removeProperty(NORTH_PROPERTY);
     this.host = null;
     this.canvas = null;
@@ -312,7 +338,7 @@ class EstateControls implements EngineNavigation {
       moving = true;
     } else if (this.mode === 'walk' && this.walk) {
       if (this.walk.update(dt, this.held, halted)) moving = true;
-    } else if (this.mode === 'overview' && this.orbit) {
+    } else if ((this.mode === 'overview' || this.mode === 'plan') && this.orbit) {
       if (this.flight) {
         const { flight, startMs } = this.flight;
         const elapsed = halted ? Infinity : (t - startMs) / 1000;
@@ -324,6 +350,8 @@ class EstateControls implements EngineNavigation {
     } else if (this.mode === 'fly' && this.fly) {
       if (this.fly.update(dt, this.held, halted)) moving = true;
     }
+    // Plan's rooms arrive with the building's nav file: listed once it is in.
+    if (this.plan && !this.view.get().plan?.ready) this.publishPlan();
     this.writeNorth(moving);
     this.trackSite(moving, t);
     return moving;
@@ -388,6 +416,7 @@ class EstateControls implements EngineNavigation {
    */
   private siteFor(): number {
     const camera = this.core.camera;
+    if (this.plan) return this.plan.site;
     if (this.mode === 'fly') {
       const p = threeToEstate(camera.position.toArray(this.e1), this.e1);
       const beside = siteAround(p[0], p[1], p[2], this.prisms, FLY_SITE_MARGIN);
@@ -413,7 +442,7 @@ class EstateControls implements EngineNavigation {
   /** Refresh the chip's building: every SITE_CHECK_MS while moving, and once on coming to rest. Not mid-flight. */
   private trackSite(moving: boolean, t: number) {
     // Walk names its own place (walkMode.ts publish); an arc lands with one.
-    if (this.flight || this.arc || this.mode === 'walk') return;
+    if (this.flight || this.arc || this.mode === 'walk' || this.mode === 'plan') return;
     if (moving) {
       this.siteDirty = true;
       if (t - this.lastSiteCheck < SITE_CHECK_MS) return;
@@ -545,9 +574,11 @@ class EstateControls implements EngineNavigation {
 
   setMode(mode: EstateViewMode): boolean {
     if (!this.live) return false;
-    if (mode !== 'overview' && mode !== 'fly' && mode !== 'walk') return false; // Plan is P6
     if (mode === this.mode) return false;
+    if (mode === 'plan') return this.planSelected();
     if (mode === 'walk' && !this.walk) return false;
+    // From Plan, Walk walks into the picked room (with none picked, the nearest entrance, as from Overview).
+    if (mode === 'walk' && this.plan && this.plan.room >= 0) return this.walkIn();
     const halted = this.core.options.motionHalted();
     // Out of Walk to Overview is the reverse arc (§8.1); an Enter arc still running turns back.
     if (mode === 'overview' && this.mode === 'walk') return this.exitWalk(halted);
@@ -560,11 +591,12 @@ class EstateControls implements EngineNavigation {
     if (!this.live) return false;
     if (action === 'cancel-transition') return this.walk?.cancelTransition() ?? false;
     if (action === 'overview') return this.setMode('overview');
-    return false; // exit-plan is P6
+    if (action === 'exit-plan') return this.exitPlan();
+    return false;
   }
 
   capture(): boolean {
-    if (!this.live || this.mode === 'overview') return false;
+    if (!this.live || this.mode === 'overview' || this.mode === 'plan') return false;
     const canvas = this.canvas;
     if (!canvas || typeof canvas.requestPointerLock !== 'function') return false;
     if (document.pointerLockElement === canvas) return false;
@@ -589,7 +621,7 @@ class EstateControls implements EngineNavigation {
     if (!this.live || this.arc) return false;
     const halted = this.core.options.motionHalted();
     this.cancelFlightHere();
-    if (this.mode === 'overview' && this.orbit) this.orbit.step(step, halted);
+    if ((this.mode === 'overview' || this.mode === 'plan') && this.orbit) this.orbit.step(step, halted);
     else if (this.mode === 'fly' && this.fly) this.fly.step(step);
     else if (this.mode === 'walk' && this.walk) return this.walk.step(step);
     else return false;
@@ -603,7 +635,15 @@ class EstateControls implements EngineNavigation {
   }
 
   setStorey(target: EstateStep | EstateStoreyTag): boolean {
-    if (!this.live || this.mode !== 'walk' || this.arc || !this.walk) return false;
+    if (!this.live || this.arc) return false;
+    if (this.mode === 'plan' && this.plan) {
+      const tags = this.core.interiors?.table(this.plan.site)?.tags;
+      if (!tags) return false;
+      const tag = typeof target === 'number' ? null : normaliseStoreyTag(target);
+      const s = typeof target === 'number' ? this.plan.storey + target : tag === null ? -1 : tags.indexOf(tag);
+      return s >= 0 && s < tags.length && this.planView(ESTATE_SITE_IDS[this.plan.site], tags[s]);
+    }
+    if (this.mode !== 'walk' || !this.walk) return false;
     return this.walk.setStorey(target);
   }
 
@@ -699,6 +739,257 @@ class EstateControls implements EngineNavigation {
     return true;
   }
 
+  // ---- Plan (P6, plan §8.1) -------------------------------------------------------------------
+
+  /**
+   * Plan of `site` at `storey`: from another mode (or another building) a 1.2 s
+   * flight to planFrame's pose, 55 degrees above the horizon over that storey's
+   * floor; on the same building a storey change only slides the target's
+   * height (PLAN_STOREY_SECONDS). The cut starts at 1.2 m (kept across storeys),
+   * the pick is cleared, and the building's files load at P0. Refused, with
+   * the reason said, while entering it has failed for good or the pack has no
+   * interior for it (§7.5: Enter, Plan and walk-in go together).
+   */
+  planView(site: EstateSiteId, storey: EstateStoreyTag, options?: EstateFlyOptions): boolean {
+    if (!this.live || !this.orbit) return false;
+    const pack = this.core.pack;
+    const interiors = this.core.interiors;
+    const index = ESTATE_SITE_IDS.indexOf(site);
+    const building = index >= 0 ? pack?.sites[index] : undefined;
+    const table = interiors?.table(index);
+    if (!building || !interiors || !table) return false;
+    const tag = normaliseStoreyTag(storey);
+    const s = tag === null ? -1 : table.tags.indexOf(tag);
+    if (s < 0) return false;
+    const entry = interiors.entry(index, this.entry);
+    if (entry.state === 'failed' || entry.state === 'absent') {
+      if (entry.reason) this.view.announce(false, entry.reason);
+      return false;
+    }
+    const same = this.mode === 'plan' && this.plan !== null && this.plan.site === index;
+    if (same && this.plan!.storey === s) return false;
+    const halted = this.core.options.motionHalted();
+    this.abandonArc();
+    if (this.mode !== 'overview' && this.mode !== 'plan') this.switchMode('overview', halted);
+    const orbit = this.orbit;
+    const from = orbit.currentOrbit(this.fromPose);
+    let to: OrbitPose;
+    if (same) {
+      to = this.toPose;
+      to.target[0] = from.target[0];
+      to.target[1] = from.target[1] + table.ffl[s] - table.ffl[this.plan!.storey];
+      to.target[2] = from.target[2];
+      to.distance = from.distance;
+      to.azimuth = from.azimuth;
+      to.polar = from.polar;
+    } else {
+      to = planFrame(building.bounds, table.ffl[s], PLAN_POLAR, from, this.core.camera.fov, this.core.camera.aspect, ORBIT_LIMITS, this.toPose);
+    }
+    const cut = same ? this.plan!.cut : PLAN_CUT_DEFAULT;
+    this.releaseKeys();
+    this.mode = 'plan';
+    orbit.enabled = true;
+    this.plan = { site: index, storey: s, cut, room: -1 };
+    this.marker?.hide();
+    this.core.setFocus(site);
+    this.core.setPlan(index, s, cut);
+    this.siteDirty = false;
+    this.view.set({ selection: site, location: { mode: 'plan', site, storey: table.tags[s], unit: null, room: null } });
+    this.publishPlan();
+    this.startFlight(to, same ? PLAN_STOREY_SECONDS : FLY_TO_SECONDS, index, options?.instant === true || halted);
+    return true;
+  }
+
+  /** setMode('plan'): the selected building, else the one the overview frames, on its first typical storey. */
+  private planSelected(): boolean {
+    const selection = this.view.get().selection;
+    const index = selection ? ESTATE_SITE_IDS.indexOf(selection) : this.siteFor();
+    const table = index >= 0 ? this.core.interiors?.table(index) : null;
+    if (!table) {
+      this.view.announce(false, 'Select a building to see its plan.');
+      return false;
+    }
+    return this.planView(ESTATE_SITE_IDS[index], table.tags[defaultPlanStorey(table.typical)]);
+  }
+
+  /** Esc in Plan (§8.3, amended): back to Overview where the camera is, and the selection cleared with it. */
+  private exitPlan(): boolean {
+    if (this.mode !== 'plan') return false;
+    this.cancelFlightHere();
+    this.switchMode('overview', this.core.options.motionHalted());
+    this.landed = null;
+    this.core.setFocus(null);
+    this.view.set({ selection: null });
+    return true;
+  }
+
+  /** Plan's state, cut, marker and view go (the mode itself is the caller's). */
+  private endPlan(): void {
+    if (!this.plan) return;
+    this.plan = null;
+    this.marker?.hide();
+    this.core.setPlan(null);
+    this.view.set({ plan: null });
+  }
+
+  private planRoomCount(): number {
+    const plan = this.plan;
+    return plan ? this.core.interiors?.nav(plan.site)?.rooms[plan.storey]?.length ?? 0 : 0;
+  }
+
+  /** view.plan from the state: a new frozen object only when something in it changed. */
+  private publishPlan(): void {
+    const plan = this.plan;
+    const interiors = this.core.interiors;
+    const table = plan ? interiors?.table(plan.site) : null;
+    if (!plan || !interiors || !table) {
+      if (this.view.get().plan) this.view.set({ plan: null });
+      return;
+    }
+    const nav = interiors.nav(plan.site);
+    const rooms = nav ? planRooms(nav, plan.storey) : NO_ROOMS;
+    const site = ESTATE_SITE_IDS[plan.site];
+    const storey = table.tags[plan.storey];
+    const prev = this.view.get().plan;
+    if (prev && prev.site === site && prev.storey === storey && prev.cut === plan.cut && prev.rooms === rooms
+      && prev.ready === (nav !== null) && prev.room === plan.room) return;
+    const next: EstatePlanView = Object.freeze({ site, storey, cut: plan.cut, rooms, ready: nav !== null, room: plan.room });
+    this.view.set({ plan: next });
+  }
+
+  /**
+   * Pick room `index` of the storey (null clears): its outline marked on the
+   * floor, and, when `say` (a key or a click on the stage), its name and place
+   * in the list said. A pick from the list is said by the list itself.
+   */
+  pickRoom(index: number | null, say = false): boolean {
+    const plan = this.plan;
+    if (!this.live || this.mode !== 'plan' || !plan) return false;
+    const nav = this.core.interiors?.nav(plan.site);
+    const rooms = nav?.rooms[plan.storey] ?? [];
+    const i = index === null ? -1 : index;
+    if (!(i >= -1 && i < rooms.length) || (i | 0) !== i || i === plan.room) return false;
+    plan.room = i;
+    const room = i >= 0 ? rooms[i] : null;
+    const building = this.core.pack?.sites[plan.site];
+    const table = this.core.interiors?.table(plan.site);
+    if (room && building && table) this.marker?.show(room.poly, building.at, table.ffl[plan.storey] + room.z);
+    else this.marker?.hide();
+    this.publishPlan();
+    if (room && say) this.view.announce(false, roomSpoken(room, i, rooms.length), true);
+    this.core.invalidate();
+    return true;
+  }
+
+  /** The cut one step lower or higher ([ and ]). */
+  setCut(step: EstateStep): boolean {
+    const plan = this.plan;
+    if (!this.live || this.mode !== 'plan' || !plan) return false;
+    const cut = stepCut(plan.cut, step);
+    if (cut === plan.cut) return false;
+    plan.cut = cut;
+    this.core.setPlan(plan.site, plan.storey, cut);
+    this.publishPlan();
+    this.view.announce(false, cutSpoken(cut), true);
+    return true;
+  }
+
+  /**
+   * Walk into the picked room (or room `index`): the Enter arc (1.2 s, no rise:
+   * the camera comes straight down through the cut) to the walkable cell
+   * nearest the room's centre on that storey (lib/estate/plan.ts walkInPoint),
+   * facing the way the plan looked, into Walk. A cut when halted.
+   */
+  walkIn(index?: number): boolean {
+    const plan = this.plan;
+    const interiors = this.core.interiors;
+    if (!this.live || this.mode !== 'plan' || !plan || !this.walk || !interiors) return false;
+    const site = ESTATE_SITE_IDS[plan.site];
+    const nav = interiors.nav(plan.site);
+    if (!nav) {
+      this.view.announce(false, 'Its rooms are still loading.');
+      return false;
+    }
+    const i = index ?? plan.room;
+    const room = nav.rooms[plan.storey]?.[i];
+    if (!room) {
+      this.view.announce(false, 'Pick a room to walk into.');
+      return false;
+    }
+    const walk = interiors.walk(plan.site);
+    const building = this.core.pack?.sites[plan.site];
+    const table = interiors.table(plan.site);
+    if (!walk || !building || !table) {
+      this.view.announce(false, 'Its walkway map is still loading.');
+      return false;
+    }
+    const pose = this.walkInPose;
+    if (!walkInPoint(walk, room, table.ffl[plan.storey], plan.storey, pose)) {
+      this.view.announce(false, `${roomText(room)} has no floor to stand on.`);
+      return false;
+    }
+    const camera = this.core.camera;
+    const f = threeToEstate(camera.getWorldDirection(this.v1).toArray(this.e2), this.e2);
+    const spawn: WalkSpawn = {
+      x: building.at[0] + pose.x, y: building.at[1] + pose.y, z: pose.z, yaw: Math.atan2(-f[0], f[1]), name: roomText(room),
+    };
+    const halted = this.core.options.motionHalted();
+    const storey = table.tags[plan.storey];
+    this.cancelFlightHere();
+    this.releaseKeys();
+    this.endDrag();
+    this.core.setFocus(site);
+    // The cut stays on until the walker stands in the room (ActiveArc.plan); the list and marker go now.
+    const { cut } = plan;
+    this.leaveFor('walk');
+    this.core.setPlan(plan.site, plan.storey, cut);
+    this.walk.stop();
+    this.mode = 'walk';
+    if (halted) {
+      this.core.setPlan(null);
+      this.applyFov(ESTATE_VFOV_DEG.walk);
+      this.view.set({ selection: site, flight: false });
+      this.walk.start(spawn);
+      this.core.invalidate();
+      return true;
+    }
+    const from = endFromCamera(camera);
+    const to = endFromLook([spawn.x, spawn.z + EYE_HEIGHT, -spawn.y], spawn.yaw, 0, ESTATE_VFOV_DEG.walk);
+    this.arc = {
+      arc: planArc(from, to, 0, ENTER_SECONDS), startMs: now(), kind: 'enter', site: plan.site, spawn, storey: null, orbit: null, plan: true,
+    };
+    this.view.set({ selection: site, flight: true, walk: null, location: { mode: 'walk', site, storey, unit: null, room: null } });
+    this.core.invalidate();
+    return true;
+  }
+
+  /** The room of the planned storey under a client point: its index, -1 for none, null off the canvas. */
+  private roomAtPoint(clientX: number, clientY: number): number | null {
+    const plan = this.plan;
+    const canvas = this.canvas;
+    const interiors = this.core.interiors;
+    if (!plan || !canvas || !interiors) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (!(rect.width > 0 && rect.height > 0)) return null;
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
+    const nav = interiors.nav(plan.site);
+    const table = interiors.table(plan.site);
+    const building = this.core.pack?.sites[plan.site];
+    if (!nav || !table || !building) return -1;
+    const camera = this.core.camera;
+    const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    camera.updateMatrixWorld();
+    const through = this.v1.set(x, y, 0.5).unproject(camera);
+    const dir = through.sub(camera.position);
+    const origin = threeToEstate(camera.position.toArray(this.e1), this.e1);
+    const direction = threeToEstate(dir.toArray(this.e2), this.e2);
+    const hit = rayFloor(origin, direction, table.ffl[plan.storey], this.floorHit);
+    if (!hit) return -1;
+    const room = roomAt(nav, plan.storey, hit[0] - building.at[0], hit[1] - building.at[1]);
+    return room ? nav.rooms[plan.storey].indexOf(room) : -1;
+  }
+
   /** getResume's `inside` (Walk on a building's grid), else null. */
   resumeInside(): EstateResume['inside'] {
     const walk = this.walk;
@@ -760,7 +1051,8 @@ class EstateControls implements EngineNavigation {
 
   /** The mode the camera is leaving gives it up: Overview's controls off, Fly stopped, Walk's session ended. */
   private leaveFor(next: ControlMode) {
-    if (this.mode === 'overview' && next !== 'overview' && this.orbit) this.orbit.enabled = false;
+    if (this.mode === 'plan' && next !== 'plan') this.endPlan();
+    if ((this.mode === 'overview' || this.mode === 'plan') && next !== 'overview' && next !== 'plan' && this.orbit) this.orbit.enabled = false;
     if (this.mode === 'fly' && next !== 'fly') this.fly?.stop();
     if (this.mode === 'walk' && next !== 'walk') this.walk?.stop();
     if (next === 'overview') this.exitLock();
@@ -797,6 +1089,7 @@ class EstateControls implements EngineNavigation {
     }
     this.releaseKeys();
     this.endDrag();
+    if (this.arc?.plan) this.core.setPlan(null);
     this.arc = null;
     this.leaveFor('overview');
     this.mode = 'overview';
@@ -819,6 +1112,7 @@ class EstateControls implements EngineNavigation {
     this.arc = null;
     const camera = this.core.camera;
     applyArc(active.arc, Infinity, camera);
+    if (active.plan) this.core.setPlan(null);
     if (active.kind === 'enter' && active.spawn && this.walk) {
       this.walk.start(active.spawn, active.storey && active.site >= 0 ? { site: active.site, tag: active.storey } : undefined);
       this.view.set({ flight: false });
@@ -844,6 +1138,7 @@ class EstateControls implements EngineNavigation {
     if (!active) return;
     if (active.kind === 'exit') { this.landArc(); return; }
     this.arc = null;
+    if (active.plan) this.core.setPlan(null);
     this.walk?.stop();
     const orbit = this.orbit;
     const camera = this.core.camera;
@@ -872,6 +1167,17 @@ class EstateControls implements EngineNavigation {
     this.endDrag();
     this.clicks.cancel();
     this.cancelFlightHere();
+    // Out of Plan the orbit stays as it is: Overview from the same pose, or on to Walk or Fly from there.
+    if (this.mode === 'plan') {
+      this.endPlan();
+      this.mode = 'overview';
+      if (mode === 'overview') {
+        this.siteDirty = false;
+        this.view.set({ location: { mode: 'overview', site: this.siteId(this.siteFor()), storey: null, unit: null, room: null } });
+        this.core.invalidate();
+        return;
+      }
+    }
     const camera = this.core.camera;
     const from = this.mode;
     if (mode === 'fly') {
@@ -1021,7 +1327,21 @@ class EstateControls implements EngineNavigation {
       case 'mode':
         this.setMode(action.mode);
         return;
+      case 'cycle-room':
+        if (this.plan) this.pickRoom(cycleRoom(this.plan.room, action.step, this.planRoomCount()), true);
+        return;
+      case 'storey':
+        this.setStorey(action.step);
+        return;
+      case 'cut':
+        this.setCut(action.step);
+        return;
       case 'activate': {
+        // Plan: walk into the picked room (§8.2's Enter).
+        if (this.mode === 'plan') {
+          this.walkIn();
+          return;
+        }
         if (this.mode === 'walk') {
           // Walk: the offered lift opens its popover, else the offered stair.
           const done = this.walk && !this.arc ? this.walk.activate() : false;
@@ -1051,7 +1371,6 @@ class EstateControls implements EngineNavigation {
         this.view.announce(true, null);
         return;
       default:
-        // cycle-room, storey, cut (P6).
     }
   }
 
@@ -1077,7 +1396,7 @@ class EstateControls implements EngineNavigation {
     const locked = canvas !== null && document.pointerLockElement === canvas;
     this.clicks.down(event.pointerId, event.clientX, event.clientY, event.timeStamp, event.button === 0 && event.isPrimary !== false && !locked, event.pointerType || 'mouse');
 
-    if (this.mode === 'overview') {
+    if (this.mode === 'overview' || this.mode === 'plan') {
       this.orbit?.setShiftPan(event.shiftKey);
       return;
     }
@@ -1125,6 +1444,14 @@ class EstateControls implements EngineNavigation {
     if (this.drag && this.drag.id === event.pointerId) this.endDrag();
     // Walk picks nothing: a press there is a look.
     if (!kind || !this.live || this.mode === 'walk' || this.arc) return;
+    // Plan: a click picks the room under it (or clears the pick off every room), a double-click walks in.
+    if (this.mode === 'plan' && this.plan) {
+      const room = this.roomAtPoint(event.clientX, event.clientY);
+      if (room === null) return;
+      if (kind === 'click') this.pickRoom(room < 0 ? null : room, true);
+      else if (room >= 0) this.walkIn(room);
+      return;
+    }
     const index = this.pickAt(event.clientX, event.clientY);
     if (index === null) return; // released off the stage
     if (kind === 'click') this.selectIndex(index);
@@ -1144,7 +1471,7 @@ class EstateControls implements EngineNavigation {
     event.preventDefault();
     const steps = wheelSteps(event.deltaY, event.deltaMode, event.ctrlKey, isMac());
     if (steps === 0) return;
-    if (this.mode === 'overview' && this.orbit) {
+    if ((this.mode === 'overview' || this.mode === 'plan') && this.orbit) {
       this.cancelFlightHere();
       this.orbit.wheel(steps, event.clientX, event.clientY, this.core.options.motionHalted());
     } else if (this.mode === 'fly' && this.fly) {

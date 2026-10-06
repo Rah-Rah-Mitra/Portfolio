@@ -4,6 +4,8 @@ import { localAgent as clientAgent, validatePageCommand } from '../components/As
 import { defaultSettings } from '../contexts/PhysicsContext';
 import { allowedLinks, buildPageState } from '../lib/askPageState';
 import { workbenchApps } from '../lib/workbench';
+import { validateEstateFocus } from '../lib/estate/events';
+import { readFile } from 'node:fs/promises';
 import { experienceRecords } from '../portfolioData';
 
 const trustedPageState = {
@@ -102,9 +104,17 @@ describe('server page-agent command parity', () => {
     ['Show Rahul’s security record.', { type: 'focusGuideChapter', chapterId: 'proof' }],
     ['show me Explore World', { type: 'openDesktopApp', appId: 'world-3d' }],
     ['walk me through the HDB estate', { type: 'openDesktopApp', appId: 'world-3d' }],
-    ['is there a hawker centre in the estate?', { type: 'openDesktopApp', appId: 'world-3d' }],
-    ['what is blk 509?', { type: 'openDesktopApp', appId: 'world-3d' }],
-    ['show the multi-storey car park', { type: 'openDesktopApp', appId: 'world-3d' }],
+    // A named building flies there (plan §9.4, P6); "into", "enter", "walk" or "inside" walks in.
+    ['is there a hawker centre in the estate?', { type: 'focusEstate', site: 'NC_514' }],
+    ['what is blk 509?', { type: 'focusEstate', site: 'BLK_509' }],
+    ['show the multi-storey car park', { type: 'focusEstate', site: 'MSCP_513' }],
+    ['take me into the hawker centre', { type: 'focusEstate', site: 'NC_514', enter: true }],
+    ['walk inside Blk 512', { type: 'focusEstate', site: 'BLK_512', enter: true }],
+    ['fly to blk501', { type: 'focusEstate', site: 'BLK_501' }],
+    ['enter the MSCP', { type: 'focusEstate', site: 'MSCP_513', enter: true }],
+    ['show me the neighbourhood centre', { type: 'focusEstate', site: 'NC_514' }],
+    // Blk 513 is the car park's number, not a block: the window opens, nothing is flown to.
+    ['show me blk 513', { type: 'openDesktopApp', appId: 'world-3d' }],
     ['show generic project work', { type: 'focusGuideChapter', chapterId: 'work' }],
   ])('keeps client/server fallback parity for %s', (message, expected) => {
     const clientCommand = clientAgent(message).commands?.[0];
@@ -119,6 +129,9 @@ describe('server page-agent command parity', () => {
     'use Quick Scan',
     'show me Explore World',
     'walk me through the HDB estate',
+    'take me into the hawker centre',
+    'show me blk 509',
+    'walk into the car park',
     'what is in the systems lab?',
     'open the Camera Lab stereo depth model',
     'How does the Zhang calibration work?',
@@ -134,6 +147,50 @@ describe('server page-agent command parity', () => {
     const server = serverAgent.localAgent(message);
     expect(client.commands).toEqual(server.commands);
     expect(client.reply).toBe(server.reply);
+  });
+
+  it('sanitises focusEstate as the client validates it: unknown buildings dropped, a storey the building lacks dropped alone', () => {
+    expect(serverAgent.sanitizeCommands([
+      { type: 'focusEstate', site: 'BLK_509', storey: 'L5', enter: true },
+      { type: 'focusEstate', site: 'BLK_509', storey: 'L05' },
+      { type: 'focusEstate', site: 'NC_514', storey: 'rf' },
+      { type: 'focusEstate', site: 'BLK_509', storey: 'L99', enter: 'true' },
+      { type: 'focusEstate', site: 'BLK_599', storey: 'L5' },
+      { type: 'focusEstate', site: 'SITE' },
+    ], {})).toEqual([
+      { type: 'focusEstate', site: 'BLK_509', storey: 'L5', enter: true },
+      { type: 'focusEstate', site: 'BLK_509', storey: 'L5' },
+      { type: 'focusEstate', site: 'NC_514', storey: 'RF' },
+      { type: 'focusEstate', site: 'BLK_509' },
+    ]);
+    // Unknown keys never pass through, and a building id never becomes a targetId.
+    expect(serverAgent.sanitizeCommands([{ type: 'focusEstate', site: 'MSCP_513', targetId: 'MSCP_513', storey: 7 }], {}))
+      .toEqual([{ type: 'focusEstate', site: 'MSCP_513' }]);
+  });
+
+  it('agrees with the client on every building × {L5, L05, RF, L99}', () => {
+    // Plan §10.1: the table both sides are held to, and lib/estate/events.ts (the viewer's own check) with them.
+    for (const site of Object.keys(serverAgent.ESTATE_SITE_STOREYS)) {
+      for (const storey of ['L5', 'L05', 'RF', 'L99']) {
+        const command = { type: 'focusEstate', site, storey };
+        const [server] = serverAgent.sanitizeCommands([command], {});
+        const client = validatePageCommand(command);
+        expect(client, `${site} ${storey}`).toEqual(server);
+        expect(validateEstateFocus({ site, storey }), `${site} ${storey}`).toEqual({ site, ...('storey' in server ? { storey: server.storey } : {}) });
+        const has = (serverAgent.ESTATE_SITE_STOREYS as Record<string, readonly string[]>)[site].includes(storey === 'L05' ? 'L5' : storey);
+        expect('storey' in server, `${site} ${storey}`).toBe(has);
+      }
+    }
+    // NC 514 has no L5: the storey goes, the building stays.
+    expect(validatePageCommand({ type: 'focusEstate', site: 'NC_514', storey: 'L5' })).toEqual({ type: 'focusEstate', site: 'NC_514' });
+  });
+
+  it('lists focusEstate for the model, outside the client-supplied page state', async () => {
+    const source = await readFile(new URL('../server/pageAgent.mjs', import.meta.url), 'utf8');
+    expect(source).toMatch(/- \{"type":"focusEstate","site":"an Estate building: BLK_501 to BLK_512, MSCP_513 \(the car park\) or NC_514 \(the hawker centre\)"/);
+    const estate = serverAgent.SITE_EXHIBITS.find((line: string) => line.startsWith('Estate (#world')) ?? '';
+    expect(estate).toMatch(/^Estate \(#world, app world-3d, command focusEstate\)/);
+    expect(estate).toMatch(/opens a storey in plan when given one, and walks in with enter/);
   });
 
   it('keeps the offline default pointed at Experience and Contact through the sanitizer', async () => {

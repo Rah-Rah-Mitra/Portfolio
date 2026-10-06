@@ -137,7 +137,7 @@ export const loadEngine = (): Promise<EstateRuntime> => {
   if (!pending) {
     pending = Promise.all([import('./engine'), import('./live/EstateHud')])
       .then(([engine, hud]) => {
-        loaded = { createEngine: engine.createEngine, EstateHud: hud.EstateHud };
+        loaded = { createEngine: engine.createEngine, EstateHud: hud.EstateHud, EstatePlanRooms: hud.EstatePlanRooms };
         return loaded;
       })
       .catch(async (error: unknown) => {

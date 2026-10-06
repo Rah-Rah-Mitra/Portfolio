@@ -8,6 +8,7 @@ import { desktopAppFromSearch } from '../../lib/workstation';
 import { clamp, pathSampler, routePath, spring, type PathSampler } from '../../lib/rig';
 import { motionHalted, onMotionChange } from '../../lib/motion';
 import { Corners } from './bits';
+import { ESTATE_DESCRIPTION, ESTATE_DISPLAY_NAME } from './estate/EstateRegistry';
 import { track } from '../../lib/analytics';
 
 const KINDS = ['ALL', 'PROJECTS', 'EXPERIENCE', 'METHODS', 'PROOF', 'RESUMES', 'CERTS'] as const;
@@ -43,6 +44,18 @@ const INDEX_ROWS: IndexRow[] = [
       links: project ? projectLinks(project).map((link) => ({ label: `${link.label.toUpperCase()} ↗`, href: link.href })) : undefined,
     };
   }),
+  // The Estate is a 3D desktop window (plan §9.5): here, its facts as text and a
+  // pointer to it, as the builder row below does for the builder. No poster.
+  {
+    id: 'estate:sample-town-n5',
+    kind: 'PROJECTS',
+    date: 'WIN-07',
+    title: ESTATE_DISPLAY_NAME,
+    sub: 'The Estate · 3D on desktop',
+    detail: `${ESTATE_DESCRIPTION} The 3D view needs a desktop browser.`,
+    tags: ['IFC4X3', '3D'],
+    links: [{ label: 'OPEN ON DESKTOP', href: '/?app=world-3d' }],
+  },
   ...experienceRecords.map((record): IndexRow => ({
     id: `experience:${record.id}`,
     kind: 'EXPERIENCE',
@@ -141,12 +154,14 @@ const APP_TO_KIND: Partial<Record<DesktopAppId, Kind>> = {
   'resume-builder': 'RESUMES',
 };
 
-// This file is the only mounted producer of ?app= (the builder row's
-// "OPEN ON DESKTOP" href), so it has to be able to read it back: a phone user
-// who taps its own link must land somewhere. Windows with no row of their own
-// (the labs, the Estate) get their filter chip and nothing more.
+// This file is the only mounted producer of ?app= (the builder's and the
+// Estate's "OPEN ON DESKTOP" hrefs), so it has to be able to read it back: a phone user
+// who taps its own link must land somewhere. The Estate has its pointer row
+// too; windows with no row of their own (the labs) get their filter chip and
+// nothing more.
 const APP_TO_ROW: Partial<Record<DesktopAppId, string>> = {
   'resume-builder': 'resume:builder',
+  'world-3d': 'estate:sample-town-n5',
 };
 
 interface Rig {

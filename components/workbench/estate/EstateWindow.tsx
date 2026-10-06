@@ -41,6 +41,7 @@ export const POSTER_MODEL: EstateModel = Object.freeze({
   rowAction: null,
   focus: null,
   hud: null,
+  side: null,
 });
 
 /**
@@ -82,7 +83,7 @@ export const EstateView: React.FC<{
   onRowAction?: () => void;
 }> = ({ model, rootRef, onSite, onAction, onRowAction }) => {
   const { poster } = ESTATE_CATALOGUE;
-  const { hud } = model;
+  const { hud, side } = model;
   return (
     <div id="world" className="wb-estate" data-estate-phase={model.phase} ref={rootRef}>
       <figure className="wb-estate-figure blueprint wb-figure">
@@ -118,6 +119,7 @@ export const EstateView: React.FC<{
           rowAction={model.rowAction && onRowAction ? { ...model.rowAction, onClick: onRowAction } : null}
           onSite={onSite}
           notice={model.notice}
+          extra={side && <side.Hud {...side.props} />}
         />
       </aside>
     </div>

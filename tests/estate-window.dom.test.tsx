@@ -97,6 +97,9 @@ const createFake = (options: EstateEngineOptions): FakeEngine => {
     takeLift: vi.fn(() => false),
     takeStairs: vi.fn(() => false),
     planView: vi.fn(() => false),
+    pickRoom: vi.fn(() => false),
+    walkIn: vi.fn(() => false),
+    setCut: vi.fn(() => false),
     walkStep: vi.fn(() => false),
     setStick: vi.fn(() => false),
     walkFrom: vi.fn(() => false),
@@ -607,6 +610,55 @@ describe('Estate window — focus requests, Esc and raising', () => {
     dispatch({ site: 'NC_514' });
     expect(engine.flyTo).toHaveBeenLastCalledWith('NC_514');
     expect(engine.flyTo).toHaveBeenCalledTimes(2);
+  });
+
+  it('applies a held request by what it asks: a storey opens Plan there, enter walks in (at that storey), else a fly-to (P6)', async () => {
+    const { engine } = await mountLive();
+    Object.assign(engine.features, { walk: true, enter: true, interiors: true, plan: true });
+    vi.mocked(engine.planView).mockReturnValue(true);
+    vi.mocked(engine.enter).mockReturnValue(true);
+    const dispatch = (detail: unknown) => act(() => { window.dispatchEvent(new CustomEvent(ESTATE_FOCUS_EVENT, { detail })); });
+    dispatch({ site: 'BLK_509', storey: 'L05' });
+    expect(engine.planView).toHaveBeenLastCalledWith('BLK_509', 'L5');
+    dispatch({ site: 'NC_514', enter: true });
+    expect(engine.enter).toHaveBeenLastCalledWith('NC_514', undefined);
+    dispatch({ site: 'BLK_509', storey: 'L12', enter: true });
+    expect(engine.enter).toHaveBeenLastCalledWith('BLK_509', { storey: 'L12' });
+    expect(engine.planView).toHaveBeenCalledTimes(1);
+    // A storey the building lacks is dropped: a plain fly-to.
+    dispatch({ site: 'MSCP_513', storey: 'L9' });
+    expect(engine.flyTo).toHaveBeenLastCalledWith('MSCP_513');
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('in consent, a focus request highlights its row and says to load first, without moving focus', async () => {
+    const { container } = render(<Desk device={SAVE_DATA} />);
+    await flush();
+    act(() => { window.dispatchEvent(new CustomEvent(ESTATE_FOCUS_EVENT, { detail: { site: 'NC_514', enter: true } })); });
+    await flush();
+    expect(container.querySelector('[data-estate-site="NC_514"]')?.getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('.wb-estate-state .wb-estate-notice')?.textContent).toBe('Load the 3D estate to fly there.');
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('draws the runtime’s room list in the side panel, above BUILDINGS, with the HUD’s props, while the HUD is drawn (P6)', async () => {
+    const Rooms: React.FC<EstateHudProps> = ({ phase, engine }) => <section data-fake-rooms={phase} data-token={engine.token} />;
+    const withRooms: EstateRuntime = { ...runtime, EstatePlanRooms: Rooms };
+    loadMock.mockResolvedValue(withRooms);
+    const { container } = render(<Desk />);
+    await flush();
+    runIdle();
+    await flush();
+    expect(container.querySelector('[data-fake-rooms]')).toBeNull();
+    const engine = instances[instances.length - 1];
+    engine.emit({ type: 'ready', tier: 'mid', msaa: false, programs: 6 });
+    await flush();
+    const rooms = container.querySelector('aside [data-fake-rooms]')!;
+    expect(rooms.getAttribute('data-fake-rooms')).toBe('live');
+    expect(rooms.getAttribute('data-token')).toBe(String(engine.token));
+    // Between the status line and BUILDINGS.
+    expect(rooms.previousElementSibling?.classList.contains('wb-estate-action')).toBe(true);
+    expect(rooms.nextElementSibling?.textContent).toBe('BUILDINGS');
   });
 
   it('in consent, a row press highlights it and says to load first', async () => {

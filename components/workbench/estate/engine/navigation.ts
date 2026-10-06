@@ -24,8 +24,8 @@ export interface ViewAccess {
   get(): EstateView;
   /** Merge a change; emits `location` (once ready) when anything differs. */
   set(patch: Partial<Omit<EstateView, 'popoverOpen' | 'location'>> & { location?: Partial<EstateView['location']> }, via?: string): boolean;
-  /** Something to speak now (engineApi EstateAnnounceEvent). */
-  announce(full: boolean, text: string | null): void;
+  /** Something to speak now (engineApi EstateAnnounceEvent); `quiet`: said, not shown as a notice. */
+  announce(full: boolean, text: string | null, quiet?: boolean): void;
 }
 
 export interface EngineNavigation {
@@ -37,7 +37,10 @@ export interface EngineNavigation {
   setStorey?(target: EstateStep | EstateStoreyTag): boolean;
   takeLift?(level: EstateStoreyTag): boolean;
   takeStairs?(direction: EstateStep): boolean;
-  planView?(site: EstateSiteId, storey: EstateStoreyTag): boolean;
+  planView?(site: EstateSiteId, storey: EstateStoreyTag, options?: EstateFlyOptions): boolean;
+  pickRoom?(index: number | null): boolean;
+  walkIn?(index?: number): boolean;
+  setCut?(step: EstateStep): boolean;
   walkStep?(step: EstateWalkStep): boolean;
   setStick?(x: number, y: number): boolean;
   /** "Start at BS1" (engineApi walkFrom). */

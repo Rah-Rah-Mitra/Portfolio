@@ -140,6 +140,42 @@ export const frameBuilding = (
   return out;
 };
 
+/** How much of the frame's short side a Plan storey's outline fills (its half-diagonal's silhouette). */
+export const PLAN_FILL = 0.85;
+/** A storey change in Plan slides the target this long, s. */
+export const PLAN_STOREY_SECONDS = 0.4;
+
+/**
+ * Plan's pose (§8.1): aimed at the middle of the building's outline on the
+ * storey's floor (`floorY`, three Y = block-local Z), `polar` from straight down
+ * (lib/estate/plan.ts PLAN_POLAR, 55° above the horizon), the same azimuth as
+ * now, and far enough that a disc of the outline's half-diagonal fills
+ * PLAN_FILL of the short side: the whole storey in frame from any azimuth.
+ */
+export const planFrame = (
+  bounds: readonly [ArrayLike<number>, ArrayLike<number>],
+  floorY: number,
+  polar: number,
+  current: OrbitPose,
+  vfovDeg: number,
+  aspect: number,
+  limits: OrbitLimits = ORBIT_LIMITS,
+  out: OrbitPose = blankPose(),
+): OrbitPose => {
+  const [lo, hi] = bounds;
+  out.target[0] = (lo[0] + hi[0]) / 2;
+  out.target[1] = floorY;
+  out.target[2] = -(lo[1] + hi[1]) / 2;
+  const radius = Math.max(1, Math.hypot(hi[0] - lo[0], hi[1] - lo[1]) / 2);
+  const halfV = (clamp(vfovDeg, 10, 120) * DEG) / 2;
+  const halfH = Math.atan(Math.tan(halfV) * (aspect > 0 ? aspect : 1));
+  const silhouette = Math.atan(PLAN_FILL * Math.tan(Math.min(halfV, halfH)));
+  out.distance = clamp(radius / Math.sin(silhouette), limits.minDistance, limits.maxDistance);
+  out.azimuth = current.azimuth;
+  out.polar = clamp(polar, 0, limits.maxPolar);
+  return out;
+};
+
 export interface Flight {
   from: OrbitPose;
   to: OrbitPose;

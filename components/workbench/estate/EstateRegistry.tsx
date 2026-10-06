@@ -67,7 +67,7 @@ const openFromLink = (event: React.MouseEvent, appId: DesktopAppId, targetId: st
 
 /**
  * The stage's keys (lib/estate/input.ts, plan §8.2 with the pan and look
- * additions) for what this build does: Overview, Walk and Fly. The full list;
+ * additions) for what this build does: Overview, Plan, Walk and Fly. The full list;
  * the live stage's own description is the HUD's short summary
  * (#estate-keys-desc), because a closed <details> is outside the accessibility
  * tree.
@@ -76,20 +76,21 @@ export const ESTATE_KEYS: ReadonlyArray<readonly [string, string]> = [
   ['Drag', 'Orbit; in Walk and Fly, look around'],
   ['Right-drag, Shift-drag', 'Pan; in Walk and Fly, strafe'],
   ['Wheel', 'Zoom towards the pointer; in Walk, half-metre steps; in Fly, speed'],
-  ['W S, ↑ ↓', 'Tilt; in Walk and Fly, forward and back'],
+  ['W S, ↑ ↓', 'Tilt; in Walk and Fly, forward and back; in Plan, the rooms'],
   ['A D', 'Pan sideways; in Walk and Fly, strafe'],
   ['Shift + arrows', 'In Overview, pan'],
   ['← →', 'Rotate; in Walk and Fly, turn'],
-  ['PgUp PgDn', 'In Walk, the stairs or the lift, up and down'],
+  ['PgUp PgDn', 'In Walk, the stairs or the lift, up and down; in Plan, storeys'],
+  ['[ ]', 'In Plan, the cut down and up'],
   ['R F', 'In Fly, look up and down'],
   ['Space E, C Q', 'In Fly, up and down'],
   ['Shift', 'In Walk and Fly, faster'],
   ['1, 2, 3', 'Overview, Walk, Fly'],
-  ['Enter', 'Fly to the selected building, then walk in; in Walk, take the lift or stair offered'],
+  ['Enter', 'Fly to the selected building, then walk in; in Plan, into the room; in Walk, take the lift or stair offered'],
   ['Home', 'Back to the aerial view; in Walk, to the start'],
   ['L', 'In Walk and Fly, capture the mouse'],
   ['I', 'Say where the camera is'],
-  ['Esc', 'One step back (the lift panel, a climb, Walk or Fly, the selection); then minimises the window'],
+  ['Esc', 'One step back (the lift panel, a climb, Walk, Fly or Plan, the selection); then minimises the window'],
 ];
 
 /** What the action slot under the description offers: consent's Load, Retry or Reload. */
@@ -113,9 +114,11 @@ export interface EstateRegistryProps {
   onSite: (site: EstateSiteId) => void;
   /** Beside the action, in the status line: "Load the 3D estate to fly there", or null. */
   notice: string | null;
+  /** Above BUILDINGS: Plan's room list while in Plan (the window's side slot, P6). */
+  extra?: React.ReactNode;
 }
 
-export const EstateRegistry: React.FC<EstateRegistryProps> = ({ stateText, action, selected, rowsFly, rowAction, onSite, notice }) => (
+export const EstateRegistry: React.FC<EstateRegistryProps> = ({ stateText, action, selected, rowsFly, rowAction, onSite, notice, extra }) => (
   <>
     <Kicker>{ESTATE_DISPLAY_NAME.toUpperCase()} — GENERATED HDB ESTATE</Kicker>
     <h3 className="wb-estate-title">{ESTATE_DISPLAY_NAME}</h3>
@@ -139,6 +142,7 @@ export const EstateRegistry: React.FC<EstateRegistryProps> = ({ stateText, actio
         </button>
       )}
     </div>
+    {extra}
     <p className="wb-estate-head">BUILDINGS</p>
     <ul className="wb-estate-sites" aria-label={`${ESTATE_DISPLAY_NAME} buildings`}>
       {ESTATE_CATALOGUE.sites.map((site) => (

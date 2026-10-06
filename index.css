@@ -1038,6 +1038,23 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 .wb-estate-site-meta { font-size: 10px; letter-spacing: 0.06em; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
 /* The HUD's Enter or Exit, mirrored under the row it acts on. */
 .wb-estate-site-act { margin: 4px 0 6px 6px; font-size: 11px; padding: 4px 8px; }
+/* Plan's room list (P6), above BUILDINGS while in Plan: grouped by flat, in a
+   scroller of its own (padding keeps the focus ring and its offset unclipped). */
+.wb-estate-rooms { margin: 0 0 12px; }
+.wb-estate-rooms .wb-estate-site-act { margin: 2px 0 6px; text-align: left; }
+.wb-estate-rooms-list {
+  max-height: 260px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+  padding: 0 5px 4px 4px; border-top: 1px solid var(--ink-8);
+}
+.wb-estate-rooms-group { display: flex; flex-wrap: wrap; gap: 3px; padding: 5px 0 7px; border-bottom: 1px solid var(--ink-8); }
+.wb-estate-rooms-flat { flex: 0 0 100%; margin: 0; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
+.wb-estate-room {
+  min-height: 24px; padding: 2px 7px; border: 1px solid var(--color-divider); border-radius: 0; background: transparent;
+  cursor: pointer; font-size: 11px; line-height: 1.25; color: var(--color-text); text-align: left;
+}
+.wb-estate-room:hover:not(:disabled) { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-estate-room[aria-pressed='true'] { background: var(--color-accent-100); border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
+.wb-estate-room:disabled { opacity: 0.45; cursor: not-allowed; }
 .wb-estate-keys { margin: 0 0 12px; }
 .wb-estate-keys > summary { list-style: none; cursor: pointer; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.13em; color: var(--color-accent-700); }
 .wb-estate-keys > summary::-webkit-details-marker { display: none; }

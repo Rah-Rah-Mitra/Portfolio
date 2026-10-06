@@ -107,7 +107,8 @@ and a Zhang calibration), and inside the Systems Lab a mechanism bench, a
 flow-shop sequencing model and a contained drop test. The Estate window shows
 Sample Town N5, a generated sample HDB neighbourhood, as a duotone still render
 with a text registry of its fourteen buildings, and a 3D viewer to orbit it,
-fly to a building and walk in through its void decks, stairs and lifts. The FX panel can switch on two desk backdrops, an N-body
+fly to a building, open one storey of it as a cut plan, and walk in through its
+void decks, stairs and lifts or straight into a room picked on the plan. The FX panel can switch on two desk backdrops, an N-body
 gravity field and a fluid; both are off at boot.
 
 **Key characteristics:**
@@ -268,10 +269,27 @@ the FX "Pause all motion").
     what the interior is about); a faint dotted line along some flat window
     heads is a coplanar sliver in the interior geometry, left for the release
     pack;
+  - **Plan is a drawing's plan cut** (P6): one storey seen from 55° above the
+    horizon, cut at its floor + 1.2 m (the architectural convention; `[` and `]`
+    move it 0.3 m between 0.3 and 2.4 m). Everything above the cut is gone —
+    the storeys over it and the top of every wall — and where the cut opens a
+    wall, slab edge or cabinet its section is filled flat
+    `--color-accent-900`, unlit, as poché, so the walls read as solid black-blue
+    lines and the rooms as the light floor between them. The storeys below show
+    their façade. A picked room is outlined on its floor in the edge colour
+    (`--color-accent-700`) over a light accent-300 wash at 35 %, and named on a
+    "ROOM" chip with Walk in; the cut has its own chip ("CUT +1.20 M", ▼ ▲). The
+    storey strip down the right edge, the same one Walk uses, opens Plan from
+    Overview on the storey pressed and marks the storey shown. The room list in
+    the side panel groups rooms by flat ("#05-104", then "Common areas") as
+    square toggle buttons, the picked one with the selected row's accent-100
+    fill and inset accent-700 border; it scrolls inside its own 260px box, and
+    the side panel brings it into view when a plan opens;
   - **one palette:** every 3D material role maps onto the design tokens
     (walls `--color-neutral-100`, slabs and paving `--color-neutral-300`, doors
     `--color-neutral-500`, asphalt `--color-neutral-700`, grass and foliage
-    `--color-accent-300/400`, exterior glass and edges `--color-accent-700`;
+    `--color-accent-300/400`, exterior glass and edges `--color-accent-700`,
+    Plan's cut sections `--color-accent-900`;
     `lib/estate/palette.json`), read from CSS at mount. There is no second
     "model" palette and no colour in engine code.
 

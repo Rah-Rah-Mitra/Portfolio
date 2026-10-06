@@ -43,7 +43,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - Mobile ≤880px: `components/workbench/FieldIndex.tsx` — one searchable
   registry with traverse/crane rigs. SSR renders both surfaces (CSS hides
   one); after hydration `App.tsx` prunes to the active one. Keep `App`
-  render-pass free of `window` access — the build prerenders it.
+  render-pass free of `window` access — the build prerenders it. The Estate has
+  no 3D there: `estate:sample-town-n5` is a text row (PROJECTS, modelled on
+  `resume:builder`, its detail the window's pinned description) whose OPEN ON
+  DESKTOP is `/?app=world-3d`, and `APP_TO_ROW['world-3d']` expands it when that
+  link comes back to a phone.
 - **Mechanism bench** (`components/workbench/MechanismBench.tsx`, inside the
   Systems Lab window — no new app id, no new anchor). Six live mechanisms drawn
   from a planar projective geometric algebra: `lib/pga.ts` (core), `lib/pgaDraw.ts`
@@ -160,8 +164,30 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      The side panel's polite status line speaks phase changes (a row pressed
      before live says "Load the 3D estate to fly there" there); the HUD's hidden
      status speaks the camera's location. `portfolio:estate-focus` (`lib/estate/events.ts`) requests are
-     held until live and delivered once; the assistant's `focusEstate` command
-     that sends them is P6.
+     held until live and delivered once, and never move DOM focus; in consent
+     they highlight the row and say "Load the 3D estate to fly there". A request
+     with `enter` walks in (at its storey, by lift, when it names one), one with
+     a storey alone opens Plan there, anything else flies to the building.
+     **`focusEstate`** (P6) is the assistant's way to send them:
+     `{type:'focusEstate', site, storey?, enter?}`, checked in three places
+     that cannot share code and must agree — `AskThePage.tsx validatePageCommand`
+     (main bundle: reads the catalogue's storey range `'L1–L16 + RF'` rather than
+     carry `lib/estate/ids.ts`), `server/pageAgent.mjs sanitizeCommands`
+     (`canonicalEstateSiteIds`, `ESTATE_SITE_STOREYS` and `normaliseStoreyTag`
+     restated beside the canonical id lists) and `lib/estate/events.ts` (the
+     viewer's): an unknown building drops the command, a storey that building
+     lacks drops only the storey (`L05`/`l5` → `L5`, `rf` → `RF`), `enter` only
+     as a boolean. `applyCommand` opens `world-3d` with `targetId: 'world'` and,
+     80 ms later, dispatches the event: a building id never goes into
+     `targetId`. Both local fallbacks route a named building word for word the
+     same: "blk 501"–"blk 512" → that block, car park / mscp → MSCP_513, hawker /
+     neighbourhood centre → NC_514, with `enter: true` for into / enter / walk /
+     inside, and otherwise `openDesktopApp world-3d`; the reply is the same
+     Estate description either way. The model is told the command in the
+     prompt's list and in SITE_EXHIBITS' Estate line. Pinned by
+     `tests/{assistant,page-agent-server,estate-assistant}.test.ts` (the 14 ×
+     {L5, L05, RF, L99} table, the three checks against the catalogue, phone
+     starters never sending it).
   3. **Engine + HUD** (`estate/engine/**`, `estate/live/**`: three r186,
      camera-controls; built as `assets/estate-engine-<hash>.js` plus
      `EstateHud-<hash>.js`), reached only through `estate/loadEngine.ts` (one
@@ -260,8 +286,45 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        live frame and Home are the poster camera with its Blender lens shift
        turned into the view direction (`engine/views.ts aerialPose`; a pack
        without views uses upstream's aerial_NE numbers). `engine/navigation.ts` and
-       `engine/rig.ts` are the seam P6's Plan extends: `features` names the live
+       `engine/rig.ts` are the seam every mode plugs into: `features` names the live
        commands, and every other one returns false rather than throwing.
+     - Plan (P6, `engine/controls/{index,plan}.ts`, pure rules in
+       `lib/estate/plan.ts`): `planView(site, storey)` flies 1.2 s (a cut when
+       halted) to `tween.ts planFrame` — 55° above the horizon (polar 35°) over
+       the storey's floor, the outline's half-diagonal filling 0.85 of the short
+       side — and Overview's orbit controls stay on; a storey change on the same
+       building only slides the target's height. `core.setPlan` →
+       `interior.ts setPlan`: the building is the current one wherever the
+       camera is, held at F, its interior drawn up to S only (`uBand` top = S),
+       its façade masked from the band's foot to the roof, and its interior cut
+       at FFL_S + the cut (1.2 m; `[`/`]` step 0.3 m within 0.3–2.4 m) through
+       `uPlanCut` — all once the interior **and** the façade are resident. The
+       cut's discard and its fill (back faces of opaque slots, flat
+       `--color-accent-900`, the palette's `cut` slot) live only under
+       `#ifdef DOUBLE_SIDED`, and in Plan `materials.ts setPlanSides` makes the
+       building's two interior opaque materials glass's exact configuration bar
+       `depthWrite` (two-sided, single pass, transparent-sorted, alpha 1), so they
+       draw with glass's programs: **still six programs**, and every other draw
+       keeps its early depth test. Glass parts carry `renderOrder` 1 so they
+       sort after them. `view.plan` (`EstatePlanView`: site, storey, cut, the
+       storey's rooms from its nav file, `ready`, the picked room) feeds the HUD
+       and the side panel. Rooms are picked by a click on the floor (the ray
+       meets the floor plane, `nav.ts roomAt`), ↑/↓ (W/S) on the stage (said with
+       its place, "Unit 05-101, Bedroom, 2 of 105", as a `quiet` announce: no
+       notice chip) or the list (`pickRoom`); the pick is outlined on its floor
+       (`PlanMarker`: outline in the edge colour, translucent fill in the
+       interior-glass colour, the line and glass programs, geometry made per
+       pick). Enter, a double-click, the HUD's or the list's Walk in, or 2 /
+       WALK walk in (`walkIn`): `plan.ts walkInPoint` takes the walkable cell
+       nearest the room's centre on that storey (a stair room's middle is the
+       flight from below, so it looks for the room's own landing), then the
+       Enter arc with no rise comes straight down through the cut, which stays
+       on until the walker lands. Every room of all 14 buildings lands inside
+       itself on its own storey but one closed substation (BLK 505 L1-AM2),
+       which is refused with the reason (`tests/estate-plan.test.ts`, real
+       data). Esc leaves Plan **and** clears the selection (one layer, per the
+       amendment), so the next Esc minimises; Home, Fly, a fly-to or Enter leave
+       it too. A building whose entry failed refuses Plan with the reason.
      - Walk (P5, `engine/controls/{walk,walkMode,arc}.ts` and `engine/lifts.ts`):
        eye 1.6 m, 60°, 1.6 m/s (4.0 with Shift), ≤ 10 m/s² up and 12/s coasting
        down, ←/→ 90°/s, drag looks, the wheel and step buttons take 0.5 m / 15°.
@@ -329,7 +392,16 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        RF"), Walk's steps (▲ ▼ 0.5 m, ◀ ▶ 15°, strafe, look) and the 96 px touch
        stick (`.wb-estate-stick`, `setStick`; shown on the stage's first touch
        or under `(any-pointer: coarse)`, `aria-hidden` because the steps do all
-       it does). The root carries `data-mode`, `data-transition` and
+       it does). Plan (P6) adds PLAN to the mode group, the storey strip in
+       Overview (the selection's storeys from ids.ts' table, each opening Plan
+       there: "L5 +12.00, plan view") and in Plan (the one shown current), the
+       room chip with Walk in, the cut chip with ▼ ▲ (`setCut`), Overview's
+       steps, and `EstatePlanRooms` — the side panel's room list, grouped by
+       flat, each a toggle (`pickRoom`), with "Walk into …" — which the
+       controller hands the view as `EstateModel.side` (the runtime's
+       `EstatePlanRooms`, the HUD's props) and the registry draws above
+       BUILDINGS; a new plan scrolls the side panel to it. The strips carry
+       `data-estate-strip="walk|plan"`. The root carries `data-mode`, `data-transition` and
        `data-flight` for the stylesheet and the e2e. Nothing in the top-right
        row may change width between a press and its release — the KEYS chip
        reserves its longer label's width — or the row reflows under the pointer
@@ -366,8 +438,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   interior, walk and nav file), checked by estate:check and
   `tests/estate-pack.test.ts`: the P5 real-data suites skip without them, so
   the gate is what fails. The engine pins are a tripwire at measured + 5 %
-  (942,000 / 265,000 B after P5); the plan's 950,000 / 307,200 B are the hard
-  ceiling P6 must fit under.
+  (942,000 / 265,000 B after P5; P6 measured 903,573 B for the engine chunk and
+  263,316 B gzip for the Load click, inside both); the plan's 950,000 / 307,200 B
+  are the hard ceiling. The chunk the engine shares with its HUD is named
+  `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
+  whichever pure module it lists first).
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
   `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
   a focused HUD button, and the touch stick), the Estate cases in
@@ -393,13 +468,20 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   L5 with 0 requests, the lift panel, a clean axe scan in Walk, then the Esc
   layers out to a minimised window; 8b: the car park's ramp from L1 to L2 by
   holding W; 8c: the hawker hall) and slow-then-failed interiors (13: F stays
-  whole, "Streaming interior…", then the reason, and Enter refused). The tour
+  whole, "Streaming interior…", then the reason, and Enter refused), and P6's
+  Plan (18: Blk 509 L5 from the Overview strip, ↓ cycling rooms aloud, the cut,
+  six programs, a clean axe scan, Enter walking into the bedroom with nothing of
+  Blk 509 fetched again; 19: Esc out of Plan clears the selection, the next Esc
+  minimises), the assistant's local fallback walking into the hawker centre
+  (20) and the phone's Estate row at 390 × 844 (10). The tour
   moves by step buttons because they are discrete; its routes assume the
   entrance Enter's arc picks from a landed fly-to at 1280 × 720. Restated constants in
 
   the view (`ESTATE_DISPLAY_NAME`, `ESTATE_REPO_URL`, `ESTATE_FOCUS_EVENT_NAME`,
   the shell's tier list) exist so the main bundle need not import `lib/estate`
-  modules that build tables at import; the DOM test pins each to its source.
+  modules that build tables at import; the DOM test pins each to its source
+  (AskThePage's catalogue-based storey check and the server's storey table are
+  pinned by `tests/estate-assistant.test.ts`).
 - **FX desk backdrops** (`DeskBackdrop.tsx`, first child of `.wb-desk`, desktop
   only): two FX-panel toggles, both off at boot — the N-body field (`NBodyField.tsx`,
   a 2-D fast multipole solver in `lib/nbody/fmm.ts` run by `workers/nbody.worker.ts`,
@@ -836,12 +918,11 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   has not loaded) within `engineGzip`, because the consent label counts that
   cap. Both budgets were re-pinned in P4b and again in P5 (interiors, Walk and
   the Walk HUD) at the measured size + 5%; a re-pin may move them but never
-  above the plan's 307,200 B / 950,000 B — and after P5 the engine chunk's pin
-  sits within 1 % of that 950,000 B, so P6's Plan must pay for itself. The main
-  cap is NOT re-pinnable: after P5 the main bundle is 506,673 B of 508,834 B
-  (P5 spent 691 B: the registry's Enter/Exit row, Walk's keys and the assistant's
-  "walk in"), so P6's main-bundle code (`focusEstate` checks, the phone row)
-  must fit in ~2.1 KB or move into the controller chunk. The
+  above the plan's 307,200 B / 950,000 B. The main cap is NOT re-pinnable:
+  after P6 the main bundle is 508,080 B of 508,834 B (P6 spent ~1.3 KB: the
+  `focusEstate` check, routing and dispatch in AskThePage, the phone row, the
+  registry's Plan keys and the side slot), so **754 B are left** for P7 —
+  anything bigger goes into the controller, engine or HUD chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).
 - `npm run test:e2e` runs two Playwright projects: `chromium` (everything but the

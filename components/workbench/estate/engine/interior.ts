@@ -14,7 +14,8 @@ import {
 } from '../../../../lib/estate/storeys';
 import type { EstateTier } from '../../../../lib/estate/tiers';
 import { floorAt, type FloorHit, type WalkFile } from '../../../../lib/estate/walk';
-import { setStoreyMask } from './materials';
+import { PLAN_CUT_OFF, setPlanCut, setStoreyMask } from './materials';
+import { PLAN_CUT_DEFAULT } from '../../../../lib/estate/plan';
 import { STOREY_ATTRIBUTE, type InteriorFurniture, type InteriorParts, type Part } from './parts';
 import type { BuildingNode } from './scene';
 
@@ -34,8 +35,13 @@ import type { BuildingNode } from './scene';
 //     hysteresis), or from a hint (setStoreyHint: Walk knows the floor under
 //     its feet, which is right on a stair where eye height is not).
 //  3. Active = (inside, peeking or Plan) AND the interior file fully on the GPU
-//     AND entering it has not failed for good AND (peeking only) its façade
-//     is resident, so the band opens a façade, not a massing box.
+//     AND entering it has not failed for good AND (peeking and Plan) its
+//     façade is resident, so the band opens a façade, not a massing box.
+//     Plan (P6) also holds the building at F, like inside, and draws its
+//     interior only up to S, cut at FFL_S + the cut (uPlanCut on the interior's
+//     uniforms), with the façade masked from the band's foot to the roof and
+//     the interior's opaque materials two-sided (the cut's fill; scene.ts
+//     setPlanSides through the onPlanSides hook).
 //  4. Active: the band [S − k, S + k] (k ≥ 1 on every tier; peeking 1). A band
 //     change writes ≤ 5 T instances (matrix and storey), the interior's uBand,
 //     which specials show, and the façade mask (the building's F, D and edge
@@ -164,6 +170,8 @@ interface Building {
   /** What the interior draws now. */
   tris: number;
   draws: number;
+  /** The Plan cut (world Y) written on its uniforms, or PLAN_CUT_OFF: Plan's mask, uBand and sides follow it. */
+  planCut: number;
 }
 
 const showParts = (parts: readonly Part[], on: boolean): number => {
@@ -195,8 +203,9 @@ export class InteriorSystem {
   private current = -1;
   private storey = -1;
   private hint: { index: number; storey: number } | null = null;
-  private plan: { index: number; storey: number } | null = null;
+  private plan: { index: number; storey: number; cut: number } | null = null;
   private readonly onChange: (status: InteriorStatus) => void;
+  private onPlanSides: (index: number, on: boolean) => void = () => undefined;
 
   /** After update(): what the active interior draws, booked before any building. */
   reserveTris = 0;
@@ -212,13 +221,17 @@ export class InteriorSystem {
     this.buildings = pack.sites.map((site, index) => ({
       index, site, table: storeyTable(site.storeys), band: createBandState(),
       walk: null, nav: null, failed: null, applied: false,
-      fx: Number.NaN, fz: Number.NaN, fRadius: -1, fLo: 0, fHi: -1, tris: 0, draws: 0,
+      fx: Number.NaN, fz: Number.NaN, fRadius: -1, fLo: 0, fHi: -1, tris: 0, draws: 0, planCut: PLAN_CUT_OFF,
     }));
   }
 
-  /** The scene's building nodes (index-aligned with pack.sites), once it exists. */
-  bindScene(nodes: readonly BuildingNode[]): void {
+  /**
+   * The scene's building nodes (index-aligned with pack.sites), once it exists,
+   * and how Plan turns a building's interior two-sided (scene.ts setPlanSides).
+   */
+  bindScene(nodes: readonly BuildingNode[], onPlanSides?: (index: number, on: boolean) => void): void {
     this.nodes = nodes;
+    if (onPlanSides) this.onPlanSides = onPlanSides;
     for (const b of this.buildings) b.applied = false;
   }
 
@@ -322,13 +335,16 @@ export class InteriorSystem {
   }
 
   /**
-   * Plan (P6): building `index` shows its interior with S = `storey` wherever the
-   * camera is. null ends it.
+   * Plan (P6): building `site` shows its interior with S = `storey` wherever the
+   * camera is, cut `cut` m above S's floor. null ends it.
    */
-  setPlan(site: SiteRef | null, storey = -1): void {
+  setPlan(site: SiteRef | null, storey = -1, cut = PLAN_CUT_DEFAULT): void {
     const index = site === null ? -1 : this.indexOf(site);
-    this.plan = index < 0 ? null : { index, storey };
+    this.plan = index < 0 ? null : { index, storey, cut };
   }
+
+  /** The building Plan shows, or −1. */
+  get planIndex(): number { return this.plan?.index ?? -1; }
 
   /**
    * The floor at estate (x, y) for feet at `feetZ` (§8.4), into `out`: a
@@ -461,7 +477,8 @@ export class InteriorSystem {
       this.releaseIdle();
     }
     this.currentIndex = access !== 'outside' || this.plan ? index : -1;
-    this.insideIndex = access === 'inside' ? index : -1;
+    // Plan holds the building's exterior at F too: D never draws over its cut.
+    this.insideIndex = access === 'inside' || this.plan ? index : -1;
 
     const b = this.buildings[index];
     if (!b) {
@@ -483,7 +500,7 @@ export class InteriorSystem {
     if (failed && b.failed === null) b.failed = failReason(b.site.id);
     const resident = this.resident(b);
     const facadeUp = (scheduler.residentMask(b.site.id) & RESIDENT_FACADE) !== 0;
-    const active = !failed && interiorActive(access, this.plan !== null, resident) && (access !== 'peeking' || facadeUp);
+    const active = !failed && interiorActive(access, this.plan !== null, resident) && ((access !== 'peeking' && !this.plan) || facadeUp);
     const node = this.nodes[index];
 
     if (!active || !node || !node.interiorParts) {
@@ -497,8 +514,9 @@ export class InteriorSystem {
     // 4. The band, and everything it decides.
     const k = bandHalfWidth(frame.tier, this.plan ? 'inside' : access);
     const bandChanged = applyBand(b.band, b.table, storey, k);
-    if (bandChanged || !b.applied) {
-      this.applyBandTo(b, node, node.interiorParts);
+    const planCut = this.plan ? b.table.ffl[storey] + this.plan.cut : PLAN_CUT_OFF;
+    if (bandChanged || !b.applied || planCut !== b.planCut) {
+      this.applyBandTo(b, node, node.interiorParts, planCut);
       changed = true;
     }
 
@@ -528,6 +546,7 @@ export class InteriorSystem {
       b.fRadius = -1;
       const node = this.nodes[b.index];
       if (node) setStoreyMask(node.storey, MASK_OFF.lo, MASK_OFF.hi);
+      this.clearPlanCut(b);
     }
     this.reserveTris = 0;
     this.reserveDraws = 0;
@@ -561,17 +580,39 @@ export class InteriorSystem {
     b.fRadius = -1;
     b.tris = 0;
     b.draws = 0;
-    if (!node) return wasApplied;
+    const uncut = this.clearPlanCut(b);
+    if (!node) return wasApplied || uncut;
     const masked = setStoreyMask(node.storey, MASK_OFF.lo, MASK_OFF.hi);
     const shown = node.interior.visible;
     node.interior.visible = false;
-    return wasApplied || masked || shown;
+    return wasApplied || masked || shown || uncut;
   }
 
-  private applyBandTo(b: Building, node: BuildingNode, parts: InteriorParts) {
+  /** Plan's cut and sides off building `b` (its uniforms back to PLAN_CUT_OFF). True if they were on. */
+  private clearPlanCut(b: Building): boolean {
+    if (b.planCut === PLAN_CUT_OFF) return false;
+    b.planCut = PLAN_CUT_OFF;
+    const node = this.nodes[b.index];
+    if (node) setPlanCut(node.interiorUniforms, PLAN_CUT_OFF);
+    this.onPlanSides(b.index, false);
+    return true;
+  }
+
+  /**
+   * The band's instances, uBand, specials and mask. In Plan (`planCut` a height,
+   * not PLAN_CUT_OFF) the interior draws only up to S (uBand's top is S, so T's
+   * instances and the specials above collapse), the façade is masked from the
+   * band's foot to the roof (nothing above the cut storey is drawn), and the
+   * interior is cut and two-sided.
+   */
+  private applyBandTo(b: Building, node: BuildingNode, parts: InteriorParts, planCut: number) {
     const band = b.band;
-    node.interiorUniforms.uBand.value.set(band.lo, band.hi);
-    setStoreyMask(node.storey, band.lo, band.hi);
+    const plan = planCut !== PLAN_CUT_OFF;
+    node.interiorUniforms.uBand.value.set(band.lo, plan ? band.storey : band.hi);
+    setStoreyMask(node.storey, band.lo, plan ? b.table.ffl.length - 1 : band.hi);
+    if (plan !== (b.planCut !== PLAN_CUT_OFF)) this.onPlanSides(b.index, plan);
+    setPlanCut(node.interiorUniforms, planCut);
+    b.planCut = planCut;
     const typical = parts.typical;
     if (typical) {
       for (let k = 0; k < typical.meshes.length; k += 1) {

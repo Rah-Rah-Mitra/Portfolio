@@ -36,9 +36,9 @@ import type { EstateTier } from '../../../lib/estate/tiers';
 //
 // Phases. P4b shipped Overview, Fly, fly-to, picking and the HUD; P5 Walk,
 // Enter and Exit, interiors, stairs and lifts (EstateView.interior and .walk
-// carry what the HUD shows for them). Plan is P6: its commands exist so the
-// shell, the HUD and the assistant are written once, return false until then,
-// and `features` says which are live.
+// carry what the HUD shows for them); P6 Plan (EstateView.plan: one storey of
+// one building, cut at its floor + 1.2 m, with its rooms to pick and walk into).
+// `features` says which are live in a build.
 
 // ---- options ------------------------------------------------------------------------------
 
@@ -169,7 +169,7 @@ export interface EstateEngineFeatures {
   enter: boolean;
   /** Interiors stream and the facade mask runs (§7.5). P5. */
   interiors: boolean;
-  /** planView(), setMode('plan'), the plan half of setStorey(). P6. */
+  /** planView(), setMode('plan'), the plan half of setStorey(), pickRoom(), walkIn(), setCut(). P6. */
   plan: boolean;
 }
 
@@ -294,8 +294,10 @@ export interface EstateEngine {
    * point ahead). 'walk' (P5) from Overview cuts to the entrance spawn nearest the
    * orbit target; from Fly it drops to a floor within 3 m below the camera, else
    * the same cut. Walk → 'overview' is the 1.0 s reverse arc (as Esc), Walk →
-   * 'fly' keeps the pose. 'plan' (P6) needs a selected building; use
-   * planView(). Returns false for a mode not in `features`, or the mode already on.
+   * 'fly' keeps the pose. 'plan' (P6) plans the selected building (else the one
+   * the overview frames) on its first typical storey, as planView() does; from
+   * Plan, 'walk' walks into the picked room. Returns false for a mode not in
+   * `features`, the mode already on, or Plan with no building to show.
    */
   setMode(mode: EstateViewMode): boolean;
   /**
@@ -317,8 +319,31 @@ export interface EstateEngine {
    * halted). PgUp / PgDn held keep climbing storey by storey.
    */
   takeStairs(direction: EstateStep): boolean;
-  /** P6: the 55° plan view of `site` cut at `storey` floor + 1.2 m. False in P4b and P5. */
-  planView(site: EstateSiteId, storey: EstateStoreyTag): boolean;
+  /**
+   * P6, Plan (§8.1): `site` seen from 55° above the horizon over storey
+   * `storey` (any spelling normaliseStoreyTag accepts), cut at its floor + 1.2 m:
+   * its interior from the band below up to that storey, walls the cut slices
+   * filled --color-accent-900, everything above masked. A 1.2 s flight (a cut
+   * when `instant` or halted); from Plan on the same building, a storey change
+   * moves only the target's height. Selects `site`, loads its interior, walk
+   * grid and nav at P0. Refused with an `announce` when entering it failed for
+   * good, or the pack has no interior for it; false for a storey it lacks.
+   */
+  planView(site: EstateSiteId, storey: EstateStoreyTag, options?: EstateFlyOptions): boolean;
+  /**
+   * P6, Plan: pick room `index` of view.plan.rooms (its outline marked on the
+   * floor, its name said), or clear the pick with null. ↑ / ↓ on the stage
+   * cycle through them; a click on the floor picks the room there.
+   */
+  pickRoom(index: number | null): boolean;
+  /**
+   * P6, Plan: walk into the picked room (or room `index`): the Enter arc to the
+   * walkable cell nearest the room's centre, into Walk on that storey. Refused
+   * with an `announce` while its rooms or walk grid are still on their way.
+   */
+  walkIn(index?: number): boolean;
+  /** P6, Plan: the cut one step (0.3 m) lower (-1) or higher (1), within 0.3–2.4 m of the floor. The `[` and `]` keys. */
+  setCut(step: EstateStep): boolean;
   /**
    * One press of the HUD's step buttons (§8.6 bottom row), for pointer and touch
    * alike, in every mode that moves: Overview dollies ×0.8 in or out, orbits
@@ -408,6 +433,36 @@ export interface EstateView {
   readonly interior?: EstateInteriorView | null;
   /** P5: Walk's offers where the walker stands (lift, stair, preparing, the ride caption, the strip); null outside Walk. */
   readonly walk?: EstateWalkView | null;
+  /** P6: what Plan shows (building, storey, cut, rooms, the pick); null outside Plan. */
+  readonly plan?: EstatePlanView | null;
+}
+
+/**
+ * EstateView.plan (P6): one storey of one building, cut. A new frozen object
+ * only when a field changes; `rooms` keeps its identity while the building and
+ * storey do, so a list renders once per storey.
+ */
+export interface EstatePlanView {
+  readonly site: EstateSiteId;
+  readonly storey: EstateStoreyTag;
+  /** The cut above the storey's floor, m (1.2 by default). */
+  readonly cut: number;
+  /** The storey's rooms from the building's nav file, as it orders them; empty until that file is in. */
+  readonly rooms: readonly EstatePlanRoom[];
+  /** The nav file is in (rooms listed, picking and walking in possible). */
+  readonly ready: boolean;
+  /** Index into `rooms` of the picked room, or -1. */
+  readonly room: number;
+}
+
+/** One room on a Plan storey, as the nav file names it. */
+export interface EstatePlanRoom {
+  /** As the data spells it: '#05-104 LD', 'L5-CORR'. Unique on its storey. */
+  readonly name: string;
+  /** 'Living / Dining', 'Common corridor'. */
+  readonly label: string;
+  /** The flat, '#05-104', or null for common areas. */
+  readonly flat: string | null;
 }
 
 /** EstateView.interior (P5). */
@@ -559,6 +614,12 @@ export interface EstateAnnounceEvent extends EstateEventBase {
   readonly type: 'announce';
   readonly full: boolean;
   readonly text: string | null;
+  /**
+   * Said, not shown: the HUD shows this elsewhere already (a Plan room pick's
+   * chip, the cut's readout), so no notice chip. Absent for a refusal, which
+   * is news to a sighted visitor too.
+   */
+  readonly quiet?: boolean;
 }
 
 /**
@@ -673,12 +734,19 @@ export interface EstateEngineModule {
 /** estate/live/EstateHud.tsx. */
 export interface EstateHudModule {
   EstateHud: ComponentType<EstateHudProps>;
+  EstatePlanRooms: ComponentType<EstateHudProps>;
 }
 
 /** What loadEngine() resolves: both halves of the lazy chunk, downloaded together. */
 export interface EstateRuntime {
   createEngine: CreateEngine;
   EstateHud: ComponentType<EstateHudProps>;
+  /**
+   * P6: Plan's room list, drawn in the side panel (above BUILDINGS) with the
+   * same props as the HUD; it renders nothing outside Plan. Optional so a
+   * runtime without it (a test's) still mounts.
+   */
+  EstatePlanRooms?: ComponentType<EstateHudProps>;
 }
 
 /**

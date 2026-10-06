@@ -15,8 +15,14 @@ import type { EnginePalette } from './palette';
 //                       drives it, MASK_OFF = (0, −1) hides nothing);
 //   uBand        vec2   only storeys in [lo, hi] draw (interior furniture and
 //                       residuals, P5; (0, 255) draws everything);
-//   uPlanCut     float  the Plan cut height (P6; a huge value while off — the
-//                       discard lands with Plan, so no P4b program carries one);
+//   uPlanCut     float  the Plan cut height, world Y (P6; PLAN_CUT_OFF while
+//                       off). Only the two-sided programs carry its discard
+//                       and fill (#ifdef DOUBLE_SIDED): interior glass, and
+//                       the planned building's interior while in Plan, which
+//                       setPlanSides turns two-sided and transparent-sorted so
+//                       it shares glass's programs. The front-face-only
+//                       opaque programs every other draw uses carry no
+//                       discard, so early depth testing is lost only there;
 //   uMassingLines float 1 px lines at the storey floors, massing only.
 // A vertex's storey is _META.z on a Mesh and _STOREY.x on an InstancedMesh
 // (D and furniture carry it per instance; P5 gives T its own).
@@ -27,6 +33,18 @@ import type { EnginePalette } from './palette';
 // lines and the ground grid. Opaque draws front faces only; glass (interior,
 // P5) is two-sided in one pass, alpha from the palette, no depth write, and so
 // sorted after every opaque draw. Façade glass is an opaque slot.
+//
+// Plan's cut (P6, §7.3): above the cut every pixel of the planned building's
+// interior is discarded, and where the cut opens a closed solid (a wall, a
+// slab edge, a cabinet) the view looks into it and meets its back faces,
+// which are filled flat with the palette's cut slot (--color-accent-900): the
+// drawing's poché. Back faces only draw when the material is two-sided, and an
+// opaque two-sided material would be a seventh and eighth program (three keys
+// programs on side and on transparency), so in Plan the building's interior
+// opaque materials become exactly glass's configuration bar depthWrite —
+// two-sided, single pass, transparent-sorted, alpha 1 from the palette — and
+// draw with glass's programs. Glass itself is never filled (its slot's alpha
+// is below 1) and is drawn after them (renderOrder 1, scene.ts).
 
 /** A huge cut height: nothing is above it, so Plan's cut is off. */
 export const PLAN_CUT_OFF = 1e9;
@@ -56,6 +74,7 @@ interface EstateUniforms extends StoreyUniforms {
 }
 
 const EDGE_SLOT = extraSlot('edge').toFixed(1);
+const CUT_SLOT = extraSlot('cut').toFixed(1);
 const SLOTS = PALETTE_SIZE.toFixed(1);
 
 const VERTEX_HEAD = /* glsl */ `#include <common>
@@ -105,7 +124,18 @@ if ( uMassingLines > 0.5 && estateSlope > 1e-4 ) {
     estateHit = max( estateHit, step( abs( vEstateY - uFfl[ i ] ), estateHalf ) );
   }
   diffuseColor.rgb = mix( diffuseColor.rgb, estatePalette( ${EDGE_SLOT} ).rgb, estateHit );
-}`;
+}
+#ifdef DOUBLE_SIDED
+if ( vEstateY > uPlanCut ) discard;
+#endif`;
+
+// After the lit colour is written: a back face of an opaque slot seen while the
+// cut is on (uPlanCut below PLAN_CUT_OFF's 1e9) is the inside of a cut solid,
+// filled flat (no light, so it reads as a section, not a surface).
+const FRAGMENT_CUT_FILL = /* glsl */ `#include <opaque_fragment>
+#ifdef DOUBLE_SIDED
+if ( uPlanCut < 1e8 && ! gl_FrontFacing && estateColour.a > 0.99 ) gl_FragColor.rgb = estatePalette( ${CUT_SLOT} ).rgb;
+#endif`;
 
 const DIFFUSE_LINE = 'vec4 diffuseColor = vec4( diffuse, opacity );';
 
@@ -121,7 +151,8 @@ function estateOnBeforeCompile(this: Material, shader: WebGLProgramParametersWit
     .replace('#include <project_vertex>', VERTEX_BODY);
   shader.fragmentShader = shader.fragmentShader
     .replace('#include <common>', FRAGMENT_HEAD)
-    .replace(DIFFUSE_LINE, FRAGMENT_COLOUR);
+    .replace(DIFFUSE_LINE, FRAGMENT_COLOUR)
+    .replace('#include <opaque_fragment>', FRAGMENT_CUT_FILL);
 }
 
 // ---- the ground grid (§7.2: one quad, 10 m and 50 m lines) ------------------------------
@@ -343,6 +374,29 @@ export const setMassingLines = (material: Material, on: boolean): boolean => {
   const value = on && uniforms.uFflCount.value > 0 ? 1 : 0;
   if (uniforms.uMassingLines.value === value) return false;
   uniforms.uMassingLines.value = value;
+  return true;
+};
+
+/**
+ * Plan's sides (P6, header): `on` makes an opaque estate material two-sided,
+ * single-pass and transparent-sorted (alpha stays 1, depth still written), so
+ * it draws with glass's program and its back faces show the cut; off puts it
+ * back. Returns whether it changed (three re-resolves the program once, from
+ * its cache: nothing compiles).
+ */
+export const setPlanSides = (material: Material, on: boolean): boolean => {
+  if ((material.side === DoubleSide) === on) return false;
+  material.side = on ? DoubleSide : FrontSide;
+  material.transparent = on;
+  material.forceSinglePass = on;
+  material.needsUpdate = true;
+  return true;
+};
+
+/** Sets a uniforms object's Plan cut (world Y); PLAN_CUT_OFF turns it off. */
+export const setPlanCut = (uniforms: StoreyUniforms, y: number): boolean => {
+  if (uniforms.uPlanCut.value === y) return false;
+  uniforms.uPlanCut.value = y;
   return true;
 };
 

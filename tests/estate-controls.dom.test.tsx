@@ -4,13 +4,13 @@ import { PerspectiveCamera, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ESTATE_SITE_IDS, type EstateSiteId } from '../lib/estate/ids';
 import type {
-  EstateEngine, EstateEngineEvent, EstateEngineFeatures, EstateHudProps, EstateView,
+  EstateEngine, EstateEngineEvent, EstateEngineFeatures, EstateHudProps, EstatePlanView, EstateView,
 } from '../components/workbench/estate/engineApi';
 import { createControls, NORTH_PROPERTY } from '../components/workbench/estate/engine/controls';
 import type { EstateCore } from '../components/workbench/estate/engine/core';
 import type { ViewAccess } from '../components/workbench/estate/engine/navigation';
 import { StaticRig, type CameraRig } from '../components/workbench/estate/engine/rig';
-import { EstateHud } from '../components/workbench/estate/live/EstateHud';
+import { EstateHud, EstatePlanRooms } from '../components/workbench/estate/live/EstateHud';
 
 // The Estate viewer's controls and HUD in a DOM (plan §8.2, §8.3, §8.6, §8.7):
 //  - the controls against a stand-in render core (a real three camera, the
@@ -452,6 +452,172 @@ describe('the controls, live', () => {
   });
 });
 
+describe('the controls, in Plan (P6)', () => {
+  // Blk 509's stand-in has three storeys (L1 0, L2 3.6, RF 6.4) and two rooms on
+  // L2; its nav file is in, its walk grid is not (walking in is refused).
+  const B509 = ESTATE_SITE_IDS.indexOf('BLK_509');
+  const TABLE = { tags: ['L1', 'L2', 'RF'], ffl: [0, 3.6, 6.4], typical: [false, true, false] };
+  const sq = (x0: number, y0: number, x1: number, y1: number) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as Array<[number, number]>;
+  const navRoom = (name: string, label: string, flat: string | null, poly: Array<[number, number]>) => ({
+    name, label, flat, z: 0, h: 2.6, ext: false, poly, area: 16, box: [poly[0][0], poly[0][1], poly[2][0], poly[2][1]],
+  });
+  const NAV = {
+    site: 'BLK_509',
+    storeys: TABLE.tags.map((tag, i) => ({ tag, ffl: TABLE.ffl[i], geom: TABLE.typical[i] ? 'typical' : 'special' })),
+    rooms: [[], [navRoom('#02-101 LD', 'Living / Dining', '#02-101', sq(-8, -8, 0, 0)), navRoom('L2-CORR', 'Common corridor', null, sq(0, -8, 8, 0))], []],
+    doors: [[], [], []], lifts: [], stairs: [], spawns: [], roomHeight: 2.6,
+  };
+  let h: Harness;
+  let setPlan: ReturnType<typeof vi.fn>;
+  let navReady = true;
+  beforeEach(() => {
+    h = harness();
+    setPlan = vi.fn();
+    navReady = true;
+    Object.assign(h.core, {
+      setPlan,
+      interiors: {
+        table: (i: number) => (i >= 0 ? TABLE : null),
+        entry: (i: number, out: { state: string; reason: string | null }) => { out.state = i === B509 ? 'ready' : 'absent'; out.reason = i === B509 ? null : 'No interior.'; return out; },
+        nav: (i: number) => (i === B509 && navReady ? NAV : null),
+        walk: () => null,
+        ground: () => null,
+        indexOf: (site: EstateSiteId) => ESTATE_SITE_IDS.indexOf(site),
+        floorQuery: (_x: number, _y: number, _z: number, out: { kind: string }) => { out.kind = 'none'; return out; },
+        setStoreyHint: () => undefined,
+      },
+    });
+    h.nav.ready?.();
+  });
+  afterEach(() => h.nav.dispose?.());
+
+  it('opens a storey of the building: Plan mode, the cut at 1.2 m, its rooms listed, the building selected; a cut while halted', () => {
+    h.setHalted(true);
+    expect(h.nav.planView?.('BLK_509', 'L02' as never)).toBe(true);
+    expect(h.rig().mode).toBe('plan');
+    expect(setPlan).toHaveBeenLastCalledWith(B509, 1, 1.2);
+    expect(h.core.setFocus).toHaveBeenLastCalledWith('BLK_509');
+    const view = h.view();
+    expect(view.location).toMatchObject({ mode: 'plan', site: 'BLK_509', storey: 'L2', unit: null, room: null });
+    expect(view.selection).toBe('BLK_509');
+    expect(view.plan).toMatchObject({ site: 'BLK_509', storey: 'L2', cut: 1.2, ready: true, room: -1 });
+    expect(view.plan!.rooms.map((r) => r.name)).toEqual(['#02-101 LD', 'L2-CORR']);
+    expect(view.flight).toBe(false); // halted: a cut
+    // Looking down at 55° above the horizon, at the storey's floor.
+    h.frames(1);
+    const target = h.rig().getTarget(new Vector3());
+    expect(target.y).toBeCloseTo(3.6, 6);
+    const d = h.camera.position.clone().sub(target);
+    expect(Math.atan2(Math.hypot(d.x, d.z), d.y)).toBeCloseTo((35 * Math.PI) / 180, 3);
+    // A storey it does not have, or a building without an interior, is refused.
+    expect(h.nav.planView?.('BLK_509', 'L9')).toBe(false);
+    expect(h.nav.planView?.('BLK_501', 'L2')).toBe(false);
+    expect(h.announce).toHaveBeenLastCalledWith(false, 'No interior.');
+  });
+
+  it('cycles rooms on ↑ ↓ (said, not shown), steps the cut on [ ], changes storey on PgUp / PgDn', () => {
+    h.setHalted(true);
+    h.nav.planView?.('BLK_509', 'L2');
+    expect(key(h.host, 'ArrowDown').defaultPrevented).toBe(true);
+    expect(h.view().plan?.room).toBe(0);
+    expect(h.announce).toHaveBeenLastCalledWith(false, 'Unit 02-101, Living / Dining, 1 of 2', true);
+    key(h.host, 'KeyS');
+    expect(h.view().plan?.room).toBe(1);
+    expect(h.announce).toHaveBeenLastCalledWith(false, 'Common corridor, 2 of 2', true);
+    key(h.host, 'ArrowDown');
+    expect(h.view().plan?.room).toBe(0); // wraps
+    key(h.host, 'ArrowUp');
+    expect(h.view().plan?.room).toBe(1);
+    // The cut, within its limits.
+    key(h.host, 'BracketRight');
+    expect(setPlan).toHaveBeenLastCalledWith(B509, 1, 1.5);
+    expect(h.view().plan?.cut).toBe(1.5);
+    expect(h.announce).toHaveBeenLastCalledWith(false, 'Cut 1.5 metres above the floor', true);
+    key(h.host, 'BracketLeft');
+    key(h.host, 'BracketLeft');
+    expect(h.view().plan?.cut).toBe(0.9);
+    // PgUp: RF, the pick cleared, the cut kept, the target up one storey.
+    key(h.host, 'PageUp');
+    expect(h.view().plan).toMatchObject({ storey: 'RF', room: -1, cut: 0.9, rooms: [] });
+    expect(setPlan).toHaveBeenLastCalledWith(B509, 2, 0.9);
+    expect(h.rig().getTarget(new Vector3()).y).toBeCloseTo(6.4, 6);
+    expect(key(h.host, 'PageUp').defaultPrevented).toBe(true); // nothing above the roof
+    expect(h.view().plan?.storey).toBe('RF');
+    expect(h.nav.setStorey?.('l1' as never)).toBe(true);
+    expect(h.view().plan?.storey).toBe('L1');
+  });
+
+  it('picks a room from the list or clears it, and refuses to walk in until the walkway map is in', () => {
+    h.setHalted(true);
+    h.nav.planView?.('BLK_509', 'L2');
+    expect(h.nav.pickRoom?.(1)).toBe(true);
+    expect(h.view().plan?.room).toBe(1);
+    expect(h.nav.pickRoom?.(1)).toBe(false);
+    expect(h.nav.pickRoom?.(7)).toBe(false);
+    expect(h.nav.pickRoom?.(null)).toBe(true);
+    expect(h.view().plan?.room).toBe(-1);
+    // Enter with no pick, then with one before the grid is here.
+    key(h.host, 'Enter');
+    expect(h.announce).toHaveBeenLastCalledWith(false, 'Pick a room to walk into.');
+    h.nav.pickRoom?.(0);
+    key(h.host, 'Enter');
+    expect(h.announce).toHaveBeenLastCalledWith(false, 'Its walkway map is still loading.');
+    expect(h.rig().mode).toBe('plan');
+  });
+
+  it('lists the rooms once the nav file arrives', () => {
+    navReady = false;
+    h.setHalted(true);
+    h.nav.planView?.('BLK_509', 'L2');
+    expect(h.view().plan).toMatchObject({ ready: false, rooms: [] });
+    expect(h.nav.walkIn?.()).toBe(false);
+    expect(h.announce).toHaveBeenLastCalledWith(false, 'Its rooms are still loading.');
+    navReady = true;
+    h.frames(1);
+    expect(h.view().plan?.ready).toBe(true);
+    expect(h.view().plan?.rooms).toHaveLength(2);
+  });
+
+  it('leaves on the Esc layer with the selection cleared (so the next Esc minimises), the cut off; Fly and Home leave it too', () => {
+    h.setHalted(true);
+    h.nav.planView?.('BLK_509', 'L2');
+    const pose = h.camera.position.clone();
+    expect(h.nav.escape?.('exit-plan')).toBe(true);
+    expect(h.rig().mode).toBe('overview');
+    expect(setPlan).toHaveBeenLastCalledWith(null);
+    expect(h.view()).toMatchObject({ selection: null, plan: null });
+    expect(h.view().location).toMatchObject({ mode: 'overview', storey: null });
+    expect(h.camera.position.distanceTo(pose)).toBeLessThan(1e-6); // where it was
+    expect(h.nav.escape?.('exit-plan')).toBe(false);
+    // setMode('plan') plans the selection on its first typical storey.
+    h.nav.flyTo?.('BLK_509');
+    expect(h.nav.setMode?.('plan')).toBe(true);
+    expect(h.view().plan?.storey).toBe('L2');
+    expect(h.nav.setMode?.('fly')).toBe(true);
+    expect(h.view().plan).toBeNull();
+    expect(setPlan).toHaveBeenLastCalledWith(null);
+    h.nav.setMode?.('overview');
+    h.nav.setMode?.('plan');
+    expect(h.nav.home?.()).toBe(true);
+    expect(h.rig().mode).toBe('overview');
+    expect(h.view().plan).toBeNull();
+  });
+
+  it('picks the room under a click on the floor', () => {
+    h.setHalted(true);
+    h.nav.planView?.('BLK_509', 'L2');
+    h.frames(1);
+    // Where the living room's middle (block-local −4, −4 on L2's floor) lands on the canvas.
+    const site = SITES[B509];
+    const v = new Vector3(site.at[0] - 4, 3.6, -(site.at[1] - 4)).project(h.camera);
+    const x = ((v.x + 1) / 2) * 800;
+    const y = ((1 - v.y) / 2) * 600;
+    press(h.canvas, x, y, 0);
+    expect(h.view().plan?.room).toBe(0);
+    expect(h.announce).toHaveBeenLastCalledWith(false, 'Unit 02-101, Living / Dining, 1 of 2', true);
+  });
+});
+
 describe('the controls, an L-shaped building', () => {
   // A wide L (arms 10 m deep) whose box centre lies 30 m from its outline, in
   // the courtyard, like BLK 510 and 511: the framing's target is off the building.
@@ -516,6 +682,11 @@ const fakeEngine = (features: EstateEngineFeatures = FEATURES) => {
     setPopover: vi.fn(() => true),
     capture: vi.fn(() => true),
     walkStep: vi.fn(() => true),
+    planView: vi.fn(() => true),
+    pickRoom: vi.fn(() => true),
+    walkIn: vi.fn(() => true),
+    setCut: vi.fn(() => true),
+    siteFiles: vi.fn(() => null),
   } as unknown as EstateEngine;
   const emit = (event: HudEvent) => act(() => {
     for (const listener of listeners) listener({ ...event, token: 1 } as EstateEngineEvent);
@@ -747,6 +918,110 @@ describe('the HUD', () => {
     const { unmount } = render(<Stage hud={{ engine, phase: 'frozen', fullDetail: null, debug: false }} />);
     for (const button of document.querySelectorAll('.wb-estate-hud button')) expect((button as HTMLButtonElement).disabled).toBe(true);
     expect(listeners.size).toBe(1);
+    unmount();
+    expect(listeners.size).toBe(0);
+  });
+});
+
+describe('the HUD in Plan (P6)', () => {
+  const PLAN_FEATURES: EstateEngineFeatures = { ...FEATURES, walk: true, enter: true, interiors: true, plan: true };
+  const ROOMS = Object.freeze([
+    { name: '#05-101 LD', label: 'Living / Dining', flat: '#05-101' },
+    { name: '#05-101 BED', label: 'Bedroom', flat: '#05-101' },
+    { name: 'L5-CORR', label: 'Common corridor', flat: null },
+  ]);
+  const plan = (patch: Partial<EstatePlanView> = {}): EstatePlanView => ({ site: 'BLK_509', storey: 'L5', cut: 1.2, rooms: ROOMS, ready: true, room: -1, ...patch });
+  const inPlan = (patch: Partial<EstatePlanView> = {}): Partial<EstateView> => ({
+    location: { site: 'BLK_509', storey: 'L5', unit: null, room: null, mode: 'plan' }, selection: 'BLK_509', plan: plan(patch),
+  });
+
+  it('offers Plan among the modes, and in Overview a strip of the selection’s storeys, each opening Plan there', () => {
+    const { engine, setView } = fakeEngine(PLAN_FEATURES);
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    const modes = [...screen.getByRole('group', { name: 'Camera mode' }).querySelectorAll('button')].map((b) => b.textContent);
+    expect(modes).toEqual(['Overview', 'Walk', 'Fly', 'Plan']);
+    expect(document.querySelector('[data-estate-strip]')).toBeNull(); // nothing selected
+    setView({ selection: 'BLK_509', location: { ...INITIAL_VIEW.location, site: 'BLK_509' } });
+    const strip = screen.getByRole('group', { name: 'Plan a storey of Blk 509' });
+    expect(strip.getAttribute('data-estate-strip')).toBe('plan');
+    const names = [...strip.querySelectorAll('button')].map((b) => b.getAttribute('aria-label'));
+    // RF on top, L1 at the foot: 17 storeys from ids.ts' table.
+    expect(names).toHaveLength(17);
+    expect(names[0]).toBe('RF +45.60, plan view');
+    expect(names[16]).toBe('L1 ±0.00, plan view');
+    fireEvent.click(screen.getByRole('button', { name: 'L5 +12.00, plan view' }), { detail: 1 });
+    expect(engine.planView).toHaveBeenCalledWith('BLK_509', 'L5');
+    expect(document.activeElement).toBe(document.querySelector('[data-estate-stage]'));
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
+    expect(engine.setMode).toHaveBeenCalledWith('plan');
+  });
+
+  it('in Plan shows the storey current on its strip, the room chip with Walk in, the cut with its buttons, and Overview’s steps', () => {
+    const { engine, setView } = fakeEngine(PLAN_FEATURES);
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    setView(inPlan());
+    expect(document.querySelector('[data-estate-location]')!.textContent).toBe('BLK 509 · L5 · PLAN');
+    expect(screen.getByRole('group', { name: 'Storeys of Blk 509 in plan' })).toBeTruthy();
+    const here = screen.getByRole('button', { name: 'L5 +12.00, in plan' }) as HTMLButtonElement;
+    expect(here.disabled).toBe(true);
+    expect(here.getAttribute('aria-current')).toBe('location');
+    fireEvent.click(screen.getByRole('button', { name: 'L6 +14.80, plan view' }));
+    expect(engine.planView).toHaveBeenCalledWith('BLK_509', 'L6');
+    // No selection chip in Plan (its Clear would leave a plan of nothing).
+    expect(screen.queryByRole('button', { name: 'Clear the selection' })).toBeNull();
+    const room = document.querySelector('[data-estate-plan-room]')!;
+    expect(room.textContent).toBe('RoomPick a room');
+    expect(screen.queryByRole('button', { name: /^Walk into/ })).toBeNull();
+    setView(inPlan({ room: 0 }));
+    expect(room.textContent).toBe('Room#05-101 · Living / DiningWalk in');
+    fireEvent.click(screen.getByRole('button', { name: 'Walk into #05-101 · Living / Dining' }));
+    expect(engine.walkIn).toHaveBeenCalled();
+    expect(document.querySelector('[data-estate-cut]')!.textContent).toContain('+1.20 M');
+    fireEvent.click(screen.getByRole('button', { name: 'Raise the cut' }));
+    expect(engine.setCut).toHaveBeenCalledWith(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Lower the cut' }));
+    expect(engine.setCut).toHaveBeenCalledWith(-1);
+    expect(screen.getByRole('group', { name: 'Pan, zoom, orbit and tilt' })).toBeTruthy();
+    expect(document.getElementById('estate-keys-desc')!.textContent).toMatch(/^Up and down arrows cycle rooms; Enter walks into the picked room/);
+    for (const button of document.querySelectorAll('button')) {
+      expect((button.getAttribute('aria-label') ?? button.textContent ?? '').trim(), button.outerHTML).not.toBe('');
+    }
+    setView(inPlan({ ready: false, rooms: [] }));
+    expect(room.textContent).toBe('RoomLoading rooms…');
+  });
+
+  it('says a pick or a cut without a notice chip, and shows a refusal', () => {
+    const { engine, setView, emit } = fakeEngine(PLAN_FEATURES);
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    setView(inPlan());
+    clock = 5000;
+    emit({ type: 'announce', full: false, text: 'Unit 05-101, Living / Dining, 1 of 3', quiet: true });
+    expect(screen.getByRole('status').textContent).toBe('Unit 05-101, Living / Dining, 1 of 3');
+    expect(document.querySelector('[data-estate-notice]')).toBeNull();
+    clock = 7000;
+    emit({ type: 'announce', full: false, text: 'Its walkway map is still loading.' });
+    expect(document.querySelector('[data-estate-notice]')!.textContent).toBe('Its walkway map is still loading.');
+  });
+
+  it('lists the storey’s rooms in the side panel, by flat, picking and walking in from there; nothing outside Plan', () => {
+    const { engine, setView, listeners } = fakeEngine(PLAN_FEATURES);
+    const { container, unmount } = render(<aside className="wb-estate-side"><EstatePlanRooms engine={engine} phase="live" fullDetail={null} debug={false} /></aside>);
+    expect(container.querySelector('[data-estate-rooms]')).toBeNull();
+    setView(inPlan());
+    const section = screen.getByRole('region', { name: 'Rooms of Blk 509, L5' });
+    expect(section.querySelector('.wb-estate-head')!.textContent).toBe('ROOMS — BLK 509 · L5');
+    const groups = [...section.querySelectorAll('[role="group"]')].map((g) => [g.getAttribute('aria-label'), [...g.querySelectorAll('button')].map((b) => b.textContent)]);
+    expect(groups).toEqual([['#05-101', ['Living / Dining', 'Bedroom']], ['Common areas', ['Common corridor']]]);
+    fireEvent.click(screen.getByRole('button', { name: 'Bedroom' }));
+    expect(engine.pickRoom).toHaveBeenCalledWith(1);
+    setView(inPlan({ room: 1 }));
+    expect(screen.getByRole('button', { name: 'Bedroom' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Bedroom' }));
+    expect(engine.pickRoom).toHaveBeenLastCalledWith(null); // a second press clears it
+    fireEvent.click(screen.getByRole('button', { name: 'Walk into #05-101 · Bedroom' }));
+    expect(engine.walkIn).toHaveBeenCalled();
+    setView({ plan: null, location: { ...INITIAL_VIEW.location } });
+    expect(container.querySelector('[data-estate-rooms]')).toBeNull();
     unmount();
     expect(listeners.size).toBe(0);
   });

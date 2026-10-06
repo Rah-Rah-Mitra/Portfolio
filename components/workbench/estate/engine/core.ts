@@ -2,7 +2,7 @@ import { Matrix4, PerspectiveCamera, Scene, Vector3 } from 'three';
 import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { threeToEstate, type Vec3 } from '../../../../lib/estate/frames';
 import { ESTATE_SITE_IDS, type EstateSiteId } from '../../../../lib/estate/ids';
-import { ESTATE_VFOV_DEG, sseScale } from '../../../../lib/estate/lod';
+import { ESTATE_VFOV_DEG, LOD_MASSING, sseScale } from '../../../../lib/estate/lod';
 import { EstateScheduler, type PlanContext } from '../../../../lib/estate/scheduler';
 import { EstatePackError, parsePack, type EstatePack } from '../../../../lib/estate/schema';
 import { ESTATE_TIER_TABLE, capPixelRatio, type EstateTier } from '../../../../lib/estate/tiers';
@@ -351,7 +351,7 @@ export class EstateCore {
     this.kit = kit;
     const scene = new EstateScene(pack, kit);
     this.scene = scene;
-    this.interiors?.bindScene(scene.buildings);
+    this.interiors?.bindScene(scene.buildings, (index, on) => { if (scene.setPlanSides(index, on) && this.ready) this.loop?.markChanged(); });
     for (const file of streaming.decoded.values()) this.attach(file);
     this.uploader = new GeometryUploader(created.renderer, kit.fog);
     this.levels = new LevelWiring(pack.sites);
@@ -529,6 +529,11 @@ export class EstateCore {
     // Levels, then the planes and fog for this pose.
     const edgeReach = (TYPICAL_STOREY_M * k) / (EDGE_MIN_STOREY_PX * this.pixelRatio);
     if (scene.applyLevels(selector.level, tier.edges, this.distances(levels), edgeReach) > 0 && this.ready) this.loop?.markChanged();
+    // Plan holds its building at F; should detail selection still have it at
+    // massing (F not yet in, or a starved budget), the box would cover the cut
+    // storey: it goes, and the lower storeys wait for F.
+    const planned = interiors?.planIndex ?? -1;
+    if (planned >= 0 && interiors?.getStatus().active && selector.level[planned] === LOD_MASSING) scene.hideMassing(planned);
     // A band change, the interior turning on or off, furniture re-partitioned: two settle frames (§7.8).
     if (interiorChanged && this.ready) this.loop?.markChanged();
     let nearest = Infinity;
@@ -881,6 +886,20 @@ export class EstateCore {
     this.lean = lean;
     this.invalidate();
   }
+
+  /**
+   * Plan (P6): building `site` (index) shown at storey `storey` (index), cut
+   * `cut` m above its floor (interior.ts setPlan, which writes the cut, mask
+   * and sides once the interior is active); null ends it. One frame redraws it.
+   */
+  setPlan(site: number | null, storey = -1, cut?: number): void {
+    if (this.isDisposed) return;
+    this.interiors?.setPlan(site, storey, cut);
+    this.invalidate();
+  }
+
+  /** The material kit, once the scene exists (Plan's room marker draws with its line and glass programs). */
+  get materialKit(): MaterialKit | null { return this.kit; }
 
   /** The poster camera (home in Overview). */
   posterPose(): ThreePose | null {

@@ -9,8 +9,11 @@ import { gzipSync } from 'node:zlib';
 // stage's description and a fully clean axe scan (5c), a reopen drawn at full
 // size and detail (14b), and Reload after a failed engine chunk (17). P5's
 // tour (8: Blk 509's stairs and lift, the car park's ramp, the hawker hall)
-// and its slow and failed interiors (13). Context loss (9) and the phone row
-// (10) land with the phases that build them.
+// and its slow and failed interiors (13). P6's Plan (18: Blk 509 L5 from the
+// Overview strip, rooms cycled, the cut moved, walked into; 19: Esc leaves
+// Plan and the selection together), the assistant's focusEstate on the local
+// fallback (20) and the phone registry's Estate row (10). Context loss (9)
+// lands with P7.
 //
 // The tour moves with the HUD's step buttons (half a metre, 15°): they are
 // discrete, so a route of presses lands in the same place every run, where a
@@ -98,7 +101,7 @@ const enterFromRegistry = async (page: Page, name: RegExp, inside: RegExp) => {
   await enter.click();
   await expect(chip(page)).toHaveText(inside, { timeout: LIVE_TIMEOUT });
   await expect.poll(() => hud(page).getAttribute('data-flight')).toBeNull();
-  await expect(page.locator('.wb-estate-strip')).toBeVisible({ timeout: LIVE_TIMEOUT });
+  await expect(page.locator('[data-estate-strip="walk"]')).toBeVisible({ timeout: LIVE_TIMEOUT });
 };
 
 /** Settled: nothing in flight, and the readouts written since. */
@@ -617,5 +620,119 @@ test.describe('estate window — live 3D view', () => {
     await expect(win.locator('.wb-estate-state')).toContainText(/updated|reload/i);
     await expect(win.locator('canvas')).toHaveCount(0);
     expect(errors).toEqual([]);
+  });
+
+  test('18 · Plan: Blk 509 L5 from the Overview strip, ↓ cycles rooms aloud, the cut moves, Enter walks into the picked room', async ({ page }) => {
+    const errors = collectErrors(page);
+    const paths = collectPaths(page);
+    const estateRequests = () => paths.filter((path) => ESTATE_FILES.test(path)).length;
+    const win = await openEstate(page);
+    await waitLive(page);
+    await flyToAndLand(page, 'BLK_509', /^BLK 509 · /);
+    // Overview's strip is the selection's storeys, each opening Plan there.
+    await expect(win.locator('[data-estate-strip="plan"]')).toBeVisible();
+    await win.getByRole('button', { name: 'L5 +12.00, plan view' }).click();
+    await expect(chip(page)).toHaveText('BLK 509 · L5 · PLAN');
+    await expect(hud(page)).toHaveAttribute('data-mode', 'plan');
+    await expect(win.getByRole('button', { name: 'L5 +12.00, in plan' })).toBeDisabled();
+    // The cut storey opens once the interior is in, with every room of L5 listed in the side panel.
+    await expect.poll(() => stage(page).getAttribute('data-estate-band'), { timeout: LIVE_TIMEOUT }).toMatch(/^L[34]–L[56]$/);
+    const rooms = win.getByRole('region', { name: 'Rooms of Blk 509, L5' });
+    await expect(rooms.locator('[data-estate-room]')).toHaveCount(105, { timeout: LIVE_TIMEOUT });
+    await expect.poll(() => hud(page).getAttribute('data-flight')).toBeNull();
+    await settle(page);
+    // The cut adds no program (it draws with glass's), and the caps hold.
+    expect(await readout(page, 'programs')).toBeLessThanOrEqual(6);
+    expect(await readout(page, 'draws')).toBeLessThanOrEqual(150);
+    expect(await readout(page, 'tris')).toBeLessThanOrEqual(1_200_000);
+    // ↓ on the stage cycles the rooms, each said with its place in the list; the list and the chip follow.
+    await stage(page).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(spoken(page)).toHaveText(/^Unit 05-101, Bathroom, 1 of 105/);
+    await page.keyboard.press('ArrowDown');
+    await expect(spoken(page)).toHaveText(/^Unit 05-101, Bedroom, 2 of 105/);
+    await expect(win.locator('[data-estate-plan-room]')).toContainText('#05-101 · Bedroom');
+    await expect(rooms.getByRole('group', { name: '#05-101' }).getByRole('button', { name: 'Bedroom' })).toHaveAttribute('aria-pressed', 'true');
+    // Said, not shown: no notice chip for a pick.
+    await expect(win.locator('[data-estate-notice]')).toHaveCount(0);
+    // ] raises the cut a step, [ lowers it.
+    await page.keyboard.press(']');
+    await expect(win.locator('[data-estate-cut]')).toContainText('+1.50 M');
+    await page.keyboard.press('[');
+    await expect(win.locator('[data-estate-cut]')).toContainText('+1.20 M');
+    // Plan's HUD (strip, room and cut chips, steps) and the room list are as clean for axe as Overview's.
+    expect(await allFindings(page)).toEqual([]);
+    // Enter walks in: the arc comes down through the cut into the bedroom, on L5. Nothing of Blk 509
+    // downloads again (Plan had its interior, walk grid and rooms); Walk itself brings the ground
+    // heights, and a neighbour within 40 m prefetches its interior, as after any Enter (§7.5, §7.6).
+    const before = estateRequests();
+    await page.keyboard.press('Enter');
+    await expect(chip(page)).toHaveText(/^BLK 509 · L5 · #05-101 · BEDROOM · WALK$/, { timeout: 20_000 });
+    await expect.poll(() => hud(page).getAttribute('data-flight')).toBeNull();
+    await expect(win.locator('[data-estate-rooms]')).toHaveCount(0);
+    await settle(page);
+    const walkIn = paths.filter((path) => ESTATE_FILES.test(path)).slice(before);
+    expect(walkIn.filter((path) => /\/BLK_509\./.test(path)), 'Blk 509 files downloaded again for the walk-in').toEqual([]);
+    expect(walkIn.every((path) => /\/site\/ground\.|\/(?:i|w|nav)\/BLK_5\d\d\./.test(path)), walkIn.join(' ')).toBe(true);
+    expect(await stage(page).getAttribute('data-estate-band')).toMatch(/^L[34]–L[67]$/);
+    expect(errors).toEqual([]);
+  });
+
+  test('19 · Plan: Esc leaves it and clears the selection with it, so the next Esc minimises the window', async ({ page }) => {
+    const errors = collectErrors(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    await flyToAndLand(page, 'MSCP_513', /^MSCP 513 · /);
+    await win.getByRole('button', { name: 'L2 +3.00, plan view' }).click();
+    await expect(chip(page)).toHaveText('MSCP 513 · L2 · PLAN');
+    await expect(win.getByRole('region', { name: 'Rooms of Multi-storey car park 513, L2' })).toBeVisible({ timeout: LIVE_TIMEOUT });
+    await stage(page).focus();
+    await page.keyboard.press('PageUp');
+    await expect(chip(page)).toHaveText('MSCP 513 · L3 · PLAN');
+    await page.keyboard.press('Escape');
+    await expect(chip(page)).toHaveText(/ · OVERVIEW$/);
+    await expect(win.locator('[data-estate-site="MSCP_513"]')).toHaveAttribute('aria-pressed', 'false');
+    await expect(win.locator('[data-estate-rooms]')).toHaveCount(0);
+    await expect(win).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(win).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test('20 · the assistant on its local fallback: "take me into the hawker centre" opens the Estate and walks in at an NC 514 entrance', async ({ page }) => {
+    // The page agent is unreachable, so the answer is AskThePage's own local index
+    // (never a network model); Chromium logs the aborted request, which is expected.
+    const errors = collectErrors(page, [/Failed to load resource: net::ERR_FAILED/]);
+    await page.route('**/api/page-agent', (route) => route.abort());
+    await page.goto('/?estate-quality=min');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'AI, open Ask this portfolio' }).click();
+    await page.getByLabel('Question or page command').fill('take me into the hawker centre');
+    await page.getByRole('button', { name: 'Send' }).click();
+    await expect(page.locator('.assistant-status')).toHaveText('Answered by the safe local portfolio index.');
+    const win = page.getByRole('dialog', { name: 'Estate' });
+    await expect(win).toBeVisible();
+    // The request waited for the viewer to go live, then walked in: Walk on NC 514's L1, at one of its entrances.
+    await expect(chip(page)).toHaveText(/^NC 514 · L1 · .*WALK$/, { timeout: 60_000 });
+    await expect.poll(() => hud(page).getAttribute('data-flight'), { timeout: 10_000 }).toBeNull();
+    await expect(win.locator('[data-estate-row-action="exit"]')).toHaveText('Exit Hawker centre');
+    // The building travelled in the event only: the workbench was asked for #world, never a building id.
+    expect(page.url()).not.toMatch(/NC_514/);
+    expect(errors).toEqual([]);
+  });
+
+  test('10 · at 390 × 844, ?app=world-3d shows the PROJECTS chip and the Estate row, pointing to the desktop', async ({ page }) => {
+    const paths = collectPaths(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/?app=world-3d');
+    await expect(page.getByRole('button', { name: 'PROJECTS' })).toHaveAttribute('data-active', 'true');
+    await expect(page.getByRole('button', { name: /Sample Town N5/, expanded: true })).toBeVisible();
+    const link = page.locator('a[href="/?app=world-3d"]');
+    await expect(link).toHaveText('OPEN ON DESKTOP');
+    await expect(link).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    // No 3D on a phone: nothing of the pack, the engine or its HUD is fetched.
+    expect(paths.filter((path) => ESTATE_FILES.test(path) && !/\/poster\//.test(path))).toEqual([]);
+    expect(paths.filter((path) => ENGINE_CHUNKS.test(path))).toEqual([]);
   });
 });

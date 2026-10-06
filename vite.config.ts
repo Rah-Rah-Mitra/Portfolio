@@ -47,11 +47,17 @@ export default defineConfig(() => {
             // The Estate engine's facade is estate/engine/index.ts, which Rollup
             // would name index-<hash>.js, the entry chunk's own pattern. Named for
             // what it is, it cannot be mistaken for the entry by anything globbing
-            // dist/assets. Every other chunk keeps Vite's default name.
+            // dist/assets. The chunk the engine shares with its HUD (pure
+            // lib/estate modules, no facade) would take the name of whichever
+            // module Rollup lists first, which moved from announce to plan in P6:
+            // it is estate-shared instead, whatever it holds. Every other chunk
+            // keeps Vite's default name.
             chunkFileNames: (chunk) => (
               /[\\/]estate[\\/]engine[\\/]index\.ts$/.test(chunk.facadeModuleId ?? '')
                 ? 'assets/estate-engine-[hash].js'
-                : 'assets/[name]-[hash].js'
+                : !chunk.isEntry && !chunk.isDynamicEntry && chunk.moduleIds.some((id) => /[\\/]lib[\\/]estate[\\/]/.test(id))
+                  ? 'assets/estate-shared-[hash].js'
+                  : 'assets/[name]-[hash].js'
             ),
           },
         },

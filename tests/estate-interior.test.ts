@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import { Matrix4, Vector3, type BufferGeometry, type InstancedBufferAttribute, type InstancedMesh, type Mesh, type Object3D } from 'three';
+import { DoubleSide, FrontSide, Matrix4, Vector3, type BufferGeometry, type InstancedBufferAttribute, type InstancedMesh, type Mesh, type Object3D } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { decodeGround } from '../lib/estate/ground';
 import { ESTATE_SITE_IDS, type EstateSiteId } from '../lib/estate/ids';
@@ -19,7 +19,7 @@ import {
 import { createGlbLoader, parseGlb, readPayload } from '../components/workbench/estate/engine/loaders';
 import { Streaming, type DecodedFile } from '../components/workbench/estate/engine/streaming';
 import { EstateScheduler } from '../lib/estate/scheduler';
-import { createMaterialKit } from '../components/workbench/estate/engine/materials';
+import { createMaterialKit, PLAN_CUT_OFF } from '../components/workbench/estate/engine/materials';
 import { createPalette } from '../components/workbench/estate/engine/palette';
 import { facadeParts, interiorParts, STOREY_ATTRIBUTE, type InteriorParts } from '../components/workbench/estate/engine/parts';
 import { EstateScene } from '../components/workbench/estate/engine/scene';
@@ -244,6 +244,73 @@ describe.skipIf(!hasInteriors)('interiors on the pack in public/estate/v1.2', ()
     scheduler.mask = RESIDENT_MASSING;
     system.update(frame(peek, 'high'));
     expect(system.getStatus()).toMatchObject({ access: 'peeking', active: false, band: null });
+  });
+
+  it('plans a storey (P6): the interior up to S only, cut at its FFL + the cut, the façade masked to the roof, two-sided while cut', async () => {
+    const { scene, scheduler, system } = await setup();
+    const node = scene.buildings[B509];
+    const sides: Array<[number, boolean]> = [];
+    system.bindScene(scene.buildings, (index, on) => { sides.push([index, on]); scene.setPlanSides(index, on); });
+    // High above and south of the block: outside it, as Plan's camera is.
+    const above = at(B509, 20, -60, 70);
+    system.setPlan('BLK_509', 4, 1.2); // L5, FFL 12 m
+    system.update(frame(above, 'high'));
+    expect(system.getStatus()).toMatchObject({ site: 'BLK_509', access: 'outside', storeyTag: 'L5', active: true, band: 'L3–L7' });
+    // Held at F like a building the camera is inside, and first for downloads.
+    expect(system.insideIndex).toBe(B509);
+    expect(system.planIndex).toBe(B509);
+    expect(node.interiorUniforms.uBand.value.toArray()).toEqual([2, 4]);
+    expect(node.storey.uStoreyMask.value.toArray()).toEqual([2, 16]);
+    expect(node.interiorUniforms.uPlanCut.value).toBeCloseTo(13.2, 9);
+    expect(node.storey.uPlanCut.value).toBe(PLAN_CUT_OFF);
+    expect(sides).toEqual([[B509, true]]);
+    // Two-sided and transparent-sorted (glass's program); glass sorts after them.
+    for (const material of node.interiorOpaque) expect([material.side, material.transparent, material.depthWrite]).toEqual([DoubleSide, true, true]);
+    const glass = node.interiorParts!.parts.filter((p) => (p.object.material as { transparent?: boolean; depthWrite?: boolean }).depthWrite === false);
+    expect(glass.length).toBeGreaterThan(0);
+    for (const p of glass) expect(p.object.renderOrder).toBe(1);
+    // A new cut rewrites the uniform; the sides stay as they are.
+    system.setPlan('BLK_509', 4, 1.5);
+    expect(system.update(frame(above, 'high'))).toBe(true);
+    expect(node.interiorUniforms.uPlanCut.value).toBeCloseTo(13.5, 9);
+    expect(system.update(frame(above, 'high'))).toBe(false);
+    expect(sides).toEqual([[B509, true]]);
+    // Over a façade not yet resident the plan waits: nothing cut, nothing masked.
+    scheduler.mask = RESIDENT_MASSING;
+    system.update(frame(above, 'high'));
+    expect(system.getStatus()).toMatchObject({ active: false, band: null });
+    expect(node.interiorUniforms.uPlanCut.value).toBe(PLAN_CUT_OFF);
+    expect(node.storey.uStoreyMask.value.toArray()).toEqual([MASK_OFF.lo, MASK_OFF.hi]);
+    expect(sides.at(-1)).toEqual([B509, false]);
+    for (const material of node.interiorOpaque) expect([material.side, material.transparent]).toEqual([FrontSide, false]);
+    scheduler.mask = RESIDENT_ALL;
+    system.update(frame(above, 'high'));
+    expect(system.getStatus().active).toBe(true);
+    // Leaving Plan from up here: the building is no longer anyone's, and everything is back.
+    system.setPlan(null);
+    system.update(frame(above, 'high'));
+    expect(system.getStatus()).toMatchObject({ site: null, active: false });
+    expect([system.insideIndex, system.planIndex]).toEqual([-1, -1]);
+    expect(node.interiorUniforms.uPlanCut.value).toBe(PLAN_CUT_OFF);
+    expect(node.storey.uStoreyMask.value.toArray()).toEqual([MASK_OFF.lo, MASK_OFF.hi]);
+    expect(sides.at(-1)).toEqual([B509, false]);
+    for (const material of node.interiorOpaque) expect(material.side).toBe(FrontSide);
+  });
+
+  it('keeps the band its own when Plan ends with the camera still inside (the walk-in lands): cut off, uBand and mask back to the band', async () => {
+    const { scene, system } = await setup();
+    const node = scene.buildings[B509];
+    system.bindScene(scene.buildings, (index, on) => { scene.setPlanSides(index, on); });
+    system.setPlan('BLK_509', 4);
+    system.update(frame(corridorL5(), 'high'));
+    expect(node.interiorUniforms.uBand.value.toArray()).toEqual([2, 4]);
+    system.setPlan(null);
+    expect(system.update(frame(corridorL5(), 'high'))).toBe(true);
+    expect(system.getStatus()).toMatchObject({ access: 'inside', storeyTag: 'L5', band: 'L3–L7', active: true });
+    expect(node.interiorUniforms.uBand.value.toArray()).toEqual([2, 6]);
+    expect(node.storey.uStoreyMask.value.toArray()).toEqual([2, 6]);
+    expect(node.interiorUniforms.uPlanCut.value).toBe(PLAN_CUT_OFF);
+    for (const material of node.interiorOpaque) expect(material.side).toBe(FrontSide);
   });
 
   it('fails visibly: F whole, entry off, a reason naming the building', async () => {

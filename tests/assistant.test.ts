@@ -88,6 +88,35 @@ describe('portfolio AI commands', () => {
     expect(response.references).toContainEqual({ label: 'Open the Systems Lab', href: '#systems-lab' });
   });
 
+  it('validates focusEstate: a known building, its storey normalised, a storey it lacks dropped alone, enter only as a boolean', () => {
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_509', storey: 'L5', enter: true })).toEqual({ type: 'focusEstate', site: 'BLK_509', storey: 'L5', enter: true });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_509', storey: 'L05' })).toEqual({ type: 'focusEstate', site: 'BLK_509', storey: 'L5' });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_509', storey: ' l5 ' })).toEqual({ type: 'focusEstate', site: 'BLK_509', storey: 'L5' });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'MSCP_513', storey: 'rf' })).toEqual({ type: 'focusEstate', site: 'MSCP_513', storey: 'RF' });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_509', storey: 'L99' })).toEqual({ type: 'focusEstate', site: 'BLK_509' });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_509', storey: 'L17' })).toEqual({ type: 'focusEstate', site: 'BLK_509' });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_509', storey: 'L0' })).toEqual({ type: 'focusEstate', site: 'BLK_509' });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_509', storey: 5, enter: 'yes' })).toEqual({ type: 'focusEstate', site: 'BLK_509' });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_509', enter: false })).toEqual({ type: 'focusEstate', site: 'BLK_509', enter: false });
+    expect(validatePageCommand({ type: 'focusEstate', site: 'BLK_599', storey: 'L5' })).toBeNull();
+    expect(validatePageCommand({ type: 'focusEstate', site: 'SITE' })).toBeNull();
+    expect(validatePageCommand({ type: 'focusEstate' })).toBeNull();
+  });
+
+  it('routes a named building to focusEstate locally: Blk 501–512, the car park, the hawker centre; into, enter, walk or inside walks in', () => {
+    expect(localAgent('take me into the hawker centre').commands).toEqual([{ type: 'focusEstate', site: 'NC_514', enter: true }]);
+    expect(localAgent('show me Blk 509').commands).toEqual([{ type: 'focusEstate', site: 'BLK_509' }]);
+    expect(localAgent('go inside blk 512').commands).toEqual([{ type: 'focusEstate', site: 'BLK_512', enter: true }]);
+    expect(localAgent('where is the car park?').commands).toEqual([{ type: 'focusEstate', site: 'MSCP_513' }]);
+    expect(localAgent('enter the mscp').commands).toEqual([{ type: 'focusEstate', site: 'MSCP_513', enter: true }]);
+    expect(localAgent('the neighbourhood centre').commands).toEqual([{ type: 'focusEstate', site: 'NC_514' }]);
+    for (const prompt of ['blk 500', 'blk 513', 'blk 5099', 'show me the estate']) {
+      expect(localAgent(prompt).commands, prompt).toEqual([{ type: 'openDesktopApp', appId: 'world-3d' }]);
+    }
+    // The reply is the same Estate description either way.
+    expect(localAgent('take me into the hawker centre').reply).toBe(localAgent('show me the estate').reply);
+  });
+
   it('exposes only validated evidence, workstation, lab, and chapter commands', () => {
     expect(validatePageCommand({ type: 'focusExperience' })).toEqual({ type: 'focusExperience' });
     expect(validatePageCommand({ type: 'focusProject', projectId: 'churp' })).toEqual({ type: 'focusProject', projectId: 'churp' });
@@ -141,6 +170,8 @@ describe('portfolio AI commands', () => {
     for (const starter of NARROW_ASSISTANT_STARTERS) {
       for (const command of localAgent(starter).commands ?? []) {
         expect(command.type, starter).not.toBe('openTechnicalLab');
+        // focusEstate opens the Estate (a desktop window) and flies its camera: never from a phone starter.
+        expect(command.type, starter).not.toBe('focusEstate');
         if (command.type === 'openDesktopApp') expect(['camera-lab', 'systems-lab', 'world-3d'], starter).not.toContain(command.appId);
       }
     }

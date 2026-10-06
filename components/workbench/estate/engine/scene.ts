@@ -6,7 +6,7 @@ import { ESTATE_STOREY_FFL } from '../../../../lib/estate/ids';
 import { LOD_DETAIL, LOD_FACADE, LOD_MASSING } from '../../../../lib/estate/lod';
 import type { EstateScheduler, Eviction } from '../../../../lib/estate/scheduler';
 import type { EstatePack, PackBuilding } from '../../../../lib/estate/schema';
-import { createStoreyUniforms, setMassingLines, setStoreyMask, type MaterialKit, type StoreyUniforms } from './materials';
+import { createStoreyUniforms, setMassingLines, setPlanSides, setStoreyMask, type MaterialKit, type StoreyUniforms } from './materials';
 import {
   isGlass, type DecodedParts, type DetailParts, type FacadeParts, type InteriorParts, type MassingNode, type Part, type SiteParts,
   type SiteSpecies,
@@ -58,6 +58,8 @@ export interface BuildingNode {
   readonly interiorUniforms: StoreyUniforms;
   /** Its interior file's objects, once decoded and attached (interior.ts draws them). */
   interiorParts: InteriorParts | null;
+  /** The interior's two opaque materials (plain, instanced): Plan turns them two-sided (materials.ts setPlanSides). */
+  interiorOpaque: Material[];
   interiorId: string | null;
   massing: MassingNode | null;
   facade: FacadeParts | null;
@@ -168,6 +170,7 @@ export class EstateScene {
         interior,
         interiorUniforms,
         interiorParts: null,
+        interiorOpaque: [],
         interiorId: site.interior?.path ?? null,
         materials: {
           massing: kit.opaque(massingStorey, massingFloors(site)),
@@ -269,8 +272,13 @@ export class EstateScene {
       const instanced = (object as InstancedMesh).isInstancedMesh === true;
       const clear = isGlass(object);
       replaceMaterial(object, clear ? (instanced ? glassInstanced : glass) : (instanced ? opaqueInstanced : opaque));
+      // Glass sorts after everything else transparent: in Plan the interior's
+      // opaque parts are transparent-sorted too (materials.ts), and glass drawn
+      // first would be overwritten by an opaque part behind it.
+      if (clear) object.renderOrder = 1;
       object.visible = false;
     }
+    building.interiorOpaque = [opaque, opaqueInstanced];
     // T and furniture are added as they are; R and the specials by their node (its TRS).
     const add = (object: Object3D) => {
       object.removeFromParent();
@@ -470,6 +478,26 @@ export class EstateScene {
   setFacadeMask(index: number, lo: number, hi: number): boolean {
     const building = this.buildings[index];
     return building ? setStoreyMask(building.storey, lo, hi) : false;
+  }
+
+  /**
+   * Plan's sides on building `index`'s interior (P6, materials.ts setPlanSides):
+   * two-sided and transparent-sorted while its storey is cut, so the cut solids
+   * show their filled insides; back to front faces only after. Returns whether
+   * anything changed.
+   */
+  setPlanSides(index: number, on: boolean): boolean {
+    const building = this.buildings[index];
+    if (!building) return false;
+    let changed = false;
+    for (const material of building.interiorOpaque) if (setPlanSides(material, on)) changed = true;
+    return changed;
+  }
+
+  /** Hides building `index`'s massing box (Plan, when detail selection fell back to it: it would hide the cut storey). */
+  hideMassing(index: number): void {
+    const massing = this.buildings[index]?.massing;
+    if (massing) showParts(massing.parts, false);
   }
 
   /** Tells the scheduler which files drew this frame (eviction's "not seen for" clocks). */

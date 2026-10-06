@@ -43,7 +43,7 @@ const sameView = (a: EstateView, b: EstateView): boolean =>
   sameLocation(a.location, b.location) && a.selection === b.selection && a.transition === b.transition
   && a.flight === b.flight && a.popover === b.popover && a.moving === b.moving && a.pointerLocked === b.pointerLocked
   && a.pointerUnlockedAtMs === b.pointerUnlockedAtMs && a.lean === b.lean && a.flySpeed === b.flySpeed
-  && (a.interior ?? null) === (b.interior ?? null) && (a.walk ?? null) === (b.walk ?? null);
+  && (a.interior ?? null) === (b.interior ?? null) && (a.walk ?? null) === (b.walk ?? null) && (a.plan ?? null) === (b.plan ?? null);
 
 const sameInterior = (a: EstateInteriorView | null, b: EstateInteriorView | null): boolean =>
   a === b || (a !== null && b !== null && a.site === b.site && a.state === b.state && a.storey === b.storey
@@ -93,8 +93,8 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
       if (core && core.isReady && !core.isDisposed) emitLocation(via);
       return true;
     },
-    announce: (full, text) => {
-      if (core && core.isReady) emitter.emit({ type: 'announce', full, text });
+    announce: (full, text, quiet) => {
+      if (core && core.isReady) emitter.emit({ type: 'announce', full, text, ...(quiet ? { quiet: true } : {}) });
     },
   };
 
@@ -181,7 +181,10 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
     setStorey: (target) => live() && nav.setStorey !== undefined && nav.setStorey(target),
     takeLift: (level) => live() && nav.takeLift !== undefined && nav.takeLift(level),
     takeStairs: (direction) => live() && nav.takeStairs !== undefined && nav.takeStairs(direction),
-    planView: (site, storey) => live() && nav.planView !== undefined && nav.planView(site, storey),
+    planView: (site, storey, planOptions) => live() && nav.planView !== undefined && nav.planView(site, storey, planOptions),
+    pickRoom: (index) => live() && nav.pickRoom !== undefined && nav.pickRoom(index),
+    walkIn: (index) => live() && nav.walkIn !== undefined && nav.walkIn(index),
+    setCut: (step) => live() && nav.setCut !== undefined && nav.setCut(step),
     walkStep: (step) => live() && nav.walkStep !== undefined && nav.walkStep(step),
     setStick: (x, y) => live() && nav.setStick !== undefined && nav.setStick(x, y),
     walkFrom: (spawn) => live() && nav.walkFrom !== undefined && nav.walkFrom(spawn),
@@ -202,8 +205,8 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
         case 'clear-selection': return select(null);
         case 'none': return false;
         default:
+          // Leaving Plan clears the selection with it (§8.3 amendment): controls/index.ts exitPlan does both.
           if (nav.escape?.(action)) return true;
-          // Leaving Plan clears the selection with it (§8.3 amendment).
           return action === 'exit-plan' ? select(null) : false;
       }
     },

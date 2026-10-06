@@ -69,6 +69,12 @@ export interface EstateModel {
    */
   readonly focus: { readonly target: 'stage' | 'action'; readonly seq: number } | null;
   readonly hud: EstateModelHud | null;
+  /**
+   * The side panel's slot above BUILDINGS (P6): Plan's room list, from the lazy
+   * runtime, with the HUD's props; it draws nothing outside Plan. Null before
+   * there is an engine, and while the HUD is not drawn.
+   */
+  readonly side: EstateModelHud | null;
 }
 
 /** The view's two controls. Stable for the controller's life. */

@@ -167,10 +167,10 @@ const EffectsLabPanel: React.FC = () => {
   const holdStatus = (enabled: boolean) => (backdropHold ? `${enabled ? 'On' : 'Off'} · ${backdropHold}`
     : enabled && gpuClaimed && !narrow ? `On · ${BACKDROP_YIELD_HOLD}` : undefined);
   const motionNote = enhancements.motionPaused
-    ? 'Paused. Window rigs, Systems Lab mechanisms and the desk backgrounds hold their current frame; the labs skip straight to their end state, and the Estate camera’s flights cut to the end.'
+    ? 'Paused. Window rigs, Systems Lab mechanisms and the desk backgrounds hold their current frame; the labs skip straight to their end state, and the Estate camera’s flights, lift fades and stair climbs cut to the end.'
     : reducedMotion
       ? 'Your device asks for reduced motion, so every loop on this site already holds still.'
-      : 'Stops every animation loop on the site at once: window rigs, mechanisms, desk backgrounds and labs, and makes the Estate camera’s flights cut to the end.';
+      : 'Stops every animation loop on the site at once: window rigs, mechanisms, desk backgrounds and labs, and makes the Estate camera’s flights, lift fades and stair climbs cut to the end.';
 
   return (
     <>

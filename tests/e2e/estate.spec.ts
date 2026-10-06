@@ -372,6 +372,8 @@ test.describe('estate window — live 3D view', () => {
   test('8a · the P5 tour: Enter Blk 509, the stairs to L2, the lift to L5, and Esc back out', async ({ page }) => {
     const errors = collectErrors(page);
     const paths = collectPaths(page);
+    const estateRequests = () => paths.filter((path) => ESTATE_FILES.test(path)).length;
+    await countFrames(page);
     const win = await openEstate(page);
     await waitLive(page);
     await flyToAndLand(page, 'BLK_509', /^BLK 509 · /);
@@ -392,6 +394,9 @@ test.describe('estate window — live 3D view', () => {
     await steps(page, 'f6 r6 f2');
     const up = win.getByRole('button', { name: 'Take stair 5 up to L2' });
     await expect(up).toBeVisible();
+    // The climb downloads nothing: the building's interior and grid are already here (§3 P5, §12.4).
+    await settle(page);
+    const beforeStairs = estateRequests();
     await up.click();
     await expect(hud(page)).toHaveAttribute('data-transition', 'climb');
     await expect(chip(page)).toHaveText(/^BLK 509 · L2 · /, { timeout: 20_000 });
@@ -399,28 +404,57 @@ test.describe('estate window — live 3D view', () => {
 
     // L5 by the strip: one lift ride behind the paper, and nothing downloaded for it.
     await settle(page);
-    const before = paths.filter((path) => ESTATE_FILES.test(path)).length;
+    expect(estateRequests() - beforeStairs, 'requests for a stair climb').toBe(0);
+    const before = estateRequests();
     await win.getByRole('button', { name: 'L5 +12.00, by lift' }).click();
     await expect(chip(page)).toHaveText(/^BLK 509 · L5 · /, { timeout: 10_000 });
     await expect.poll(() => hud(page).getAttribute('data-transition'), { timeout: 10_000 }).toBeNull();
     await settle(page);
-    expect(paths.filter((path) => ESTATE_FILES.test(path)).length - before, 'requests for a lift ride').toBe(0);
+    expect(estateRequests() - before, 'requests for a lift ride').toBe(0);
     // The arrival was one utterance with the lift's name; the corridor follows once standing still.
     await expect(spoken(page)).toHaveText(/^Common corridor/, { timeout: 5_000 });
     expect(await readout(page, 'draws')).toBeLessThanOrEqual(150);
     expect(await readout(page, 'tris')).toBeLessThanOrEqual(1_200_000);
     expect(await stage(page).getAttribute('data-estate-band')).toMatch(/^L[34]–L[67]$/);
+    // At rest inside a building, as in Overview (case 11): no animation frames, no readout written.
+    const rest = [await frames(page), await stage(page).getAttribute('data-estate-ms')] as const;
+    await page.waitForTimeout(1_000);
+    expect(await frames(page) - rest[0], 'requestAnimationFrame calls in 1 s at rest on L5').toBe(0);
+    expect(await stage(page).getAttribute('data-estate-ms')).toBe(rest[1]);
 
-    // The lift the ride left us at: its panel lists what it serves, this level disabled.
+    // Enter on the stage at the landing opens the lift's panel: focus goes in, onto the level above, and it is said.
     const lift = win.locator('[data-estate-lift]');
     await expect(lift).toHaveText(/^LIFT \d · CHOOSE A LEVEL$/);
-    await lift.click();
     const panel = win.getByRole('region', { name: /^Lift \d, levels$/ });
+    await stage(page).focus();
+    await page.keyboard.press('Enter');
     await expect(panel).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '')).toMatch(/^Lift \d to L6$/);
+    await expect(spoken(page)).toHaveText(/^Lift \d: choose a level$/);
     await expect(panel.getByRole('button', { name: 'L5, here' })).toBeDisabled();
-    await expect(panel.getByRole('button', { name: /^Lift \d to L12$/ })).toBeEnabled();
     // Walk's HUD (location, Exit, the strip, the lift chip and its open panel, the steps) is as clean for axe as Overview's.
     expect(await allFindings(page)).toEqual([]);
+    // Esc closes it and hands the keys back to the stage, which opened it.
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect.poll(() => stage(page).evaluate((node) => document.activeElement === node)).toBe(true);
+
+    // The panel rides too: L5 → L12 from its chip, nothing downloaded.
+    await lift.click();
+    await expect(panel).toBeVisible();
+    const beforePanel = estateRequests();
+    await panel.getByRole('button', { name: /^Lift \d to L12$/ }).click();
+    await expect(chip(page)).toHaveText(/^BLK 509 · L12 · /, { timeout: 10_000 });
+    await expect.poll(() => hud(page).getAttribute('data-transition'), { timeout: 10_000 }).toBeNull();
+    await settle(page);
+    expect(estateRequests() - beforePanel, 'requests for a ride from the panel').toBe(0);
+
+    // The lift the ride left us at: its panel lists what it serves, this level disabled.
+    await expect(lift).toHaveText(/^LIFT \d · CHOOSE A LEVEL$/);
+    await lift.click();
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'L12, here' })).toBeDisabled();
+    await expect(panel.getByRole('button', { name: /^Lift \d to L5$/ })).toBeEnabled();
     // Esc layers from a HUD button: the panel, then Walk, then the selection, then the window.
     await page.keyboard.press('Tab');
     await expect.poll(() => panel.evaluate((node) => node.contains(document.activeElement))).toBe(true);
@@ -496,6 +530,8 @@ test.describe('estate window — live 3D view', () => {
     expect(await stage(page).getAttribute('data-estate-band')).toBeNull();
     // Two retries later it has failed for good: still no band, and the reason is shown.
     await expect(win.locator('[data-estate-interior="failed"]')).toHaveText(/^Blk 509 cannot be entered: its interior did not download/, { timeout: 60_000 });
+    // Said as it happens, not only on the next Enter (the chip has no live role).
+    await expect(spoken(page)).toHaveText(/^Blk 509 cannot be entered: its interior did not download/);
     expect(held).toBeGreaterThanOrEqual(3);
     expect(await stage(page).getAttribute('data-estate-band')).toBeNull();
     // Back out, and Enter again: refused, said and shown.

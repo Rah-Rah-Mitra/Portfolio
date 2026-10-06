@@ -99,6 +99,8 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
   };
 
   let navigation: EngineNavigation | null = null;
+  /** Buildings whose failed entry has been said as it happened (once each). */
+  const failuresSaid = new Set<string>();
   const engineCore = new EstateCore(options, emitter, {
     beforeReady: () => {
       const before = locations;
@@ -112,6 +114,12 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
       });
       if (sameInterior(view.interior ?? null, next)) return;
       access.set({ interior: next });
+      // The building being entered or stood in has failed for good: said once, as
+      // it happens (the chip has no live role), not only on the next Enter.
+      if (next?.state === 'failed' && next.reason && view.location.mode !== 'overview' && !failuresSaid.has(next.site)) {
+        failuresSaid.add(next.site);
+        access.announce(false, next.reason);
+      }
     },
   });
   core = engineCore;

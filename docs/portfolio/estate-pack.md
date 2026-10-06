@@ -41,10 +41,12 @@ The only real input is a **Bonsai-Estate release**: a folder holding
 ```powershell
 # P2: the candidate, from upstream's release folder (R2a)
 npm run estate:pack -- --zips ..\Bonsai-Estate-release\v1.2 --out artifacts\estate\v1.2
-# P4a on: the published zips, checked against the candidate's own record
+# The release pack: the published zips, checked against the candidate's own record.
+# P5 on it carries every class: the engine reads all eight, and estate:check and
+# tests/estate-pack.test.ts refuse a committed pack without them (SHIPPED_CLASSES).
 Copy-Item ..\Bonsai-Estate-release\v1.2\release_manifest.json <downloaded>\
-npm run estate:pack -- --zips <downloaded> --classes poster --out public\estate\v1.2 --release --expect-assets artifacts\estate\v1.2\pack.<h8>.json
-npm run estate:pack -- --zips <downloaded> --classes poster --out public\estate\v1.2 --verify
+npm run estate:pack -- --zips <downloaded> --classes poster,s0,f,d,i,w,nav,ground --out public\estate\v1.2 --release --expect-assets artifacts\estate\v1.2\pack.<h8>.json
+npm run estate:pack -- --zips <downloaded> --classes poster,s0,f,d,i,w,nav,ground --out public\estate\v1.2 --verify
 npm run estate:check -- --provenance --zips <downloaded>
 ```
 
@@ -430,12 +432,32 @@ whole pack 2,139,868 B in 63 files).
 - **Downward open ground surfaces.** 1,435 SITE ground triangles belong to open
   surfaces and face down below grade; the tool turns them up (invisible either way).
 
+## For the release re-pack (the P5 review, 2026-10-06)
+
+Found on rc2b, left for the pack the release is cut from (each changes pack
+output, so the S1–S5 pins move with it):
+- **Furniture stand-ins take the legs' colour.** `buildInterior`
+  (`lib/building.mjs`) colours a kit's 12-triangle box by `dominantSlot()`,
+  which counts triangles, so a hawker table (top neutral-200, 8 vertices; legs
+  neutral-600, 52) becomes a dark full-height crate beyond the furniture
+  radius, beside full stools (each instance switches by its own centre). Colour
+  the box by the slot with the most upward-facing area, or give it a top in the
+  top's colour; optionally switch a table and its stools together.
+- **A dotted line at some flat window heads** (BLK 509 L5) is a sliver in the
+  interior geometry coplanar with the wall face: it stays with F hidden. Drop
+  glass coplanar with an opaque wall face, or flag such pairs in the checks.
+- **Stair wells above the band are empty shafts**: stair flights and landings
+  exist only in the interior file, so above S + k the well is open (0.04–0.29 %
+  of a floor). Accepted; `tests/estate-interior.test.ts` pins it at ≤ 0.3 %.
+  Drawing the stair one storey beyond the band would need stair triangles
+  tagged apart from their storey.
+
 ## Moving to a new version
 
 1. Upstream releases `vX.Y` (deterministic zips, `release_manifest.json`).
 2. `git -C external/Bonsai-Estate checkout <tag commit>`.
 3. Copy the candidate's `release_manifest.json` beside the downloaded zips, then
-   `npm run estate:pack -- --zips <downloaded> --classes <committed set> --out public\estate\vX.Y --release --expect-assets <candidate pack.json>`, then `--verify`.
+   `npm run estate:pack -- --zips <downloaded> --classes poster,s0,f,d,i,w,nav,ground --out public\estate\vX.Y --release --expect-assets <candidate pack.json>`, then `--verify` (the full set, `SHIPPED_CLASSES` in `scripts/estate/check.mjs`).
 4. `git rm -r public/estate/v<old>`; exactly one version folder may exist.
 5. `npm run estate:check -- --provenance --zips <downloaded>`, then commit the
    pack, the catalogue and the gitlink together.

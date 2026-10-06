@@ -10,7 +10,7 @@ import type { EstateCore } from '../core';
 import type { InteriorEntry, InteriorLocation } from '../interior';
 import {
   fadeAt, liftArrival, liftChip, liftLabel, liftOffer, nearestLift, noRouteReason, planRoute, rideCaption, servedLevels, STAIR_CUT_REACH,
-  stairChip, stairFor, stairLabel, stairOffer, stairPaths, stairStart, walkLevels, type Arrival, type FadeState, type RouteLeg,
+  stairChip, stairFor, stairLabel, stairOffer, stairPaths, stairStart, stairStartOnFoot, walkLevels, type Arrival, type FadeState, type RouteLeg,
   type StairChoice, type StairOfferState,
 } from '../lifts';
 import type { ViewAccess } from '../navigation';
@@ -286,7 +286,7 @@ export class WalkMode {
       const lx = w.x - at[0];
       const ly = w.y - at[1];
       lift = liftOffer(nav, w.layer, lx, ly);
-      stair = stairOffer(nav, w.layer, lx, ly, w.z, this.so);
+      stair = stairOffer(nav, w.layer, lx, ly, w.z, this.so, interiors?.walk(site) ?? null);
     }
     this.liftLift = lift;
 
@@ -468,7 +468,7 @@ export class WalkMode {
     const nav = this.navOf(w.site);
     if (!nav || w.layer < 0) return null;
     const at = this.world.sites[w.site].at;
-    return stairOffer(nav, w.layer, w.x - at[0], w.y - at[1], w.z, this.so);
+    return stairOffer(nav, w.layer, w.x - at[0], w.y - at[1], w.z, this.so, this.core.interiors?.walk(w.site) ?? null);
   }
 
   private beginClimb(choice: StairChoice): boolean {
@@ -540,6 +540,7 @@ export class WalkMode {
     if (!path) return false;
     const k = dir === 'up' ? 0 : 3 * (path.count - 1);
     if (Math.hypot(path.xyz[k] - (w.x - at[0]), path.xyz[k + 1] - (w.y - at[1])) > STAIR_CUT_REACH) return false;
+    if (!stairStartOnFoot(nav, this.core.interiors?.walk(w.site) ?? null, choice, w.x - at[0], w.y - at[1], w.z, STAIR_CUT_REACH + 0.5)) return false;
     return this.beginClimb({ ...choice });
   }
 
@@ -611,8 +612,9 @@ export class WalkMode {
     if (!choice) { this.route = null; return false; }
     const path = stairPaths(nav)[choice.stair]!;
     const k = dir === 'up' ? 0 : 3 * (path.count - 1);
-    if (Math.hypot(path.xyz[k] - lx, path.xyz[k + 1] - ly) > STAIR_CUT_REACH) {
-      // Too far to walk onto the line: a paper cut to its start, then the climb.
+    if (Math.hypot(path.xyz[k] - lx, path.xyz[k + 1] - ly) > STAIR_CUT_REACH
+      || !stairStartOnFoot(nav, this.core.interiors?.walk(w.site) ?? null, choice, lx, ly, w.z, STAIR_CUT_REACH + 0.5)) {
+      // Too far to walk onto the line, or near but behind a wall: a paper cut to its start, then the climb.
       const walk = this.core.interiors?.walk(w.site);
       const arrival: Arrival = { x: 0, y: 0, z: 0, layer: -1, heading: 0 };
       if (!walk || !stairStart(nav, walk, choice, arrival)) { this.route = null; return false; }

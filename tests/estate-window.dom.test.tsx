@@ -867,8 +867,16 @@ describe('Estate window — Walk, with the real HUD module inside the workbench'
     // Top down, from the data; the storey underfoot current, a storey nothing reaches disabled with why.
     expect(names[0]).toBe('RF +45.60, No lift or stair reaches RF');
     expect(names.at(-1)).toBe('L1 ±0.00, by lift');
+    // Unreachable: aria-disabled, not disabled, so Tab reaches it and its reason can be heard;
+    // pressing it asks the engine, which refuses and says why (and focus stays on it).
     const rf = strip.querySelector<HTMLButtonElement>('[data-route="none"]')!;
-    expect(rf.disabled).toBe(true);
+    expect(rf.disabled).toBe(false);
+    expect(rf.getAttribute('aria-disabled')).toBe('true');
+    act(() => { rf.focus(); });
+    act(() => { fireEvent.click(rf); });
+    expect(engine.setStorey).toHaveBeenLastCalledWith('RF');
+    expect(document.activeElement).toBe(rf);
+    vi.mocked(engine.setStorey).mockClear();
     const here = strip.querySelector<HTMLButtonElement>('[aria-current]')!;
     expect(here.getAttribute('aria-label')).toBe('L5 +12.00, here');
     expect(here.disabled).toBe(true);
@@ -901,6 +909,71 @@ describe('Estate window — Walk, with the real HUD module inside the workbench'
     expect(engine.setStick).toHaveBeenLastCalledWith(0.5, 0);
     act(() => { fireEvent.pointerUp(stick, { pointerType: 'touch', pointerId: 9 }); });
     expect(engine.setStick).toHaveBeenLastCalledWith(0, 0);
+  });
+
+  it('Enter on the stage opens the lift panel with focus on the nearest level up, says so, and Esc hands focus back to the stage', async () => {
+    const { container, engine } = await mountWalking();
+    const stage = stageOf(container);
+    act(() => { stage.focus(); });
+    // What the engine does on Enter at a landing (controls activate → popover 'lift').
+    act(() => engine.setView({ popover: 'lift', popoverOpen: true }));
+    const panel = container.querySelector<HTMLElement>('[data-estate-popover="lift"]')!;
+    expect(panel).not.toBeNull();
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Lift 3 to L6');
+    expect(panel.contains(document.activeElement)).toBe(true);
+    expect(container.querySelector('.wb-estate-hud [role="status"]')!.textContent).toBe('Lift 3: choose a level');
+    act(() => { fireEvent.keyDown(document.activeElement!, { key: 'Escape', code: 'Escape' }); });
+    expect(engine.escape).toHaveBeenLastCalledWith('close-popover');
+    expect(container.querySelector('[data-estate-popover="lift"]')).toBeNull();
+    expect(document.activeElement).toBe(stage);
+  });
+
+  it('a lift level rides from the panel; pressed from the keyboard, focus lands on the stage once the panel goes', async () => {
+    const { container, engine } = await mountWalking();
+    // The engine's ride: the panel closes and the paper is up (the chip goes with the offer).
+    engine.takeLift = vi.fn(() => {
+      engine.setView({ popover: null, popoverOpen: false, transition: 'fade', walk: { ...engine.getView().walk!, lift: null, ride: 'LIFT 3 · L5 → L12' } });
+      return true;
+    });
+    const lift = container.querySelector<HTMLButtonElement>('[data-estate-lift]')!;
+    expect(lift.getAttribute('aria-label')).toBe('Lift 3: choose a level');
+    act(() => { fireEvent.click(lift); });
+    const l12 = container.querySelector<HTMLButtonElement>('[data-estate-level="L12"]')!;
+    act(() => { l12.focus(); });
+    // fireEvent.click is a keyboard press here (detail 0): the button keeps focus until it goes.
+    act(() => { fireEvent.click(l12); });
+    expect(engine.takeLift).toHaveBeenLastCalledWith('L12');
+    expect(container.querySelector('[data-estate-popover="lift"]')).toBeNull();
+    expect(document.activeElement).toBe(stageOf(container));
+    expect(container.querySelector('[data-estate-ride]')!.textContent).toBe('LIFT 3 · L5 → L12');
+  });
+
+  it('Esc on a registry row’s Enter clears the selection and leaves focus on that row, never on the page', async () => {
+    const { container, engine } = await mountWalking();
+    act(() => engine.setView({ location: { site: null, storey: null, unit: null, room: null, mode: 'overview' }, walk: null, interior: null }));
+    const enter = container.querySelector<HTMLButtonElement>('[data-estate-row-action="enter"]')!;
+    expect(enter.textContent).toBe('Enter Blk 509 · 0.2 MB');
+    act(() => { enter.focus(); });
+    act(() => { fireEvent.keyDown(enter, { key: 'Escape', code: 'Escape' }); });
+    expect(engine.escape).toHaveBeenLastCalledWith('clear-selection');
+    expect(container.querySelector('[data-estate-row-action]')).toBeNull();
+    expect(document.activeElement).toBe(container.querySelector('[data-estate-site="BLK_509"]'));
+  });
+
+  it('walking outdoors keeps the selection’s Enter, on the HUD and on its registry row', async () => {
+    const { container, engine } = await mountWalking();
+    act(() => engine.setView({
+      location: { site: null, storey: null, unit: null, room: null, mode: 'walk' },
+      selection: 'NC_514',
+      walk: { site: null, storey: null, preparing: false, lift: null, stair: null, ride: null, levels: [] },
+      interior: null,
+    }));
+    expect(container.querySelector('[data-estate-enter="NC_514"]')).not.toBeNull();
+    expect(container.querySelector('[data-estate-row-action="enter"]')!.textContent).toMatch(/^Enter /);
+    // Inside a building the HUD offers Exit instead, as before.
+    act(() => engine.setView({ location: { site: 'BLK_509', storey: 'L5', unit: null, room: null, mode: 'walk' }, selection: 'BLK_509', walk: WALK }));
+    expect(container.querySelector('[data-estate-enter]')).toBeNull();
+    expect(container.querySelector('[data-estate-row-action="exit"]')).not.toBeNull();
   });
 });
 

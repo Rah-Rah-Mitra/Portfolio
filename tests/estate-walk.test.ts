@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FEET_OMEGA, WALK_BAND_PAD, WALK_BLOCKED, WALK_HEADER_BYTES, WALK_LAYER_BYTES, WALK_LRU, WALK_MAX_SUBSTEPS,
   WALK_OVERFLOW_BYTES, WALK_SUBSTEP, WalkFormatError, decodeWalk, floorAt, followFloor, layerOf,
-  moveWithCollision, nearestWalkable, walkBoundsContain, type FeetSpring, type FloorHit, type WalkFile,
+  moveWithCollision, nearestWalkable, walkBoundsContain, walkReaches, type FeetSpring, type FloorHit, type WalkFile,
   type WalkPose,
 } from '../lib/estate/walk';
 import { ESTATE_SITE_STOREYS, ESTATE_STOREY_FFL, type EstateSiteId } from '../lib/estate/ids';
@@ -698,6 +698,23 @@ describe('moveWithCollision', () => {
       expect(cellOf(turned, p.x, p.y)[0]).toBe(10);
     });
 
+    it('nudges a heading with float noise on its other axis, as a key or a 15° step turn gives', () => {
+      // cos(π/2) = 6e-17: a "slide" on y that small succeeds in place and used to
+      // end the substep before the nudge was tried, stopping the walker at the wall.
+      for (const y of [0.95, 1.15]) {
+        for (const noise of [Math.cos(Math.PI / 2), -Math.cos(Math.PI / 2), 1e-12, -1e-12]) {
+          const p = pose(1.55, y);
+          expect(moveWithCollision(door, p, 2, 2 * noise), `y ${y}, noise ${noise}`).toBe('nudged');
+          expect(p.x).toBeCloseTo(3.55, 9);
+          expect(cellOf(door, p.x, p.y)[1]).toBe(10);
+        }
+      }
+      // A real diagonal still slides along the wall rather than nudging.
+      const q = pose(1.95, 1.55);
+      expect(moveWithCollision(door, q, 0.3, 0.3)).toBe('slid');
+      expect(q.x).toBe(1.95);
+    });
+
     it('does not nudge two cells', () => {
       const p = pose(1.55, 0.85);
       expect(moveWithCollision(door, p, 2, 0)).toBe('blocked');
@@ -866,5 +883,37 @@ describe('nearestWalkable', () => {
     expect(out.y).toBeCloseTo(0.55, 12);
     expect([out.z, out.layer]).toEqual([3, 1]);
     expect(nearestWalkable(walk, 0.7, 0.7, 1.5, 3, out)).toBe(false);
+  });
+});
+
+describe('walkReaches (the stair chip\'s gate)', () => {
+  // 6 m × 4 m: a one-cell wall at x ∈ [3.0, 3.1) with a doorway at its far end
+  // (cells iy 36–38, y ∈ [3.6, 3.9)), and a flight of 175 mm treads east of it.
+  const nx = 60, ny = 40;
+  const g = paint(fill(nx, ny, 0), nx, 30, 0, 30, ny - 1, B);
+  paint(g, nx, 30, 36, 30, 38, 0);
+  for (let ix = 40; ix < 52; ix += 1) paint(g, nx, ix, 0, ix, 10, Math.floor((ix - 40) / 3) * 175);
+  const walk = decodeWalk(encodeWalk({ nx, ny, layers: [{ tag: 'L1', ffl: 0, heights: g }, { tag: 'L2', ffl: 3, heights: fill(nx, ny, B) }] }));
+
+  it('reaches a point across open floor, within the distance on foot', () => {
+    expect(walkReaches(walk, pose(1.05, 1.05), 2.05, 1.05, 0, 1.2)).toBe(true);
+    expect(walkReaches(walk, pose(1.05, 1.05), 2.05, 1.05, 0, 0.8)).toBe(false);
+  });
+
+  it('does not reach through a wall, only round it by the doorway', () => {
+    // 0.4 m apart in plan, but 7 m on foot by way of the doorway.
+    expect(walkReaches(walk, pose(2.85, 0.55), 3.25, 0.55, 0, 2.5)).toBe(false);
+    expect(walkReaches(walk, pose(2.85, 0.55), 3.25, 0.55, 0, 8)).toBe(true);
+  });
+
+  it('climbs treads to a point up a flight, and refuses one at the wrong height', () => {
+    expect(walkReaches(walk, pose(3.85, 0.55), 4.95, 0.55, 0.525, 2.5)).toBe(true);
+    expect(walkReaches(walk, pose(3.85, 0.55), 4.95, 0.55, 2.5, 2.5)).toBe(false);
+  });
+
+  it('refuses a start off the floor and non-finite input', () => {
+    expect(walkReaches(walk, pose(3.05, 0.55), 2.05, 0.55, 0, 2.5)).toBe(false);
+    expect(walkReaches(walk, pose(1.05, Number.NaN), 2.05, 1.05, 0, 2.5)).toBe(false);
+    expect(walkReaches(walk, pose(1.05, 1.05), 2.05, 1.05, 0, Number.POSITIVE_INFINITY)).toBe(false);
   });
 });

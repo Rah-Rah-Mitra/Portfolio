@@ -15,12 +15,20 @@ import type { DrawObject } from './parts';
 // The upload scene has a hemisphere light, a directional light and the main
 // fog, like the main scene, so the stand-in asks three for the very program the
 // real object will use, never a second one.
+//
+// An instanced part gets a stand-in of its own, kept for the part's life:
+// three frees an instance buffer only when the object it RENDERED is disposed
+// (WebGLObjects listens for 'dispose' on that object), so a part uploaded here
+// and evicted before the main scene ever drew it (a prefetched interior's T and
+// furniture, a detail level never reached) left its buffer on the GPU while the
+// scheduler counted it freed, behind one shared stand-in. release() disposes
+// the part's own stand-in, which frees exactly that part's buffers.
 
 export class GeometryUploader {
   private readonly scene = new Scene();
   private readonly renderer: WebGLRenderer;
   private readonly mesh = new Mesh();
-  private readonly instanced: InstancedMesh;
+  private readonly instanced = new WeakMap<InstancedMesh, InstancedMesh>();
   private readonly lines = new LineSegments();
 
   constructor(renderer: WebGLRenderer, fog: Fog) {
@@ -34,19 +42,25 @@ export class GeometryUploader {
     scene.add(hemisphere, sun);
     hemisphere.updateMatrixWorld();
     sun.updateMatrixWorld();
-    this.instanced = new InstancedMesh(undefined, undefined, 0);
-    for (const proxy of [this.mesh, this.instanced, this.lines]) {
-      proxy.frustumCulled = false;
-      proxy.matrixAutoUpdate = false;
-      proxy.visible = false;
-      scene.add(proxy);
-    }
+    for (const proxy of [this.mesh, this.lines]) this.addProxy(proxy);
+  }
+
+  private addProxy(proxy: Mesh | InstancedMesh | LineSegments) {
+    proxy.frustumCulled = false;
+    proxy.matrixAutoUpdate = false;
+    proxy.visible = false;
+    this.scene.add(proxy);
   }
 
   private standIn(object: DrawObject): Mesh | InstancedMesh | LineSegments {
     if ((object as InstancedMesh).isInstancedMesh) {
       const real = object as InstancedMesh;
-      const proxy = this.instanced;
+      let proxy = this.instanced.get(real);
+      if (!proxy) {
+        proxy = new InstancedMesh(undefined, undefined, 0);
+        this.addProxy(proxy);
+        this.instanced.set(real, proxy);
+      }
       proxy.geometry = real.geometry;
       proxy.material = real.material;
       proxy.instanceMatrix = real.instanceMatrix;
@@ -81,6 +95,21 @@ export class GeometryUploader {
       renderer.autoClear = autoClear;
       proxy.visible = false;
     }
+  }
+
+  /**
+   * An evicted part: an instanced one's instance buffers leave the GPU even if
+   * only its stand-in drew it (the main scene's draw, if any, is freed by the
+   * part's own dispose). Removing a buffer twice is harmless in three.
+   */
+  release(object: DrawObject): void {
+    if (!(object as InstancedMesh).isInstancedMesh) return;
+    const real = object as InstancedMesh;
+    const proxy = this.instanced.get(real);
+    if (!proxy) return;
+    proxy.instanceMatrix = real.instanceMatrix;
+    proxy.instanceColor = real.instanceColor;
+    proxy.dispose();
   }
 
   dispose(): void {

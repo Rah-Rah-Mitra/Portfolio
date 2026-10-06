@@ -10,7 +10,7 @@ import { polygonDistance } from '../lib/estate/storeys';
 import { decodeWalk, nearestWalkable, type WalkFile, type WalkPose } from '../lib/estate/walk';
 import { InteriorSystem, type FloorQuery } from '../components/workbench/estate/engine/interior';
 import {
-  LIFT_ARRIVAL_OUT, liftArrival, servedLevels, stairPaths, stairStart, type Arrival,
+  LIFT_ARRIVAL_OUT, liftArrival, servedLevels, stairChip, stairOffer, stairPaths, stairStart, type Arrival, type StairOfferState,
 } from '../components/workbench/estate/engine/lifts';
 import { WalkController, type WalkWorld } from '../components/workbench/estate/engine/controls/walk';
 
@@ -166,5 +166,56 @@ describe.skipIf(dir === null)('spawns, lift arrivals and stair ends on the real 
     });
     expect(bad).toEqual([]);
     expect(ends).toBeGreaterThan(500);
+  });
+
+  it('offers every stair core at both ends of its line, and never through a wall (§8.5, the P5 review)', () => {
+    // Both ends, as stairStart lands a walker there: the walking-distance gate keeps every real offer.
+    const missing: string[] = [];
+    const so: StairOfferState = { label: '', up: null, down: null, distance: 0 };
+    pack.sites.forEach((site, i) => {
+      const nav = navs[i];
+      const tags = nav.storeys.map((s) => s.tag);
+      stairPaths(nav).forEach((path, k) => {
+        if (!path) return;
+        const stair = nav.stairs[k];
+        for (const dir of ['up', 'down'] as const) {
+          const at: Arrival = { x: 0, y: 0, z: 0, layer: -1, heading: 0 };
+          const to = tags.indexOf(dir === 'up' ? stair.to : stair.storey);
+          if (!stairStart(nav, walks[i], { stair: k, dir, to }, at)) continue; // pinned by the test above
+          const offer = stairOffer(nav, at.layer, at.x, at.y, at.z, so, walks[i]);
+          const way = dir === 'up' ? offer?.up : offer?.down;
+          if (!way || way.to !== to) missing.push(`${site.id} ${stair.name} ${dir}: ${offer ? stairChip(offer.label, offer.up ? tags[offer.up.to] : null, offer.down ? tags[offer.down.to] : null) : 'no offer'}`);
+          // Never a way out to the storey underfoot.
+          if (offer && (offer.up?.to === at.layer || offer.down?.to === at.layer)) missing.push(`${site.id} ${stair.name} ${dir}: offers ${tags[at.layer]} on ${tags[at.layer]}`);
+        }
+      });
+    });
+    expect(missing).toEqual([]);
+    // Where the 3-D reach alone offered a stair behind a wall (estate frame), 4–30 m away on foot: nothing now.
+    const THROUGH_WALLS: ReadonlyArray<readonly [string, string, number, number]> = [
+      ['BLK_509', 'L5', 164.88, 51.35], // #05-110 Bedroom 2, beside stair 5
+      ['BLK_509', 'L5', 45.35, 52.8], // #05-101 Living / Dining, beside stair 1 ("▲ L5" on L5)
+      ['BLK_501', 'L2', 258.2, 339.5], // #02-105 Household Shelter
+      ['BLK_501', 'L1', 258.2, 340.3], // Residents' Committee centre
+      ['BLK_511', 'L2', 316.0, 180.6], // #02-109 Bedroom 2
+      ['BLK_512', 'L2', 254.2, 50.4], // #02-101 Bedroom 2
+      ['MSCP_513', 'L1', 179.4, 250.7], // motorcycle lot L1-M24
+      ['NC_514', 'L1', 152.5, 338.7], // M&E / refuse room
+      ['NC_514', 'L2', 148.7, 338.7], // shop unit #02-10
+    ];
+    const offered: string[] = [];
+    for (const [id, tag, x, y] of THROUGH_WALLS) {
+      const i = ESTATE_SITE_IDS.indexOf(id as (typeof ESTATE_SITE_IDS)[number]);
+      const site = pack.sites[i];
+      const s = navs[i].storeys.findIndex((st) => st.tag === tag);
+      const p = pose();
+      expect(nearestWalkable(walks[i], x - site.at[0], y - site.at[1], navs[i].storeys[s].ffl, 0.3, p), `${id} ${tag} (${x}, ${y}) stands on floor`).toBe(true);
+      expect(p.layer, `${id} ${tag} (${x}, ${y})`).toBe(s);
+      const offer = stairOffer(navs[i], s, p.x, p.y, p.z, so, walks[i]);
+      if (offer) offered.push(`${id} ${tag} (${x}, ${y}): ${offer.label}`);
+      // The 3-D reach alone still finds one there: the gate is what turns it away.
+      expect(stairOffer(navs[i], s, p.x, p.y, p.z, so, null), `${id} ${tag} (${x}, ${y}) is near a flight`).not.toBeNull();
+    }
+    expect(offered).toEqual([]);
   });
 });

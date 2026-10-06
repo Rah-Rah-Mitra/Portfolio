@@ -228,14 +228,25 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        is inside is held at F (lod `maxLevel`), and the interior's triangles and
        draws are booked as the reserve before any building. Furniture: full kits
        within the tier's radius, 12-triangle boxes beyond, band storeys only.
-       Walk grids (`lib/estate/walk.ts`, released on leaving the building), nav
+       Walk grids (`lib/estate/walk.ts`), nav
        files (`lib/estate/nav.ts`: rooms with `{S}`/`{SS}` templates expanded,
        lifts, doors, stairs, spawns) and the SN5G ground (`lib/estate/ground.ts`)
        live there too, with the Walk controls' queries: `floorQuery` (building
        grid inside its walk bounds less 0.5 m, else the ground), `locate`
-       (building, storey, flat, room), `entry` (ready / streaming / failed).
-       Pinned by `tests/estate-{interior,nav,ground}.test.ts` and the S4–S5 rows
-       of `tests/estate-budget.test.ts`.
+       (building, storey, flat, room), `entry` (ready / streaming / failed; a
+       failure's reason names what failed: interior, walkway map, or rooms,
+       stairs and lifts). Every walk grid the engine fetched stays decoded, so
+       `decodeWalk` keeps each stored raster run-length coded, never the unzipped
+       file (30.4 MB for the fourteen, 2.0 MB as runs, `cpuBytes()`), and only
+       the current building's and the walker's grids keep expanded storeys
+       (`releaseIdle` on either changing). Polygon tests run over flat
+       `Float64Array` rings (`storeys.ts flatRing`, cached by identity): fed three
+       nested-array shapes they went megamorphic and allocated every frame.
+       Accepted: above the band a stair well is an empty shaft (stairs live in
+       the interior file only), ≤ 0.3 % of a floor, pinned. Pinned by
+       `tests/estate-{interior,nav,ground}.test.ts` (with the engine's own T
+       placement compared with F triangle by triangle, and the band's ceiling)
+       and the S4–S5 rows of `tests/estate-budget.test.ts`.
      - `engine/controls/`: Overview (camera-controls with its own wheel handler
        off; the stage's non-passive wheel dollies at the cursor, so the sheet
        never scrolls; A/D and Shift+arrows pan), Fly (WASD, E/Space up, Q/C
@@ -268,7 +279,13 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        Esc or 1 is the 1.0 s reverse arc. Stairs climb for real, or PgUp/PgDn and
        the stair chip follow the nav file's walking line at 2.0 m/s
        (`lib/estate/climb.ts`; held keys chain storeys; a movement key, drag,
-       wheel, step or stick stops it there; Esc lands it at the nearer end).
+       wheel, step or stick stops it there; Esc lands it at the nearer end). The
+       chip needs the line within 1.5 m (3-D) **and** within 2.5 m on foot over
+       the walk grid (`walk.ts walkReaches`), and never offers the storey
+       underfoot: the 3-D reach alone offered stairs in flats and plant rooms
+       beside a core and glided the walker through the wall. An axis slide in
+       `moveWithCollision` counts only where that axis carries real motion, or a
+       heading's float noise (cos(π/2) = 6e-17) skipped the doorway nudge.
        Lifts: within 1.5 m of a landing `view.walk.lift` offers the served
        levels; a ride is a 250 ms fade to paper and back (the engine's own
        `[data-estate-fade]` layer between canvas and HUD), landing 1.2 m out of
@@ -297,10 +314,15 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        streaming line and lean mode's "Load full detail". Walk (P5) adds Exit,
        the storey strip on the right (`view.walk.levels` top down, 'RF +45.60 …
        L1 ±0.00'; each button calls `setStorey`, the storey underfoot is
-       `aria-current` and disabled, an unreachable one disabled with its reason
-       in its name), the stair chip with ▲ / ▼ (`takeStairs`), the lift chip and
+       `aria-current`, disabled and scrolled into view, an unreachable one
+       `aria-disabled` but focusable, with its reason in its name and spoken when
+       pressed; the strip's top is measured under the top-right row, which wraps
+       at 881 px), the stair chip with ▲ / ▼ (`takeStairs`), the lift chip and
        its level panel (`view.popover === 'lift'`, an Esc layer the engine closes
-       itself when the offer goes; `takeLift`, the storey underfoot disabled),
+       itself when the offer goes; `takeLift`, the storey underfoot disabled;
+       opened by Enter on the stage, focus moves onto the nearest level and
+       "Lift n: choose a level" is said, and closing hands focus back to the
+       stage), walking outdoors the selection's Enter (registry row too),
        the ride caption over the engine's paper fade, "Preparing walkway…",
        "Streaming interior…" / the failed interior's reason (`view.interior`),
        a notice chip for 5 s after any spoken refusal ("No lift or stair reaches
@@ -338,7 +360,14 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   Vercel checkout until the pack is committed) and on a dev catalogue under
   CI/Vercel; `npm run estate:check` fails on both everywhere; and
   `scripts/check-bundle.mjs` (the build) fails when a catalogue URL is missing
-  from `dist/`, and on a dev catalogue on Vercel or CI.
+  from `dist/`, and on a dev catalogue on Vercel or CI. A committed pack must
+  also carry every class this engine reads (`SHIPPED_CLASSES` in
+  `scripts/estate/check.mjs`: poster, s0, f, d, i, w, nav, ground, and each site's
+  interior, walk and nav file), checked by estate:check and
+  `tests/estate-pack.test.ts`: the P5 real-data suites skip without them, so
+  the gate is what fails. The engine pins are a tripwire at measured + 5 %
+  (942,000 / 265,000 B after P5); the plan's 950,000 / 307,200 B are the hard
+  ceiling P6 must fit under.
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
   `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
   a focused HUD button, and the touch stick), the Estate cases in

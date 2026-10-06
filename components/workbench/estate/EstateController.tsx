@@ -526,6 +526,12 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
       event.preventDefault();
       event.stopPropagation();
       if (decision.action !== 'none') instance.escape(decision.action);
+      // A registry row's Enter leaves with the selection Esc just cleared: focus
+      // goes to that row's own button, never to the page (whose next Esc would
+      // be the workbench's).
+      if (decision.action === 'clear-selection' && target?.matches?.('[data-estate-row-action]')) {
+        target.parentElement?.querySelector<HTMLElement>('[data-estate-site]')?.focus({ preventScroll: true });
+      }
     };
     section.addEventListener('pointerdown', raise);
     section.addEventListener('focusin', raise);
@@ -578,14 +584,15 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   );
 
   // The registry's mirror of the HUD's Enter and Exit (§8.6): Exit on the row of
-  // the building Walk stands in, else Enter on the selected row, labelled with
-  // what entering downloads (pack.json's sizes, so only once the engine has it).
+  // the building Walk stands in, else Enter on the selected row (outdoors in
+  // Walk too), labelled with what entering downloads (pack.json's sizes, so
+  // only once the engine has it).
   const canEnter = phase === 'live' && engine?.features.enter === true;
   let rowSite: EstateSiteId | null = null;
   let rowKind: EstateModelRowAction['kind'] = 'enter';
   let rowLabel = '';
-  if (canEnter && walkSite !== undefined) {
-    if (walkSite) { rowSite = walkSite; rowKind = 'exit'; rowLabel = `Exit ${siteShortName(walkSite)}`; }
+  if (canEnter && walkSite) {
+    rowSite = walkSite; rowKind = 'exit'; rowLabel = `Exit ${siteShortName(walkSite)}`;
   } else if (canEnter && selected && engine) {
     const files = engine.siteFiles(selected);
     rowSite = selected;

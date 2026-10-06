@@ -1,7 +1,8 @@
-import { projectOntoPath, stairPath, type PathProjection, type StairPath } from '../../../../lib/estate/climb';
+import { pointAt, projectOntoPath, stairPath, type PathProjection, type StairPath } from '../../../../lib/estate/climb';
+import type { Vec3 } from '../../../../lib/estate/frames';
 import type { EstateStoreyTag } from '../../../../lib/estate/ids';
 import { liftNear, type EstateNav, type LiftNear, type NavLift, type NavStair } from '../../../../lib/estate/nav';
-import { nearestWalkable, type WalkFile, type WalkPose } from '../../../../lib/estate/walk';
+import { nearestWalkable, walkReaches, type WalkFile, type WalkPose } from '../../../../lib/estate/walk';
 
 // Stairs and lifts in Walk (plan §8.5): what the walker is offered where it
 // stands, where a lift ride lands, and how the storey strip routes to a level.
@@ -20,7 +21,12 @@ import { nearestWalkable, type WalkFile, type WalkPose } from '../../../../lib/e
 // Stairs: within STAIR_REACH of a stair's walking line (3-D, so the flights
 // stacked over each other are told apart by the feet height) the chip offers
 // the storey above and below through that core; Take stairs follows the line
-// (lib/estate/climb.ts).
+// (lib/estate/climb.ts). The 3-D reach alone passes through walls: a bedroom
+// beside a stair core is within 1.5 m of its flight, and Take stairs glided the
+// walker through the wall onto it (8–19 % of the cells that offered a stair, on
+// every site). So the walk grid has the last word: the nearest point of the
+// line must be within STAIR_WALK_REACH on foot (walk.ts walkReaches), and a way
+// out that ends on the storey underfoot is never offered.
 //
 // The strip: Dijkstra over the storeys, a lift ride costing LIFT_COST and each
 // stair flight STAIR_COST, so a level the lifts serve is one ride and one they
@@ -37,6 +43,8 @@ export const LIFT_ARRIVAL_OUT = 1.2;
 export const LIFT_SNAP = 1.5;
 /** The stair chip is offered within this of a stair's walking line, m (3-D). */
 export const STAIR_REACH = 1.5;
+/** …and its nearest point within this on foot, over the walk grid, m (walk.ts walkReaches). */
+export const STAIR_WALK_REACH = 2.5;
 /** Within this of a line's end (m of progress) the walker is at that landing, not on the flight. */
 export const STAIR_END_REACH = 1.0;
 /** A routed stair leg starting farther than this from its line fades to the line's start first, m. */
@@ -135,15 +143,37 @@ export interface StairOfferState {
 
 const PROJ: PathProjection = { s: 0, distance: 0 };
 const P3 = [0, 0, 0];
+const ON_LINE: Vec3 = [0, 0, 0];
+const FEET: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
+
+/** Can the walker at block-local (x, y, feetZ) walk onto `path` at progress `s` within `reach` m? Without a grid (nav alone), yes. */
+const onFoot = (walk: WalkFile | null, path: StairPath, s: number, x: number, y: number, feetZ: number, reach: number): boolean => {
+  if (!walk) return true;
+  pointAt(path, s, ON_LINE);
+  FEET.x = x; FEET.y = y; FEET.z = feetZ; FEET.layer = -1;
+  return walkReaches(walk, FEET, ON_LINE[0], ON_LINE[1], ON_LINE[2], reach);
+};
+
+/** Can the walker at block-local (x, y, feetZ) walk to the near end of `choice`'s line within `reach` m? True without a grid. */
+export const stairStartOnFoot = (
+  nav: EstateNav, walk: WalkFile | null, choice: StairChoice, x: number, y: number, feetZ: number, reach: number,
+): boolean => {
+  const path = stairPaths(nav)[choice.stair];
+  if (!path) return false;
+  return onFoot(walk, path, choice.dir === 'up' ? 0 : path.length, x, y, feetZ, reach);
+};
 
 /**
  * The stair core the walker at block-local (x, y, feetZ) on storey `storey` is
- * in, if any line touching that storey passes within `reach` (3-D): ▲ continues
- * up through that core, ▼ down. At a landing the core's flights above and below
- * are both offered; on a flight, its own two ends. Fills `out`, or returns null.
+ * in, if any line touching that storey passes within `reach` (3-D) and, given
+ * the walk grid, its nearest point is within STAIR_WALK_REACH on foot: ▲
+ * continues up through that core, ▼ down. At a landing the core's flights above
+ * and below are both offered; on a flight, its own two ends; never a way that
+ * ends on `storey` itself. Fills `out`, or returns null.
  */
 export const stairOffer = (
-  nav: EstateNav, storey: number, x: number, y: number, feetZ: number, out: StairOfferState, reach = STAIR_REACH,
+  nav: EstateNav, storey: number, x: number, y: number, feetZ: number, out: StairOfferState,
+  walk: WalkFile | null = null, reach = STAIR_REACH,
 ): StairOfferState | null => {
   const paths = stairPaths(nav);
   const tag = nav.storeys[storey]?.tag;
@@ -161,7 +191,10 @@ export const stairOffer = (
     // the walker may be standing on, or about to walk down).
     if (s.storey !== tag && !(below !== null && s.storey === below && s.to === tag)) continue;
     projectOntoPath(path, P3, PROJ);
-    if (PROJ.distance <= best) { best = PROJ.distance; found = i; bestS = PROJ.s; }
+    if (PROJ.distance > best) continue;
+    // Behind a wall it is not on offer, however near.
+    if (!onFoot(walk, path, PROJ.s, x, y, feetZ, STAIR_WALK_REACH)) continue;
+    best = PROJ.distance; found = i; bestS = PROJ.s;
   }
   if (found < 0) return null;
   const s = nav.stairs[found];
@@ -190,6 +223,10 @@ export const stairOffer = (
     up = { stair: found, dir: 'up', to: b };
     down = { stair: found, dir: 'down', to: a };
   }
+  // "▲ L5" on L5 is no way out: that end of the flight underfoot is this storey.
+  if (up && up.to === storey) up = null;
+  if (down && down.to === storey) down = null;
+  if (!up && !down) return null;
   out.label = stairLabel(s);
   out.up = up;
   out.down = down;

@@ -252,13 +252,22 @@ the FX "Pause all motion").
   - **Walk offers what is where the walker stands**, as chips: a stair chip
     with ▲ / ▼ buttons, a lift chip that opens a level panel (the storey
     underfoot listed and disabled), the storey strip down the right edge
-    ('RF +45.60 … L1 ±0.00', from the data) whose unreachable storeys are
-    disabled and say why, "Preparing walkway…" and "Streaming interior…" while
-    files arrive. A lift ride is a 250 ms fade to the paper ground with its
-    caption over it. Enter and Exit appear twice — on the HUD and under the
-    building's registry row — and Enter's label says what it downloads. The
-    touch stick is a 96px square pad, square-cornered like every control, shown
-    only once the stage has seen a finger (or the pointer is coarse);
+    ('RF +45.60 … L1 ±0.00', from the data, 24px rows) whose unreachable storeys
+    stay focusable with a dashed border, dimmed words and their reason, and
+    "Preparing walkway…" and "Streaming interior…" while files arrive. A lift
+    ride is a 250 ms fade to the paper ground with its caption over it. Enter
+    and Exit appear twice — on the HUD and under the building's registry row —
+    and Enter's label says what it downloads. The touch stick is a 96px square
+    pad, square-cornered like every control, shown only once the stage has seen
+    a finger (or the pointer is coarse);
+  - **inside a building, its own exterior is held at the façade level**, so
+    its window frames and outline lines drop out while you are in it (or
+    peeking through a notch at its other wing), and the opened storeys read as
+    an unlined strip; looking straight up a stair well above the walk band
+    shows an empty shaft. Both are accepted for P5 (the band, not the lines, is
+    what the interior is about); a faint dotted line along some flat window
+    heads is a coplanar sliver in the interior geometry, left for the release
+    pack;
   - **one palette:** every 3D material role maps onto the design tokens
     (walls `--color-neutral-100`, slabs and paving `--color-neutral-300`, doors
     `--color-neutral-500`, asphalt `--color-neutral-700`, grass and foliage

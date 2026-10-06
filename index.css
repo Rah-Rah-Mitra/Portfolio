@@ -1144,23 +1144,33 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 .wb-estate-steps[data-mode='walk'] { grid-template-rows: repeat(2, 28px); grid-template-areas: '. pu . . a1 b1' 'pl pd pr . a2 b2'; }
 /* Walk's storey strip, right, top down from RF to L1, bottom-aligned (the
    first row's auto margin, which still lets an overflowing strip scroll to
-   RF); the steps move in beside it. */
+   RF); the steps move in beside it. Its top is under the top-right controls
+   however they wrap (--estate-strip-top, measured by the HUD); the storey
+   underfoot is scrolled into view. 24 px rows (WCAG 2.2 target size), and 5 px
+   of padding so the focus ring and its paper halo are not clipped by the
+   scroller (overflow-y: auto clips x as well). */
 .wb-estate-strip {
-  position: absolute; right: 10px; top: 84px; bottom: 40px; display: flex; flex-direction: column; gap: 2px;
+  position: absolute; right: 5px; top: var(--estate-strip-top, 84px); bottom: 35px; display: flex; flex-direction: column; gap: 2px;
+  padding: 5px; scroll-padding: 5px 0;
   overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; pointer-events: auto;
 }
 .wb-estate-strip > :first-child { margin-top: auto; }
 .wb-estate-strip-btn {
-  flex: none; display: grid; grid-template-columns: 26px auto; align-items: center; gap: 4px; min-width: 76px; height: 20px; padding: 0 6px;
+  flex: none; display: grid; grid-template-columns: 26px auto; align-items: center; gap: 4px; min-width: 76px; height: 24px; padding: 0 6px;
   border: 1px solid var(--color-divider); border-radius: 0; background: var(--paper-55); color: var(--color-text); cursor: pointer;
   font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; line-height: 1; letter-spacing: 0.06em; text-align: left;
 }
-.wb-estate-strip-btn:hover:not(:disabled) { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-estate-strip-btn:hover:not(:disabled):not([aria-disabled='true']) { background: var(--color-accent-100); border-color: var(--color-accent-700); }
 .wb-estate-strip-ffl { font-family: var(--font-body); font-weight: 400; font-size: 10px; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
 .wb-estate-strip-btn[aria-current] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); cursor: default; }
 .wb-estate-strip-btn:disabled:not([aria-current]) { opacity: 0.45; cursor: not-allowed; }
-.wb-estate-hud[data-strip] .wb-estate-steps { right: 96px; }
-.wb-estate-hud[data-strip] .wb-estate-hud-bottom { max-width: calc(100% - 276px); }
+/* A storey nothing reaches is aria-disabled, not disabled: still in the tab
+   order, so its reason can be heard. Only its words dim, so a focus ring on it
+   stays at full strength. */
+.wb-estate-strip-btn[aria-disabled='true'] { cursor: not-allowed; border-style: dashed; }
+.wb-estate-strip-btn[aria-disabled='true'] > span { opacity: 0.45; }
+.wb-estate-hud[data-strip] .wb-estate-steps { right: 106px; }
+.wb-estate-hud[data-strip] .wb-estate-hud-bottom { max-width: calc(100% - 286px); }
 /* The lift's level panel, under its chip in the bottom column. */
 .wb-estate-lift { width: 214px; max-height: 210px; }
 .wb-estate-lift-levels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }

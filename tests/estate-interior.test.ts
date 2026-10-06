@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import type { InstancedBufferAttribute, InstancedMesh } from 'three';
+import { Matrix4, Vector3, type BufferGeometry, type InstancedBufferAttribute, type InstancedMesh, type Mesh, type Object3D } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { decodeGround } from '../lib/estate/ground';
 import { ESTATE_SITE_IDS, type EstateSiteId } from '../lib/estate/ids';
@@ -21,7 +21,7 @@ import { Streaming, type DecodedFile } from '../components/workbench/estate/engi
 import { EstateScheduler } from '../lib/estate/scheduler';
 import { createMaterialKit } from '../components/workbench/estate/engine/materials';
 import { createPalette } from '../components/workbench/estate/engine/palette';
-import { interiorParts, STOREY_ATTRIBUTE, type InteriorParts } from '../components/workbench/estate/engine/parts';
+import { facadeParts, interiorParts, STOREY_ATTRIBUTE, type InteriorParts } from '../components/workbench/estate/engine/parts';
 import { EstateScene } from '../components/workbench/estate/engine/scene';
 
 // The interior side of plan §7.5 on the real pack (public/estate/v1.2; skipped
@@ -265,7 +265,10 @@ describe.skipIf(!hasInteriors)('interiors on the pack in public/estate/v1.2', ()
     const { scene, system } = await setup();
     let released = 0;
     const walk = walks.get(B509)!;
-    system.addWalk('BLK_509', { ...walk, header: walk.header, layers: walk.layers, grid: (i: number) => walk.grid(i), residentLayers: () => walk.residentLayers(), decodeCount: 0, release: () => { released += 1; } });
+    system.addWalk('BLK_509', {
+      ...walk, header: walk.header, layers: walk.layers, grid: (i: number) => walk.grid(i), residentLayers: () => walk.residentLayers(),
+      decodeCount: 0, release: () => { released += 1; }, cpuBytes: () => walk.cpuBytes(),
+    });
     system.update(frame(corridorL5()));
     expect(system.getStatus().active).toBe(true);
     system.update(frame([200, 200, 120]));
@@ -274,6 +277,41 @@ describe.skipIf(!hasInteriors)('interiors on the pack in public/estate/v1.2', ()
     expect(scene.buildings[B509].storey.uStoreyMask.value.toArray()).toEqual([MASK_OFF.lo, MASK_OFF.hi]);
     expect(scene.buildings[B509].interior.visible).toBe(false);
     expect([system.reserveTris, system.insideIndex, system.currentIndex]).toEqual([0, -1, -1]);
+  });
+
+  it('holds every walk grid run-length coded, and decoded storeys only for the building walked (the P5 review)', async () => {
+    // All fourteen files unzip to 30.4 MB; kept whole for the engine's life,
+    // that was 30 MB of CPU memory after a tour. Their runs: ~2.0 MB.
+    const { system } = await setup({ attach: false });
+    let unzipped = 0;
+    pack.sites.forEach((site, i) => {
+      const raw = read(site.walk!.path);
+      unzipped += raw.byteLength;
+      system.addWalk(i, decodeWalk(raw, site.id));
+    });
+    expect(unzipped).toBeGreaterThan(25e6);
+    const coded = system.walkBytes();
+    expect(coded).toBeLessThan(2.4e6);
+    // Visit each building: stand on its L1 grid as the walker (the hint), and query every storey.
+    const q: FloorQuery = { kind: 'none', z: Number.NaN, site: null, layer: -1 };
+    pack.sites.forEach((site, i) => {
+      const g = site.walk!.grid;
+      const x = site.at[0] + g.origin[0] + (g.nx * g.cell) / 2;
+      const y = site.at[1] + g.origin[1] + (g.ny * g.cell) / 2;
+      system.setStoreyHint(i, 0);
+      system.update(frame([x, y, 1.6]));
+      for (const s of site.storeys) system.floorQuery(x, y, s.ffl, q);
+    });
+    // Only the last building visited still holds decoded storeys (≤ WALK_LRU of them).
+    const held = pack.sites.map((_, i) => system.walk(i)!.residentLayers().length);
+    expect(held.slice(0, -1).every((n) => n === 0), held.join(' ')).toBe(true);
+    const last = system.walk(pack.sites.length - 1)!;
+    const g = last.header;
+    expect(system.walkBytes() - coded).toBeLessThanOrEqual(6 * g.nx * g.ny * 2);
+    // Leaving it releases that too.
+    system.setStoreyHint(null);
+    system.update(frame([200, 200, 300]));
+    expect(system.walkBytes()).toBe(coded);
   });
 
   // ---- furniture -------------------------------------------------------------------------
@@ -403,7 +441,7 @@ describe.skipIf(!hasInteriors)('streaming the interior classes (engine/streaming
     const pack = packOf();
     let now = 0;
     const decoded: DecodedFile[] = [];
-    const blocked: Array<{ site: string; message: string }> = [];
+    const blocked: Array<{ site: string; message: string; klass: string }> = [];
     const scheduler = new EstateScheduler({ tier: 'high' });
     const fetchImpl = (async (input: RequestInfo | URL) => {
       const path = String(input).replace(/^\/estate\/v1\.2\//, '');
@@ -424,7 +462,7 @@ describe.skipIf(!hasInteriors)('streaming the interior classes (engine/streaming
         fatal: (message) => { throw new Error(message); },
         stale: (url) => { throw new Error(`stale ${url}`); },
         progress: () => undefined,
-        entryBlocked: (site, message) => blocked.push({ site, message }),
+        entryBlocked: (site, message, klass) => blocked.push({ site, message, klass }),
       },
     });
     pump();
@@ -463,12 +501,189 @@ describe.skipIf(!hasInteriors)('streaming the interior classes (engine/streaming
     expect(interiorCalls).toBe(3);
     expect(failing.scheduler.isFailed(failing.ids[0])).toBe(true);
     expect(failing.scheduler.entryBlocked('BLK_509')).toBe(true);
-    expect(failing.blocked).toEqual([{ site: 'BLK_509', message: expect.stringMatching(/HTTP 500/) }]);
+    expect(failing.blocked).toEqual([{ site: 'BLK_509', message: expect.stringMatching(/HTTP 500/), klass: 'i' }]);
     // A GLB where the walk grid belongs: decoded as a failure ("expected sn5w"), retried, then blocked.
     const pack = packOf();
     const glb = readFileSync(join(packDir, ...pack.sites[B509].interior!.path.split('/')));
     const wrong = await run((path) => (path.startsWith('w/BLK_509.') ? new Response(glb) : null));
     expect(wrong.scheduler.isFailed(wrong.ids[1])).toBe(true);
-    expect(wrong.blocked).toEqual([{ site: 'BLK_509', message: expect.stringMatching(/expected sn5w, got gltf/) }]);
+    expect(wrong.blocked).toEqual([{ site: 'BLK_509', message: expect.stringMatching(/expected sn5w, got gltf/), klass: 'w' }]);
+    // The reason names what failed: a walk grid is not "its interior" (the P5 review).
+    const system = new InteriorSystem(pack, new StubScheduler());
+    system.markFailed('BLK_509', 'expected sn5w', 'w');
+    system.markFailed('NC_514', 'HTTP 500', 'nav');
+    system.markFailed('MSCP_513', 'HTTP 500', 'i');
+    const entry: InteriorEntry = { state: 'absent', reason: null };
+    expect(system.entry('BLK_509', entry).reason).toBe('Blk 509 cannot be entered: its walkway map did not download. Reload the page to try again.');
+    expect(system.entry('NC_514', entry).reason).toMatch(/: its rooms, stairs and lifts did not download\./);
+    expect(system.entry('MSCP_513', entry).reason).toMatch(/: its interior did not download\./);
   }, 30_000);
+});
+
+describe.skipIf(!hasInteriors)('the repeated storeys against the facade, as the engine places them (the P5 review)', () => {
+  // Both files decoded with the engine's loader and parts, T placed by the
+  // engine's own applyBand + writeTypical, then compared with F triangle by
+  // triangle (reviewer 4206's ceil.ts, kept): a datum or slab-depth slip in
+  // writeTypical or parts.ts smaller than the 0.5 m the placement test above
+  // allows would still put a storey's walls on another storey's facade. Also
+  // pins the ceiling over the band's top storey (F's slab of S + k + 1 plus
+  // the interior's own), whose only gaps are the stair wells above the band.
+  interface Tri { p: Float64Array; storey: number; ny: number }
+  const A = new Vector3(); const B = new Vector3(); const C = new Vector3(); const E1 = new Vector3(); const E2 = new Vector3();
+  const trianglesOf = (geometry: BufferGeometry, matrix: Matrix4, storeyOf: (metaZ: number) => number, out: Tri[]) => {
+    const pos = geometry.getAttribute('position');
+    const meta = geometry.getAttribute('_meta');
+    const index = geometry.index;
+    const n = index ? index.count : pos.count;
+    for (let t = 0; t + 2 < n; t += 3) {
+      const ia = index ? index.getX(t) : t; const ib = index ? index.getX(t + 1) : t + 1; const ic = index ? index.getX(t + 2) : t + 2;
+      A.fromBufferAttribute(pos as never, ia).applyMatrix4(matrix);
+      B.fromBufferAttribute(pos as never, ib).applyMatrix4(matrix);
+      C.fromBufferAttribute(pos as never, ic).applyMatrix4(matrix);
+      E1.subVectors(B, A).cross(E2.subVectors(C, A));
+      const len = E1.length();
+      if (len < 1e-9) continue;
+      out.push({ p: Float64Array.of(A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z), storey: storeyOf(meta ? meta.getZ(ia) : 0), ny: E1.y / len });
+    }
+  };
+  const meshesUnder = (node: Object3D): Mesh[] => {
+    const out: Mesh[] = [];
+    node.traverse((o) => { if ((o as Mesh).isMesh && !(o as InstancedMesh).isInstancedMesh) out.push(o as Mesh); });
+    return out;
+  };
+  // A triangle's plan (glTF x, z) sampled at 0.25 m cell centres: cb(cell key, height).
+  const CELL = 0.25;
+  const raster = (t: Tri, cb: (key: number, y: number) => void) => {
+    const p = t.p;
+    const ax = p[0], az = p[2], bx = p[3], bz = p[5], cx = p[6], cz = p[8];
+    const d = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+    if (Math.abs(d) < 1e-12) return;
+    const x1 = Math.max(ax, bx, cx), z1 = Math.max(az, bz, cz);
+    for (let ix = Math.ceil(Math.min(ax, bx, cx) / CELL - 0.5); (ix + 0.5) * CELL <= x1; ix += 1) {
+      const x = (ix + 0.5) * CELL;
+      for (let iz = Math.ceil(Math.min(az, bz, cz) / CELL - 0.5); (iz + 0.5) * CELL <= z1; iz += 1) {
+        const z = (iz + 0.5) * CELL;
+        const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / d;
+        const l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / d;
+        const l3 = 1 - l1 - l2;
+        if (l1 < -1e-9 || l2 < -1e-9 || l3 < -1e-9) continue;
+        cb((ix + 4000) * 10000 + (iz + 4000), l1 * p[1] + l2 * p[4] + l3 * p[7]);
+      }
+    }
+  };
+
+  it('puts every facade triangle an interior triangle repeats on that same storey, and keeps the band’s ceiling whole but for stair wells', async () => {
+    const pack = parsePack(JSON.parse(readFileSync(join(packDir, packFile as string), 'utf8')));
+    const loader = createGlbLoader();
+    const load = async (path: string) => {
+      const p = await readPayload(new Uint8Array(readFileSync(join(packDir, path))), path);
+      const g = await parseGlb(loader, p.bytes);
+      g.scene.updateMatrixWorld(true);
+      return g.scene;
+    };
+    const misplaced: string[] = [];
+    const gaps: string[] = [];
+    let buildings = 0;
+    let worstGap = 0;
+    for (const site of pack.sites) {
+      if (!site.facade || !site.interior) continue;
+      buildings += 1;
+      const ffl = site.storeys.map((s) => s.ffl);
+      const n = ffl.length;
+      const F: Tri[] = [];
+      for (const part of facadeParts(await load(site.facade.path)).meshes) {
+        const m = part.object as Mesh;
+        trianglesOf(m.geometry, m.matrixWorld, (z) => z, F);
+      }
+      const ip = interiorParts(await load(site.interior.path), site.storeys);
+      const I: Tri[] = [];
+      if (ip.typical) {
+        // The engine's own placement: applyBand's instances through writeTypical, one storey at a time.
+        const table = storeyTable(site.storeys);
+        const band = createBandState();
+        const placed = new Matrix4();
+        for (let k = 0; k < ip.typical.meshes.length; k += 1) {
+          const mesh = ip.typical.meshes[k].object as InstancedMesh;
+          for (let s = 0; s < n; s += 1) {
+            if (site.storeys[s].geom !== 'typical') continue;
+            applyBand(band, table, s, 1);
+            writeTypical(mesh, ip.typical.base[k], band);
+            const j = Array.from(band.typicalStorey.subarray(0, band.typicalCount)).indexOf(s);
+            expect(j, `${site.id} ${site.storeys[s].tag} has a T instance`).toBeGreaterThanOrEqual(0);
+            placed.fromArray(mesh.instanceMatrix.array as Float32Array, 16 * j);
+            trianglesOf(mesh.geometry, placed, () => s, I);
+          }
+        }
+      }
+      if (ip.residual) for (const m of meshesUnder(ip.residual.node)) trianglesOf(m.geometry, m.matrixWorld, (z) => z, I);
+      for (const sp of ip.specials) for (const m of meshesUnder(sp.node)) trianglesOf(m.geometry, m.matrixWorld, () => sp.storey, I);
+
+      // 1. Placement: a facade triangle whose centroid an interior triangle repeats (±1 cm) does so on its own storey.
+      const centroid = (t: Tri, a: number) => Math.round(((t.p[a] + t.p[a + 3] + t.p[a + 6]) / 3) * 100);
+      const iStoreys = new Map<string, number[]>();
+      for (const t of I) {
+        const key = `${centroid(t, 0)},${centroid(t, 1)},${centroid(t, 2)}`;
+        const list = iStoreys.get(key);
+        if (list) list.push(t.storey); else iStoreys.set(key, [t.storey]);
+      }
+      let other = 0;
+      let example = '';
+      for (const t of F) {
+        const cx = centroid(t, 0), cy = centroid(t, 1), cz = centroid(t, 2);
+        let found: number[] | undefined;
+        for (let dx = -1; dx <= 1 && !found; dx += 1) {
+          for (let dy = -1; dy <= 1 && !found; dy += 1) {
+            for (let dz = -1; dz <= 1 && !found; dz += 1) found = iStoreys.get(`${cx + dx},${cy + dy},${cz + dz}`);
+          }
+        }
+        if (found && !found.includes(t.storey)) {
+          other += 1;
+          if (!example) example = `F ${site.storeys[t.storey]?.tag} repeated by I ${found.map((s) => site.storeys[s]?.tag).join('/')} at y ${(cy / 100).toFixed(2)}`;
+        }
+      }
+      if (other) misplaced.push(`${site.id}: ${other} facade triangles on another storey's interior, e.g. ${example}`);
+
+      // 2. The ceiling over the band's top storey s, at k = 1 and 2: every floor cell of s that the
+      // building roofs at all is roofed by what that band draws (the interior inside it, F outside it).
+      const floorCells: Set<number>[] = Array.from({ length: n }, () => new Set());
+      for (const t of I) {
+        if (t.ny < 0.7) continue;
+        raster(t, (key, y) => { if (y > ffl[t.storey] - 0.35 && y < ffl[t.storey] + 0.35) floorCells[t.storey].add(key); });
+      }
+      // Each down-facing sample belongs to at most one storey's ceiling range (FFL + 1.9 … next FFL + 0.3).
+      const ceilI: Map<number, number[]>[] = Array.from({ length: n }, () => new Map());
+      const ceilF: Map<number, number[]>[] = Array.from({ length: n }, () => new Map());
+      const sample = (into: Map<number, number[]>[]) => (t: Tri) => {
+        if (t.ny > -0.7) return;
+        raster(t, (key, y) => {
+          for (let s = 1; s < n - 1; s += 1) {
+            if (y > ffl[s] + 1.9 && y < ffl[s + 1] + 0.3) {
+              const list = into[s].get(key);
+              if (list) list.push(t.storey); else into[s].set(key, [t.storey]);
+              return;
+            }
+          }
+        });
+      };
+      I.forEach(sample(ceilI));
+      F.forEach(sample(ceilF));
+      for (let s = 1; s < n - 1; s += 1) {
+        const roofed = [...floorCells[s]].filter((c) => ceilI[s].has(c));
+        if (roofed.length === 0) continue;
+        for (const k of [1, 2]) {
+          const lo = Math.max(0, s - k);
+          const holes = roofed.filter((c) => !(ceilI[s].get(c)!.some((st) => st >= lo && st <= s)
+            || (ceilF[s].get(c) ?? []).some((st) => st < lo || st > s))).length;
+          const pct = (100 * holes) / roofed.length;
+          worstGap = Math.max(worstGap, pct);
+          if (pct > 0.3) gaps.push(`${site.id} ${site.storeys[s].tag} k=${k}: ${pct.toFixed(2)} % of the floor has no ceiling`);
+        }
+      }
+    }
+    expect(buildings).toBe(14);
+    expect(misplaced).toEqual([]);
+    // Stair wells above the band (stair geometry lives in the interior file only): 0.04–0.29 % today.
+    expect(gaps).toEqual([]);
+    expect(worstGap).toBeGreaterThan(0);
+  }, 120_000);
 });

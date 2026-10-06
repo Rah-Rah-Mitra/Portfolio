@@ -174,6 +174,8 @@ export class EstateCore {
   };
   private readonly interiorFrame = { now: 0, eye: this.eye, tier: 'mid' as EstateTier, furnitureRadius: 0 };
   private readonly partsOf = (id: string): readonly Part[] | null => this.streaming?.partsOf(id) ?? null;
+  /** An evicted part's stand-in lets go of its GPU buffers too (upload.ts release). */
+  private readonly releasePart = (object: Part['object']): void => this.uploader?.release(object);
   private readonly stats: FrameStats = {
     draws: 0, tris: 0, programs: 0, frameMs: 0, tier: 'mid', pixelRatio: 1, band: null, gpuBytes: 0,
   };
@@ -244,7 +246,7 @@ export class EstateCore {
         fatal: (message) => this.fail(new Error(message)),
         stale: (staleUrl) => this.stale(staleUrl),
         progress: () => this.progress(),
-        entryBlocked: (site, message) => this.interiors?.markFailed(site, message),
+        entryBlocked: (site, message, klass) => this.interiors?.markFailed(site, message, klass),
       },
     });
     // Stage 0 only until the first frame plans the rest (frozen keeps P0 and P1;
@@ -474,7 +476,7 @@ export class EstateCore {
     let uploaded = false;
     const ticket = scheduler.takeUpload(now);
     if (ticket) {
-      if (ticket.evict.length) scene.evict(ticket.evict, this.partsOf);
+      if (ticket.evict.length) scene.evict(ticket.evict, this.partsOf, this.releasePart);
       const part: Part | undefined = streaming.partsOf(ticket.id)?.[ticket.part];
       if (part) {
         uploader.upload(part.object, camera);
@@ -483,7 +485,7 @@ export class EstateCore {
         if (part.role === 'trees') scene.invalidateTrees();
       }
     }
-    scene.evict(scheduler.evict(now), this.partsOf);
+    scene.evict(scheduler.evict(now), this.partsOf, this.releasePart);
 
     // What is in view, near/far trees, and what the site costs.
     this.projScreen.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);

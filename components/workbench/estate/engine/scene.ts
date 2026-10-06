@@ -484,7 +484,7 @@ export class EstateScene {
   }
 
   /** The scheduler freed these (§7.7): their GPU buffers go, the CPU copies stay for a re-upload. */
-  evict(evictions: readonly Eviction[], partsOf: (id: string) => readonly Part[] | null): boolean {
+  evict(evictions: readonly Eviction[], partsOf: (id: string) => readonly Part[] | null, release?: (object: Part['object']) => void): boolean {
     let trees = false;
     for (let i = 0; i < evictions.length; i += 1) {
       const e = evictions[i];
@@ -498,6 +498,8 @@ export class EstateScene {
         p.object.visible = false;
         p.object.geometry.dispose();
         if ((p.object as InstancedMesh).isInstancedMesh) (p.object as InstancedMesh).dispose();
+        // Uploaded by a stand-in and never drawn here: the stand-in holds three's dispose hook (upload.ts).
+        release?.(p.object);
         if (p.role === 'trees') trees = true;
       }
     }

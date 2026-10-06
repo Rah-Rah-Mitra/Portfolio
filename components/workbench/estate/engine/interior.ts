@@ -176,8 +176,15 @@ const showParts = (parts: readonly Part[], on: boolean): number => {
   return shown;
 };
 
-const failReason = (site: EstateSiteId): string =>
-  `${siteSpokenName(site)} cannot be entered: its interior did not download. Reload the page to try again.`;
+/** What failed to download, in the visitor's words, by class (the walk grid is the HUD's "walkway"). */
+const FAILED_PART: Readonly<Record<'i' | 'w' | 'nav', string>> = {
+  i: 'its interior',
+  w: 'its walkway map',
+  nav: 'its rooms, stairs and lifts',
+};
+
+const failReason = (site: EstateSiteId, klass: 'i' | 'w' | 'nav' = 'i'): string =>
+  `${siteSpokenName(site)} cannot be entered: ${FAILED_PART[klass]} did not download. Reload the page to try again.`;
 
 export class InteriorSystem {
   readonly buildings: Building[];
@@ -233,10 +240,13 @@ export class InteriorSystem {
     this.groundGrid = ground;
   }
 
-  /** Entering `site` failed for good (its interior, walk or nav file; scheduler.entryBlocked). */
-  markFailed(site: SiteRef, _message: string): void {
+  /**
+   * Entering `site` failed for good (scheduler.entryBlocked): its interior, walk
+   * grid or nav file, named by `klass` in the reason (the first failure's).
+   */
+  markFailed(site: SiteRef, _message: string, klass: 'i' | 'w' | 'nav' = 'i'): void {
     const b = this.building(site);
-    if (b && b.failed === null) b.failed = failReason(b.site.id);
+    if (b && b.failed === null) b.failed = failReason(b.site.id, klass);
   }
 
   // ---- reading ------------------------------------------------------------------------
@@ -284,7 +294,31 @@ export class InteriorSystem {
    */
   setStoreyHint(site: SiteRef | null, storey = -1): void {
     const index = site === null ? -1 : this.indexOf(site);
+    const before = this.hint?.index ?? -1;
     this.hint = index < 0 ? null : { index, storey };
+    // The walker left that building's grid: its decoded storeys go (unless the camera is still at it).
+    if (index !== before) this.releaseIdle();
+  }
+
+  /**
+   * Drop the decoded storeys of every walk grid but the current building's and
+   * the walker's (the hint's). Run when either changes, so a grid a floor query
+   * merely passed through (overlapping walk bounds: the car park's and the
+   * hawker centre's) does not keep its rasters for the engine's life.
+   */
+  private releaseIdle(): void {
+    const keep = this.hint?.index ?? -1;
+    for (let i = 0; i < this.buildings.length; i += 1) {
+      const b = this.buildings[i];
+      if (i !== this.current && i !== keep) b.walk?.release();
+    }
+  }
+
+  /** CPU bytes the walk grids hold (walk.ts cpuBytes): their runs, overflow and decoded storeys. */
+  walkBytes(): number {
+    let bytes = 0;
+    for (let i = 0; i < this.buildings.length; i += 1) bytes += this.buildings[i].walk?.cpuBytes() ?? 0;
+    return bytes;
   }
 
   /**
@@ -420,12 +454,11 @@ export class InteriorSystem {
     }
     if (index !== this.current) {
       const left = this.buildings[this.current];
-      if (left) {
-        changed = this.deactivate(left) || changed;
-        left.walk?.release();
-      }
+      if (left) changed = this.deactivate(left) || changed;
       this.current = index;
       this.storey = -1;
+      // Leaving a building releases its walk grid's decoded storeys (but not under a walker still on it).
+      this.releaseIdle();
     }
     this.currentIndex = access !== 'outside' || this.plan ? index : -1;
     this.insideIndex = access === 'inside' ? index : -1;
@@ -618,9 +651,17 @@ export class InteriorSystem {
         draws += 1;
       }
     }
-    if (parts.residual) for (const p of parts.residual.parts) if (p.object.visible) { tris += trianglesOf(p); draws += 1; }
-    for (const s of parts.specials) for (const p of s.parts) if (p.object.visible) { tris += trianglesOf(p); draws += 1; }
-    for (const f of parts.furniture) {
+    // Indexed loops: this runs every frame inside a building (no iterator objects).
+    const residual = parts.residual?.parts;
+    if (residual) {
+      for (let i = 0; i < residual.length; i += 1) if (residual[i].object.visible) { tris += trianglesOf(residual[i]); draws += 1; }
+    }
+    for (let s = 0; s < parts.specials.length; s += 1) {
+      const list = parts.specials[s].parts;
+      for (let i = 0; i < list.length; i += 1) if (list[i].object.visible) { tris += trianglesOf(list[i]); draws += 1; }
+    }
+    for (let k = 0; k < parts.furniture.length; k += 1) {
+      const f = parts.furniture[k];
       const full = f.full?.object as InstancedMesh | undefined;
       const proxy = f.proxy?.object as InstancedMesh | undefined;
       if (full?.visible) { tris += f.fullTris * full.count; draws += 1; }

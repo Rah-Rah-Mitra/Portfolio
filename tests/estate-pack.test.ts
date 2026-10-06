@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { ESTATE_CATALOGUE } from '../lib/estate/catalogue.generated';
-import { checkCommittedCatalogue } from '../scripts/estate/check.mjs';
+import { checkCommittedCatalogue, checkShippedClasses, SHIPPED_CLASSES } from '../scripts/estate/check.mjs';
+import { DECODED_CLASSES } from '../components/workbench/estate/engine/streaming';
 
 // The catalogue and the pack it names (plan §10.2 estate-pack): the merge gate
 // for the Estate window. lib/estate/catalogue.generated.ts is committed and
@@ -77,6 +78,15 @@ describe('the pack under public/estate', () => {
     const licence = readFileSync(join(estateDir, 'LICENSE.txt'), 'utf8');
     expect(licence).toMatch(/CC BY 4\.0/);
     expect(licence).toMatch(/not covered by this\s+repository['’]s\s+MIT licence/i);
+  });
+
+  it('carries every class this engine reads, for every site (a P4 pack would skip every P5 suite and refuse every Enter)', () => {
+    // The gate's list is exactly what the engine decodes, plus the poster the shell shows.
+    expect([...SHIPPED_CLASSES].sort()).toEqual(['poster', ...DECODED_CLASSES].sort());
+    const pack = JSON.parse(readFileSync(onDisk(ESTATE_CATALOGUE.packUrl), 'utf8'));
+    expect(checkShippedClasses(pack), 'repack with --classes poster,s0,f,d,i,w,nav,ground').toEqual([]);
+    // And the rule bites: the P4b class set is refused.
+    expect(checkShippedClasses({ ...pack, classes: ['poster', 's0', 'f', 'd'] })[0]).toMatch(/lacks i, w, nav, ground/);
   });
 
   it('has every file pack.json lists, at its recorded size, hashing to the name it carries', () => {

@@ -4,7 +4,7 @@ import type { EstateSiteId } from '../../../../../lib/estate/ids';
 import type { HeldKeys } from '../../../../../lib/estate/input';
 import { EYE_HEIGHT, polygonDistance } from '../../../../../lib/estate/storeys';
 import {
-  floorAt, followFloor, moveWithCollision, nearestWalkable, walkBoundsContain, type FeetSpring, type FloorHit, type WalkFile, type WalkPose,
+  axisFloor, floorAt, followFloor, moveWithCollision, nearestWalkable, walkBoundsContain, type FeetSpring, type FloorHit, type WalkFile, type WalkPose,
 } from '../../../../../lib/estate/walk';
 import type { FloorQuery } from '../interior';
 import { LookState } from './firstPerson';
@@ -399,9 +399,12 @@ export class WalkController {
     const x0 = this.x;
     const y0 = this.y;
     this.preparing = false;
+    // As moveWithCollision: an axis with only float noise on it is no slide.
+    const minAxis = axisFloor(sx, sy);
     for (let k = 0; k < n; k += 1) {
       if (this.stepOnce(sx, sy)) continue;
-      if (sx !== 0 && sy !== 0 && (this.stepOnce(sx, 0) || this.stepOnce(0, sy))) continue;
+      if (sx !== 0 && sy !== 0
+        && ((Math.abs(sx) >= minAxis && this.stepOnce(sx, 0)) || (Math.abs(sy) >= minAxis && this.stepOnce(0, sy)))) continue;
       break;
     }
     if (!this.preparing && this.site < 0) {

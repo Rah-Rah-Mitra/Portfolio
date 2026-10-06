@@ -63,7 +63,7 @@ export interface StreamingHooks {
    * Plan and walk-in for it are off from now on; F stays whole. `message` is
    * the last failure's.
    */
-  entryBlocked?(site: EstateSiteId, message: string): void;
+  entryBlocked?(site: EstateSiteId, message: string, klass: 'i' | 'w' | 'nav'): void;
 }
 
 export interface StreamingOptions {
@@ -78,7 +78,8 @@ export interface StreamingOptions {
   setTimer: (ms: number, run: () => void) => unknown;
 }
 
-const CLASS_LABEL: Partial<Record<StreamClass, string>> = { f: 'FAÇADE', d: 'DETAIL', i: 'INTERIOR', w: 'WALKWAY', nav: 'PLAN' };
+// The nav file is rooms, stairs and lifts: not "PLAN", which names a view (P6).
+const CLASS_LABEL: Partial<Record<StreamClass, string>> = { f: 'FAÇADE', d: 'DETAIL', i: 'INTERIOR', w: 'WALKWAY', nav: 'ROOMS' };
 
 /** Every streamable file of the pack, by id (its path). */
 export const fileIndex = (pack: EstatePack): Map<string, FileInfo> => {
@@ -236,7 +237,8 @@ export class Streaming {
           // A coarser level from now on (lod reads levelCap); for an interior,
           // walk or nav file, entering that building is off from now on.
           if (outcome.entryBlocked && info.site !== null) {
-            options.hooks.entryBlocked?.(info.site, error instanceof Error ? error.message : String(error));
+            const klass = info.klass === 'w' || info.klass === 'nav' ? info.klass : 'i';
+            options.hooks.entryBlocked?.(info.site, error instanceof Error ? error.message : String(error), klass);
           }
           options.hooks.wake();
       }

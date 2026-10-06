@@ -368,3 +368,59 @@ describe('GPU bytes', () => {
     expect(gpuBytes({ geometry: shared })).toBe(60);
   });
 });
+
+describe('the geometry uploader and eviction (upload.ts)', () => {
+  // three frees an InstancedMesh's instance buffer only from a 'dispose'
+  // listener WebGLObjects puts on the object it rendered. This renderer does
+  // the same for the scene it is handed, and records what it would delete.
+  const fakeRenderer = () => {
+    const removed: unknown[] = [];
+    const onDispose = (event: { target: InstancedMesh }) => {
+      event.target.removeEventListener('dispose', onDispose as never);
+      removed.push(event.target.instanceMatrix);
+    };
+    const renderer = {
+      autoClear: true,
+      setScissorTest: vi.fn(),
+      setScissor: vi.fn(),
+      render: (scene: { traverseVisible: (fn: (o: unknown) => void) => void }) => {
+        scene.traverseVisible((o) => {
+          const mesh = o as InstancedMesh;
+          if (mesh.isInstancedMesh && !mesh.hasEventListener('dispose', onDispose as never)) mesh.addEventListener('dispose', onDispose as never);
+        });
+      },
+    };
+    return { renderer, removed };
+  };
+  const part = () => {
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new BufferAttribute(new Float32Array(9), 3));
+    return new InstancedMesh(geometry, new MeshBasicMaterial(), 4);
+  };
+
+  it('frees an evicted instanced part’s buffer though only its stand-in ever drew it, and again after a re-upload', async () => {
+    const { GeometryUploader } = await import('../components/workbench/estate/engine/upload');
+    const { Fog } = await import('three');
+    const { renderer, removed } = fakeRenderer();
+    const uploader = new GeometryUploader(renderer as never, new Fog(0xffffff, 1, 2));
+    const camera = new PerspectiveCamera();
+    const a = part();
+    const b = part();
+    uploader.upload(a, camera);
+    uploader.upload(b, camera);
+    // Evicted without the main scene drawing either: each stand-in's hook frees exactly its own part.
+    a.dispose();
+    uploader.release(a);
+    expect(removed).toEqual([a.instanceMatrix]);
+    b.dispose();
+    uploader.release(b);
+    expect(removed).toEqual([a.instanceMatrix, b.instanceMatrix]);
+    // Uploaded again, evicted again: freed again (the hook comes back with the upload).
+    uploader.upload(a, camera);
+    uploader.release(a);
+    expect(removed).toEqual([a.instanceMatrix, b.instanceMatrix, a.instanceMatrix]);
+    // A plain mesh or a part never uploaded: nothing to do.
+    uploader.release(part());
+    expect(removed).toHaveLength(3);
+  });
+});

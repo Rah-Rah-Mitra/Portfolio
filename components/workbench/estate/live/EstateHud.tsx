@@ -115,7 +115,7 @@ const KEY_HELP: Readonly<Partial<Record<EstateViewMode, ReadonlyArray<readonly [
     ['Right- or Shift-drag', 'Strafe'],
     ['Wheel', 'Half-metre steps'],
     ['PgUp PgDn', 'Stairs or lift up · down; hold to keep climbing'],
-    ['Enter', 'Take the offered lift or stair'],
+    ['Enter', 'Take the offered stair, or open the lift’s levels'],
     ['L', 'Capture the mouse'],
     ['Home', 'Back to the start'],
     ['1 · 2 · 3', 'Overview · Walk · Fly'],
@@ -148,7 +148,7 @@ const KEY_HELP: Readonly<Partial<Record<EstateViewMode, ReadonlyArray<readonly [
 const KEY_SUMMARY: Readonly<Record<EstateViewMode, string>> = {
   overview: 'Arrow keys rotate and tilt; A and D, or Shift with the arrows, pan; Enter flies to the selected building, and again walks in; 2 walks, 3 flies; Esc steps back. The full list is under Keys.',
   fly: 'W A S D move; the arrows turn; R and F look up and down; E and C climb and sink; Home returns to the aerial view; Esc goes back to Overview. The full list is under Keys.',
-  walk: 'W A S D walk and the arrows turn; Page Up and Page Down take the stairs or the lift; Enter takes the one offered; Home goes back to the start; Esc closes the lift panel, stops a climb, then goes back to Overview. The full list is under Keys.',
+  walk: 'W A S D walk and the arrows turn; Page Up and Page Down take the stairs or the lift; Enter takes the stair offered, or opens the lift’s levels; Home goes back to the start; Esc closes the lift panel, stops a climb, then goes back to Overview. The full list is under Keys.',
   plan: 'Up and down arrows cycle rooms; Enter walks in; Esc leaves the plan. The full list is under Keys.',
 };
 
@@ -274,6 +274,8 @@ const useEngineView = (engine: EstateEngine, debug: boolean) => {
   const [notice, setNotice] = React.useState<string | null>(null);
   const [progress, setProgress] = React.useState<ProgressState | null>(null);
   const [stats, setStats] = React.useState<EstateStatsEvent | null>(null);
+  // Said through the same announcer, without the notice chip: for what the HUD itself does (a panel opening).
+  const sayRef = React.useRef<(text: string) => void>(() => {});
 
   React.useEffect(() => {
     const announcer = new LocationAnnouncer();
@@ -324,15 +326,19 @@ const useEngineView = (engine: EstateEngine, debug: boolean) => {
       }
     };
     const off = engine.subscribe(onEvent);
+    sayRef.current = (text: string) => { if (alive) speak(announcer.say(text, nowMs())); };
     return () => {
       alive = false;
       off();
+      sayRef.current = () => {};
       if (timer !== null) clearTimeout(timer);
       if (noticeTimer !== null) clearTimeout(noticeTimer);
     };
   }, [engine, debug]);
 
-  return { view, spoken, notice, progress, stats };
+  const say = React.useCallback((text: string) => sayRef.current(text), []);
+
+  return { view, spoken, notice, progress, stats, say };
 };
 
 const stageOf = (rootRef: React.RefObject<HTMLDivElement | null>) => rootRef.current?.closest<HTMLElement>('[data-estate-stage]') ?? null;
@@ -369,8 +375,8 @@ const useStageInput = (rootRef: React.RefObject<HTMLDivElement | null>) => {
   return { active, touch, coarse };
 };
 
-/** Where focus goes when a control inside a popover dies: the control that opened it. */
-type PopoverOpeners = Readonly<Record<EstatePopover, React.RefObject<HTMLButtonElement | null>>>;
+/** Where focus goes when a control inside a popover dies: whatever opened it (a HUD toggle, or the stage). */
+type PopoverOpener = (popover: EstatePopover) => HTMLElement | null;
 
 /**
  * A control that held focus and then left the DOM or was disabled drops focus
@@ -380,7 +386,7 @@ type PopoverOpeners = Readonly<Record<EstatePopover, React.RefObject<HTMLButtonE
  * still the dead control), so it never takes focus from anything the visitor
  * chose. Checked after every commit.
  */
-const useFocusRescue = (rootRef: React.RefObject<HTMLDivElement | null>, openers: PopoverOpeners) => {
+const useFocusRescue = (rootRef: React.RefObject<HTMLDivElement | null>, openerOf: PopoverOpener) => {
   const lastRef = React.useRef<{ el: HTMLElement; popover: EstatePopover | null } | null>(null);
   React.useEffect(() => {
     const root = rootRef.current;
@@ -401,8 +407,8 @@ const useFocusRescue = (rootRef: React.RefObject<HTMLDivElement | null>, openers
     lastRef.current = null;
     const active = document.activeElement;
     if (active !== null && active !== document.body && active !== last.el) return;
-    const opener = last.popover ? openers[last.popover].current : null;
-    if (opener?.isConnected && !opener.disabled) opener.focus({ preventScroll: true });
+    const opener = last.popover ? openerOf(last.popover) : null;
+    if (opener?.isConnected && !(opener as HTMLButtonElement).disabled) opener.focus({ preventScroll: true });
     else stageOf(rootRef)?.focus({ preventScroll: true });
   });
 };
@@ -458,35 +464,98 @@ const useLockNotes = (mode: EstateViewMode, locked: boolean, unlockedAt: number 
 };
 
 /**
+ * Walk's strip starts under the top-right controls however they wrap: at an
+ * 881 px stage they take two rows, and a fixed top ran the strip under KEYS
+ * ACTIVE. The lowest control of the row (KEYS' help popover, drawn on a line of
+ * its own, left out) sets --estate-strip-top on the HUD, re-measured whenever
+ * the row or the HUD resizes. No React state: a resize re-renders nothing.
+ */
+const useStripTop = (rootRef: React.RefObject<HTMLDivElement | null>, rowRef: React.RefObject<HTMLDivElement | null>) => {
+  React.useLayoutEffect(() => {
+    const root = rootRef.current;
+    const row = rowRef.current;
+    if (!root || !row) return undefined;
+    const measure = () => {
+      const top = root.getBoundingClientRect().top;
+      let bottom = 0;
+      for (let i = 0; i < row.children.length; i += 1) {
+        const child = row.children[i];
+        if (child.classList.contains('wb-estate-popover-slot')) continue;
+        bottom = Math.max(bottom, child.getBoundingClientRect().bottom - top);
+      }
+      if (bottom > 0) root.style.setProperty('--estate-strip-top', `${Math.ceil(bottom + 8)}px`);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(row);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [rootRef, rowRef]);
+};
+
+/** Bring the storey underfoot into the strip's view (it opened scrolled to RF, L1 hidden, in a 26-storey block). Only the strip scrolls. */
+const scrollCurrentIntoStrip = (strip: HTMLElement) => {
+  const here = strip.querySelector<HTMLElement>('[aria-current]');
+  if (!here) return;
+  const pad = 6;
+  const top = here.offsetTop;
+  const bottom = top + here.offsetHeight;
+  if (top - pad < strip.scrollTop) strip.scrollTop = Math.max(0, top - pad);
+  else if (bottom + pad > strip.scrollTop + strip.clientHeight) strip.scrollTop = bottom + pad - strip.clientHeight;
+};
+
+/**
  * Walk's storey strip (§8.5, §8.6 right): every storey of the building
  * underfoot, top down, 'RF +45.60 … L1 ±0.00', from the data. A button takes
  * the route the engine planned (one ride, the stair line, or a ride to the
  * highest served level then the stairs); the storey underfoot is current and
- * disabled; a storey nothing reaches is disabled and its name says why. P6
- * adds Overview's strip, which opens Plan.
+ * disabled; a storey nothing reaches stays focusable but aria-disabled, its
+ * name says why, and pressing it has the engine refuse and say why aloud and
+ * on screen (a disabled button is skipped by Tab, and its title needs a hover:
+ * a keyboard-only visitor could never learn the reason). The storey underfoot
+ * is scrolled into the strip's view. P6 adds Overview's strip, which opens Plan.
  */
 const StoreyStrip: React.FC<{
   engine: EstateEngine; walk: EstateWalkView; live: boolean; onPress: (event: React.MouseEvent) => void;
 }> = ({ engine, walk, live, onPress }) => {
+  const stripRef = React.useRef<HTMLDivElement>(null);
+  React.useLayoutEffect(() => {
+    if (stripRef.current) scrollCurrentIntoStrip(stripRef.current);
+  }, [walk.site, walk.storey, walk.levels]);
+  // …and again whenever the strip itself resizes (its top is set from the
+  // measured row after it mounts, which shortened it under a storey just
+  // scrolled into view).
+  const mounted = walk.site !== null && walk.levels.length > 0;
+  React.useLayoutEffect(() => {
+    const strip = stripRef.current;
+    if (!strip || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => scrollCurrentIntoStrip(strip));
+    observer.observe(strip);
+    return () => observer.disconnect();
+  }, [mounted]);
   if (walk.site === null || walk.levels.length === 0) return null;
   const levels = [...walk.levels].reverse();
   return (
-    <div className="wb-estate-strip" role="group" aria-label={`Storeys of ${siteSpokenName(walk.site)}`} data-estate-scroll>
+    <div className="wb-estate-strip" ref={stripRef} role="group" aria-label={`Storeys of ${siteSpokenName(walk.site)}`} data-estate-scroll>
       {levels.map((level) => {
         const here = level.route === 'here';
+        const unreachable = level.route === null;
         const text = `${level.tag} ${fflText(level.ffl)}`;
-        const name = here ? `${text}, here` : level.route === null ? `${text}, ${level.reason ?? 'no route'}` : `${text}, ${ROUTE_TEXT[level.route]}`;
+        const name = here ? `${text}, here` : unreachable ? `${text}, ${level.reason ?? 'no route'}` : `${text}, ${ROUTE_TEXT[level.route as Exclude<EstateWalkLevel['route'], null | 'here'>]}`;
         return (
           <button
             key={level.tag}
             type="button"
             className="wb-estate-strip-btn"
-            disabled={!live || here || level.route === null}
+            disabled={!live || here}
+            aria-disabled={live && unreachable ? 'true' : undefined}
             aria-current={here ? 'location' : undefined}
             aria-label={name}
-            title={level.route === null ? level.reason ?? undefined : undefined}
+            title={unreachable ? level.reason ?? undefined : undefined}
             data-route={level.route ?? 'none'}
-            onClick={(event) => { if (engine.setStorey(level.tag)) onPress(event); }}
+            // Unreachable: the engine refuses, and says why (aloud and in the notice chip).
+            onClick={(event) => { if (engine.setStorey(level.tag) && !unreachable) onPress(event); }}
           >
             <span className="wb-estate-strip-tag">{level.tag}</span>
             <span className="wb-estate-strip-ffl">{fflText(level.ffl)}</span>
@@ -555,17 +624,25 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
   const rootRef = React.useRef<HTMLDivElement>(null);
   const keysToggleRef = React.useRef<HTMLButtonElement>(null);
   const liftToggleRef = React.useRef<HTMLButtonElement>(null);
-  const openers = React.useMemo<PopoverOpeners>(() => ({ help: keysToggleRef, lift: liftToggleRef }), []);
+  const liftPanelRef = React.useRef<HTMLDivElement>(null);
+  const topRowRef = React.useRef<HTMLDivElement>(null);
+  // Who opened the lift panel: its chip, or the stage (Enter in Walk). Focus goes back there.
+  const liftOpenedFrom = React.useRef<'chip' | 'stage'>('chip');
+  const openerOf = React.useCallback<PopoverOpener>((popover) => {
+    if (popover === 'help') return keysToggleRef.current;
+    return liftOpenedFrom.current === 'stage' ? stageOf(rootRef) : liftToggleRef.current;
+  }, []);
   const popoverId = React.useId();
   const liftPanelId = React.useId();
-  const { view, spoken, notice, progress, stats } = useEngineView(engine, debug);
+  const { view, spoken, notice, progress, stats, say } = useEngineView(engine, debug);
   const { active: keysActive, touch, coarse } = useStageInput(rootRef);
   const fullscreen = useFullscreen(rootRef);
   const mode = view.location.mode;
   const lock = useLockNotes(mode, view.pointerLocked, view.pointerUnlockedAtMs);
   const live = phase === 'live';
   const { features } = engine;
-  useFocusRescue(rootRef, openers);
+  useFocusRescue(rootRef, openerOf);
+  useStripTop(rootRef, topRowRef);
 
   const focusStage = () => stageOf(rootRef)?.focus({ preventScroll: true });
   /** A control pressed with the pointer hands the keys back to the stage; one pressed from the keyboard keeps focus. */
@@ -628,7 +705,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
   const lift = walk && !busy ? walk.lift : null;
   const liftOpen = lift !== null && view.popover === 'lift';
   const liftPanel = liftOpen && lift ? (
-    <div className="wb-estate-popover wb-estate-lift" id={liftPanelId} role="region" aria-label={`${lift.name}, levels`} data-estate-scroll data-estate-popover="lift">
+    <div className="wb-estate-popover wb-estate-lift" ref={liftPanelRef} id={liftPanelId} role="region" aria-label={`${lift.name}, levels`} data-estate-scroll data-estate-popover="lift">
       <div className="wb-estate-popover-head">
         <span>{lift.text}</span>
         <button type="button" className="wb-estate-hud-btn" disabled={!live} onClick={() => engine.setPopover(null)}>Close</button>
@@ -639,6 +716,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
             key={level}
             type="button"
             className="wb-estate-hud-btn"
+            data-estate-level={level}
             disabled={!live || level === lift.current}
             aria-current={level === lift.current ? 'location' : undefined}
             aria-label={level === lift.current ? `${level}, here` : `${lift.name} to ${level}`}
@@ -649,6 +727,35 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
     </div>
   ) : null;
   const stair = walk && !busy ? walk.stair : null;
+
+  // Enter on the stage opens the lift panel (the engine's activate) and says
+  // nothing else, so focus goes into it, onto the nearest level up (else down),
+  // and the panel is said; Esc, Close or a ride hands focus back to the stage
+  // (openerOf). Opened from its chip, focus stays put and returns to the chip.
+  const wasLiftOpen = React.useRef(false);
+  React.useLayoutEffect(() => {
+    const opened = liftOpen && !wasLiftOpen.current;
+    wasLiftOpen.current = liftOpen;
+    if (!opened || !lift) return;
+    const stage = stageOf(rootRef);
+    if (!stage || document.activeElement !== stage) {
+      liftOpenedFrom.current = 'chip';
+      return;
+    }
+    liftOpenedFrom.current = 'stage';
+    const here = lift.served.indexOf(lift.current);
+    const next = lift.served[here + 1] ?? lift.served[here - 1];
+    const panel = liftPanelRef.current;
+    const target = (next ? panel?.querySelector<HTMLButtonElement>(`[data-estate-level="${next}"]`) : null)
+      ?? panel?.querySelector<HTMLButtonElement>('[data-estate-level]:not(:disabled)');
+    target?.focus({ preventScroll: true });
+    say(`${lift.name}: choose a level`);
+  });
+
+  // Walking outdoors (after Start at BS1, or out on the ground): the selection's Enter stays on offer (§8.6, mirrored).
+  // (Not during Enter's arc, when the walk has not begun: view.walk is null then.)
+  const outdoors = walking && walk !== null && walk.site === null && !view.flight;
+  const showSelection = selection !== null && (!walking || outdoors);
 
   return (
     <div
@@ -677,11 +784,11 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
               onClick={(event) => { if (engine.setMode('overview')) toStage(event); }}
             >{walk?.site ? `Exit ${siteShortName(walk.site)}` : 'Exit'}</button>
           )}
-          {selection && !walking && (
+          {showSelection && selection && (
             <div className="wb-estate-chip wb-estate-chip-sel">
               <span className="wb-estate-chip-key">Selected</span>
               <span>{siteChipLabel(selection)}</span>
-              {features.flyTo && (
+              {features.flyTo && !walking && (
                 <button
                   type="button"
                   className="wb-estate-hud-btn"
@@ -719,7 +826,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
         </div>
 
         <div className="wb-estate-hud-col wb-estate-hud-col-end">
-          <div className="wb-estate-hud-row">
+          <div className="wb-estate-hud-row" ref={topRowRef}>
             {modes.length > 1 && (
               <div className="wb-domainseg" role="group" aria-label="Camera mode">
                 {modes.map((m) => (
@@ -738,7 +845,8 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
               type="button"
               className="wb-estate-hud-btn"
               disabled={!live}
-              aria-label={walking ? 'Back to where this walk started' : 'Home: the aerial view'}
+              // Each name leads with the visible word (WCAG 2.5.3, label in name).
+              aria-label={walking ? 'Start: back to where this walk began' : 'Home: the aerial view'}
               onClick={(event) => { if (engine.home()) toStage(event); }}
             >{walking ? 'Start' : 'Home'}</button>
             {features.walk && !walking && (
@@ -746,7 +854,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
                 type="button"
                 className="wb-estate-hud-btn"
                 disabled={!live}
-                aria-label="Start walking at bus stop BS1"
+                aria-label="Start at BS1, the bus stop"
                 onClick={(event) => { if (engine.walkFrom('BS1')) toStage(event); }}
               >Start at BS1</button>
             )}
@@ -841,6 +949,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
             className="wb-estate-hud-btn wb-estate-chip-offer"
             disabled={!live}
             data-estate-lift
+            aria-label={`${lift.name}: choose a level`}
             aria-expanded={liftOpen}
             aria-controls={liftOpen ? liftPanelId : undefined}
             onClick={() => engine.setPopover(liftOpen ? null : 'lift')}

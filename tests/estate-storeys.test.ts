@@ -546,6 +546,35 @@ describe('polygon helpers', () => {
     // Concave: (−50, 7.2) sits in the notch above y = 6.5, 0.7 m from the edge.
     expect(polygonDistance(-50, 7.2, BLK_509_FOOTPRINT)).toBeCloseTo(0.7, 12);
   });
+
+  it('allocates nothing per test once warm, whatever ring shapes it has seen (the P5 review: 237 B a call, megamorphic)', () => {
+    // Every shape the engine hands it: pack footprints (plain arrays), nav room
+    // outlines (frozen arrays of frozen pairs), picking pairs, typed rings.
+    const frozen = Object.freeze(BLK_509_FOOTPRINT.map((p) => Object.freeze([p[0], p[1]] as const)));
+    const pairs = BLK_509_FOOTPRINT.map((p) => [p[0] + 1, p[1]] as readonly [number, number]);
+    const typed = BLK_509_FOOTPRINT.map((p) => Float64Array.of(p[0], p[1] - 1));
+    const shapes = [BLK_509_FOOTPRINT, frozen, pairs, typed, SQUARE];
+    const shape: FootprintShape = { footprint: BLK_509_FOOTPRINT, roofTop: 50 };
+    // The sum lives in a typed array: a double kept in a closure variable is boxed on every store.
+    const sink = new Float64Array(1);
+    // Every ring kind first (the engine's picking, nav and footprint calls all reach these loops)…
+    for (let i = 0; i < 100_000; i += 1) sink[0] += polygonDistance(-60 + (i % 120), -3 + (i % 13), shapes[i % shapes.length]);
+    // …then the per-frame call: the interior's inside test.
+    const run = (n: number) => {
+      for (let i = 0; i < n; i += 1) if (interiorAccess(-60 + (i % 120), -3 + (i % 13), 10, shape) === 'inside') sink[0] += 1;
+    };
+    run(200_000); // warm: past the interpreter, which boxes doubles of its own
+    // The growth is read with no other code between the two samples; a
+    // scavenge only lowers it, so the largest of five runs is the honest one.
+    let worst = -Infinity;
+    for (let k = 0; k < 5; k += 1) {
+      const before = process.memoryUsage().heapUsed;
+      run(20_000);
+      worst = Math.max(worst, (process.memoryUsage().heapUsed - before) / 20_000);
+    }
+    expect(Number.isFinite(sink[0])).toBe(true);
+    expect(worst, 'heap bytes per call').toBeLessThan(4);
+  });
 });
 
 describe('inside and peeking', () => {

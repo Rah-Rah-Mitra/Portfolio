@@ -314,6 +314,9 @@ describe.skipIf(!hasWalk)('Walk’s session on the pack in public/estate/v1.2', 
     h.mode.start(nearLift('BLK_509', 'Lift 3', 'L5'));
     expect(h.walkView().lift).toMatchObject({ name: 'Lift 3', text: 'LIFT 3 · CHOOSE A LEVEL', current: 'L5' });
     expect(h.walkView().lift!.served).toEqual(['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'L10', 'L11', 'L12', 'L13', 'L14', 'L15', 'L16']);
+    // Enter at a landing opens the level panel (the controls set popover 'lift'; the HUD moves focus into it).
+    expect(h.mode.activate()).toBe('lift');
+    expect(h.mode.busy).toBe(false);
     expect(h.mode.takeLift('L5')).toBe(false); // the current storey
     expect(h.mode.takeLift('RF')).toBe(false); // not served
     expect(h.mode.takeLift('L12')).toBe(true);
@@ -437,6 +440,26 @@ describe.skipIf(!hasWalk)('Walk’s session on the pack in public/estate/v1.2', 
     h.frames(1);
     expect(h.view().transition).toBeNull();
     expect(h.walkView().storey).toBe('L6');
+  });
+
+  it('Enter at a stair landing takes the offered way up; in a flat beside the core nothing is offered and Enter does nothing (the P5 review)', () => {
+    const h = harness();
+    h.setHalted(true);
+    const nav = navs.get(index('BLK_509'))!;
+    const stair = nav.stairs.find((s) => s.name === 'L5 stair 2')!;
+    const [x, y, z] = stair.path[0];
+    h.mode.start(local('BLK_509', x, y, z, 0));
+    expect(h.mode.activate()).toBe(true);
+    h.frames(1);
+    expect(h.walkView().storey).toBe('L6');
+    // #05-110 Bedroom 2, through the wall from stair 5: 1.5 m from its flight, 16 m away on foot.
+    h.mode.start({ x: 164.88, y: 51.35, z: 12, yaw: 0, name: 'bedroom' });
+    expect(h.walkView()).toMatchObject({ storey: 'L5', stair: null });
+    expect(h.mode.activate()).toBe(false);
+    expect(h.mode.takeStairs(1)).toBe(false);
+    expect(h.mode.storeyKey(1)).toBe(false);
+    expect(h.mode.setStorey(1)).toBe(true); // the strip's neighbour: a route (a lift ride), never a glide through the wall
+    expect(h.walkView().ride).toMatch(/^LIFT \d · L5 → L6$/);
   });
 
   it('holds the walker on the ground with PREPARING WALKWAY until the grid arrives, then walks it in', () => {

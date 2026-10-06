@@ -25,6 +25,14 @@ import {
 // so only the building being walked holds any. Queries and moves allocate
 // nothing once their storeys are resident.
 //
+// What a decoded file keeps between those is run-length coded, not the file:
+// decodeWalk reads each stored raster once into runs (end index, value) and
+// lets the unzipped bytes go. A file's raw and delta rasters unzip to 4× a
+// storey (2.2 MB for BLK_509, 5.7 MB for the car park, 30 MB for all fourteen),
+// and the engine keeps every file it ever fetched (every building within 40 m
+// of a walk); their runs are 2.0 MB in all (cpuBytes()). The runs expand into a
+// raster only when a query reaches that storey.
+//
 // Decoded with its site (as the engine always does), a file's layers are
 // exactly that site's storeys in order, so a layer index IS the storey index of
 // ids.ts, storeys.ts and the shader's uStoreyMask. Without a site (tests) it is
@@ -119,6 +127,8 @@ export interface WalkFile {
   readonly decodeCount: number;
   /** Drops every decoded raster (the walker left the building); the next query decodes again. */
   release(): void;
+  /** CPU bytes this file holds: its run-length coded rasters, overflow records and resident rasters. */
+  cpuBytes(): number;
 }
 
 export class WalkFormatError extends Error {
@@ -151,6 +161,30 @@ const LITTLE_ENDIAN = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
 
 interface Slot { layer: number; grid: Int16Array; used: number }
 
+/** One stored raster, run-length coded: run i is `values[i]` up to (not including) cell `ends[i]`. */
+interface Runs { ends: Uint32Array; values: Int16Array }
+
+/**
+ * Run-length code a stored raster (the stored values: a delta layer's
+ * differences, which are mostly 0). Two passes, so nothing grows.
+ */
+const encodeRuns = (raster: Int16Array): Runs => {
+  const cells = raster.length;
+  let count = cells > 0 ? 1 : 0;
+  for (let i = 1; i < cells; i += 1) if (raster[i] !== raster[i - 1]) count += 1;
+  const ends = new Uint32Array(count);
+  const values = new Int16Array(count);
+  let r = 0;
+  for (let i = 1; i <= cells; i += 1) {
+    if (i === cells || raster[i] !== raster[i - 1]) {
+      ends[r] = i;
+      values[r] = raster[i - 1];
+      r += 1;
+    }
+  }
+  return { ends, values };
+};
+
 class DecodedWalk implements WalkFile {
   decodeCount = 0;
   private readonly slots: Slot[] = [];
@@ -159,9 +193,20 @@ class DecodedWalk implements WalkFile {
   constructor(
     readonly header: WalkHeader,
     readonly layers: readonly WalkLayer[],
-    private readonly bytes: Uint8Array,
-    private readonly rasterOff: Uint32Array,
+    /** Per layer its stored raster's runs; null for a same layer. */
+    private readonly runs: readonly (Runs | null)[],
   ) {}
+
+  cpuBytes(): number {
+    let bytes = 0;
+    for (let i = 0; i < this.runs.length; i += 1) {
+      const r = this.runs[i];
+      if (r) bytes += r.ends.byteLength + r.values.byteLength;
+      bytes += this.layers[i].overflowKeys.byteLength + this.layers[i].overflowMm.byteLength;
+    }
+    for (let i = 0; i < this.slots.length; i += 1) bytes += this.slots[i].grid.byteLength;
+    return bytes;
+  }
 
   grid(layer: number): Int16Array {
     const info = this.layers[layer];
@@ -196,15 +241,14 @@ class DecodedWalk implements WalkFile {
   private decode(layer: number): Int16Array {
     this.decodeCount += 1;
     const cells = this.header.nx * this.header.ny;
-    const start = this.bytes.byteOffset + this.rasterOff[layer];
-    let out: Int16Array;
-    if (LITTLE_ENDIAN) {
-      // One copy into an owned, aligned buffer; the file's own may be unaligned.
-      out = new Int16Array(this.bytes.buffer.slice(start, start + cells * 2));
-    } else {
-      out = new Int16Array(cells);
-      const dv = new DataView(this.bytes.buffer, start, cells * 2);
-      for (let i = 0; i < cells; i += 1) out[i] = dv.getInt16(2 * i, true);
+    const out = new Int16Array(cells);
+    const runs = this.runs[layer]!;
+    let from = 0;
+    for (let r = 0; r < runs.ends.length; r += 1) {
+      const to = runs.ends[r];
+      const v = runs.values[r];
+      if (v !== 0) out.fill(v, from, to);
+      from = to;
     }
     if (this.layers[layer].mode === 'delta') {
       // Stored = value − ref mod 2^16, over the whole int16 range: the blocked
@@ -227,7 +271,7 @@ class DecodedWalk implements WalkFile {
  * or unsorted. With `site` the layers must be exactly that site's storeys, in
  * order, at their FFLs (lib/estate/ids.ts, to 0.5 mm): layer i is storey i.
  *
- * Keeps a view of `input` for the lazy decode: do not reuse its buffer.
+ * Keeps nothing of `input`: each stored raster is read once into runs.
  */
 export const decodeWalk = (input: ArrayBuffer | ArrayBufferView, site?: EstateSiteId): WalkFile => {
   const bytes = ArrayBuffer.isView(input)
@@ -334,7 +378,21 @@ export const decodeWalk = (input: ArrayBuffer | ArrayBufferView, site?: EstateSi
     deltaLayers: (flags & WALK_FLAG_DELTA) !== 0, coarse: (flags & WALK_FLAG_COARSE) !== 0,
     cell, radius, step, originX, originY, nx, ny, refLayer,
   };
-  return new DecodedWalk(Object.freeze(header), Object.freeze(layers), bytes, rasterOff);
+  // Every stored raster into runs, now, so the unzipped file is not kept.
+  const cells = nx * ny;
+  const runs: (Runs | null)[] = layers.map((layer, i) => {
+    if (layer.mode === 'same') return null;
+    const start = bytes.byteOffset + rasterOff[i];
+    let raster: Int16Array;
+    if (LITTLE_ENDIAN && start % 2 === 0) raster = new Int16Array(bytes.buffer, start, cells);
+    else if (LITTLE_ENDIAN) raster = new Int16Array(bytes.buffer.slice(start, start + cells * 2));
+    else {
+      raster = new Int16Array(cells);
+      for (let c = 0; c < cells; c += 1) raster[c] = dv.getInt16(rasterOff[i] + 2 * c, true);
+    }
+    return encodeRuns(raster);
+  });
+  return new DecodedWalk(Object.freeze(header), Object.freeze(layers), Object.freeze(runs));
 };
 
 /** Index of storey `raw` (any spelling normaliseStoreyTag accepts) in the file's layers, or -1. */
@@ -441,6 +499,10 @@ export type MoveOutcome = 'free' | 'slid' | 'nudged' | 'blocked';
 // frame of walking (4 m/s); a longer request (a stalled frame's dt) is cut there.
 export const WALK_SUBSTEP = 0.1;
 export const WALK_MAX_SUBSTEPS = 64;
+/** A substep's axis slides only when that axis carries at least this share of it (or 1 µm). */
+export const WALK_SLIDE_SHARE = 0.05;
+/** The smallest axis component of substep (sx, sy) worth sliding on, m. */
+export const axisFloor = (sx: number, sy: number): number => Math.max(1e-6, WALK_SLIDE_SHARE * Math.hypot(sx, sy));
 
 const HIT: FloorHit = { z: 0, layer: -1 };
 const NUDGE: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
@@ -508,17 +570,145 @@ export const moveWithCollision = (walk: WalkFile, pose: WalkPose, dx: number, dy
     n = WALK_MAX_SUBSTEPS;
   }
   const sx = (dx * scale) / n, sy = (dy * scale) / n;
+  // A slide on one axis counts only where that axis carries real motion: every
+  // exact heading has float noise (cos(π/2) = 6e-17, a 15° step turn's sums), and
+  // a 1e-17 m "slide" succeeds in place, so the doorway nudge was never reached.
+  const minAxis = axisFloor(sx, sy);
   let worst = 0; // 0 free, 1 slid, 2 nudged
   for (let k = 0; k < n; k += 1) {
     if (tryStep(walk, pose, sx, sy)) continue;
     if (sx !== 0 && sy !== 0) {
-      if (tryStep(walk, pose, sx, 0) || tryStep(walk, pose, 0, sy)) { if (worst < 1) worst = 1; continue; }
+      if ((Math.abs(sx) >= minAxis && tryStep(walk, pose, sx, 0)) || (Math.abs(sy) >= minAxis && tryStep(walk, pose, 0, sy))) {
+        if (worst < 1) worst = 1;
+        continue;
+      }
     }
     if (tryNudge(walk, pose, sx, sy)) { worst = 2; continue; }
     // Nothing changed, so every later substep would fail the same way.
     return 'blocked';
   }
   return worst === 0 ? 'free' : worst === 1 ? 'slid' : 'nudged';
+};
+
+// ---- reach -------------------------------------------------------------------
+
+// Scratch for walkReaches, grown to the largest window asked and then reused:
+// per window cell its cost (tenths of a cell), floor, and the call that last
+// queued and settled it (generation stamps, so nothing is cleared between
+// calls), and a binary heap of window indices ordered by cost.
+let reachCost = new Int32Array(0);
+let reachFloor = new Float64Array(0);
+let reachQueued = new Uint32Array(0);
+let reachSettled = new Uint32Array(0);
+let reachHeap = new Int32Array(0);
+let reachLength = 0;
+let reachGen = 0;
+const ORTHO = 10;
+const DIAG = 14;
+
+const heapPush = (k: number) => {
+  const heap = reachHeap, cost = reachCost;
+  let i = reachLength++;
+  heap[i] = k;
+  while (i > 0) {
+    const p = (i - 1) >> 1;
+    if (cost[heap[p]] <= cost[heap[i]]) break;
+    const t = heap[p]; heap[p] = heap[i]; heap[i] = t; i = p;
+  }
+};
+
+const heapPop = (): number => {
+  const heap = reachHeap, cost = reachCost;
+  const top = heap[0];
+  const n = --reachLength;
+  if (n > 0) {
+    heap[0] = heap[n];
+    let i = 0;
+    for (;;) {
+      const a = 2 * i + 1, b = a + 1;
+      let m = i;
+      if (a < n && cost[heap[a]] < cost[heap[m]]) m = a;
+      if (b < n && cost[heap[b]] < cost[heap[m]]) m = b;
+      if (m === i) break;
+      const t = heap[m]; heap[m] = heap[i]; heap[i] = t; i = m;
+    }
+  }
+  return top;
+};
+
+/**
+ * Can a walker standing at block-local `from` (its floor in `from.z`) walk to
+ * within one cell of block-local (tx, ty), onto a floor within `dz` m of `tz`,
+ * in no more than `maxDist` m over the grid? Dijkstra over the 8 neighbours
+ * (octile steps; a diagonal needs one of the two cells it cuts past, as a
+ * collision step does), each step onto a floor within ±step of the last, inside
+ * a window of maxDist about the start. A point 1.5 m away through a wall is
+ * 4–30 m away on foot, so this is what keeps the stair chip (lifts.ts) out of
+ * the flats and plant rooms beside a stair core. Allocation-free once its
+ * scratch has grown to the largest window asked.
+ */
+export const walkReaches = (
+  walk: WalkFile, from: WalkPose, tx: number, ty: number, tz: number, maxDist: number, dz = 0.6,
+): boolean => {
+  const h = walk.header;
+  if (!Number.isFinite(from.x) || !Number.isFinite(from.y) || !Number.isFinite(from.z)
+    || !Number.isFinite(tx) || !Number.isFinite(ty) || !Number.isFinite(tz) || !(maxDist >= 0 && maxDist < 1e3)) return false;
+  if (Math.hypot(tx - from.x, ty - from.y) > maxDist + 1.5 * h.cell) return false;
+  const sx = cellX(h, from.x), sy = cellY(h, from.y);
+  const startZ = floorInCell(walk, sx, sy, from.z, undefined);
+  if (Number.isNaN(startZ)) return false;
+  const tcx = cellX(h, tx), tcy = cellY(h, ty);
+  const r = Math.ceil(maxDist / h.cell) + 2;
+  const w = 2 * r + 1;
+  const size = w * w;
+  if (size > reachCost.length) {
+    reachCost = new Int32Array(size);
+    reachFloor = new Float64Array(size);
+    reachQueued = new Uint32Array(size);
+    reachSettled = new Uint32Array(size);
+    // Each cell is queued at most once per neighbour that improves it (≤ 8).
+    reachHeap = new Int32Array(8 * size + 1);
+    reachGen = 0;
+  }
+  reachGen = (reachGen + 1) >>> 0;
+  if (reachGen === 0) { reachQueued.fill(0); reachSettled.fill(0); reachGen = 1; }
+  const gen = reachGen;
+  const limit = Math.ceil((maxDist / h.cell) * ORTHO);
+  const x0 = sx - r, y0 = sy - r;
+  const cost = reachCost, floor = reachFloor, queued = reachQueued, settled = reachSettled;
+  reachLength = 0;
+  const start = r * w + r;
+  queued[start] = gen; cost[start] = 0; floor[start] = startZ;
+  heapPush(start);
+  while (reachLength > 0) {
+    const k = heapPop();
+    if (settled[k] === gen) continue;
+    settled[k] = gen;
+    const lx = k % w, ly = (k - lx) / w;
+    const ix = x0 + lx, iy = y0 + ly;
+    const z = floor[k];
+    if (Math.abs(ix - tcx) <= 1 && Math.abs(iy - tcy) <= 1 && Math.abs(z - tz) <= dz) return true;
+    for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        if (dx === 0 && dy === 0) continue;
+        const mx = lx + dx, my = ly + dy;
+        if (mx < 0 || my < 0 || mx >= w || my >= w) continue;
+        const m = my * w + mx;
+        if (settled[m] === gen) continue;
+        const c = cost[k] + (dx !== 0 && dy !== 0 ? DIAG : ORTHO);
+        if (c > limit || (queued[m] === gen && cost[m] <= c)) continue;
+        const zn = floorInCell(walk, ix + dx, iy + dy, z, undefined);
+        if (Number.isNaN(zn)) continue;
+        if (dx !== 0 && dy !== 0
+          && Number.isNaN(floorInCell(walk, ix + dx, iy, z, undefined))
+          && Number.isNaN(floorInCell(walk, ix, iy + dy, z, undefined))) continue;
+        if (reachLength >= reachHeap.length) return false;
+        queued[m] = gen; cost[m] = c; floor[m] = zn;
+        heapPush(m);
+      }
+    }
+  }
+  return false;
 };
 
 // ---- feet spring -------------------------------------------------------------

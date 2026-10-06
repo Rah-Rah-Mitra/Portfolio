@@ -965,6 +965,7 @@ describe('the HUD in Plan (P6)', () => {
     { name: 'L5-CORR', label: 'Common corridor', flat: null },
   ]);
   const plan = (patch: Partial<EstatePlanView> = {}): EstatePlanView => ({ site: 'BLK_509', storey: 'L5', cut: 1.2, rooms: ROOMS, ready: true, room: -1, ...patch });
+  const FAILED_ROOMS = 'Blk 509 cannot be entered: its rooms, stairs and lifts did not download. Reload the page to try again.';
   const inPlan = (patch: Partial<EstatePlanView> = {}): Partial<EstateView> => ({
     location: { site: 'BLK_509', storey: 'L5', unit: null, room: null, mode: 'plan' }, selection: 'BLK_509', plan: plan(patch),
   });
@@ -1022,6 +1023,12 @@ describe('the HUD in Plan (P6)', () => {
     }
     setView(inPlan({ ready: false, rooms: [] }));
     expect(room.textContent).toBe('RoomLoading rooms…');
+    // Its nav file failed for good: the chip says so instead of loading for ever.
+    setView({ interior: { site: 'BLK_509', state: 'failed', storey: 'L5', band: null, reason: FAILED_ROOMS } });
+    expect(room.textContent).toBe('RoomRooms unavailable');
+    // Another building's failure is not this plan's.
+    setView({ interior: { site: 'BLK_510', state: 'failed', storey: null, band: null, reason: FAILED_ROOMS } });
+    expect(room.textContent).toBe('RoomLoading rooms…');
   });
 
   it('says a pick or a cut without a notice chip, and shows a refusal', () => {
@@ -1054,6 +1061,12 @@ describe('the HUD in Plan (P6)', () => {
     expect(engine.pickRoom).toHaveBeenLastCalledWith(null); // a second press clears it
     fireEvent.click(screen.getByRole('button', { name: 'Walk into #05-101 · Bedroom' }));
     expect(engine.walkIn).toHaveBeenCalled();
+    // Until the nav file is in, the list waits; failed for good, it says why.
+    setView(inPlan({ ready: false, rooms: [] }));
+    expect(section.querySelector('.wb-estate-state')!.textContent).toBe('Loading the rooms…');
+    setView({ interior: { site: 'BLK_509', state: 'failed', storey: 'L5', band: null, reason: FAILED_ROOMS } });
+    expect(screen.getByRole('region', { name: 'Rooms of Blk 509, L5' }).querySelector('.wb-estate-state')!.textContent).toBe(FAILED_ROOMS);
+    setView({ interior: null });
     setView({ plan: null, location: { ...INITIAL_VIEW.location } });
     expect(container.querySelector('[data-estate-rooms]')).toBeNull();
     unmount();

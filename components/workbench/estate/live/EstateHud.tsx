@@ -7,7 +7,7 @@ import { ESTATE_SITE_STOREYS, ESTATE_STOREY_FFL, type EstateSiteId, type EstateS
 import { cutText, roomGroups, roomText } from '../../../../lib/estate/plan';
 import { enterLabel } from '../../../../lib/estate/policy';
 import type {
-  EstateEngine, EstateEngineEvent, EstateHudProps, EstatePlanView, EstatePopover, EstateProgressEvent, EstateStatsEvent, EstateView,
+  EstateEngine, EstateEngineEvent, EstateHudProps, EstateInteriorView, EstatePlanView, EstatePopover, EstateProgressEvent, EstateStatsEvent, EstateView,
   EstateWalkLevel, EstateWalkStep, EstateWalkView,
 } from '../engineApi';
 
@@ -659,8 +659,17 @@ const stageNear = (el: Element | null) => el?.closest('#world')?.querySelector<H
  * panel to it, and the picked row is kept in view inside the list's own
  * scroller: only those two scrollers move, never the page.
  */
+/**
+ * Why a plan's rooms will never list, or null while they may still come: the
+ * planned building's nav file (or its interior or walk grid) failed for good,
+ * so view.plan stays not ready and "Loading" would wait forever.
+ */
+const roomsFailed = (plan: EstatePlanView, interior: EstateInteriorView | null): string | null =>
+  !plan.ready && interior?.site === plan.site && interior.state === 'failed' ? interior.reason ?? 'The rooms did not download.' : null;
+
 export function EstatePlanRooms({ engine, phase }: EstateHudProps): React.ReactElement | null {
   const [plan, setPlan] = React.useState<EstatePlanView | null>(() => engine.getView().plan ?? null);
+  const [interior, setInterior] = React.useState<EstateInteriorView | null>(() => engine.getView().interior ?? null);
   const listRef = React.useRef<HTMLDivElement>(null);
   const sectionRef = React.useRef<HTMLElement>(null);
   // The roving stop's fallback when nothing is picked: the room last focused, for this plan only.
@@ -693,8 +702,9 @@ export function EstatePlanRooms({ engine, phase }: EstateHudProps): React.ReactE
   }, [shown]);
   React.useEffect(() => {
     setPlan(engine.getView().plan ?? null);
+    setInterior(engine.getView().interior ?? null);
     return engine.subscribe((event) => {
-      if (event.type === 'location') setPlan(event.plan ?? null);
+      if (event.type === 'location') { setPlan(event.plan ?? null); setInterior(event.interior ?? null); }
     });
   }, [engine]);
   React.useLayoutEffect(() => {
@@ -747,7 +757,7 @@ export function EstatePlanRooms({ engine, phase }: EstateHudProps): React.ReactE
       }}
     >
       <p className="wb-estate-head">{`ROOMS — ${siteChipLabel(plan.site)} · ${plan.storey}`}</p>
-      {!plan.ready && <p className="wb-estate-state">Loading the rooms…</p>}
+      {!plan.ready && <p className="wb-estate-state">{roomsFailed(plan, interior) ?? 'Loading the rooms…'}</p>}
       {plan.ready && (
         <div
           className="wb-estate-rooms-list"
@@ -904,6 +914,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
   // Overview's strip (the selection's storeys, each opening Plan) and Plan's own.
   const planSite = features.plan ? (planned ? planned.site : mode === 'overview' ? selection : null) : null;
   const pickedRoom = planned && planned.room >= 0 ? planned.rooms[planned.room] ?? null : null;
+  const noRooms = planned ? roomsFailed(planned, interior) !== null : false;
 
   let lockLine: string | null = null;
   if (firstPerson) {
@@ -1159,7 +1170,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
         {planned && (
           <div className="wb-estate-chip wb-estate-chip-sel" data-estate-plan-room>
             <span className="wb-estate-chip-key">Room</span>
-            <span>{pickedRoom ? roomText(pickedRoom) : planned.ready ? 'Pick a room' : 'Loading rooms…'}</span>
+            <span>{pickedRoom ? roomText(pickedRoom) : planned.ready ? 'Pick a room' : noRooms ? 'Rooms unavailable' : 'Loading rooms…'}</span>
             {pickedRoom && (
               <button
                 type="button"

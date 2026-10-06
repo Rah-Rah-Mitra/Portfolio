@@ -6,7 +6,7 @@ import { EstateWindow } from '../components/workbench/estate/EstateWindow';
 import { ESTATE_DISPLAY_NAME, ESTATE_REPO_URL } from '../components/workbench/estate/EstateRegistry';
 import { ESTATE_FOCUS_EVENT_NAME } from '../components/workbench/estate/EstateWindow';
 import { ESTATE_NAME } from '../lib/estate/ids';
-import { RELEASE_OVERRIDE_RANGE, SHELL_TIERS, qualityFromSearch, releaseMsFromSearch } from '../components/workbench/estate/shellDom';
+import { RELEASE_OVERRIDE_RANGE, SHELL_TIERS, qualityFromSearch, releaseMsFromSearch, reloadPage } from '../components/workbench/estate/shellDom';
 import { EstateLoadError, loadEngine } from '../components/workbench/estate/loadEngine';
 import type {
   EstateEngine, EstateEngineEvent, EstateEngineOptions, EstateHudProps, EstateRuntime, EstateView,
@@ -31,6 +31,11 @@ vi.mock('../components/workbench/estate/loadEngine', async (importOriginal) => (
   loadEngine: vi.fn(),
 }));
 const loadMock = vi.mocked(loadEngine);
+// Reload is the answer to a failed chunk; jsdom cannot navigate, so it is recorded.
+vi.mock('../components/workbench/estate/shellDom', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../components/workbench/estate/shellDom')>()),
+  reloadPage: vi.fn(),
+}));
 
 /** An event as a test writes it: the fake stamps its own token. Distributes over the union. */
 type Untokened<E> = E extends unknown ? Omit<E, 'token'> : never;
@@ -144,6 +149,7 @@ const Desk: React.FC<{ open?: boolean; homeOpen?: boolean; focused?: boolean; de
 }) => {
   const desk = (
     <main data-desk>
+      <button type="button" className="wb-rail-desk">DESK</button>
       <section data-win="home" style={{ display: homeOpen ? 'flex' : 'none' }}><button type="button">Home body</button></section>
       <section data-win="world-3d" data-focused={focused || undefined} style={{ display: open ? 'flex' : 'none' }}>
         <header className="wb-titlebar"><button type="button" aria-label="Close Estate">×</button></header>
@@ -180,6 +186,7 @@ beforeEach(() => {
   pendingLoad = null;
   idle = [];
   loadMock.mockReset();
+  vi.mocked(reloadPage).mockClear();
   vi.mocked(runtime.createEngine).mockClear();
   rafSpy = vi.fn(() => 1);
   vi.stubGlobal('requestAnimationFrame', rafSpy);
@@ -225,7 +232,9 @@ describe('Estate window — loading', () => {
     const stage = stageOf(container);
     expect(stage.getAttribute('role')).toBe('application');
     expect(stage.tabIndex).toBe(0);
-    expect(stage.getAttribute('aria-describedby')).toBe('estate-keys');
+    // Described by the HUD's always-present key summary: #estate-keys sits in a
+    // closed <details>, outside the accessibility tree until opened.
+    expect(stage.getAttribute('aria-describedby')).toBe('estate-keys-desc');
     expect(container.querySelector('[data-fake-hud="live"]')).not.toBeNull();
     // An automatic load never moves focus.
     expect(document.activeElement).toBe(document.body);
@@ -257,6 +266,35 @@ describe('Estate window — loading', () => {
     await flush();
     expect(phaseOf(container)).toBe('live');
     expect(document.activeElement).toBe(stageOf(container));
+  });
+
+  it('a load that lands after the visitor went to another window leaves focus and the stack alone', async () => {
+    let resolveLoad: (value: EstateRuntime) => void = () => {};
+    loadMock.mockImplementation(() => new Promise<EstateRuntime>((resolve) => { resolveLoad = resolve; }));
+    const { container } = render(<Desk device={SAVE_DATA} />);
+    await flush();
+    runIdle();
+    const load = actionButton(container)!;
+    act(() => { load.focus(); fireEvent.click(load); });
+    await flush();
+    expect(phaseOf(container)).toBe('loading');
+    // The visitor presses another window and focuses something in it.
+    const other = container.querySelector<HTMLButtonElement>('section[data-win="home"] button')!;
+    act(() => { other.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); other.focus(); });
+    const opens: unknown[] = [];
+    const onOpen = (event: Event) => opens.push((event as CustomEvent).detail);
+    window.addEventListener(WORKBENCH_OPEN_EVENT, onOpen);
+    try {
+      await act(async () => { resolveLoad(runtime); });
+      await flush();
+      instances[0].emit({ type: 'ready', tier: 'low', msaa: false, programs: 6 });
+      await flush();
+      expect(phaseOf(container)).toBe('live');
+      expect(document.activeElement).toBe(other);
+      expect(opens).toEqual([]);
+    } finally {
+      window.removeEventListener(WORKBENCH_OPEN_EVENT, onOpen);
+    }
   });
 
   it('a deep link without the experience provider stays on the poster', async () => {
@@ -362,10 +400,23 @@ describe('Estate window — lifecycle', () => {
   });
 
   it('DESK (every window closed at once) releases without waiting', async () => {
-    const { engine, rerender } = await mountLive();
+    const { container, engine, rerender } = await mountLive();
+    fireEvent.click(container.querySelector('.wb-rail-desk')!);
     rerender(<Desk open={false} homeOpen={false} />);
     await flush();
     expect(engine.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closing the last open window by hand is an ordinary close: frozen, and resumed on reopen', async () => {
+    const { engine, rerender } = await mountLive({ homeOpen: false });
+    rerender(<Desk open={false} homeOpen={false} />);
+    await flush();
+    expect(engine.freeze).toHaveBeenCalled();
+    expect(engine.dispose).not.toHaveBeenCalled();
+    rerender(<Desk homeOpen={false} />);
+    await flush();
+    expect(engine.resume).toHaveBeenCalled();
+    expect(instances).toHaveLength(1);
   });
 
   it('ignores events from an instance it has dropped', async () => {
@@ -379,7 +430,33 @@ describe('Estate window — lifecycle', () => {
   });
 });
 
+describe('Estate window — focus through a GPU reset', () => {
+  it('moves focus from the stage to Retry when a live context is lost, and back when it returns', async () => {
+    const { container, engine } = await mountLive();
+    act(() => { stageOf(container).focus(); });
+    engine.emit({ type: 'lost', frozen: false });
+    await flush();
+    expect(phaseOf(container)).toBe('lost');
+    expect(document.activeElement).toBe(actionButton(container));
+    expect(actionButton(container)?.textContent).toBe('Retry');
+    engine.emit({ type: 'restored' });
+    await flush();
+    expect(phaseOf(container)).toBe('live');
+    expect(document.activeElement).toBe(stageOf(container));
+  });
+
+  it('never pulls focus from another window when the reset happens', async () => {
+    const { container, engine } = await mountLive();
+    const other = container.querySelector<HTMLButtonElement>('section[data-win="home"] button')!;
+    act(() => { other.focus(); });
+    engine.emit({ type: 'lost', frozen: false });
+    await flush();
+    expect(document.activeElement).toBe(other);
+  });
+});
+
 describe('Estate window — failures', () => {
+
   it('a live context loss shows the reason and Retry; a restore goes back to live', async () => {
     const { container, engine } = await mountLive();
     engine.emit({ type: 'lost', frozen: false });
@@ -453,19 +530,34 @@ describe('Estate window — failures', () => {
     expect(loadMock).toHaveBeenCalledTimes(1);
   });
 
-  it('a failed download offers Retry, which imports again', async () => {
-    loadMock.mockRejectedValueOnce(new EstateLoadError('failed', new Error('offline')));
+  it('an engine chunk that failed to load offers Reload: a failed import() never fetches again', async () => {
+    loadMock.mockRejectedValueOnce(new EstateLoadError('failed', new Error('Failed to fetch dynamically imported module')));
     loadMock.mockResolvedValue(runtime);
     const { container } = render(<Desk />);
     await flush();
     runIdle();
     await flush();
     expect(phaseOf(container)).toBe('error');
-    expect(stateText(container)).toBe(ESTATE_REASONS.error);
+    expect(stateText(container)).toBe('The 3D viewer did not download. Reload to try again.');
+    expect(actionButton(container)?.textContent).toBe('Reload');
     act(() => { fireEvent.click(actionButton(container)!); });
     await flush();
-    expect(loadMock).toHaveBeenCalledTimes(2);
-    expect(instances[0].start).toHaveBeenCalledTimes(1);
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+    expect(loadMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failure after the chunk ran (the engine says error) keeps Retry, which builds a new instance', async () => {
+    const { container, engine } = await mountLive();
+    engine.emit({ type: 'error', message: 'pack.json: 503' });
+    await flush();
+    expect(phaseOf(container)).toBe('error');
+    expect(stateText(container)).toBe(ESTATE_REASONS.error);
+    expect(actionButton(container)?.textContent).toBe('Retry');
+    act(() => { fireEvent.click(actionButton(container)!); });
+    await flush();
+    expect(reloadPage).not.toHaveBeenCalled();
+    expect(instances).toHaveLength(2);
+    expect(instances[1].start).toHaveBeenCalledTimes(1);
   });
 
   it('a pack file that 404s mid-load (the engine says stale) is stale too', async () => {
@@ -513,7 +605,9 @@ describe('Estate window — focus requests, Esc and raising', () => {
     await flush();
     act(() => { fireEvent.click(container.querySelector('[data-estate-site="MSCP_513"]')!); });
     expect(container.querySelector('[data-estate-site="MSCP_513"]')?.getAttribute('aria-pressed')).toBe('true');
-    expect(container.querySelector('.wb-estate-notice')?.textContent).toBe('Load the 3D estate to fly there.');
+    // In the polite status line beside the Load button, not under fourteen rows.
+    expect(container.querySelector('.wb-estate-state .wb-estate-notice')?.textContent).toBe('Load the 3D estate to fly there.');
+    expect(stateText(container)).toBe('Load the 3D estate to fly there. Still render · held: Data Saver is on.');
   });
 
   it('live, a row flies there and puts the keys on the stage', async () => {

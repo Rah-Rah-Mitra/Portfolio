@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CALIBRATION_FRAMES, CLEAN_DROPS, CPU_DOWN, CPU_UP, DISPLAY_SLACK, DROP_FACTOR, GPU_DOWN, PERIOD_MAX_MS, PERIOD_MIN_MS,
+  CALIBRATION_FRAMES, CLEAN_DROPS, CPU_DOWN, CPU_UP, DISPLAY_SLACK, DROP_FACTOR, EARLY_DROP_SHARE, EARLY_WINDOW_FRAMES, EARLY_WINDOW_MS,
+  GPU_DOWN, PERIOD_MAX_MS, PERIOD_MIN_MS, RECENT_CALIBRATION_MS,
   PERIOD_SAMPLES, PERIOD_WARMUP, PROBE_WAIT_MAX_MS, PROBE_WAIT_MS, TRIAL_MS, WINDOW_FRAMES, WINDOW_MS, buildLadder,
   calibrateDisplay, classifyRenderer, createGovernor, governorNotch, governorSample, judgedPeriod, parseQualityOverride,
   percentileInPlace, startingTier, type GovernorDecision, type GovernorSample, type GovernorState,
@@ -204,6 +205,24 @@ describe('display floor', () => {
     const changes = simulate(s, 4_000, () => ({ drops: 0.6, cpu: 3 }));
     expect(changes[0]?.decision).toBe('down');
     expect(changes[0].t).toBeLessThan(3_000);
+  });
+
+  it('closes a plainly overloaded window early, a notch a second, once a recent calibration says it is the scene', () => {
+    expect([EARLY_WINDOW_MS, EARLY_WINDOW_FRAMES, EARLY_DROP_SHARE, RECENT_CALIBRATION_MS]).toEqual([1000, 20, 0.5, 10_000]);
+    // A SwiftShader-like device: every frame takes about three vsyncs (≈ 13 fps).
+    const s = createGovernor({ tier: 'high', pixelRatio: 2 });
+    calibrateDisplay(s, new Array(CALIBRATION_FRAMES).fill(HZ60));
+    const changes = simulate(s, 6_000, () => ({ drops: 1, cpu: 3 }), 3 * HZ60 / 2);
+    // Each notch after ~1 s of 20+ frames, not one per 60-frame window (~4.6 s at 13 fps).
+    expect(changes.length).toBeGreaterThanOrEqual(4);
+    expect(changes[0].decision).toBe('down');
+    expect(changes[0].t).toBeLessThan(2_600);
+    expect(s.recalibrate).toBe(false); // the warm-up calibration was recent: no burst asked mid-drag
+    // A mixed window (a third dropped) still waits for the full verdict.
+    const m = createGovernor({ tier: 'high', pixelRatio: 2 });
+    calibrateDisplay(m, new Array(CALIBRATION_FRAMES).fill(HZ60));
+    const mixed = simulate(m, 1_900, () => ({ drops: 0.33, cpu: 3 }));
+    expect(mixed).toEqual([]);
   });
 
   it('believes a slower display only from a calibration: a window dragged to a 30 Hz monitor', () => {

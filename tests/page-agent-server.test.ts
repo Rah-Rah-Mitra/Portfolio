@@ -153,6 +153,10 @@ describe('server page-agent command parity', () => {
     expect(exhibits).toMatch(/synthetic, seeded jobs \(not Abbott data\)/);
     expect(exhibits).toMatch(/N-body gravity field[\s\S]*WebGL2 fluid/);
     expect(exhibits).toMatch(/Sample Town N5[\s\S]*not a real town[\s\S]*desktop/i);
+    // The model hears what P4b does (orbit, fly to, detail on approach), and no walking in before P5.
+    const estate = serverAgent.SITE_EXHIBITS.find((line: string) => line.startsWith('Estate (#world')) ?? '';
+    expect(estate).toMatch(/orbit it or fly to a building, and detail loads as they get closer/);
+    expect(estate).not.toMatch(/walk in/i);
     // FIG. 06b ships with the Camera Lab; the model was told only the four models.
     expect(exhibits).toMatch(/Zhang calibration[\s\S]*Levenberg–Marquardt/);
     // ?mode=scan is still honoured (lib/experienceMode.ts); the mode is not denied.

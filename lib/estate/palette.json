@@ -24,11 +24,11 @@
     { "slot": 19, "material": "Bark", "role": "bark", "token": "--color-neutral-600", "sourceRGBA": [0.4, 0.28, 0.18, 1] },
     { "slot": 20, "material": "Foliage", "role": "foliage", "token": "--color-accent-400", "sourceRGBA": [0.24, 0.48, 0.22, 1] },
     { "slot": 21, "material": "Painted RC - party wall", "role": "party-wall", "token": "--color-neutral-200", "sourceRGBA": [0.9, 0.88, 0.84, 1] },
-    { "slot": 22, "material": "Painted RC - block accent", "role": "block-accent", "token": "--color-accent-300", "sourceRGBA": [0.8, 0.55, 0.42, 1] },
+    { "slot": 22, "material": "Painted RC - block accent", "role": "block-accent", "token": "--color-accent-200", "sourceRGBA": [0.8, 0.55, 0.42, 1] },
     { "slot": 23, "material": "Homogeneous tile - wet area", "role": "wet-area", "token": "--color-neutral-200", "sourceRGBA": [0.86, 0.87, 0.88, 1] },
     { "slot": 24, "material": "Precast concrete kerb", "role": "kerb", "token": "--color-neutral-300", "sourceRGBA": [0.66, 0.65, 0.62, 1] },
     { "slot": 25, "material": "Road marking - white", "role": "marking", "token": "--color-neutral-100", "sourceRGBA": [0.95, 0.95, 0.93, 1] },
-    { "slot": 26, "material": "EPDM playground surface", "role": "play-surface", "token": "--color-neutral-400", "sourceRGBA": [0.8, 0.36, 0.28, 1] },
+    { "slot": 26, "material": "EPDM playground surface", "role": "play-surface", "token": "--color-accent-500", "sourceRGBA": [0.8, 0.36, 0.28, 1] },
     { "slot": 27, "material": "Metal deck roof - linkway", "role": "roofing", "token": "--color-neutral-400", "sourceRGBA": [0.56, 0.6, 0.64, 1] },
     { "slot": 28, "material": "Roller shutter - galvanised", "role": "door", "token": "--color-neutral-500", "sourceRGBA": [0.62, 0.64, 0.66, 1] }
   ],

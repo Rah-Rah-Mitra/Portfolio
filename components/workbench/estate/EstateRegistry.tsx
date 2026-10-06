@@ -31,16 +31,9 @@ export const groupThousands = (value: number): string => String(value).replace(/
 
 const KIND_LABEL: Record<Site['kind'], string> = { block: 'Block', mscp: 'Car park', nc: 'Hawker hall' };
 
-/** 'L1–L16 + RF': the storeys a site has, from the catalogue. */
-export const storeyRange = (storeys: readonly string[]): string => {
-  const levels = storeys.filter((tag) => tag !== 'RF');
-  const range = levels.length > 1 ? `${levels[0]}–${levels[levels.length - 1]}` : (levels[0] ?? '');
-  return storeys.includes('RF') ? `${range} + RF` : range;
-};
-
-/** One registry row's second line: 'Block · SL · L1–L16 + RF · 49.0 m'. */
+/** One registry row's second line: 'Block · SL · L1–L16 + RF · 49.0 m' (the storey range comes written: scripts/estate/lib/manifest.mjs storeyRange). */
 export const siteMeta = (site: Site): string =>
-  [KIND_LABEL[site.kind], site.typology, storeyRange(site.storeys), `${site.heightM.toFixed(1)} m`]
+  [KIND_LABEL[site.kind], site.typology, site.levels, `${site.heightM.toFixed(1)} m`]
     .filter((part): part is string => Boolean(part)).join(' · ');
 
 const blocks = ESTATE_CATALOGUE.sites.filter((site) => site.kind === 'block').length;
@@ -73,21 +66,24 @@ const openFromLink = (event: React.MouseEvent, appId: DesktopAppId, targetId: st
 };
 
 /**
- * The stage's keys (lib/estate/input.ts, plan §8.2) for what this build does:
- * Overview and Fly. The live stage's aria-describedby points here. P5 adds
- * Walk's.
+ * The stage's keys (lib/estate/input.ts, plan §8.2 with the pan and look
+ * additions) for what this build does: Overview and Fly. The full list; the
+ * live stage's own description is the HUD's short summary (#estate-keys-desc),
+ * because a closed <details> is outside the accessibility tree. P5 adds Walk's.
  */
 export const ESTATE_KEYS: ReadonlyArray<readonly [string, string]> = [
   ['Drag', 'Orbit; in Fly, look around'],
   ['Right-drag, Shift-drag', 'Pan; in Fly, strafe'],
   ['Wheel', 'Zoom towards the pointer; in Fly, speed'],
   ['W S, ↑ ↓', 'Tilt; in Fly, forward and back'],
-  ['A D', 'In Fly, strafe'],
+  ['A D', 'Pan sideways; in Fly, strafe'],
+  ['Shift + arrows', 'In Overview, pan'],
   ['← →', 'Rotate; in Fly, turn'],
+  ['R F', 'In Fly, look up and down'],
   ['Space E, C Q', 'In Fly, up and down'],
   ['Shift', 'In Fly, faster'],
   ['1, 3', 'Overview, Fly'],
-  ['Enter', 'Fly to the selected building'],
+  ['Enter', 'In Overview, fly to the selected building'],
   ['Home', 'Back to the aerial view'],
   ['L', 'In Fly, capture the mouse'],
   ['I', 'Say where the camera is'],
@@ -111,7 +107,7 @@ export interface EstateRegistryProps {
   rowsFly: boolean;
   /** A row was pressed. */
   onSite: (site: EstateSiteId) => void;
-  /** Under the rows: "Load the 3D estate to fly there", or null. */
+  /** Beside the action, in the status line: "Load the 3D estate to fly there", or null. */
   notice: string | null;
 }
 
@@ -126,7 +122,13 @@ export const EstateRegistry: React.FC<EstateRegistryProps> = ({ stateText, actio
     </dl>
     <p className="wb-estate-desc">{ESTATE_DESCRIPTION}</p>
     <div className="wb-estate-action">
-      <p className="wb-estate-state" role="status" aria-live="polite">{stateText}</p>
+      {/* The notice answers a row press made before the viewer is live: next to
+          the Load button it asks for, and spoken, not under fourteen rows. */}
+      <p className="wb-estate-state" role="status" aria-live="polite">
+        {notice && <span className="wb-estate-notice">{notice}</span>}
+        {notice && stateText ? ' ' : null}
+        {stateText}
+      </p>
       {action && (
         <button type="button" className={`btn ${action.primary ? 'btn-primary' : 'btn-secondary'}`} onClick={action.onClick} data-estate-action>
           {action.label}
@@ -150,8 +152,8 @@ export const EstateRegistry: React.FC<EstateRegistryProps> = ({ stateText, actio
         </li>
       ))}
     </ul>
-    {notice && <p className="wb-estate-notice">{notice}</p>}
     <details className="wb-estate-keys">
+
       <summary>Keys</summary>
       <dl id="estate-keys" className="wb-estate-keylist">
         {ESTATE_KEYS.map(([keys, what]) => <React.Fragment key={keys}><dt>{keys}</dt><dd>{what}</dd></React.Fragment>)}

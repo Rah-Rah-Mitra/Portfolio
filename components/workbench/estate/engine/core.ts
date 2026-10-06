@@ -56,6 +56,15 @@ const TYPICAL_STOREY_M = 2.8;
 const FADE_MS = 200;
 const PACK_RETRIES = 2;
 const PACK_BACKOFF_MS = 1000;
+/**
+ * A pixel-ratio notch reallocates the drawing buffer (setSize), which took
+ * 56–437 ms on SwiftShader mid-orbit. While the visitor drives the camera it
+ * waits for the first frame without motion, at most this long, ms.
+ */
+export const NOTCH_RESIZE_DEFER_MS = 2000;
+/** Fly below this eye height (m) is among the tree crowns, which are not boxes: the near plane stays ≤ FLY_TREE_NEAR_M. */
+export const TREE_CROWN_TOP_M = 16;
+export const FLY_TREE_NEAR_M = 0.3;
 
 export interface CoreHooks {
   /** The first live frame is drawn: emit the first `location` before `ready`. */
@@ -126,6 +135,16 @@ export class EstateCore {
   /** Index of the selected or targeted building (lean mode and P0 downloads follow it), or −1. */
   private focusIndex = -1;
   private calibrating = false;
+  /** The size and ratio the drawing buffer was last given (setSize reallocates even when nothing changed). */
+  private appliedWidth = 0;
+  private appliedHeight = 0;
+  private appliedRatio = 0;
+  /** A governor notch's pixel ratio, waiting for a frame without motion (NOTCH_RESIZE_DEFER_MS), and since when. */
+  private pendingRatio: number | null = null;
+  private pendingRatioSince = 0;
+  /** The timer that wakes the loop when a held level step comes due (lod.ts DWELL_MS), and when it fires. */
+  private holdTimer: ReturnType<typeof setTimeout> | null = null;
+  private holdDue = Infinity;
 
   // per-frame scratch
   private readonly visible: boolean[] = ESTATE_SITE_IDS.map(() => false);
@@ -243,9 +262,25 @@ export class EstateCore {
   }
 
   private hostSize(): { width: number; height: number } {
+    return this.hostBox() ?? { width: 1, height: 1 };
+  }
+
+  /**
+   * The host's CSS size, or null when it has no box: a closed or minimised
+   * window is display:none, and its ResizeObserver reports 0 × 0. Sizing the
+   * buffer to that drew every reopen at 1 × 1 (a grey frame, and every
+   * building dropped to massing), so a boxless host keeps the last size.
+   */
+  private hostBox(): { width: number; height: number } | null {
     const host = this.options.host;
-    const width = host.clientWidth || host.getBoundingClientRect().width;
-    const height = host.clientHeight || host.getBoundingClientRect().height;
+    let width = host.clientWidth;
+    let height = host.clientHeight;
+    if (!(width > 0 && height > 0)) {
+      const rect = host.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+    }
+    if (!(width >= 0.5 && height >= 0.5)) return null;
     return { width: Math.max(1, Math.round(width)), height: Math.max(1, Math.round(height)) };
   }
 
@@ -449,6 +484,9 @@ export class EstateCore {
     const selector = levels.update(lf, scheduler);
     streaming.pump(levels.views, this.planFor(false));
     scheduler.setViews(levels.views);
+    // A level step held by the 400 ms dwell comes due with nothing else moving:
+    // wake one frame for it then (a timeout, not rAF, so rest stays rest).
+    this.armHold(selector.holdUntil, now);
 
     // Levels, then the planes and fog for this pose.
     const edgeReach = (TYPICAL_STOREY_M * k) / (EDGE_MIN_STOREY_PX * this.pixelRatio);
@@ -457,6 +495,9 @@ export class EstateCore {
     for (let i = 0; i < this.visible.length; i += 1) {
       if (this.visible[i] && levels.inputs[i].distance < nearest) nearest = levels.inputs[i].distance;
     }
+    // Low in Fly the camera is among tree crowns, which the box distance does
+    // not see: hold the near plane at FLY_TREE_NEAR_M there.
+    if (rig.mode === 'fly' && this.eye[2] < TREE_CROWN_TOP_M && nearest > 2 * FLY_TREE_NEAR_M) nearest = 2 * FLY_TREE_NEAR_M;
     const pose = this.clipPose;
     pose.nearestBoxDistance = nearest;
     pose.heightAboveFloor = Math.max(0, this.eye[2]);
@@ -465,6 +506,14 @@ export class EstateCore {
     applyClip(camera, rig.mode, pose, this.clipScratch);
     fogRange(rig.mode, orbitDistance, this.fog);
     kit.setFog(this.fog.near, this.fog.far);
+
+    // A governor notch's resize, deferred while the camera moved (or overdue).
+    if (this.pendingRatio !== null && (!moving || now - this.pendingRatioSince >= NOTCH_RESIZE_DEFER_MS)) {
+      const ratio = this.pendingRatio;
+      this.pendingRatio = null;
+      // Two settle frames: this one's detail selection used the old buffer height.
+      if (this.applySize(false, ratio)) this.loop?.markChanged();
+    }
 
     // Draw, once stage 0 can.
     let drew = false;
@@ -497,11 +546,14 @@ export class EstateCore {
       }
       this.readouts?.offer(this.stats);
       this.statsOut?.offer(this.stats);
-      const excluded = uploaded || compiled || this.resized;
+      // A frame still drawn at the old ratio while a notch's resize waits is
+      // not judged: it would step the ladder twice for one overload.
+      const excluded = uploaded || compiled || this.resized || this.pendingRatio !== null;
       this.resized = false;
       const change = this.ready ? governor.sample(time, continuous, cpuMs, excluded) : null;
-      if (change) this.applyNotch(change);
-      if (governor.wantsCalibration) this.recalibrate();
+      if (change) this.applyNotch(change, moving, now);
+      // The calibration burst draws nothing for 8 frames: never under the visitor's hand.
+      if (governor.wantsCalibration && !moving) this.recalibrate();
     }
     this.progress();
 
@@ -539,14 +591,42 @@ export class EstateCore {
     this.emitter.emit({ type: 'ready', tier: this.tier, msaa: this.msaa, programs: this.programs });
   }
 
-  private applyNotch(change: GovernorChange) {
+  /**
+   * A governor notch: the tier at once (detail selection, streaming, trees);
+   * the pixel ratio at once only while the camera is at rest, else on the
+   * first frame without motion (NOTCH_RESIZE_DEFER_MS at most), because the
+   * buffer reallocation is the one long task a notch costs.
+   */
+  private applyNotch(change: GovernorChange, moving: boolean, now: number) {
     const { notch } = change;
     this.tier = notch.tier;
     this.streaming?.scheduler.setTier(notch.tier);
     if (shouldDropMsaa(this.msaa, notch.tier)) writeMsaaOff();
-    this.applySize(false, notch.pixelRatio);
+    const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
+    const ratio = capPixelRatio(this.tier, this.cssWidth, this.cssHeight, dpr, notch.pixelRatio);
+    if (ratio !== this.appliedRatio && moving) {
+      if (this.pendingRatio === null) this.pendingRatioSince = now;
+      this.pendingRatio = notch.pixelRatio;
+    } else {
+      this.pendingRatio = null;
+      this.applySize(false, notch.pixelRatio);
+    }
     this.scene?.invalidateTrees();
     this.loop?.markChanged();
+  }
+
+  /** Keeps one timeout armed for the earliest held level step (`due`, loop-host ms), replacing a later one. */
+  private armHold(due: number, now: number) {
+    if (!(due < Infinity)) return;
+    if (this.holdTimer !== null && this.holdDue <= due) return;
+    if (this.holdTimer !== null) this.timers.cancel(this.holdTimer);
+    this.holdDue = due;
+    // +1 ms: the hold reads `now − since < DWELL_MS`, so the frame must come strictly after.
+    this.holdTimer = this.timers.after(Math.max(0, due - now) + 1, () => {
+      this.holdTimer = null;
+      this.holdDue = Infinity;
+      if (!this.frozen) this.invalidate();
+    });
   }
 
   private recalibrate() {
@@ -562,27 +642,41 @@ export class EstateCore {
     });
   }
 
-  /** Reads the host's size and applies it with the §7.7 pixel ratio under the governor's ceiling. */
-  private applySize(initial: boolean, ceiling?: number) {
+  /**
+   * Reads the host's size and applies it with the §7.7 pixel ratio under the
+   * governor's ceiling. A host with no box (the window closed) keeps the last
+   * size, and a size and ratio already applied reallocate nothing (assigning a
+   * canvas its own width still clears and reallocates its buffer). Returns
+   * whether the buffer changed.
+   */
+  private applySize(initial: boolean, ceiling?: number): boolean {
     const created = this.created;
-    if (!created) return;
+    if (!created) return false;
     if (!initial) {
-      const { width, height } = this.hostSize();
-      this.cssWidth = width;
-      this.cssHeight = height;
+      const box = this.hostBox();
+      if (box) {
+        this.cssWidth = box.width;
+        this.cssHeight = box.height;
+      }
     }
     const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
-    const limit = ceiling ?? this.governor?.notch.pixelRatio ?? Infinity;
+    // While a notch's resize waits, the old ratio stands (the frame decides when).
+    const limit = ceiling ?? (this.pendingRatio !== null ? this.appliedRatio : this.governor?.notch.pixelRatio) ?? Infinity;
     const ratio = initial
       ? capPixelRatio(this.tier, this.cssWidth, this.cssHeight, dpr)
       : capPixelRatio(this.tier, this.cssWidth, this.cssHeight, dpr, limit);
+    if (!initial && ratio === this.appliedRatio && this.cssWidth === this.appliedWidth && this.cssHeight === this.appliedHeight) return false;
     this.pixelRatio = ratio;
+    this.appliedRatio = ratio;
+    this.appliedWidth = this.cssWidth;
+    this.appliedHeight = this.cssHeight;
     created.renderer.setPixelRatio(ratio);
     created.renderer.setSize(this.cssWidth, this.cssHeight, false);
     this.camera.aspect = this.cssWidth / this.cssHeight;
     this.camera.updateProjectionMatrix();
     this.resized = true;
     this.updateDrawingBuffer();
+    return true;
   }
 
   private updateDrawingBuffer() {
@@ -680,6 +774,9 @@ export class EstateCore {
     if (this.isDisposed || this.frozen) return;
     this.frozen = true;
     this.loop?.stop();
+    if (this.holdTimer !== null) this.timers.cancel(this.holdTimer);
+    this.holdTimer = null;
+    this.holdDue = Infinity;
     this.governor?.rest();
     if (this.wasMoving) {
       this.wasMoving = false;
@@ -692,8 +789,15 @@ export class EstateCore {
   resume(): void {
     if (this.isDisposed || !this.frozen) return;
     this.frozen = false;
-    if (this.phase === 'live' && !this.lost) this.loop?.start();
+    if (this.phase === 'live' && !this.lost) {
+      // The window may have changed size while closed: read it now, so the
+      // first frame back is drawn at the right size, not 150 ms later.
+      this.loop?.cancelResize();
+      if (this.applySize(false)) this.loop?.markChanged();
+      this.loop?.start();
+    }
   }
+
 
   invalidate(): void {
     if (this.isDisposed) return;

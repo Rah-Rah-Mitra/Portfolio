@@ -427,7 +427,7 @@ describe('pack budgets (plan §6.5, §7.4)', () => {
       expect(tier.treeRadiusM).toBeLessThanOrEqual(prev.treeRadiusM);
       expect(tier.furnitureRadiusM).toBeLessThanOrEqual(prev.furnitureRadiusM);
     });
-    // The top tier is the plan's C11 cap, proved over the pose grid elsewhere.
+    // The top tier is the plan's C11 cap, proved over the pose grid in tests/estate-budget.test.ts.
     expect(budgets.tiers[0]).toMatchObject({ maxDraws: 150, maxTris: 1_200_000 });
   });
 

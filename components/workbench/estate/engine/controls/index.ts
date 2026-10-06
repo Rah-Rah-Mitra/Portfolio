@@ -57,9 +57,20 @@ export const FRAME_MARGIN = 15;
 export const FLY_SITE_MARGIN = 20;
 /** …or else the one in the middle of the view, if it is no farther than this, m. */
 export const FLY_FRAME_REACH = 250;
-/** The host's custom property the HUD's north arrow turns by. */
+/**
+ * The host's custom property a newly mounted north arrow starts from. Written
+ * only when the camera comes to rest: a custom property inherits, so writing it
+ * per frame restyled, laid out and repainted the whole stage subtree on every
+ * frame of an orbit (3.4 ms a frame, measured). During motion the arrow's own
+ * dial ([data-estate-north], an HTML layer: an SVG root's transform is resolved
+ * in layout) is turned directly, a composited transform.
+ */
 export const NORTH_PROPERTY = '--estate-north';
 const NORTH_EPSILON = (0.5 * Math.PI) / 180;
+/** The arrow the HUD draws; found by DOM scan, never by ref. */
+const NORTH_SELECTOR = '[data-estate-north]';
+/** A flight's landing names its building while the orbit target stays within this of where it landed, m. */
+const LANDED_REACH = 1;
 /** Fly → Overview orbits about the ground this far ahead at least, and never farther than this. */
 const AHEAD_MIN = 30;
 const AHEAD_MAX = 600;
@@ -103,7 +114,11 @@ class EstateControls implements EngineNavigation {
   private disposed = false;
   private lastSiteCheck = -Infinity;
   private siteDirty = false;
-  private lastNorth = Number.NaN;
+  private northDial: HTMLElement | null = null;
+  private northDrawn = Number.NaN;
+  private northRested = Number.NaN;
+  /** Where the last flight to a building landed (three world target) and which building: siteFor() names it there. */
+  private landed: { site: number; x: number; y: number; z: number } | null = null;
   private readonly fromPose: OrbitPose = blankPose();
   private readonly toPose: OrbitPose = blankPose();
   private readonly stepPose: OrbitPose = blankPose();
@@ -230,7 +245,7 @@ class EstateControls implements EngineNavigation {
     } else if (this.mode === 'fly' && this.fly) {
       if (this.fly.update(dt, this.held, halted)) moving = true;
     }
-    this.writeNorth();
+    this.writeNorth(moving);
     this.trackSite(moving, t);
     return moving;
   }
@@ -241,8 +256,13 @@ class EstateControls implements EngineNavigation {
     return this.core.staticRig.getTarget(out);
   }
 
-  /** The north arrow's turn, written to the host as a CSS angle when it moves by more than half a degree. */
-  private writeNorth() {
+  /**
+   * The north arrow: its own dial turned directly whenever the heading moves by
+   * more than half a degree (a single composited element, no restyle of the
+   * stage), and the host's NORTH_PROPERTY once the camera rests, so an arrow
+   * the HUD mounts later starts at the right angle.
+   */
+  private writeNorth(moving: boolean) {
     const host = this.host;
     if (!host) return;
     const camera = this.core.camera;
@@ -250,9 +270,21 @@ class EstateControls implements EngineNavigation {
     const u = this.v2.set(0, 1, 0).applyQuaternion(camera.quaternion);
     const turn = northRotation(f.x, f.z, u.x, u.z);
     if (turn === null) return;
-    if (!Number.isNaN(this.lastNorth) && Math.abs(wrapAngle(turn - this.lastNorth)) < NORTH_EPSILON) return;
-    this.lastNorth = turn;
-    host.style.setProperty(NORTH_PROPERTY, `${turn.toFixed(4)}rad`);
+    let dial = this.northDial;
+    if (dial === null || !dial.isConnected) {
+      dial = host.querySelector<HTMLElement>(NORTH_SELECTOR);
+      this.northDial = dial;
+      this.northDrawn = Number.NaN;
+    }
+    const moved = (last: number) => Number.isNaN(last) || Math.abs(wrapAngle(turn - last)) >= NORTH_EPSILON;
+    if (dial && moved(this.northDrawn)) {
+      this.northDrawn = turn;
+      dial.style.transform = `rotate(${turn.toFixed(4)}rad)`;
+    }
+    if (!moving && moved(this.northRested)) {
+      this.northRested = turn;
+      host.style.setProperty(NORTH_PROPERTY, `${turn.toFixed(4)}rad`);
+    }
   }
 
   // ---- where the camera is ------------------------------------------------------------------
@@ -278,6 +310,14 @@ class EstateControls implements EngineNavigation {
     }
     if (!this.orbit) return -1;
     const target = this.orbit.getTarget(this.v1);
+    // Still resting where a flight to a building landed: that building, even
+    // when the framing's target (its box's middle) lies off its outline, as an
+    // L-block's does in its courtyard.
+    const landed = this.landed;
+    if (landed) {
+      if (Math.hypot(target.x - landed.x, target.y - landed.y, target.z - landed.z) <= LANDED_REACH) return landed.site;
+      this.landed = null;
+    }
     if (camera.position.distanceTo(target) > FRAME_REACH) return -1;
     return siteNear(target.x, -target.z, this.prisms, FRAME_MARGIN);
   }
@@ -329,10 +369,16 @@ class EstateControls implements EngineNavigation {
     camera.updateProjectionMatrix();
   }
 
+  /** Remember where a flight to building `site` ended (its orbit target), so the chip keeps naming it there. */
+  private noteLanding(site: number, target: ArrayLike<number>) {
+    this.landed = site >= 0 ? { site, x: target[0], y: target[1], z: target[2] } : null;
+  }
+
   private landFlight() {
     const active = this.flight;
     if (!active) return;
     this.flight = null;
+    this.noteLanding(active.site, active.flight.to.target);
     const site = active.site >= 0 ? active.site : this.siteFor();
     this.siteDirty = false;
     this.view.set({ flight: false, location: { site: this.siteId(site) } });
@@ -350,6 +396,7 @@ class EstateControls implements EngineNavigation {
   private cancelFlightHere() {
     if (!this.flight) return;
     this.flight = null;
+    this.landed = null;
     this.siteDirty = true;
     this.view.set({ flight: false });
   }
@@ -362,6 +409,7 @@ class EstateControls implements EngineNavigation {
     if (instant) {
       this.flight = null;
       orbit.setOrbit(to);
+      this.noteLanding(site, to.target);
       this.siteDirty = false;
       this.view.set({ ...patch, flight: false, location: { site: this.siteId(site >= 0 ? site : this.siteFor()) } });
     } else {
@@ -582,8 +630,10 @@ class EstateControls implements EngineNavigation {
         return;
       }
       case 'aerial':
+        // Overview and (now) Fly: the aerial view, as the HUD's Home does.
         this.home();
         return;
+
       case 'capture':
         this.capture();
         return;
@@ -612,7 +662,8 @@ class EstateControls implements EngineNavigation {
     if (!this.live) return;
     const canvas = this.canvas;
     const locked = canvas !== null && document.pointerLockElement === canvas;
-    this.clicks.down(event.pointerId, event.clientX, event.clientY, event.timeStamp, event.button === 0 && event.isPrimary !== false && !locked);
+    this.clicks.down(event.pointerId, event.clientX, event.clientY, event.timeStamp, event.button === 0 && event.isPrimary !== false && !locked, event.pointerType || 'mouse');
+
     if (this.mode === 'overview') {
       this.orbit?.setShiftPan(event.shiftKey);
       return;
@@ -675,6 +726,8 @@ class EstateControls implements EngineNavigation {
       this.orbit.wheel(steps, event.clientX, event.clientY, this.core.options.motionHalted());
     } else if (this.mode === 'fly' && this.fly) {
       this.fly.wheel(steps);
+      // The HUD's prompt shows the speed: the wheel's only visible effect.
+      this.view.set({ flySpeed: this.fly.multiplier });
     }
     this.core.invalidate();
   };

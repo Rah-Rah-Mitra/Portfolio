@@ -25,7 +25,13 @@ import { createTreePartition, gatherMatrices, partitionTrees, TREE_REPARTITION_M
 // Culling is the engine's own, by bounding spheres from pack.json (§7.2), so
 // three's per-object frustum test is off everywhere (and no geometry ever pays
 // for a computed bounding sphere). One material instance per building per class
-// carries that building's uniforms; they share programs (materials.ts).
+// carries that building's uniforms; they share programs (materials.ts). A
+// material never serves both a Mesh and an InstancedMesh: three keys its
+// program on `instancing`, so one shared by both re-resolves its program and
+// re-uploads every uniform twice a frame (measured: the site's quadrants and
+// trees did). The site gets one of each over one uniforms object; P5's
+// interior (T instanced beside R) keeps the same rule. Per-frame loops below
+// are indexed, not for…of (§7.8: no allocation per frame).
 
 const LEVEL_NONE = -1;
 
@@ -89,7 +95,13 @@ const replaceMaterial = (object: Mesh | InstancedMesh | LineSegments, material: 
   object.material = material;
 };
 
+/** Shows uploaded parts when `on`, hides the rest. Indexed: called per building per frame. */
+const showParts = (parts: readonly Part[], on: boolean) => {
+  for (let i = 0; i < parts.length; i += 1) parts[i].object.visible = on && parts[i].uploaded;
+};
+
 /** The building's storey floors above L1, block-local Z: the massing storey lines. */
+
 const massingFloors = (site: PackBuilding): number[] => ESTATE_STOREY_FFL[site.id].slice(1);
 
 export class EstateScene {
@@ -215,7 +227,9 @@ export class EstateScene {
   }
 
   private attachSite(decoded: SiteParts) {
-    const siteMaterial = this.kit.opaque(createStoreyUniforms());
+    const uniforms = createStoreyUniforms();
+    const siteMaterial = this.kit.opaque(uniforms);
+    const treeMaterial = this.kit.opaque(uniforms);
     for (const p of decoded.quadrants) {
       replaceMaterial(p.object, siteMaterial);
       p.object.visible = false;
@@ -227,7 +241,7 @@ export class EstateScene {
       const sphere = (g.boundingSphere as Sphere).clone();
       this.quadrants.push({ part: p, sphere, tris: trianglesOf(p.object as Mesh), inView: false });
     }
-    for (const s of decoded.species) this.species.push(this.attachSpecies(s, siteMaterial));
+    for (const s of decoded.species) this.species.push(this.attachSpecies(s, treeMaterial));
     this.siteGroup.updateMatrixWorld(true);
     for (const q of this.quadrants) q.sphere.applyMatrix4(q.part.object.matrixWorld);
   }
@@ -270,11 +284,14 @@ export class EstateScene {
   cull(projScreen: Matrix4, reversedDepth: boolean, visible: boolean[]): void {
     const frustum = this.frustum;
     frustum.setFromProjectionMatrix(projScreen, undefined, reversedDepth);
-    for (const b of this.buildings) {
+    const buildings = this.buildings;
+    for (let i = 0; i < buildings.length; i += 1) {
+      const b = buildings[i];
       b.inView = frustum.intersectsSphere(b.sphere);
       visible[b.index] = b.inView;
     }
-    for (const q of this.quadrants) q.inView = frustum.intersectsSphere(q.sphere);
+    const quadrants = this.quadrants;
+    for (let i = 0; i < quadrants.length; i += 1) quadrants[i].inView = frustum.intersectsSphere(quadrants[i].sphere);
   }
 
   /** Near/far trees about the camera (three x, z). Re-partitions after TREE_REPARTITION_M of travel or a radius change. */
@@ -284,7 +301,8 @@ export class EstateScene {
     this.treeCamera.set(cx, 0, cz);
     this.treeRadius = radius;
     let changed = false;
-    for (const s of this.species) {
+    for (let k = 0; k < this.species.length; k += 1) {
+      const s = this.species[k];
       const fullReady = s.full !== null && s.full.uploaded && s.fullSource !== null;
       const r = fullReady ? radius : 0;
       if (!partitionTrees(s.centres, s.count, cx, cz, r, s.partition)) continue;
@@ -320,7 +338,9 @@ export class EstateScene {
    */
   applyLevels(levels: ArrayLike<number>, edges: boolean, distances: ArrayLike<number>, edgeReach: number): number {
     let swaps = 0;
-    for (const b of this.buildings) {
+    const buildings = this.buildings;
+    for (let k = 0; k < buildings.length; k += 1) {
+      const b = buildings[k];
       const level = levels[b.index];
       const near = distances[b.index] <= edgeReach;
       const lined = edges && near;
@@ -330,19 +350,21 @@ export class EstateScene {
       const massing = level === LOD_MASSING;
       const facade = level === LOD_FACADE || level === LOD_DETAIL;
       const detail = level === LOD_DETAIL;
-      if (b.massing) for (const p of b.massing.parts) p.object.visible = massing && p.uploaded;
+      if (b.massing) showParts(b.massing.parts, massing);
       if (b.facade) {
-        for (const p of b.facade.meshes) p.object.visible = facade && p.uploaded;
-        for (const p of b.facade.edges) p.object.visible = facade && lined && p.uploaded;
+        showParts(b.facade.meshes, facade);
+        showParts(b.facade.edges, facade && lined);
         // polygonOffset(1, 1) on F and massing whenever edge lines draw (§7.2).
         this.setOffset(b.materials.facade, lined);
       }
       this.setOffset(b.materials.massing, lined);
       setMassingLines(b.materials.massing, near);
-      if (b.detail) for (const p of b.detail.parts) p.object.visible = detail && p.uploaded;
+      if (b.detail) showParts(b.detail.parts, detail);
     }
-    for (const q of this.quadrants) q.part.object.visible = q.inView && q.part.uploaded;
-    for (const s of this.species) {
+    const quadrants = this.quadrants;
+    for (let i = 0; i < quadrants.length; i += 1) quadrants[i].part.object.visible = quadrants[i].inView && quadrants[i].part.uploaded;
+    for (let i = 0; i < this.species.length; i += 1) {
+      const s = this.species[i];
       if (s.full) s.full.object.visible = s.full.uploaded && s.partition.nearCount > 0;
       if (s.crown) s.crown.object.visible = s.crown.uploaded && s.partition.farCount > 0;
     }
@@ -360,12 +382,14 @@ export class EstateScene {
   reserve(out: { tris: number; draws: number }): { tris: number; draws: number } {
     let tris = 2;
     let draws = 1;
-    for (const q of this.quadrants) {
+    for (let i = 0; i < this.quadrants.length; i += 1) {
+      const q = this.quadrants[i];
       if (!q.inView || !q.part.uploaded) continue;
       tris += q.tris;
       draws += 1;
     }
-    for (const s of this.species) {
+    for (let i = 0; i < this.species.length; i += 1) {
+      const s = this.species[i];
       if (s.full?.uploaded && s.partition.nearCount > 0) { tris += s.partition.nearCount * s.fullTris; draws += 1; }
       if (s.crown?.uploaded && s.partition.farCount > 0) { tris += s.partition.farCount * s.crownTris; draws += 1; }
     }
@@ -387,8 +411,9 @@ export class EstateScene {
 
   /** Tells the scheduler which files drew this frame (eviction's "not seen for" clocks). */
   markSeen(scheduler: EstateScheduler, now: number): void {
-    for (const id of this.siteFiles) scheduler.seen(id, now);
-    for (const b of this.buildings) {
+    for (let i = 0; i < this.siteFiles.length; i += 1) scheduler.seen(this.siteFiles[i], now);
+    for (let i = 0; i < this.buildings.length; i += 1) {
+      const b = this.buildings[i];
       if (!b.group.visible) continue;
       if (b.shown >= LOD_FACADE && b.facadeId) scheduler.seen(b.facadeId, now);
       if (b.shown >= LOD_DETAIL && b.detailId) scheduler.seen(b.detailId, now);
@@ -398,10 +423,13 @@ export class EstateScene {
   /** The scheduler freed these (§7.7): their GPU buffers go, the CPU copies stay for a re-upload. */
   evict(evictions: readonly Eviction[], partsOf: (id: string) => readonly Part[] | null): boolean {
     let trees = false;
-    for (const e of evictions) {
+    for (let i = 0; i < evictions.length; i += 1) {
+      const e = evictions[i];
       const parts = partsOf(e.id);
       if (!parts) continue;
-      for (const p of parts) {
+      for (let j = 0; j < parts.length; j += 1) {
+        const p = parts[j];
+
         if (p.role !== e.role || !p.uploaded) continue;
         p.uploaded = false;
         p.object.visible = false;

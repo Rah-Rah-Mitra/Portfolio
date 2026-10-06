@@ -101,9 +101,20 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      `#estate-keys` in a closed `<details>`, the spatial RECORD links, the repo
      link and the CC BY credit linking `/estate/LICENSE.txt`. Every value is read
      from `lib/estate/catalogue.generated.ts` (written by the pack tool; never
-     hand-edit it). No canvas is prerendered; no id starts with `experience-`,
-     `project-` or `selected-`; no `Hoist` wraps the stage. The stage gets
-     `role="application"`/`tabIndex=0` only while live or frozen.
+     hand-edit it — it carries only what the main bundle reads: one line per
+     site with its storey range written out, and the two byte totals the Load
+     label counts; per-site file sizes stay in pack.json). No canvas is
+     prerendered; no id starts with `experience-`, `project-` or `selected-`; no
+     `Hoist` wraps the stage. The `<figure>` is FIG. 07 (corners, caption); the
+     stage (`[data-estate-stage]`) is a layer inside it holding the poster,
+     plate, HUD and canvas, and gets `role="application"`/`tabIndex=0` only while
+     live or frozen — never on the figure (axe `aria-allowed-role`). Its
+     `aria-describedby` is the HUD's short per-mode summary `#estate-keys-desc`
+     (`hidden`, always in the tree): `#estate-keys` sits in a closed `<details>`,
+     which Chrome keeps out of the accessibility tree. Without JavaScript the
+     poster in the closed window downloads anyway (browsers ignore
+     `loading="lazy"` with scripting off; ~50–70 KB per no-JS desktop visit) —
+     accepted: §9.2 pins the prerendered `src`.
   2. **Controller** (`estate/EstateController.tsx`, a lazy chunk the bootstrap
      imports the first time the window is open, or when a focus request or row
      press comes first): renders nothing, reports an `EstateModel`
@@ -120,16 +131,31 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      (Save-Data, reduced motion, `?mode=scan`; the Load label is generated from
      the catalogue and never understates the download; Save-Data loads lean),
      loading (automatic loads wait for `readyState` complete, then idle),
-     live, frozen (closed, hidden, off screen), released (closed 30 s, or DESK),
-     lost / unavailable (two live resets a minute, no restore in 5 s) / error /
-     stale (Reload). Esc is scope 2: one native keydown listener on the section
+     live, frozen (closed, hidden, off screen), released (closed 30 s, or the
+     rail's DESK — a close counts as DESK only when `.wb-rail-desk` was pressed
+     within a second and every window is closed; closing the last window by hand
+     waits the 30 s like any close), lost / unavailable (two live resets a
+     minute, no restore in 5 s) / error / stale (Reload). A failed engine or
+     controller **chunk** is Reload too, never Retry: a browser keeps a failed
+     `import()` in its module map for the document's life, so importing again
+     makes no request; Retry stays for failures after the chunk ran (pack files,
+     engine errors), which fetch afresh. Esc is scope 2: one native keydown listener on the section
      peels one layer per press through `lib/estate/input.ts decideEscape` and
      stops propagation only for a press it consumes, so FieldWorkbench's handler
      minimises on exactly the rest. A press or focus in the body raises an
      unfocused window (`dispatchWorkbenchOpen`), except from the titlebar. Focus
      moves (to the stage after a clicked Load, a registry fly-to) are requests
      the view carries out after its commit, never on an automatic load or a
-     focus request. `portfolio:estate-focus` (`lib/estate/events.ts`) requests are
+     focus request, and a clicked load's move is cancelled by any press or focus
+     outside the window meanwhile (it must not pull a window the visitor left
+     back over the one they chose). A live window that fails moves focus from
+     inside it to the side panel's Retry/Reload (scrolled into sight) and back to
+     the stage on restore; the HUD hands focus to the stage (or to KEYS from its
+     popover) whenever the focused control vanishes or is disabled, so focus
+     never falls to the body and the next Esc never skips the window's layers.
+     The side panel's polite status line speaks phase changes (a row pressed
+     before live says "Load the 3D estate to fly there" there); the HUD's hidden
+     status speaks the camera's location. `portfolio:estate-focus` (`lib/estate/events.ts`) requests are
      held until live and delivered once; the assistant's `focusEstate` command
      that sends them is P6.
   3. **Engine + HUD** (`estate/engine/**`, `estate/live/**`: three r186,
@@ -154,8 +180,19 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        `lib/estate/scheduler.ts` (≤ 4 at once, ≤ 1 geometry upload a frame,
        pre-gzipped files sniffed and inflated by `DecompressionStream`). It
        renders only on change (`lib/estate/frameLoop.ts`) — **at rest it requests
-       no animation frames** — and its governor (`lib/estate/governorCore.ts`)
-       steps pixel ratio and tier down on dropped frames and probes back up. The
+       no animation frames**; a level step held by lod's 400 ms dwell is woken by
+       one timeout (`LodSelector.holdUntil`), not by rAF — and its governor
+       (`lib/estate/governorCore.ts`) steps pixel ratio and tier down on dropped
+       frames and probes back up. A window over half dropped closes after 1 s and
+       20 frames instead of 2 s and 60 (once a calibration less than 10 s old says
+       the scene, not the display, is slow); a pixel-ratio notch's buffer
+       reallocation waits for the first frame without motion (2 s at most), and
+       the calibration burst never runs under the visitor's hand. A boxless host
+       (a closed window is `display:none`) keeps its last size, and `resume()`
+       reads the size synchronously, so a reopen never draws at 1 × 1. The
+       site's quadrants and trees have one material each (one may never serve a
+       Mesh and an InstancedMesh: three re-resolves the program twice a frame);
+       P5's interiors keep that rule. The
        starting tier is read from the renderer string in `engine/renderer.ts`
        (never in `lib/experienceMode.ts`, whose test bans GPU probes) or from
        `?estate-quality=high|mid|low|min`. On a lost context the engine reports
@@ -164,19 +201,35 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        their storey (`_meta`, `_STOREY`.x) so P5's façade mask can hide a band.
      - `engine/controls/`: Overview (camera-controls with its own wheel handler
        off; the stage's non-passive wheel dollies at the cursor, so the sheet
-       never scrolls), Fly (WASD, E/Space up, Q/C down, drag looks; pointer lock
+       never scrolls; A/D and Shift+arrows pan), Fly (WASD, E/Space up, Q/C
+       down, R/F look, Home back to the aerial view, drag looks; pointer lock
        only on L or CAPTURE), the 1.2 s fly-to (a cut when `motionHalted()` or
-       `instant`) and footprint picking. `engine/navigation.ts` and
+       `instant`; the bounding sphere's silhouette fills 0.8 of the short side,
+       aimed at the box's middle, so a point block keeps its roof in frame; the
+       chip names the building while the camera rests where the flight landed,
+       even an L-block whose box centre is in its courtyard) and footprint
+       picking (12 px tap slop for touch and pen, 5 px for a mouse). The first
+       live frame and Home are the poster camera with its Blender lens shift
+       turned into the view direction (`engine/views.ts aerialPose`; a pack
+       without views uses upstream's aerial_NE numbers). `engine/navigation.ts` and
        `engine/rig.ts` are the seam P5's Walk, Enter and interiors and P6's Plan
        extend: `features` names the live commands, and every other one returns
        false rather than throwing.
      - `live/EstateHud.tsx`: survey-annotation chips over the canvas — location
        (no live role; one visually hidden `role="status"` node speaks through
        `lib/estate/announce.ts`), selection with mirrored Fly to, OVERVIEW | FLY,
-       Home, a KEYS popover (an Esc layer), CAPTURE, FULLSCREEN on `#world`,
-       north arrow, KEYS ACTIVE, step buttons, the streaming line and lean mode's
-       "Load full detail". `?estate-debug=1` adds the stats row. Its CSS is the
-       `.wb-estate-hud*` block in `index.css`.
+       Home, a KEYS popover (an Esc layer, next in tab order after KEYS),
+       CAPTURE (which gives the stage the keys first), FULLSCREEN on `#world`,
+       north arrow, KEYS ACTIVE, step buttons (every drag has one: Overview pans,
+       zooms, orbits and tilts; Fly moves, strafes, climbs and looks), the
+       streaming line and lean mode's "Load full detail". Nothing in the top-right
+       row may change width between a press and its release — the KEYS chip
+       reserves its longer label's width — or the row reflows under the pointer
+       and the click is lost. The north arrow is an HTML dial the engine turns
+       per frame (a composited transform; the inherited `--estate-north` is
+       written only at rest, for a dial mounted later — written per frame it
+       restyled the stage subtree, 3.4 ms a frame). `?estate-debug=1` adds the
+       stats row. Its CSS is the `.wb-estate-hud*` block in `index.css`.
      Test seams: `?estate-quality=` and `?estate-release-ms=` (100 ms–30 s; only
      ever shortens the 30 s release hold). `?estate-bench=1` turns on the debug
      readouts only; the benchmark route is P7.
@@ -191,19 +244,32 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   Bonsai-Estate section). Until the v1.2 release is published, the window runs on
   a dev pack copied into `public/estate/v1.2/` and excluded in `.git/info/exclude`
   — never commit it — and the committed `catalogue.generated.ts` says `dev: true`;
-  both are replaced from the real release pack before merge.
+  both are replaced from the real release pack before merge. That is gated three
+  ways: `tests/estate-pack.test.ts` fails when any `/estate/` URL the catalogue
+  names is missing under `public/` (a checkout without the pack) and on a dev
+  catalogue under CI/Vercel; `npm run estate:check` fails on a dev catalogue
+  everywhere; `scripts/check-bundle.mjs` (the build) fails when a catalogue URL
+  is missing from `dist/`, and on a dev catalogue on Vercel or CI.
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine), the Estate cases in
   `tests/workbench-deeplink.dom.test.tsx` and `tests/workbench-links.test.ts`
   (exact links, no hex anywhere under `estate/`, identical double render),
   `tests/estate-boundary.test.ts` (the import rules above),
   `tests/estate-runtime.test.ts` (the loader), `tests/estate-engine-*.test.ts`
   (teardown with a fake canvas, the pure helpers, parts decoded from the pack
-  when one is present), `tests/estate-controls*.test.ts`, the Estate shell case
+  when one is present), `tests/estate-budget.test.ts` (C11's caps over the
+  70,560-pose grid on the pack's numbers, and §7.11's S1–S3 pinned per pack:
+  a re-pack must re-pin them with a reason), `tests/estate-reader.test.ts`
+  (every GLB against pack.json: required extensions, ≤ 65,535 vertices a
+  primitive, `_META`/`_STOREY` u8 × 4), `tests/estate-pack.test.ts` (the merge
+  gate above), `tests/estate-controls*.test.ts`, the Estate shell case
   in `tests/e2e/quality.spec.ts`, and `tests/e2e/estate.spec.ts`, which runs the
   real engine in its own Playwright project, `chromium-webgl` (SwiftShader
   flags): live within 30 s inside the caps, fly-to, Esc layers, axe, consent,
   no-WebGL, **zero animation frames at rest**, a fly-to that cuts while motion
-  is paused, the Save-Data byte count against its label, and stale. Restated constants in
+  is paused, the Save-Data byte count against its label, stale, HUD mouse
+  clicks with the stage focused, a fully clean axe scan, a reopen drawn at full
+  size and detail, and Reload after a failed engine chunk. Restated constants in
+
   the view (`ESTATE_DISPLAY_NAME`, `ESTATE_REPO_URL`, `ESTATE_FOCUS_EVENT_NAME`,
   the shell's tier list) exist so the main bundle need not import `lib/estate`
   modules that build tables at import; the DOM test pins each to its source.
@@ -525,9 +591,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - Nothing here reaches `server/portfolio-snapshot.json`, so nothing reaches
   `ATTESTED` in `jobSearch.mjs`. The two RL certificates stay uncovered by
   `build_tailored_resume` on purpose — a completed course is not applied work.
-- Apart from the estate pack's checker (`scripts/estate/check.mjs`, which covers
-  `public/estate` only), `tests/certifications.test.ts` is the only place in the
-  repo that checks a `/public` reference resolves on disk.
+- Apart from the estate pack's checks (`scripts/estate/check.mjs` and
+  `tests/estate-pack.test.ts`, which cover `public/estate` and the catalogue's
+  URLs only), `tests/certifications.test.ts` is the only place in the repo that
+  checks a `/public` reference resolves on disk.
 
 ## Experience data (site)
 
@@ -640,7 +707,12 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   Load click downloads (engine and HUD chunks plus what they import that the page
   has not loaded) within `engineGzip`, because the consent label counts that
   cap. Both budgets were re-pinned in P4b at the measured size + 5%; a re-pin may
-  move them but never above the plan's 307,200 B / 950,000 B.
+  move them but never above the plan's 307,200 B / 950,000 B. The main cap is
+  NOT re-pinnable: after P4b the main bundle is 505,928 B of 508,834 B, so P5
+  and P6's main-bundle code (Walk rows, assistant wording, `focusEstate` checks,
+  the phone row) must fit in ~2.9 KB or move into the controller chunk. The
+  same step also checks the Estate catalogue's URLs are in `dist/` (and that a
+  dev catalogue never builds on Vercel/CI).
 - `npm run test:e2e` runs two Playwright projects: `chromium` (everything but the
   Estate engine) and `chromium-webgl` (`tests/e2e/estate.spec.ts` only, launched
   with `--use-angle=swiftshader --enable-unsafe-swiftshader` so headless Chromium

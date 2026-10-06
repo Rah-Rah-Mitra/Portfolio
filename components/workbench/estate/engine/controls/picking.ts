@@ -167,10 +167,17 @@ export const CLICK_SLOP_PX = 5;
 export const CLICK_MAX_MS = 500;
 export const DOUBLE_MS = 400;
 export const DOUBLE_SLOP_PX = 10;
+/**
+ * A finger (or pen) travels farther in a tap than a mouse in a click: platform
+ * touch slop is about 8–16 px, so 5 px turned many taps into drags (no select,
+ * no double-tap fly-to). Touch and pen get these instead.
+ */
+export const TOUCH_CLICK_SLOP_PX = 12;
+export const TOUCH_DOUBLE_SLOP_PX = 30;
 
 export type ClickKind = 'click' | 'double';
 
-interface Press { id: number; x: number; y: number; t: number; travel: number }
+interface Press { id: number; x: number; y: number; t: number; travel: number; slop: number; doubleSlop: number }
 
 /**
  * Turns pointer presses into clicks and doubles. Primary button (or a touch or
@@ -182,7 +189,8 @@ export class ClickTracker {
   private poisoned = false;
   private lastClick: { x: number; y: number; t: number } | null = null;
 
-  down(id: number, x: number, y: number, t: number, primary: boolean): void {
+  /** `pointerType` is PointerEvent.pointerType: anything but 'mouse' gets the touch slop. */
+  down(id: number, x: number, y: number, t: number, primary: boolean, pointerType = 'mouse'): void {
     if (this.press !== null || !primary) {
       // A second pointer (pinch, two-finger pan) or another button: no click from either.
       this.poisoned = this.press !== null;
@@ -191,7 +199,12 @@ export class ClickTracker {
       return;
     }
     this.poisoned = false;
-    this.press = { id, x, y, t, travel: 0 };
+    const coarse = pointerType !== 'mouse';
+    this.press = {
+      id, x, y, t, travel: 0,
+      slop: coarse ? TOUCH_CLICK_SLOP_PX : CLICK_SLOP_PX,
+      doubleSlop: coarse ? TOUCH_DOUBLE_SLOP_PX : DOUBLE_SLOP_PX,
+    };
   }
 
   move(id: number, x: number, y: number): void {
@@ -211,12 +224,13 @@ export class ClickTracker {
     this.press = null;
     this.move(id, x, y);
     const travel = Math.max(p.travel, Math.hypot(x - p.x, y - p.y));
-    if (this.poisoned || travel > CLICK_SLOP_PX || t - p.t > CLICK_MAX_MS) {
+    if (this.poisoned || travel > p.slop || t - p.t > CLICK_MAX_MS) {
       this.lastClick = null;
       return null;
     }
     const last = this.lastClick;
-    if (last && t - last.t <= DOUBLE_MS && Math.hypot(x - last.x, y - last.y) <= DOUBLE_SLOP_PX) {
+    if (last && t - last.t <= DOUBLE_MS && Math.hypot(x - last.x, y - last.y) <= p.doubleSlop) {
+
       this.lastClick = null;
       return 'double';
     }

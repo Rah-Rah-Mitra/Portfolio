@@ -7,18 +7,22 @@ import type { EstateLoadFailure, EstateRuntime } from './engineApi';
 // scripts/check-bundle.mjs keeps three out of the main bundle.
 //
 // The lib/physicsRuntime.ts pattern: one shared promise, so a second caller
-// (StrictMode's double effect, a Retry pressed twice) waits on the same
-// download; a failed download is not cached, so the next call imports again.
-// Call from an effect or an event handler, never during render (App is
-// prerendered).
+// (StrictMode's double effect) waits on the same download. A rejected promise
+// is dropped here, but that buys nothing in a browser: the module map keeps a
+// failed import() for the document's life (Chrome makes no request at all for
+// the URL again, and a module that threw while evaluating rethrows), so the
+// shell answers every rejection with Reload, never Retry (EstateController
+// MODULE_FAILED). Call from an effect or an event handler, never during render
+// (App is prerendered).
 //
-// A failure rejects with an EstateLoadError whose `kind` the shell turns into
-// the policy's engine state: 'stale' → Reload, 'failed' → Retry (§9.3).
+// A failure rejects with an EstateLoadError whose `kind` says why, for the
+// wording: 'stale' → "the site was updated" (§9.3), 'failed' → "did not
+// download"; both end in Reload.
 //  - stale: the chunk 404'd because the site was redeployed under this page.
 //    Vercel Hobby has no skew protection, so old hashed chunks are simply gone
 //    after a deploy, and only a reload can fetch the new ones (§7.6).
 //  - failed: anything else — offline, a 5xx, a module that threw while
-//    evaluating. Trying again may work.
+//    evaluating.
 // A browser's import() rejection does not say which: Chrome's "Failed to fetch
 // dynamically imported module" is the same for a 404 and for a dropped
 // connection, and Safari names no URL at all. So a chunk failure is checked
@@ -125,8 +129,8 @@ let pending: Promise<EstateRuntime> | null = null;
 /**
  * Downloads the engine and its HUD together (one chunk each, fetched in
  * parallel) and resolves both halves. Shared while in flight and once loaded;
- * a failure is dropped so the next call imports again, and rejects with an
- * EstateLoadError.
+ * a failure is dropped (a later call imports again, though a browser answers
+ * that from its module map: see the header) and rejects with an EstateLoadError.
  */
 export const loadEngine = (): Promise<EstateRuntime> => {
   if (loaded) return Promise.resolve(loaded);

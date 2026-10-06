@@ -39,7 +39,8 @@ const sameLocation = (a: EstateLocation, b: EstateLocation): boolean =>
 const sameView = (a: EstateView, b: EstateView): boolean =>
   sameLocation(a.location, b.location) && a.selection === b.selection && a.transition === b.transition
   && a.flight === b.flight && a.popover === b.popover && a.moving === b.moving && a.pointerLocked === b.pointerLocked
-  && a.pointerUnlockedAtMs === b.pointerUnlockedAtMs && a.lean === b.lean;
+  && a.pointerUnlockedAtMs === b.pointerUnlockedAtMs && a.lean === b.lean && a.flySpeed === b.flySpeed;
+
 
 /** The handle and the render core behind it. The shell only ever sees the handle (createEngine); harnesses, benches and tests may drive the core directly. */
 export interface EngineInternals {

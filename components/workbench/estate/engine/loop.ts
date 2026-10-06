@@ -118,7 +118,19 @@ export class RenderLoop {
     this.armResize(delay);
   }
 
+  /**
+   * Forget a resize still settling: the caller has just read and applied the
+   * size itself (resume() after a reopen), so the debounced one would only
+   * repeat it.
+   */
+  cancelResize(): void {
+    if (this.resizeTimer !== null) this.host.clearTimeout(this.resizeTimer);
+    this.resizeTimer = null;
+    takeResize(this.state, Infinity);
+  }
+
   private armResize(ms: number) {
+
     this.resizeTimer = this.host.setTimeout(() => {
       this.resizeTimer = null;
       const wait = takeResize(this.state, this.host.now());

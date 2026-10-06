@@ -191,6 +191,13 @@ export class LodSelector {
   draws = 0;
   /** The reserve plus every visible building's coarsest resident level already break a cap. Upgrades never do. */
   overBudget = false;
+  /**
+   * The earliest `now` at which a hold that is keeping a visible building off
+   * the level it would otherwise take runs out (since + DWELL_MS), or Infinity
+   * when no such hold exists. A caller that renders only on change must draw a
+   * frame then, or the step waits for the next input: nothing else moves.
+   */
+  holdUntil = Infinity;
 
   // Scratch for one select(): the level reached so far, the level this frame
   // climbs toward, whether that goal is a hold, and whether a step is pending.
@@ -224,6 +231,7 @@ export class LodSelector {
     this.tris = 0;
     this.draws = 0;
     this.overBudget = false;
+    this.holdUntil = Infinity;
   }
 
   select(buildings: ArrayLike<LodBuildingInput>, frame: LodFrame): this {
@@ -233,6 +241,7 @@ export class LodSelector {
     const lean = frame.lean === true;
     let tris = frame.reserveTris ?? 0;
     let draws = frame.reserveDraws ?? 0;
+    let holdUntil = Infinity;
 
     // Pass 1: wants, ceilings, hidden buildings, and the floor every visible
     // building starts from.
@@ -266,7 +275,9 @@ export class LodSelector {
       // A shown level that is still resident is ≥ the floor (the floor is the
       // coarsest resident level), so a hold only ever climbs.
       const holding = shown >= LOD_MASSING && now - this.since[i] < DWELL_MS && shown <= ceiling && levelAvailable(shown, b.resident);
-      const goal = holding ? shown : target > floor ? target : floor;
+      const fresh = target > floor ? target : floor;
+      const goal = holding ? shown : fresh;
+      if (holding && fresh !== shown && this.since[i] + DWELL_MS < holdUntil) holdUntil = this.since[i] + DWELL_MS;
       this.held[i] = holding ? 1 : 0;
       this.goal[i] = goal;
       this.open[i] = goal > floor ? 1 : 0;
@@ -326,6 +337,8 @@ export class LodSelector {
     }
     this.tris = tris;
     this.draws = draws;
+    this.holdUntil = holdUntil;
     return this;
+
   }
 }

@@ -1,8 +1,9 @@
 import { Euler, Vector3, type PerspectiveCamera } from 'three';
 import type { HeldKeys } from '../../../../../lib/estate/input';
+import type { EstateWalkStep } from '../../engineApi';
 import {
-  approachShare, FLY_CEILING, FLY_CLEARANCE, FLY_RESPONSE, FLY_REST_SPEED, FLY_ROAM, flySpeed, LOOK_RATE, nextFlyMultiplier,
-  PITCH_LIMIT, STEP_TURN, TURN_RATE,
+  approachShare, FLY_CEILING, FLY_CLEARANCE, FLY_RESPONSE, FLY_REST_SPEED, FLY_ROAM, flySpeed, LOOK_KEY_RATE, LOOK_RATE, nextFlyMultiplier,
+  PITCH_LIMIT, STEP_TILT, STEP_TURN, TURN_RATE,
 } from './motion';
 
 // First-person cameras (plan §8.1, §8.2): the look state shared by Fly (P4b)
@@ -10,8 +11,8 @@ import {
 // camera is a position plus a yaw and a pitch (Euler order YXZ, so yaw 0 looks
 // down three −Z, estate north; lib/estate/frames.ts headingToThreeYaw).
 //
-// Fly: W/S (↑/↓) along the view, A/D strafe, ←/→ turn at 90°/s, E/Space up and
-// Q/C down, Shift × 3, the wheel scales the speed; speed 2 + 0.5 × height
+// Fly: W/S (↑/↓) along the view, A/D strafe, ←/→ turn at 90°/s, R/F look up and
+// down at 60°/s, E/Space up and Q/C down, Shift × 3, the wheel scales the speed; speed 2 + 0.5 × height
 // (2–60 m/s); never lower than 0.3 m above the ground and no collision; drag to
 // look with pointer capture, right- or Shift-drag to strafe, and pointer lock
 // only when asked (L or CAPTURE). The velocity closes on what the keys ask for
@@ -124,8 +125,9 @@ export class FlyController {
    */
   update(dt: number, held: HeldKeys, halted: boolean): boolean {
     const turn = held.axis('turn-right', 'turn-left');
-    if (turn !== 0 && dt > 0) {
-      this.look.turn(turn * TURN_RATE * dt, 0);
+    const pitch = held.axis('look-down', 'look-up');
+    if ((turn !== 0 || pitch !== 0) && dt > 0) {
+      this.look.turn(turn * TURN_RATE * dt, pitch * LOOK_KEY_RATE * dt);
       this.dirty = true;
     }
     const fwd = held.axis('back', 'forward');
@@ -157,7 +159,7 @@ export class FlyController {
     }
     // Shift alone moves nothing and asks for no frames; a drag-look frame is
     // drawn by the input that caused it and needs no follow-up.
-    return moved || turn !== 0 || length > 0 || this.velocity.lengthSq() > 0;
+    return moved || turn !== 0 || pitch !== 0 || length > 0 || this.velocity.lengthSq() > 0;
   }
 
   /** Drag-to-look (or a locked mouse). */
@@ -185,17 +187,35 @@ export class FlyController {
     this.multiplier = nextFlyMultiplier(this.multiplier, steps);
   }
 
-  /** A step button: half a second's travel forward or back, or a 15° turn. */
-  step(kind: 'forward' | 'back' | 'turn-left' | 'turn-right'): void {
-    if (kind === 'turn-left' || kind === 'turn-right') {
-      this.look.turn(kind === 'turn-left' ? STEP_TURN : -STEP_TURN, 0);
-    } else {
-      const metres = Math.max(1, Math.min(20, flySpeed(this.heightAboveGround(), false, this.multiplier) * 0.5));
-      this.position.addScaledVector(this.look.forward(this.axis), kind === 'forward' ? metres : -metres);
-      this.clampPosition();
+  /**
+   * A step button: half a second's travel forward or back (along the view),
+   * left or right (strafe), up or down (height); a 15° turn; a 10° look up or
+   * down.
+   */
+  step(kind: EstateWalkStep): void {
+    const metres = Math.max(1, Math.min(20, flySpeed(this.heightAboveGround(), false, this.multiplier) * 0.5));
+    switch (kind) {
+      case 'turn-left': case 'turn-right':
+        this.look.turn(kind === 'turn-left' ? STEP_TURN : -STEP_TURN, 0);
+        break;
+      case 'look-up': case 'look-down':
+        this.look.turn(0, kind === 'look-up' ? STEP_TILT : -STEP_TILT);
+        break;
+      case 'forward': case 'back':
+        this.position.addScaledVector(this.look.forward(this.axis), kind === 'forward' ? metres : -metres);
+        break;
+      case 'left': case 'right':
+        this.position.addScaledVector(this.look.right(this.axis), kind === 'right' ? metres : -metres);
+        break;
+      case 'up': case 'down':
+        this.position.y += kind === 'up' ? metres : -metres;
+        break;
+      default:
     }
+    this.clampPosition();
     this.dirty = true;
   }
+
 
   /** Stop at once (a freeze, a mode switch, a cancelled drag). */
   stop(): void {

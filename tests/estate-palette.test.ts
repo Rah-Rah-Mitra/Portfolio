@@ -45,7 +45,11 @@ const UPSTREAM: Record<string, [number, number, number, number]> = {
 };
 
 // Plan §7.3's role → token table, plus the four roles it does not name
-// (palette.ts says where each joins and why).
+// (palette.ts says where each joins and why). Block accents are accent-200
+// beside the core accent (the table's accent-200/300 range) and the play
+// surface accent-500: at accent-300 and neutral-400 they read as lawn and as
+// roofing (the P4b review's palette finding), and accent-500 is used by no
+// other role.
 const ROLE_TOKENS: Record<MaterialRole, string> = {
   wall: '--color-neutral-100',
   'party-wall': '--color-neutral-200',
@@ -62,14 +66,14 @@ const ROLE_TOKENS: Record<MaterialRole, string> = {
   bark: '--color-neutral-600',
   asphalt: '--color-neutral-700',
   'core-accent': '--color-accent-200',
-  'block-accent': '--color-accent-300',
+  'block-accent': '--color-accent-200',
   grass: '--color-accent-300',
   foliage: '--color-accent-400',
   glass: '--color-accent-700',
   // not in the plan's table
   'shelter-wall': '--color-neutral-200',
   marking: '--color-neutral-100',
-  'play-surface': '--color-neutral-400',
+  'play-surface': '--color-accent-500',
   tank: '--color-accent-300',
 };
 

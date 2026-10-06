@@ -18,9 +18,11 @@ import { motionHalted, onMotionChange } from '../../../lib/motion';
 //    cues. Opening and closing are read off the section itself.
 //
 // DESK closes every window in one commit. That is read off the same mutation:
-// when this window closes and no other section on the desk is still open, the
-// close counts as DESK. Closing the last open window by hand reads the same and
-// is the same picture — an empty desk — so it releases at once too.
+// when this window closes, no other section on the desk is still open, and the
+// rail's DESK button (.wb-rail-desk) was pressed just before, the close counts
+// as DESK and releases at once. Closing the last open window by hand (× or Esc)
+// leaves the same empty desk but is an ordinary close: it waits the 30 s like
+// any other, so reopening resumes rather than rebuilding (§7.10).
 //
 // The section and the stage are found by DOM scan in a no-deps effect (the
 // MechanismBench rule), so a re-render that replaces either is picked up.
@@ -36,8 +38,9 @@ export interface PanePresence {
   hidden: boolean;
   /** motionHalted(). */
   halted: boolean;
-  /** Closed together with every other window: DESK, or the last one closing. */
+  /** Closed by the rail's DESK button, together with every other window. */
   closedByDesk: boolean;
+
 }
 
 /** The prerender's answer, and the first client render's. */
@@ -57,6 +60,10 @@ const same = (a: PanePresence, b: PanePresence) => a.open === b.open && a.focuse
   && a.hidden === b.hidden && a.halted === b.halted && a.closedByDesk === b.closedByDesk;
 
 const displayed = (section: HTMLElement) => section.style.display !== 'none';
+
+/** A close this soon after a press on the rail's DESK button is DESK's, ms. */
+export const DESK_PRESS_MS = 1000;
+const DESK_BUTTON = '.wb-rail-desk';
 
 /** Every window section beside this one is closed too. False when there is no desk to look at. */
 const deskEmpty = (section: HTMLElement) => {
@@ -84,10 +91,11 @@ export const usePanePresence = (rootRef: React.RefObject<HTMLElement | null>): P
     let onscreen = true;
     let closedByDesk = false;
     let wasOpen: boolean | null = null;
+    let deskPressedAt = -Infinity;
     const sync = () => {
       const section = sectionRef.current;
       const open = section ? displayed(section) : true;
-      if (wasOpen === true && !open) closedByDesk = section ? deskEmpty(section) : false;
+      if (wasOpen === true && !open) closedByDesk = section ? deskEmpty(section) && performance.now() - deskPressedAt < DESK_PRESS_MS : false;
       if (open) closedByDesk = false;
       wasOpen = open;
       const next: PanePresence = {
@@ -127,11 +135,17 @@ export const usePanePresence = (rootRef: React.RefObject<HTMLElement | null>): P
     observe();
     sync();
 
+    // Capture, so the press is seen before the button's own handler closes the windows.
+    const onClick = (event: MouseEvent) => {
+      if ((event.target as Element | null)?.closest?.(DESK_BUTTON)) deskPressedAt = performance.now();
+    };
     const stopMotion = onMotionChange(sync);
     document.addEventListener('visibilitychange', sync);
+    document.addEventListener('click', onClick, true);
     return () => {
       stopMotion();
       document.removeEventListener('visibilitychange', sync);
+      document.removeEventListener('click', onClick, true);
       sections.disconnect();
       intersections?.disconnect();
       sectionRef.current = null;

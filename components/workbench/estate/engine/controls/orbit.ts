@@ -3,7 +3,8 @@ import {
   Box3, MathUtils, Matrix4, Quaternion, Raycaster, Sphere, Spherical, Vector2, Vector3, Vector4, type PerspectiveCamera,
 } from 'three';
 import type { HeldKeys } from '../../../../../lib/estate/input';
-import { ORBIT_ROTATE_RATE, ORBIT_TILT_RATE, STEP_TURN, STEP_ZOOM } from './motion';
+import type { EstateWalkStep } from '../../engineApi';
+import { ORBIT_PAN_RATE, ORBIT_ROTATE_RATE, ORBIT_TILT_RATE, STEP_PAN, STEP_TILT, STEP_TURN, STEP_ZOOM } from './motion';
 import { ORBIT_LIMITS, orbitFromLookAt, positionFromOrbit, type OrbitPose } from './tween';
 
 // Overview (plan §8.1, §8.2): camera-controls 3.1.2 orbiting the estate.
@@ -12,7 +13,7 @@ import { ORBIT_LIMITS, orbitFromLookAt, positionFromOrbit, type OrbitPose } from
 // Smoothing 0.35 s (drags 0.125 s); none at all while motion is halted, so a
 // drag lands where the pointer is and nothing glides on afterwards. Limits:
 // distance 8–900 m, at most 85° from straight down, target inside the estate
-// ± 50 m. W/S (↑/↓) tilt and ←/→ rotate while held.
+// ± 50 m. W/S (↑/↓) tilt, ←/→ rotate, and A/D and Shift+arrows pan while held.
 //
 // camera-controls' own wheel handler is switched off (mouseButtons.wheel NONE):
 // it turns Ctrl+wheel — how a trackpad pinch arrives — into a lens zoom, which
@@ -168,10 +169,19 @@ export class OrbitController {
     this.setHalted(halted);
     const rotate = held.axis('rotate-right', 'rotate-left');
     const tilt = held.axis('tilt-down', 'tilt-up');
-    const keyed = rotate !== 0 || tilt !== 0;
-    if (keyed && dt > 0) void this.controls.rotate(rotate * ORBIT_ROTATE_RATE * dt, tilt * ORBIT_TILT_RATE * dt, false);
+    const side = held.axis('pan-left', 'pan-right');
+    const ahead = held.axis('pan-back', 'pan-ahead');
+    const turning = rotate !== 0 || tilt !== 0;
+    const panning = side !== 0 || ahead !== 0;
+    if (turning && dt > 0) void this.controls.rotate(rotate * ORBIT_ROTATE_RATE * dt, tilt * ORBIT_TILT_RATE * dt, false);
+    if (panning && dt > 0) {
+      // Across the ground, faster the farther out, as a right-drag pans.
+      const metres = this.controls.distance * ORBIT_PAN_RATE * dt;
+      if (side !== 0) void this.controls.truck(side * metres, 0, false);
+      if (ahead !== 0) void this.controls.forward(ahead * metres, false);
+    }
     const moved = this.controls.update(dt);
-    return moved || keyed;
+    return moved || turning || panning;
   }
 
   /** No smoothing while motion is halted: input lands at once and nothing coasts. */
@@ -188,18 +198,36 @@ export class OrbitController {
     this.controls.dollyAtCursor(steps, clientX, clientY);
   }
 
-  /** A step button: zoom in or out, or orbit 15° left or right. */
-  step(kind: 'forward' | 'back' | 'turn-left' | 'turn-right', halted: boolean): void {
+  /**
+   * A step button: zoom in or out (forward, back), orbit 15° (turn-left,
+   * -right), tilt 10° (look-up, look-down), or pan 15 % of the distance
+   * sideways (left, right) or along the ground (up, down).
+   */
+  step(kind: EstateWalkStep, halted: boolean): void {
     this.setHalted(halted);
     const smooth = !halted;
-    if (kind === 'forward' || kind === 'back') {
-      const d = this.controls.endDistance;
-      void this.controls.dollyTo(kind === 'forward' ? d * STEP_ZOOM : d / STEP_ZOOM, smooth);
-    } else {
-      void this.controls.rotate(kind === 'turn-left' ? STEP_TURN : -STEP_TURN, 0, smooth);
+    const d = this.controls.endDistance;
+    switch (kind) {
+      case 'forward': case 'back':
+        void this.controls.dollyTo(kind === 'forward' ? d * STEP_ZOOM : d / STEP_ZOOM, smooth);
+        break;
+      case 'turn-left': case 'turn-right':
+        void this.controls.rotate(kind === 'turn-left' ? STEP_TURN : -STEP_TURN, 0, smooth);
+        break;
+      case 'look-up': case 'look-down':
+        void this.controls.rotate(0, kind === 'look-up' ? STEP_TILT : -STEP_TILT, smooth);
+        break;
+      case 'left': case 'right':
+        void this.controls.truck((kind === 'right' ? 1 : -1) * d * STEP_PAN, 0, smooth);
+        break;
+      case 'up': case 'down':
+        void this.controls.forward((kind === 'up' ? 1 : -1) * d * STEP_PAN, smooth);
+        break;
+      default:
     }
     this.onControl();
   }
+
 
   getTarget(out: Vector3): Vector3 {
     return this.controls.getTarget(out, false);

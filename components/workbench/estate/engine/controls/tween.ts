@@ -36,11 +36,12 @@ export const ORBIT_LIMITS = Object.freeze({
 /** Polar range a fly-to lands in: oblique enough to read the façades, never a plan view. */
 export const FRAME_POLAR_MIN = 40 * DEG;
 export const FRAME_POLAR_MAX = 68 * DEG;
-/** How much of the frame's short side the building's bounding sphere fills. */
-export const FRAME_FILL = 0.9;
-/** The frame's target height as a share of the roof, capped: the middle of the façade, not the roof. */
-export const FRAME_TARGET_SHARE = 0.4;
-export const FRAME_TARGET_MAX = 25;
+/**
+ * How much of the frame's short side the building's bounding sphere fills: its
+ * silhouette's half-extent in NDC. 0.8 leaves a tenth of the short side clear
+ * above and below, room for the HUD's top row and bottom prompts.
+ */
+export const FRAME_FILL = 0.8;
 /** A hop pulls back by this share of the horizontal travel, at most HOP_MAX metres, at mid-flight. */
 export const HOP_SHARE = 0.35;
 export const HOP_MAX = 250;
@@ -104,8 +105,12 @@ export const clampOrbit = (pose: OrbitPose, limits: OrbitLimits = ORBIT_LIMITS):
 /**
  * The pose that frames a building (estate-frame bounds, its bounding-sphere
  * radius and roof height) from where the camera is now: same azimuth (no spin),
- * the polar brought into the oblique band, the sphere fitted to the frame's
- * short side at `vfovDeg` and `aspect`, within the distance limits.
+ * the polar brought into the oblique band, aimed at the middle of the box, and
+ * the sphere fitted so its silhouette fills FRAME_FILL of the frame's short
+ * side at `vfovDeg` and `aspect`, within the distance limits. The sphere bounds
+ * every corner of the box, so the whole building, roof included, is in frame.
+ * (The silhouette of a sphere of radius r at distance d on the view axis has a
+ * half-angle asin(r/d), so d = r / sin(atan(FRAME_FILL · tan(half))).)
  */
 export const frameBuilding = (
   bounds: readonly [ArrayLike<number>, ArrayLike<number>],
@@ -120,13 +125,16 @@ export const frameBuilding = (
   const [lo, hi] = bounds;
   const cx = (lo[0] + hi[0]) / 2;
   const cy = (lo[1] + hi[1]) / 2;
+  const bottom = Number.isFinite(lo[2]) ? lo[2] : 0;
+  const top = Number.isFinite(hi[2]) ? hi[2] : Math.max(0, roofTop);
   out.target[0] = cx;
-  out.target[1] = Math.min(Math.max(0, roofTop) * FRAME_TARGET_SHARE, FRAME_TARGET_MAX);
+  out.target[1] = Math.max(0, (bottom + top) / 2);
   out.target[2] = -cy;
   const halfV = (clamp(vfovDeg, 10, 120) * DEG) / 2;
   const halfH = Math.atan(Math.tan(halfV) * (aspect > 0 ? aspect : 1));
   const half = Math.min(halfV, halfH);
-  out.distance = clamp((Math.max(radius, 1) / Math.sin(half)) * FRAME_FILL, limits.minDistance, limits.maxDistance);
+  const silhouette = Math.atan(FRAME_FILL * Math.tan(half));
+  out.distance = clamp(Math.max(radius, 1) / Math.sin(silhouette), limits.minDistance, limits.maxDistance);
   out.azimuth = current.azimuth;
   out.polar = clamp(current.polar, FRAME_POLAR_MIN, Math.min(FRAME_POLAR_MAX, limits.maxPolar));
   return out;

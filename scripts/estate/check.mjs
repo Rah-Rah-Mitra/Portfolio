@@ -235,6 +235,27 @@ export const checkPublicEstate = (repoRoot = REPO_ROOT) => {
 };
 
 /**
+ * The committed catalogue's merge gate (plan §10.2 estate-pack, the P4b review):
+ * lib/estate/catalogue.generated.ts must describe a committed release pack, so
+ * a catalogue generated from a dev pack (`dev: true`) fails, and so does any
+ * /estate/ URL it names that is not on disk under public/. Runs on every
+ * estate:check, with or without a pack, because a branch that carries the
+ * catalogue but not its pack (the dev pack is never committed) is exactly the
+ * one to stop. Returns problems.
+ */
+export const checkCommittedCatalogue = (repoRoot = REPO_ROOT) => {
+  const file = join(repoRoot, 'lib', 'estate', 'catalogue.generated.ts');
+  if (!existsSync(file)) return [];
+  const text = readFileSync(file, 'utf8');
+  const problems = [];
+  if (/^\s*dev: true,/m.test(text)) problems.push('lib/estate/catalogue.generated.ts was generated from a dev pack (dev: true): regenerate it from the published release pack before merging');
+  for (const url of new Set(text.match(/\/estate\/v\d+\.\d+\/[A-Za-z0-9._/-]+/g) ?? [])) {
+    if (!existsSync(join(repoRoot, 'public', ...url.slice(1).split('/')))) problems.push(`lib/estate/catalogue.generated.ts names ${url}, which is not under public/`);
+  }
+  return problems;
+};
+
+/**
  * --provenance --zips: the downloaded release zips hash to the pack's
  * source.assets (plan §6.6), name for name.
  */
@@ -301,7 +322,11 @@ const main = (argv) => {
   let dirs;
   if (args.pack) dirs = [resolve(base, args.pack)];
   else {
+    const catalogue = checkCommittedCatalogue();
+    for (const p of catalogue) console.error(`  FAIL: ${p}`);
+    if (catalogue.length) failed = true;
     const { problems, versions } = checkPublicEstate();
+
     for (const p of problems) console.error(`  FAIL: ${p}`);
     if (problems.length) failed = true;
     if (!versions.length) { console.log('estate:check: no committed pack under public/estate (nothing to check).'); return failed ? 1 : 0; }

@@ -349,6 +349,92 @@ describe('the controls, live', () => {
     }
   });
 
+  it('pan the overview on A/D and Shift+arrows, pitch Fly on R/F, and go Home from Fly on the Home key', () => {
+    h.setHalted(true);
+    h.frames(2);
+    const target = () => h.rig().getTarget(new Vector3());
+    const t0 = target();
+    key(h.host, 'KeyD');
+    h.frames(10);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyD' }));
+    expect(target().distanceTo(t0)).toBeGreaterThan(5); // the target slid sideways
+    expect(target().y).toBeCloseTo(t0.y, 6); // across the ground
+    const t1 = target();
+    key(h.host, 'ArrowUp', { shiftKey: true });
+    h.frames(10);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ArrowUp' }));
+    expect(target().distanceTo(t1)).toBeGreaterThan(5);
+    expect(h.frames(1)).toBe(false);
+    key(h.host, 'Digit3');
+    const pitch = () => h.camera.getWorldDirection(new Vector3()).y;
+    const p0 = pitch();
+    key(h.host, 'KeyF');
+    h.frames(20);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyF' }));
+    expect(pitch()).toBeLessThan(p0 - 0.1); // looked down
+    expect(key(h.host, 'Home').defaultPrevented).toBe(true);
+    expect(h.view().location.mode).toBe('overview');
+    h.frames(1);
+    expect(h.camera.position.x).toBeCloseTo(500, 3);
+  });
+
+  it('step buttons pan and tilt in Overview, and climb, strafe and look in Fly (every drag has a button)', () => {
+    h.setHalted(true);
+    h.frames(2);
+    const target = () => h.rig().getTarget(new Vector3());
+    const t0 = target();
+    expect(h.nav.walkStep?.('right')).toBe(true);
+    h.frames(1);
+    expect(target().distanceTo(t0)).toBeGreaterThan(1);
+    const t1 = target();
+    expect(h.nav.walkStep?.('up')).toBe(true);
+    h.frames(1);
+    expect(target().distanceTo(t1)).toBeGreaterThan(1);
+    const polar = () => Math.acos(new Vector3().subVectors(h.camera.position, target()).normalize().y);
+    const a0 = polar();
+    expect(h.nav.walkStep?.('look-up')).toBe(true);
+    h.frames(1);
+    expect(polar()).toBeGreaterThan(a0); // towards the horizon
+    h.nav.setMode?.('fly');
+    h.frames(1);
+    const y0 = h.camera.position.y;
+    expect(h.nav.walkStep?.('up')).toBe(true);
+    h.frames(1);
+    expect(h.camera.position.y).toBeGreaterThan(y0);
+    const x0 = h.camera.position.clone();
+    expect(h.nav.walkStep?.('left')).toBe(true);
+    h.frames(1);
+    expect(h.camera.position.distanceTo(x0)).toBeGreaterThan(0.5);
+    const d0 = h.camera.getWorldDirection(new Vector3()).y;
+    expect(h.nav.walkStep?.('look-down')).toBe(true);
+    h.frames(1);
+    expect(h.camera.getWorldDirection(new Vector3()).y).toBeLessThan(d0);
+  });
+
+  it('turn the north arrow’s own dial while moving, and write the stage property only at rest', () => {
+    const arrow = document.createElement('span');
+    arrow.setAttribute('data-estate-north', '');
+    h.host.appendChild(arrow);
+    h.frames(3);
+    const rested = h.host.style.getPropertyValue(NORTH_PROPERTY);
+    key(h.host, 'ArrowRight');
+    h.frames(10);
+    // Mid-orbit the stage's inherited property has not moved; the arrow has.
+    expect(h.host.style.getPropertyValue(NORTH_PROPERTY)).toBe(rested);
+    expect(arrow.style.transform).toMatch(/^rotate\(-?[\d.]+rad\)$/);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ArrowRight' }));
+    h.frames(30);
+    expect(h.frames(1)).toBe(false);
+    expect(h.host.style.getPropertyValue(NORTH_PROPERTY)).not.toBe(rested);
+    expect(h.host.style.getPropertyValue(NORTH_PROPERTY)).toBe(arrow.style.transform.replace(/^rotate\((.*)\)$/, '$1'));
+  });
+
+  it('show the speed after a wheel in Fly', () => {
+    key(h.host, 'Digit3');
+    h.canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, deltaMode: 1, bubbles: true, cancelable: true }));
+    expect(h.view().flySpeed).toBeGreaterThan(1);
+  });
+
   it('freeze lands a flight at its end and drops held keys; dispose takes every listener off', () => {
     key(h.host, 'KeyW');
     h.nav.flyTo?.('BLK_512');
@@ -363,6 +449,45 @@ describe('the controls, live', () => {
     h.canvas.dispatchEvent(wheel);
     expect(wheel.defaultPrevented).toBe(false);
     expect(h.host.style.getPropertyValue(NORTH_PROPERTY)).toBe('');
+  });
+});
+
+describe('the controls, an L-shaped building', () => {
+  // A wide L (arms 10 m deep) whose box centre lies 30 m from its outline, in
+  // the courtyard, like BLK 510 and 511: the framing's target is off the building.
+  const L: Array<[number, number]> = [[-40, -40], [40, -40], [40, -30], [-30, -30], [-30, 40], [-40, 40]];
+  let saved: (typeof SITES)[number];
+  let h: Harness;
+  beforeEach(() => {
+    saved = { ...SITES[13], footprint: SITES[13].footprint.slice(), bounds: SITES[13].bounds };
+    const at = SITES[13].at;
+    Object.assign(SITES[13], { footprint: L, radius: 58, bounds: [[at[0] - 40, at[1] - 40, 0], [at[0] + 40, at[1] + 40, 30]] });
+    h = harness();
+    h.nav.ready?.();
+  });
+  afterEach(() => {
+    h.nav.dispose?.();
+    Object.assign(SITES[13], saved);
+  });
+
+  it('names the building a flight landed on while the target stays there, and lets go once it moves', () => {
+    h.setHalted(true);
+    expect(h.nav.flyTo?.('NC_514')).toBe(true);
+    expect(h.view().location.site).toBe('NC_514');
+    h.frames(5);
+    expect(h.view().location.site).toBe('NC_514');
+    // Slow flight too: landing names it, and a settling frame does not undo it.
+    h.setHalted(false);
+    h.nav.home?.();
+    h.frames(120);
+    h.nav.flyTo?.('NC_514');
+    h.frames(120);
+    expect(h.view()).toMatchObject({ flight: false, location: { site: 'NC_514' } });
+    // Moved away (Home, over the estate's middle): no longer named.
+    h.setHalted(true);
+    h.nav.home?.();
+    h.frames(5);
+    expect(h.view().location.site).toBeNull();
   });
 });
 
@@ -523,6 +648,98 @@ describe('the HUD', () => {
     expect(document.querySelector('[data-estate-debug]')?.textContent).toBe('Dropped 1.3% · CPU p95 3.4 ms · 56 draws · 582,841 tris · 34.0 MB · 6 programs · high ×1');
     fireEvent.click(screen.getByRole('button', { name: 'Load full detail · +1.2 MB' }));
     expect(onLoad).toHaveBeenCalled();
+  });
+
+  it('keeps the KEYS chip one width whichever label it shows, so a press never reflows the row under the pointer', () => {
+    const { engine } = fakeEngine();
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    const chip = document.querySelector<HTMLElement>('.wb-estate-chip-keys')!;
+    // The other label is drawn invisibly in the same cell (index.css ::after).
+    expect(chip.getAttribute('data-sizer')).toBe('Keys active');
+    act(() => { (document.querySelector('[data-estate-stage]') as HTMLElement).focus(); });
+    expect(chip.textContent).toBe('Keys active');
+    expect(chip.getAttribute('data-sizer')).toBe('Click or Tab to control');
+  });
+
+  it('hands focus to the stage when the focused control goes: Clear, a lean offer taken, Capture', () => {
+    const { engine, setView } = fakeEngine();
+    const onLoad = vi.fn();
+    const { rerender } = render(<Stage hud={{ engine, phase: 'live', fullDetail: { label: 'Load full detail · +1.0 MB', onLoad }, debug: false }} />);
+    const stage = document.querySelector<HTMLElement>('[data-estate-stage]')!;
+    setView({ selection: 'BLK_509' });
+    const clear = screen.getByRole('button', { name: 'Clear the selection' });
+    clear.focus();
+    fireEvent.click(clear, { detail: 0 }); // from the keyboard too
+    expect(document.activeElement).toBe(stage);
+    // The lean offer leaves once taken, with focus on it.
+    const offer = screen.getByRole('button', { name: 'Load full detail · +1.0 MB' });
+    offer.focus();
+    fireEvent.click(offer);
+    rerender(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    expect(document.activeElement).toBe(stage);
+    // Capture gives the stage the keys first, then asks for the lock.
+    setView({ location: { ...INITIAL_VIEW.location, mode: 'fly' } });
+    const capture = screen.getByRole('button', { name: /Capture the mouse/ });
+    capture.focus();
+    vi.mocked(engine.capture).mockImplementation(() => {
+      expect(document.activeElement).toBe(stage);
+      return true;
+    });
+    fireEvent.click(capture);
+    expect(engine.capture).toHaveBeenCalled();
+    // Esc back to Overview removes Capture under focus: the stage again.
+    capture.focus();
+    setView({ location: { ...INITIAL_VIEW.location, mode: 'overview' } });
+    expect(document.activeElement).toBe(stage);
+  });
+
+  it('describes the stage with a short key summary per mode, and draws the KEYS chip and prompt only while live', () => {
+    const { engine, setView } = fakeEngine();
+    const { rerender } = render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    const desc = document.getElementById('estate-keys-desc')!;
+    expect(desc.hidden).toBe(true); // in the tree for aria-describedby, never drawn
+    expect(desc.textContent).toMatch(/^Arrow keys rotate and tilt; A and D, or Shift with the arrows, pan;/);
+    setView({ location: { ...INITIAL_VIEW.location, mode: 'fly' } });
+    expect(desc.textContent).toMatch(/R and F look up and down/);
+    expect(document.querySelector('.wb-estate-prompt')).not.toBeNull();
+    rerender(<Stage hud={{ engine, phase: 'lost', fullDetail: null, debug: false }} />);
+    expect(document.querySelector('.wb-estate-chip-keys')).toBeNull();
+    expect(document.querySelector('.wb-estate-prompt')).toBeNull();
+  });
+
+  it('words the prompt for touch once a finger has been on the stage, and shows Fly’s speed', () => {
+    const { engine, setView } = fakeEngine();
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    const stage = document.querySelector<HTMLElement>('[data-estate-stage]')!;
+    expect(document.querySelector('.wb-estate-prompt')?.textContent).toMatch(/^Drag orbit · Right-drag pan/);
+    act(() => { stage.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true })); });
+    expect(document.querySelector('.wb-estate-prompt')?.textContent).toBe('Drag orbit · Two fingers pan and zoom · Tap select · Double-tap fly to');
+    expect(document.querySelector('.wb-estate-chip-keys')?.textContent).toBe('Tap or Tab to control');
+    setView({ location: { ...INITIAL_VIEW.location, mode: 'fly' }, flySpeed: 1.3225 });
+    expect(document.querySelector('.wb-estate-prompt')?.textContent).toMatch(/^Speed ×1\.32 · /);
+  });
+
+  it('puts the KEYS popover next in tab order, right after KEYS', () => {
+    const { engine, setView } = fakeEngine();
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    setView({ popover: 'help', location: { ...INITIAL_VIEW.location, mode: 'fly' } });
+    const buttons = [...document.querySelectorAll('.wb-estate-hud-row button')].map((b) => b.textContent);
+    expect(buttons.indexOf('Close')).toBe(buttons.indexOf('Keys') + 1);
+    expect(buttons.indexOf('Capture')).toBeGreaterThan(buttons.indexOf('Close'));
+  });
+
+  it('takes the released-mouse line down after a few seconds', () => {
+    vi.useFakeTimers();
+    try {
+      const { engine, setView } = fakeEngine();
+      render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+      setView({ location: { ...INITIAL_VIEW.location, mode: 'fly' }, pointerUnlockedAtMs: 10 });
+      expect(screen.getByText('Mouse released: drag to look')).toBeTruthy();
+      act(() => { vi.advanceTimersByTime(4100); });
+      expect(screen.queryByText('Mouse released: drag to look')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('disables every control outside the live phase, and unsubscribes on unmount', () => {

@@ -193,6 +193,30 @@ describe('the 400 ms hold', () => {
     expect(sel.level[0]).toBe(LOD_DETAIL);
   });
 
+  it('says when a hold that is keeping a building off its level runs out (holdUntil), so a resting loop can wake for it', () => {
+    const sel = new LodSelector(1);
+    const b = bldg({ distance: 30 });
+    sel.select([b], frame(0));
+    expect(sel.holdUntil).toBe(Infinity); // the first draw starts no hold
+    b.distance = 10;
+    sel.select([b], frame(100));
+    expect(sel.level[0]).toBe(LOD_DETAIL);
+    // The switch itself starts the hold, and nothing differs yet.
+    expect(sel.holdUntil).toBe(Infinity);
+    b.distance = 30;
+    sel.select([b], frame(200));
+    expect(sel.level[0]).toBe(LOD_DETAIL); // held
+    expect(sel.holdUntil).toBe(100 + DWELL_MS);
+    // A camera that stops here draws nothing more; the engine's timer brings
+    // one frame at holdUntil, and that frame takes the step.
+    sel.select([b], frame(sel.holdUntil));
+    expect(sel.level[0]).toBe(LOD_FACADE);
+    expect(sel.holdUntil).toBe(Infinity);
+    // A hold on the level the building wants anyway owes no frame.
+    sel.select([b], frame(sel.since[0] + 10));
+    expect(sel.holdUntil).toBe(Infinity);
+  });
+
   it('does not start on the first draw, nor on a hidden building', () => {
     const sel = new LodSelector(1);
     const b = bldg({ distance: 10, resident: RESIDENT_MASSING });

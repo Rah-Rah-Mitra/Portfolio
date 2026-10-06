@@ -1,21 +1,24 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PerspectiveCamera } from 'three';
+import { PerspectiveCamera, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { ESTATE_SITE_IDS } from '../lib/estate/ids';
 import { HeldKeys } from '../lib/estate/input';
 import { parsePack } from '../lib/estate/schema';
 import { FlyController, LookState } from '../components/workbench/estate/engine/controls/firstPerson';
+import { estateToThree } from '../lib/estate/frames';
+import { fallbackAerialPose } from '../components/workbench/estate/engine/views';
 import {
   FLY_BOOST, FLY_CLEARANCE, FLY_MULTIPLIER_MAX, FLY_MULTIPLIER_MIN, FLY_SPEED_MAX, FLY_SPEED_MIN, flySpeed, nextFlyMultiplier,
   northRotation, wheelSteps,
 } from '../components/workbench/estate/engine/controls/motion';
 import {
-  buildPrisms, ClickTracker, CLICK_MAX_MS, DOUBLE_MS, pickPrism, rayBox, rayPrism, siteAround, siteNear, type PrismSource,
+  buildPrisms, ClickTracker, CLICK_MAX_MS, CLICK_SLOP_PX, DOUBLE_MS, pickPrism, rayBox, rayPrism, siteAround, siteNear,
+  TOUCH_CLICK_SLOP_PX, type PrismSource,
 } from '../components/workbench/estate/engine/controls/picking';
 import {
-  blankPose, clampOrbit, easeInOutCubic, FLY_TO_SECONDS, flightDone, flightPose, FRAME_POLAR_MAX, FRAME_POLAR_MIN, frameBuilding,
+  blankPose, clampOrbit, easeInOutCubic, FLY_TO_SECONDS, flightDone, flightPose, FRAME_FILL, FRAME_POLAR_MAX, FRAME_POLAR_MIN, frameBuilding,
   HOP_MAX, ORBIT_LIMITS, orbitFromLookAt, planFlight, positionFromOrbit,
 } from '../components/workbench/estate/engine/controls/tween';
 
@@ -63,21 +66,27 @@ describe('orbit poses and flights', () => {
     const bounds: [[number, number, number], [number, number, number]] = [[42, 47, 0], [168, 62, 49]]; // BLK 509
     const current = { target: [200, 0, -200] as [number, number, number], distance: 600, azimuth: 2.2, polar: 20 * DEG };
     const pose = frameBuilding(bounds, 68, 49, current, 45, 4 / 3);
-    expect(pose.target).toEqual([105, 19.6, -54.5]);
+    // Aimed at the middle of the box, where its bounding sphere is centred.
+    expect(pose.target).toEqual([105, 24.5, -54.5]);
     expect(pose.azimuth).toBe(2.2);
     expect(pose.polar).toBe(FRAME_POLAR_MIN);
     expect(frameBuilding(bounds, 68, 49, { ...current, polar: 84 * DEG }, 45, 4 / 3).polar).toBe(FRAME_POLAR_MAX);
-    // The sphere fits the short side: wide stages fit the height, tall ones the width.
+    // The sphere's silhouette fills FRAME_FILL of the short side: wide stages
+    // fit the height, tall ones the width. (It once multiplied by the fill, so
+    // the sphere overfilled the frame and every point block lost its roof.)
     const wide = frameBuilding(bounds, 68, 49, current, 45, 2).distance;
     const tall = frameBuilding(bounds, 68, 49, current, 45, 0.5).distance;
-    expect(wide).toBeCloseTo((68 / Math.sin(22.5 * DEG)) * 0.9, 6);
+    expect(FRAME_FILL).toBe(0.8);
+    expect(wide).toBeCloseTo(68 / Math.sin(Math.atan(FRAME_FILL * Math.tan(22.5 * DEG))), 6);
+    expect(Math.tan(Math.asin(68 / wide)) / Math.tan(22.5 * DEG)).toBeCloseTo(FRAME_FILL, 9);
     expect(tall).toBeGreaterThan(wide);
     expect(frameBuilding(bounds, 5000, 49, current, 45, 1).distance).toBe(ORBIT_LIMITS.maxDistance);
     expect(frameBuilding(bounds, 0.1, 49, current, 45, 1).distance).toBe(ORBIT_LIMITS.minDistance);
-    // A low building's target is a share of its roof; a tall one's is capped.
-    expect(frameBuilding(bounds, 68, 9.3, current, 45, 1).target[1]).toBeCloseTo(3.72, 9);
-    expect(frameBuilding(bounds, 68, 120, current, 45, 1).target[1]).toBe(25);
+    // The target height follows the box, whatever its roof.
+    expect(frameBuilding([[0, 0, 0], [40, 40, 9.3]], 30, 9.3, current, 45, 1).target[1]).toBeCloseTo(4.65, 9);
+    expect(frameBuilding([[0, 0, 0], [40, 40, 120]], 70, 120, current, 45, 1).target[1]).toBe(60);
   });
+
 
   it('flies from pose to pose in 1.2 s: exact ends, the short way round, a hop mid-flight', () => {
     const from = { target: [0, 0, 0] as [number, number, number], distance: 600, azimuth: 3.0, polar: 50 * DEG };
@@ -194,6 +203,22 @@ describe('clicks and taps', () => {
     // …and it recovers.
     c.down(4, 0, 0, 1000, true);
     expect(c.up(4, 0, 0, 1050)).toBe('click');
+  });
+});
+
+describe('taps', () => {
+  it('lets a finger travel farther than a mouse and still tap: 12 px against 5', () => {
+    expect([CLICK_SLOP_PX, TOUCH_CLICK_SLOP_PX]).toEqual([5, 12]);
+    const c = new ClickTracker();
+    c.down(1, 100, 100, 0, true, 'mouse');
+    expect(c.up(1, 108, 100, 80)).toBeNull(); // 8 px: a mouse drag
+    c.down(2, 100, 100, 1000, true, 'touch');
+    expect(c.up(2, 108, 100, 1080)).toBe('click'); // 8 px: a finger's tap
+    // A second tap a little off the first is still a double tap.
+    c.down(3, 120, 104, 1200, true, 'touch');
+    expect(c.up(3, 120, 104, 1260)).toBe('double');
+    c.down(4, 100, 100, 3000, true, 'pen');
+    expect(c.up(4, 113, 100, 3050)).toBeNull(); // past 12 px a pen is dragging
   });
 });
 
@@ -343,6 +368,30 @@ describe.skipIf(packFile === undefined)('picking on the pack in public/estate/v1
         }
       }
       expect(hit, ESTATE_SITE_IDS[i]).toBe(true);
+    }
+  });
+
+  it('frames every building whole, roof included, clear of the HUD, at 4:3 and 16:9 (the fill once ran inverted)', () => {
+    const poster = fallbackAerialPose();
+    const from = orbitFromLookAt(poster.position, poster.target);
+    // The HUD's top row covers about 50 px of a 531 px stage: 0.19 of NDC.
+    const top = 1 - 0.19;
+    for (const aspect of [4 / 3, 16 / 9]) {
+      for (const site of pack?.sites ?? []) {
+        const pose = frameBuilding(site.bounds, site.radius, site.roofTop, from, 45, aspect);
+        const camera = new PerspectiveCamera(45, aspect, 1, 3000);
+        camera.position.set(...positionFromOrbit(pose));
+        camera.lookAt(...pose.target);
+        camera.updateMatrixWorld();
+        const [lo, hi] = site.bounds;
+        for (const x of [lo[0], hi[0]]) for (const y of [lo[1], hi[1]]) for (const z of [lo[2], hi[2]]) {
+          const p = new Vector3(...estateToThree([x, y, z])).project(camera);
+          const where = `${site.id} @ ${aspect.toFixed(2)} corner (${x}, ${y}, ${z})`;
+          expect(Math.abs(p.x), where).toBeLessThanOrEqual(1);
+          expect(p.y, where).toBeLessThanOrEqual(top);
+          expect(p.y, where).toBeGreaterThanOrEqual(-1);
+        }
+      }
     }
   });
 

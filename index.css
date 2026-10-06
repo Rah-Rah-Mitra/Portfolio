@@ -983,14 +983,18 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
    plate, HUD) is an opaque chip above it. */
 .wb-win-world-3d .wb-scroll { padding: 8px; overflow: hidden; display: flex; container-type: inline-size; }
 .wb-estate { flex: 1; min-width: 0; min-height: 0; display: flex; gap: 14px; }
-.wb-estate-stage { flex: 1; min-width: 0; min-height: 0; position: relative; padding: 0; background: var(--paper-75); }
+/* FIG. 07 is the figure (corners, caption); the stage is the layer inside it
+   that holds the poster, plate, HUD and canvas, and takes role=application
+   while live (a <figure> may not: axe aria-allowed-role). */
+.wb-estate-figure { flex: 1; min-width: 0; min-height: 0; position: relative; padding: 0; background: var(--paper-75); }
+.wb-estate-stage { position: absolute; inset: 0; }
 .wb-estate-stage[role='application'] { touch-action: none; cursor: grab; }
 .wb-estate-poster { position: absolute; inset: 0; display: block; }
 .wb-estate-poster img { width: 100%; height: 100%; object-fit: cover; }
 .wb-estate-stage > canvas { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; }
 /* A GPU reset leaves the canvas blank: show the poster under the reason. */
 .wb-estate[data-estate-phase='lost'] .wb-estate-stage > canvas { visibility: hidden; }
-.wb-estate-stage figcaption {
+.wb-estate-figure figcaption {
   position: absolute; left: 10px; bottom: 10px; z-index: 3; margin: 0; padding: 4px 8px; max-width: calc(100% - 20px);
   background: var(--paper-55); border: 1px solid var(--color-divider);
   font-size: 10px; letter-spacing: 0.08em; color: var(--color-neutral-700);
@@ -1021,7 +1025,7 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 .wb-estate-state { font-size: 11px; line-height: 1.45; color: var(--color-neutral-700); }
 .wb-estate-state:empty { display: none; }
 .wb-estate-action .btn { font-size: 12px; padding: 6px 10px; text-align: left; }
-.wb-estate-notice { font-size: 11px; line-height: 1.45; color: var(--color-accent-800); }
+.wb-estate-notice { display: block; font-size: 11px; line-height: 1.45; color: var(--color-accent-800); }
 .wb-estate-head { margin: 0 0 4px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.13em; color: var(--color-accent-700); }
 .wb-estate-sites { margin: 0 0 12px; padding: 0; list-style: none; border-top: 1px solid var(--ink-8); }
 .wb-estate-site {
@@ -1048,7 +1052,7 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 
 @container (max-width: 620px) {
   .wb-estate { flex-direction: column; }
-  .wb-estate-stage { flex: 1 1 55%; min-height: 200px; }
+  .wb-estate-figure { flex: 1 1 55%; min-height: 200px; }
   .wb-estate-side { width: auto; flex: 1 1 45%; }
 }
 
@@ -1070,7 +1074,7 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 .wb-estate-hud-col-end { flex: 1 1 0; max-width: none; align-items: flex-end; }
 .wb-estate-hud-row { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 6px; }
 .wb-estate-hud-bottom {
-  position: absolute; left: 10px; bottom: 40px; max-width: calc(100% - 130px);
+  position: absolute; left: 10px; bottom: 40px; max-width: calc(100% - 190px);
   display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
 }
 .wb-estate-chip {
@@ -1083,6 +1087,12 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 .wb-estate-chip-key { font-size: 10px; letter-spacing: 0.12em; color: var(--color-neutral-700); }
 .wb-estate-chip-sel { flex-wrap: wrap; padding: 3px 3px 3px 8px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 12px; color: var(--color-text); }
 .wb-estate-chip-keys[data-on] { border-color: var(--color-accent-700); color: var(--color-accent-800); }
+/* The chip holds the width of its longer label (the other one, drawn hidden in
+   the same cell), so focus moving off the stage never reflows the button row
+   under a press: that reflow swallowed every second HUD click. */
+.wb-estate-chip-keys { display: inline-grid; align-items: center; }
+.wb-estate-chip-keys > span, .wb-estate-chip-keys::after { grid-area: 1 / 1; }
+.wb-estate-chip-keys::after { content: attr(data-sizer); visibility: hidden; }
 .wb-estate-chip-lock { border-color: var(--color-accent-700); color: var(--color-accent-800); }
 .wb-estate-prompt, .wb-estate-chip-keys { pointer-events: none; }
 .wb-estate-hud-btn {
@@ -1092,15 +1102,24 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 }
 .wb-estate-hud-btn:hover { background: var(--color-accent-100); border-color: var(--color-accent-700); }
 .wb-estate-hud-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+/* The page's ring sits 2 px out, on scene pixels, where accent over glass or
+   asphalt falls to ~1.6:1: here it sits on a paper halo instead. */
+.wb-estate-hud :focus-visible { outline: 2px solid var(--color-accent-700); outline-offset: 1px; box-shadow: 0 0 0 4px var(--paper-75); }
 .wb-estate-hud-btn[aria-expanded='true'], .wb-estate-hud-btn[aria-pressed='true'] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
 .wb-estate-hud .wb-domainseg { pointer-events: auto; background: var(--paper-55); }
 .wb-estate-hud .wb-domainseg button { padding: 4px 9px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); text-transform: uppercase; }
 .wb-estate-hud .wb-domainseg button:disabled { opacity: 0.45; cursor: not-allowed; }
 .wb-estate-hud-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .wb-estate-north { padding: 1px; width: 30px; justify-content: center; pointer-events: none; }
-.wb-estate-north svg { width: 24px; height: 24px; overflow: visible; transform: rotate(var(--estate-north, 0rad)); }
+/* The engine turns the dial itself (an inline transform on an HTML layer, so
+   the compositor alone moves it) while the camera moves, and writes
+   --estate-north at rest for a dial mounted later. */
+.wb-estate-north-dial { display: block; width: 24px; height: 24px; transform: rotate(var(--estate-north, 0rad)); will-change: transform; }
+.wb-estate-north svg { display: block; width: 24px; height: 24px; overflow: visible; }
 .wb-estate-north-arrow { fill: var(--color-accent-700); stroke: none; }
 .wb-estate-north text { fill: var(--color-neutral-800); font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 8px; }
+/* KEYS' popover follows KEYS in tab order but is drawn on its own line under the row. */
+.wb-estate-popover-slot { order: 99; flex: 0 0 100%; display: flex; justify-content: flex-end; pointer-events: none; }
 .wb-estate-popover {
   pointer-events: auto; width: 250px; max-width: 100%; max-height: min(320px, calc(100vh - 200px)); overflow-y: auto; overscroll-behavior: contain;
   padding: 8px 10px 10px; background: var(--paper-55); border: 1px solid var(--color-divider);
@@ -1112,12 +1131,26 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 .wb-estate-streaming { flex-direction: column; align-items: stretch; gap: 4px; min-width: 180px; }
 .wb-estate-hud-progress { display: block; height: 1px; background: var(--color-divider); }
 .wb-estate-hud-progress > span { display: block; height: 1px; background: var(--color-accent-700); }
-.wb-estate-steps { position: absolute; right: 10px; bottom: 40px; display: grid; grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(2, 28px); gap: 3px; }
+/* Step buttons: an arrow pad, a gap, then three pairs (zoom, orbit, tilt in
+   Overview; climb, strafe, look in Fly). Walk (P5) has the pad only. */
+.wb-estate-steps {
+  position: absolute; right: 10px; bottom: 40px; display: grid; gap: 3px;
+  grid-template-columns: repeat(3, 28px) 4px repeat(2, 28px); grid-template-rows: repeat(3, 28px);
+  grid-template-areas: '. pu . . a1 b1' 'pl pd pr . a2 b2' '. . . . a3 b3';
+}
+.wb-estate-steps[data-mode='walk'] { grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(2, 28px); grid-template-areas: '. pu .' 'pl pd pr'; }
 .wb-estate-steps .wb-estate-hud-btn { min-height: 0; padding: 0; }
-.wb-estate-step-forward { grid-column: 2; grid-row: 1; }
-.wb-estate-step-turn-left { grid-column: 1; grid-row: 2; }
-.wb-estate-step-back { grid-column: 2; grid-row: 2; }
-.wb-estate-step-turn-right { grid-column: 3; grid-row: 2; }
+.wb-estate-step-pu { grid-area: pu; }
+.wb-estate-step-pl { grid-area: pl; }
+.wb-estate-step-pd { grid-area: pd; }
+.wb-estate-step-pr { grid-area: pr; }
+.wb-estate-step-a1 { grid-area: a1; }
+.wb-estate-step-b1 { grid-area: b1; }
+.wb-estate-step-a2 { grid-area: a2; }
+.wb-estate-step-b2 { grid-area: b2; }
+.wb-estate-step-a3 { grid-area: a3; }
+.wb-estate-step-b3 { grid-area: b3; }
+
 /* Fullscreen takes the whole window body: stage and side panel, on the page's ground. */
 .wb-estate:fullscreen { padding: 12px; background: var(--color-bg); }
 

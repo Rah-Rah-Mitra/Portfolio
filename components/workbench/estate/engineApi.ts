@@ -137,8 +137,15 @@ export type CreateEngine = (options: EstateEngineOptions) => EstateEngine;
 /** One storey down (-1) or up (+1). */
 export type EstateStep = -1 | 1;
 
-/** A step button (§8.6 bottom row): forward or back (in Walk 0.5 m), or a 15° turn. walkStep() says what each mode does. */
-export type EstateWalkStep = 'forward' | 'back' | 'turn-left' | 'turn-right';
+/**
+ * A step button (§8.6 bottom row; the DOM equivalent of every drag, §8.7).
+ * walkStep() says what each mode does with each: Overview zooms (forward,
+ * back), orbits (turn-*), tilts (look-*) and pans (left, right, up, down);
+ * Fly moves along the view (forward, back), strafes (left, right), climbs and
+ * sinks (up, down), turns and looks. P5's Walk takes 0.5 m steps and 15° turns.
+ */
+export type EstateWalkStep =
+  | 'forward' | 'back' | 'turn-left' | 'turn-right' | 'left' | 'right' | 'up' | 'down' | 'look-up' | 'look-down';
 
 /**
  * HUD popovers whose open state is an Esc layer (§8.3 level 1). The engine owns
@@ -291,10 +298,13 @@ export interface EstateEngine {
   planView(site: EstateSiteId, storey: EstateStoreyTag): boolean;
   /**
    * One press of the HUD's step buttons (§8.6 bottom row), for pointer and touch
-   * alike, in every mode that moves: Overview dollies ×0.8 in or out, or orbits
-   * 15°; Fly moves half a second's travel or turns 15° (P4b); Walk takes a 0.5 m step or a 15° turn
-   * (P5). Cancels a running fly-to where it is. False in a mode without steps.
+   * alike, in every mode that moves: Overview dollies ×0.8 in or out, orbits
+   * 15°, tilts 10° or pans 15 % of the distance; Fly moves half a second's
+   * travel along the view, sideways or up and down, turns 15° or looks 10° up
+   * or down (P4b); Walk takes a 0.5 m step or a 15° turn (P5). Cancels a
+   * running fly-to where it is. False in a mode without steps.
    */
+
   walkStep(step: EstateWalkStep): boolean;
   /** P5: the touch stick's deflection, each axis −1…1 (x strafe, y forward); 0, 0 releases it. */
   setStick(x: number, y: number): boolean;
@@ -356,7 +366,10 @@ export interface EstateView {
   /** When the last pointerlockchange to unlocked fired, on performance.now's clock; null if never. */
   readonly pointerUnlockedAtMs: number | null;
   readonly lean: boolean;
+  /** Fly's wheel speed multiplier (1 by default; 0.25–4), shown in the HUD's prompt. Absent before Fly is used. */
+  readonly flySpeed?: number;
 }
+
 
 // ---- events -------------------------------------------------------------------------------
 
@@ -542,6 +555,7 @@ export interface EstateRuntime {
  * How a failed loadEngine() rejects (EstateLoadError in loadEngine.ts carries
  * it): 'stale' when the chunk 404'd because the site was redeployed under the
  * page (the shell latches engine 'stale' and offers Reload), 'failed' for
- * anything else (engine 'failed', Retry imports again).
+ * anything else (engine 'failed'; the shell offers Reload too, because a
+ * browser never refetches a failed import(): loadEngine.ts).
  */
 export type EstateLoadFailure = 'stale' | 'failed';

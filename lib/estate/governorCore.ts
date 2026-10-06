@@ -51,6 +51,23 @@ export const CALIBRATION_FRAMES = 8;
 /** A window closes once it holds ≥ WINDOW_MS of kept time and ≥ WINDOW_FRAMES kept frames. */
 export const WINDOW_MS = 2000;
 export const WINDOW_FRAMES = 60;
+/**
+ * …or early, once it holds ≥ EARLY_WINDOW_MS and ≥ EARLY_WINDOW_FRAMES with
+ * more than EARLY_DROP_SHARE of them dropped: an overload that plain (a device
+ * drawing every third vsync drops ~90 %) needs no 60-frame verdict, and at 13
+ * fps a full window took ~5 s per notch, past G3's "settled within 5 s". An
+ * extension of §7.9.
+ */
+export const EARLY_WINDOW_MS = 1000;
+export const EARLY_WINDOW_FRAMES = 20;
+export const EARLY_DROP_SHARE = 0.5;
+/**
+ * A calibration this recent (kept time, ms) already answers "display or
+ * scene?": a slow spell inside it is the scene's, without a new burst. The
+ * engine calibrates in `loading`, so a device slow from its first live frame
+ * steps down at once instead of waiting for a burst it should not draw mid-drag.
+ */
+export const RECENT_CALIBRATION_MS = 10_000;
 // Backstop for the per-window CPU/GPU buffers: 1024 frames inside 2 s would
 // need a 500 Hz display, so in practice the time rule always closes first.
 export const WINDOW_CAP = 1024;
@@ -153,6 +170,8 @@ export interface GovernorState {
   recalibrate: boolean;
   /** A calibration found the display unchanged while the scene ran slow; cleared once the median comes back. */
   slowConfirmed: boolean;
+  /** Kept time since the last calibration, ms; Infinity before the first. */
+  sinceCalibrationMs: number;
   /** Notch changes so far (the §12 route allows ≤ 2 per segment). */
   changes: number;
   /** The last closed window, for the debug readout and bench logs; NaN until one closes. */
@@ -202,6 +221,7 @@ export const createGovernor = (start: GovernorStart): GovernorState => ({
   displayMs: Number.NaN,
   recalibrate: false,
   slowConfirmed: false,
+  sinceCalibrationMs: Infinity,
   changes: 0,
   lastDropShare: Number.NaN,
   lastCpuP95: Number.NaN,
@@ -335,6 +355,7 @@ export const calibrateDisplay = (state: GovernorState, intervals: ArrayLike<numb
     state.displayMs = clampPeriod(m & 1 ? usable[m >> 1] : 0.5 * (usable[(m >> 1) - 1] + usable[m >> 1]));
   }
   state.recalibrate = false;
+  state.sinceCalibrationMs = 0;
   resetWindow(state);
   // Still slow against the new floor: the scene, not the display. Do not ask
   // again until this spell ends.
@@ -376,9 +397,13 @@ const closeWindow = (s: GovernorState, period: number): GovernorDecision => {
   resetWindow(s);
 
   // The typical frame is itself a drop against the floor: the scene fell
-  // behind, or the display got slower. Only a calibration can tell which.
+  // behind, or the display got slower. Only a calibration can tell which, and
+  // a recent one already has.
   if (s.period > DROP_FACTOR * s.displayMs) {
-    if (!s.slowConfirmed) s.recalibrate = true;
+    if (!s.slowConfirmed) {
+      if (s.sinceCalibrationMs < RECENT_CALIBRATION_MS) s.slowConfirmed = true;
+      else s.recalibrate = true;
+    }
   } else {
     s.slowConfirmed = false;
   }
@@ -440,6 +465,7 @@ export const governorSample = (s: GovernorState, sample: GovernorSample): Govern
 
   s.winMs += interval;
   s.winFrames += 1;
+  s.sinceCalibrationMs += interval;
   if (dropped) s.winDropped += 1;
   const cpu = sample.cpuMs;
   if (cpu >= 0 && cpu < Infinity) s.winCpu[s.winCpuCount++] = cpu;
@@ -459,7 +485,12 @@ export const governorSample = (s: GovernorState, sample: GovernorSample): Govern
   }
 
   if ((s.winMs >= WINDOW_MS && s.winFrames >= WINDOW_FRAMES) || s.winFrames >= WINDOW_CAP) return closeWindow(s, period);
+  // Not while a calibration is owed: until it lands, a slow display and a slow
+  // scene look the same, and the full window is the cautious verdict.
+  if (!s.recalibrate && s.winMs >= EARLY_WINDOW_MS && s.winFrames >= EARLY_WINDOW_FRAMES && s.winDropped > EARLY_DROP_SHARE * s.winFrames) return closeWindow(s, period);
+
   return 'hold';
+
 };
 
 // ---- starting tier (plan §7.9 table) --------------------------------------------

@@ -1,5 +1,5 @@
 import { realpathSync } from 'node:fs';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
@@ -31,6 +31,37 @@ const CONTROLLER_CHUNK = /^EstateController-[\w-]+\.js$/;
 const HUD_CHUNK = /^EstateHud-[\w-]+\.js$/;
 
 const BUDGETS_FILE = path.resolve(import.meta.dirname, '..', 'lib', 'estate', 'packBudgets.json');
+const CATALOGUE_FILE = path.resolve(import.meta.dirname, '..', 'lib', 'estate', 'catalogue.generated.ts');
+
+/** Every pack URL a catalogue's text names (packUrl, the poster's src and srcSet entries). */
+export const catalogueUrls = (text) => [...new Set(text.match(/\/estate\/v\d+\.\d+\/[A-Za-z0-9._/-]+/g) ?? [])];
+
+/**
+ * The Estate catalogue's merge gate. Every /estate/ URL lib/estate/catalogue.generated.ts
+ * names must be in the build (a missing poster or pack.json would ship a broken
+ * poster and a Load that 404s into "the site was updated"), and a catalogue
+ * generated from a DEV pack (`dev: true`) never builds on Vercel or CI: the dev
+ * pack is never committed, so such a build can only be broken. Locally a dev
+ * catalogue with the dev pack copied in builds, so the branch stays testable.
+ */
+export const checkEstateCatalogue = async (distDirectory, { catalogueFile = CATALOGUE_FILE, env = process.env } = {}) => {
+  const failures = [];
+  const text = await readFile(catalogueFile, 'utf8');
+  const urls = catalogueUrls(text);
+  if (!urls.length) failures.push(`${path.basename(catalogueFile)} names no /estate/ URL`);
+  for (const url of urls) {
+    try {
+      await stat(path.join(distDirectory, ...url.slice(1).split('/')));
+    } catch {
+      failures.push(`${path.basename(catalogueFile)} names ${url}, which is not in the build: the pack it describes is not committed under public/estate`);
+    }
+  }
+  if (/^\s*dev: true,/m.test(text) && (env.VERCEL || env.CI)) {
+    failures.push(`${path.basename(catalogueFile)} was generated from a dev pack (dev: true): regenerate it from the published release pack before this deploys`);
+  }
+  console.log(`estate catalogue: ${urls.length} URLs in the build${/^\s*dev: true,/m.test(text) ? ' (DEV catalogue: never merge)' : ''}`);
+  return failures;
+};
 
 // engineGzip is what the consent label counts for the engine (lib/estate/policy.ts
 // consentBytes), so it must be an upper bound of what the click downloads;
@@ -162,10 +193,11 @@ export const checkBundle = async (distDirectory, options = {}) => {
 // but leaves argv[1] as typed, and a mismatch here would skip the check silently.
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const distDirectory = path.resolve(import.meta.dirname, '..', 'dist');
-  checkBundle(distDirectory).then(({ failures }) => {
-    for (const failure of failures) console.error(failure);
-    if (failures.length) process.exitCode = 1;
+  Promise.all([checkBundle(distDirectory), checkEstateCatalogue(distDirectory)]).then(([{ failures }, catalogue]) => {
+    for (const failure of [...failures, ...catalogue]) console.error(failure);
+    if (failures.length || catalogue.length) process.exitCode = 1;
   }).catch((error) => {
+
     console.error(error.message);
     process.exitCode = 1;
   });

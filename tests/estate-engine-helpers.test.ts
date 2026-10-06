@@ -1,5 +1,5 @@
 import { gzipSync } from 'node:zlib';
-import { BufferAttribute, BufferGeometry, InstancedMesh, MeshBasicMaterial, PerspectiveCamera } from 'three';
+import { BufferAttribute, BufferGeometry, InstancedMesh, MeshBasicMaterial, PerspectiveCamera, Vector3 } from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { estateToThree, threeToEstate, type Vec3 } from '../lib/estate/frames';
 import { ESTATE_SITE_IDS } from '../lib/estate/ids';
@@ -19,8 +19,10 @@ import {
 } from '../components/workbench/estate/engine/stats';
 import { createTreePartition, gatherMatrices, partitionTrees } from '../components/workbench/estate/engine/trees';
 import {
-  aerialPose, fallbackAerialPose, posterFov, posterPose, resumePose, rotateByQuat, toEstate,
+  aerialPose, FALLBACK_AERIAL_VIEW, fallbackAerialPose, posterFov, posterPose, resumePose, rotateByQuat, shiftOffsets, toEstate,
 } from '../components/workbench/estate/engine/views';
+
+const DEG = Math.PI / 180;
 
 // The engine's pure helpers (plan §7): poses, trees, sniffing, costs, the
 // start choice, readouts and clip/fog. The rendering itself is proved by the
@@ -58,15 +60,65 @@ describe('views', () => {
     expect(Math.hypot(up.target[0] - up.position[0], up.target[1] - up.position[1], up.target[2] - up.position[2])).toBeCloseTo(400, 6);
   });
 
-  it('falls back to a north-east aerial over the estate centre', () => {
+  it('falls back to upstream’s own aerial_NE camera, so a dev pack still fades in over its poster', () => {
+    expect(FALLBACK_AERIAL_VIEW).toMatchObject({ eye: [568.423279, 568.423279, 337.691345], vfovDeg: 42.184679, shift: [0, -0.123004] });
     const pose = fallbackAerialPose();
+    expect(pose).toEqual(aerialPose(FALLBACK_AERIAL_VIEW, FALLBACK_AERIAL_VIEW.aspect));
+    expect(posterPose(undefined, 1.5)).toEqual(aerialPose(FALLBACK_AERIAL_VIEW, 1.5));
     const eye = threeToEstate(pose.position);
-    const target = threeToEstate(pose.target);
     expect(eye[0]).toBeGreaterThan(400);
     expect(eye[1]).toBeGreaterThan(400);
-    expect(eye[2]).toBeGreaterThan(200);
-    close(target, [200, 200, 8]);
-    expect(posterPose(undefined, 1.5)).toEqual(pose);
+    // The target is on the ground, on the diagonal, past the optical axis's
+    // 30° ground point: the shift aims the camera 7.2° lower.
+    const target = threeToEstate(pose.target);
+    expect(target[2]).toBeCloseTo(0, 6);
+    expect(target[0]).toBeCloseTo(target[1], 2);
+    const axisReach = 337.691345 / Math.tan(30 * DEG);
+    const reach = Math.hypot(eye[0] - target[0], eye[1] - target[1]);
+    expect(reach).toBeLessThan(axisReach);
+    expect(Math.atan2(eye[2], reach) / DEG).toBeCloseTo(30 + 7.2, 0);
+  });
+
+  it('keeps the poster’s framing through the lens shift: the estate lands within 2 % of the poster, at 4:3, the default stage and 16:9', () => {
+    // Upstream aerial_NE (shift_y −0.123, units of the larger side): the poster
+    // camera keeps the optical axis and slides the image window down 16 % of
+    // the frame; the live orbit camera has no shift and turns instead.
+    const view = FALLBACK_AERIAL_VIEW;
+    const e2t = (p: ArrayLike<number>) => estateToThree(p);
+    const forward = rotateByQuat(view.quat, [0, 0, -1]);
+    const up = rotateByQuat(view.quat, [0, 1, 0]);
+    const { x: ox, y: oy, halfTan } = shiftOffsets(view);
+    expect(ox).toBe(0);
+    expect(Math.atan(-oy) / DEG).toBeCloseTo(7.2, 1);
+    const corners: Vec3[] = [[0, 0, 0], [400, 0, 0], [400, 400, 0], [0, 400, 0], [200, 200, 0]];
+    for (const stage of [4 / 3, 722 / 531, 16 / 9]) {
+      const pose = aerialPose(view, stage);
+      const live = new PerspectiveCamera(pose.fovDeg, stage, 1, 3000);
+      live.position.set(...pose.position);
+      live.lookAt(...pose.target);
+      live.updateMatrixWorld();
+      const poster = new PerspectiveCamera(view.vfovDeg, view.aspect, 1, 3000);
+      poster.position.set(...e2t(view.eye));
+      poster.up.set(...e2t(up));
+      poster.lookAt(...e2t([view.eye[0] + forward[0], view.eye[1] + forward[1], view.eye[2] + forward[2]]));
+      poster.updateMatrixWorld();
+      let worst = 0;
+      let unshiftedWorst = 0;
+      for (const c of corners) {
+        const p = new Vector3(...e2t(c)).project(poster);
+        // The shifted window, then cropped into the stage like object-fit: cover.
+        let px = p.x - ox / (halfTan * view.aspect);
+        let py = p.y - oy / halfTan;
+        if (stage > view.aspect) py *= stage / view.aspect; else px *= view.aspect / stage;
+        if (Math.abs(px) > 1 || Math.abs(py) > 1) continue; // off the poster
+        const q = new Vector3(...e2t(c)).project(live);
+        worst = Math.max(worst, Math.abs(px - q.x) / 2, Math.abs(py - q.y) / 2);
+        unshiftedWorst = Math.max(unshiftedWorst, Math.abs(py - (p.y * (stage > view.aspect ? stage / view.aspect : 1))) / 2);
+      }
+      expect(worst, `stage ${stage.toFixed(2)}`).toBeLessThan(0.02);
+      // What dropping the shift cost: every point a sixth of the stage lower.
+      expect(unshiftedWorst).toBeGreaterThan(0.15);
+    }
   });
 
   it('round-trips a resume pose through the three world', () => {

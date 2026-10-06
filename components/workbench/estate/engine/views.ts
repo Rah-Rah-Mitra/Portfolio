@@ -3,8 +3,9 @@ import type { AerialView } from '../../../../lib/estate/schema';
 
 // Camera poses the engine starts from, as plain tuples (no three), so node
 // tests pin them: the poster camera (pack.views.aerialNE, plan §8.1 "First
-// live frame"), the fallback when a pack carries none (a dev pack built
-// without ESTATE_views.json), and the conversions a resume pose needs.
+// live frame", lens shift included), the fallback when a pack carries none (a
+// dev pack built without ESTATE_views.json: upstream's own aerial_NE numbers),
+// and the conversions a resume pose needs.
 //
 // Frames (lib/estate/frames.ts): an AerialView is upstream's Blender camera in
 // the estate frame (Z up), looking down its local −Z with +Y up, rotated by
@@ -18,15 +19,20 @@ export interface ThreePose {
   fovDeg: number;
 }
 
-/** The estate's middle at street level (estate frame): where the fallback camera looks. */
-export const ESTATE_CENTRE: Readonly<Vec3> = Object.freeze([200, 200, 8] as Vec3);
-
-// The fallback poster camera: from the north-east, 35° down, far enough that a
-// 45° FOV holds the 400 m square at a 4:3 stage (the poster render's framing).
-const FALLBACK_AZIMUTH = Math.PI / 4; // towards +x +y from the centre: north-east
-const FALLBACK_ELEVATION = (35 * Math.PI) / 180;
-const FALLBACK_DISTANCE = 640;
-export const FALLBACK_FOV_DEG = 45;
+/**
+ * Upstream's aerial_NE camera (reports/renders/ESTATE/ESTATE_views.json, the
+ * poster render: lens 35 mm on a 36 mm sensor, 1600 × 1200, shift_y −0.123),
+ * as an AerialView. The fallback when a pack carries no `views.aerialNE` (a dev
+ * pack built without ESTATE_views.json), so the first live frame still lands on
+ * the poster it fades in over.
+ */
+export const FALLBACK_AERIAL_VIEW: Readonly<AerialView> = Object.freeze({
+  eye: [568.423279, 568.423279, 337.691345],
+  quat: [0.191342, 0.46194, 0.800103, 0.331414],
+  vfovDeg: 42.184679,
+  shift: [0, -0.123004],
+  aspect: 1600 / 1200,
+} as AerialView);
 
 /** How far along the view ray a pose's target sits when the ray never meets the ground, m. */
 const TARGET_REACH = 400;
@@ -58,40 +64,61 @@ export const posterFov = (vfovDeg: number, posterAspect: number, stageAspect: nu
 };
 
 /**
- * The poster camera as a three pose. Its target is where the view ray meets
- * the ground (estate z = 0), which is what an orbit about the first frame turns
- * around; a ray that never comes down stops TARGET_REACH metres out. Lens shift
- * is not applied: the poster render's shift is a few per cent of the frame, and
- * an orbit camera has no shift to carry it.
+ * Where a Blender lens shift puts the image centre, as tangent offsets on the
+ * camera's own right and up axes (image plane at distance 1). Blender measures
+ * shift in units of the larger image side (sensor_fit AUTO), so on a 4:3
+ * render shift_y −0.123 moves the centre 2 × 0.123 × (4/3) half-heights down:
+ * about 7.2° below the optical axis, 16 % of the frame. Never "a few per cent".
+ */
+export const shiftOffsets = (view: AerialView): { x: number; y: number; halfTan: number } => {
+  const halfTan = Math.tan((view.vfovDeg * Math.PI) / 360);
+  const aspect = view.aspect > 0 ? view.aspect : 1;
+  const larger = 2 * halfTan * Math.max(aspect, 1);
+  return { x: view.shift[0] * larger, y: view.shift[1] * larger, halfTan };
+};
+
+/**
+ * The poster camera as a three pose. An orbit camera has no lens shift, so it
+ * looks through the shifted image centre instead: the view ray is the render's
+ * optical axis turned onto that centre, and the vertical FOV spans the same
+ * top and bottom edges the shifted frame did (then cropped for the stage as the
+ * poster is). Turning instead of shifting keystones the frame a little: the
+ * estate's corners land within 2 % of the poster's, where dropping the shift
+ * put every point 17 % of the stage lower (tests/estate-engine-helpers.test.ts
+ * pins both). The target is where that ray meets the ground (estate z = 0),
+ * which is what an orbit about the first frame turns around; a ray that never
+ * comes down stops TARGET_REACH metres out.
  */
 export const aerialPose = (view: AerialView, stageAspect: number): ThreePose => {
   const forward = rotateByQuat(view.quat, [0, 0, -1]);
+  const { x: ox, y: oy, halfTan } = shiftOffsets(view);
+  if (ox !== 0 || oy !== 0) {
+    const right = rotateByQuat(view.quat, [1, 0, 0]);
+    const up = rotateByQuat(view.quat, [0, 1, 0]);
+    for (let i = 0; i < 3; i += 1) forward[i] += ox * right[i] + oy * up[i];
+    const n = Math.hypot(forward[0], forward[1], forward[2]) || 1;
+    for (let i = 0; i < 3; i += 1) forward[i] /= n;
+  }
   const eye = view.eye;
   let reach = TARGET_REACH;
   if (forward[2] < -1e-3) reach = Math.min(4 * TARGET_REACH, -eye[2] / forward[2]);
   const target: Vec3 = [eye[0] + forward[0] * reach, eye[1] + forward[1] * reach, eye[2] + forward[2] * reach];
+  // The angle between the shifted frame's top and bottom edges, seen from the eye.
+  const vfov = oy === 0 ? view.vfovDeg : ((Math.atan(oy + halfTan) - Math.atan(oy - halfTan)) * 180) / Math.PI;
   return {
     position: estateToThree(eye),
     target: estateToThree(target),
-    fovDeg: posterFov(view.vfovDeg, view.aspect, stageAspect),
+    fovDeg: posterFov(vfov, view.aspect, stageAspect),
   };
 };
 
-/** The north-east aerial used when the pack has no poster camera. */
-export const fallbackAerialPose = (): ThreePose => {
-  const c = ESTATE_CENTRE;
-  const flat = Math.cos(FALLBACK_ELEVATION) * FALLBACK_DISTANCE;
-  const eye: Vec3 = [
-    c[0] + flat * Math.cos(FALLBACK_AZIMUTH),
-    c[1] + flat * Math.sin(FALLBACK_AZIMUTH),
-    c[2] + Math.sin(FALLBACK_ELEVATION) * FALLBACK_DISTANCE,
-  ];
-  return { position: estateToThree(eye), target: estateToThree(c), fovDeg: FALLBACK_FOV_DEG };
-};
+/** The poster camera when the pack has none: upstream's aerial_NE (FALLBACK_AERIAL_VIEW). */
+export const fallbackAerialPose = (stageAspect = FALLBACK_AERIAL_VIEW.aspect): ThreePose =>
+  aerialPose(FALLBACK_AERIAL_VIEW, stageAspect);
 
 /** The start pose: the pack's poster camera, else the fallback aerial. */
 export const posterPose = (view: AerialView | undefined, stageAspect: number): ThreePose =>
-  (view ? aerialPose(view, stageAspect) : fallbackAerialPose());
+  aerialPose(view ?? FALLBACK_AERIAL_VIEW, stageAspect);
 
 /** A resume pose (estate frame) back into the three world, keeping the FOV of the mode it was taken in. */
 export const resumePose = (position: ArrayLike<number>, target: ArrayLike<number>, fovDeg: number): ThreePose => ({

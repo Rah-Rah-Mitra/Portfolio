@@ -105,3 +105,8 @@ export const whenIdle = (callback: () => void, timeout: number): (() => void) =>
   const id = setTimeout(callback, 1);
   return () => clearTimeout(id);
 };
+
+/** Reload the page: the answer to a redeploy (stale), a lost capability (unavailable) and a chunk that failed to load. */
+export const reloadPage = (): void => {
+  window.location.reload();
+};

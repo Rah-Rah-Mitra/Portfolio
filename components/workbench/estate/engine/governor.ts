@@ -1,6 +1,6 @@
 import {
   calibrateDisplay, createGovernor, governorNotch, governorSample,
-  type GovernorDecision, type GovernorNotch, type GovernorState,
+  type GovernorDecision, type GovernorNotch, type GovernorSample, type GovernorState,
 } from '../../../../lib/estate/governorCore';
 import type { EstateTier } from '../../../../lib/estate/tiers';
 import type { GpuTimer } from './renderer';
@@ -21,6 +21,8 @@ export class EngineGovernor {
   private readonly timer: GpuTimer | null;
   private lastTime = Number.NaN;
   private timing = false;
+  /** One sample object, refilled each frame (§7.8: no allocation per frame). */
+  private readonly scratch: GovernorSample = { interval: 0, cpuMs: 0, gpuMs: Number.NaN, excluded: false };
 
   constructor(tier: EstateTier, pixelRatio: number, timer: GpuTimer | null) {
     this.state = createGovernor({ tier, pixelRatio });
@@ -50,8 +52,13 @@ export class EngineGovernor {
     const interval = time - this.lastTime;
     this.lastTime = time;
     if (!continuous) return null;
-    const gpuMs = this.timer ? this.timer.poll() : Number.NaN;
-    const decision = governorSample(this.state, { interval, cpuMs, gpuMs, excluded });
+    const sample = this.scratch;
+    sample.interval = interval;
+    sample.cpuMs = cpuMs;
+    sample.gpuMs = this.timer ? this.timer.poll() : Number.NaN;
+    sample.excluded = excluded;
+    const decision = governorSample(this.state, sample);
+
     return decision === 'hold' ? null : { decision, notch: governorNotch(this.state) };
   }
 

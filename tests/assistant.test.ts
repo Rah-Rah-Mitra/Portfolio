@@ -24,6 +24,11 @@ describe('portfolio AI commands', () => {
       const response = localAgent(prompt);
       expect(response.reply, prompt).toMatch(/generated sample HDB neighbourhood/);
       expect(response.reply, prompt).toMatch(/not a real town/);
+      // P4b's capability sentence (plan §9.4), and the desktop-only line both replies carry.
+      expect(response.reply, prompt).toMatch(/Orbit it or fly to a building; detail loads as you get closer\./);
+      expect(response.reply, prompt).toMatch(/desktop window \(881px and wider\)/);
+      // Not the P4a still-render sentence, and no walking in before P5 ships it.
+      expect(response.reply, prompt).not.toMatch(/still render with a registry|walk in/i);
       expect(response.reply, prompt).not.toMatch(/CSS drawing|optical test bench|enhancement target|Three\.js|GLB|renders on demand/i);
       expect(response.references, prompt).toContainEqual({ label: 'Explore the estate', href: '#world' });
       expect(response.commands, prompt).toEqual([{ type: 'openDesktopApp', appId: 'world-3d' }]);

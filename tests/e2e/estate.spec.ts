@@ -5,7 +5,9 @@ import { gzipSync } from 'node:zlib';
 // The Estate window's live 3D view (WIN-07, plan §10.2), on the real engine in
 // the `chromium-webgl` project (SwiftShader, playwright.config.ts). P4b's cases
 // 1–7, 11, 12, 15 and 16, plus P7's release-and-reopen (14), whose release P4b
-// built. The P5 tour (8), interior streaming (13), context loss (9) and the phone
+// built, and the P4b review's: HUD clicks with the stage focused (5b), the
+// stage's description and a fully clean axe scan (5c), a reopen drawn at full
+// size and detail (14b), and Reload after a failed engine chunk (17). The P5 tour (8), interior streaming (13), context loss (9) and the phone
 // row (10) land with the phases that build them.
 //
 // `?estate-quality=min` starts the engine on its lowest tier, which is also what
@@ -69,6 +71,9 @@ const settle = async (page: Page) => {
 
 const serious = async (page: Page) => (await new AxeBuilder({ page }).include('[data-win="world-3d"]').analyze()).violations
   .filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''));
+/** Every axe finding in the window, at any impact, by rule id. */
+const allFindings = async (page: Page) => (await new AxeBuilder({ page }).include('[data-win="world-3d"]').analyze()).violations
+  .map((violation) => `${violation.id} (${violation.impact})`);
 
 test.describe('estate window — live 3D view', () => {
   test('1 · boot fetches nothing of the estate or its engine', async ({ page }) => {
@@ -147,6 +152,55 @@ test.describe('estate window — live 3D view', () => {
     expect(await serious(page)).toEqual([]);
     await win.locator('[data-estate-site="BLK_501"]').focus();
     await expect(keys).toHaveText('Click or Tab to control');
+    expect(errors).toEqual([]);
+  });
+
+  test('5b · HUD buttons take a mouse click while the stage holds the keys', async ({ page }) => {
+    const errors = collectErrors(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    const hud = win.locator('.wb-estate-hud');
+    // Focus on the stage, as after any drag, Load, or registry fly-to. A press on
+    // a HUD button moves focus off it; when the KEYS chip changed width on that
+    // blur the row reflowed under the pointer and the click was lost.
+    await stage(page).focus();
+    const fly = hud.getByRole('button', { name: 'Fly', exact: true });
+    const before = await fly.boundingBox();
+    await page.mouse.click(before!.x + before!.width / 2, before!.y + before!.height / 2);
+    await expect(chip(page)).toHaveText(/ · FLY$/);
+    // The click handed the keys back to the stage; the next mouse click lands too.
+    await expect.poll(() => stage(page).evaluate((node) => document.activeElement === node)).toBe(true);
+    const keys = hud.getByRole('button', { name: 'Keys', exact: true });
+    const k = await keys.boundingBox();
+    await page.mouse.click(k!.x + k!.width / 2, k!.y + k!.height / 2);
+    await expect(hud.getByRole('region', { name: 'Fly keys' })).toBeVisible();
+    await stage(page).focus();
+    const overview = hud.getByRole('button', { name: 'Overview', exact: true });
+    const o = await overview.boundingBox();
+    await page.mouse.click(o!.x + o!.width / 2, o!.y + o!.height / 2);
+    await expect(chip(page)).toHaveText(/ · OVERVIEW$/);
+    // The chip keeps one width whichever label it shows.
+    const chipBox = win.locator('.wb-estate-chip-keys');
+    await stage(page).focus();
+    const focused = (await chipBox.boundingBox())!.width;
+    await win.locator('[data-estate-site="BLK_501"]').focus();
+    expect((await chipBox.boundingBox())!.width).toBeCloseTo(focused, 0);
+    expect(errors).toEqual([]);
+  });
+
+  test('5c · the live stage is described by its key summary, and axe finds nothing at any impact', async ({ page }) => {
+    const errors = collectErrors(page);
+    await openEstate(page);
+    await waitLive(page);
+    // #estate-keys sits in a closed <details>, outside the accessibility tree: the
+    // stage points at the HUD's always-present summary instead.
+    await expect(stage(page)).toHaveAccessibleDescription(/^Arrow keys rotate and tilt; A and D, or Shift with the arrows, pan;/);
+    await stage(page).focus();
+    await page.keyboard.press('Digit3');
+    await expect(stage(page)).toHaveAccessibleDescription(/R and F look up and down/);
+    await page.keyboard.press('Escape');
+    // role=application sits on the stage layer, not on the <figure> (aria-allowed-role).
+    expect(await allFindings(page)).toEqual([]);
     expect(errors).toEqual([]);
   });
 
@@ -247,7 +301,63 @@ test.describe('estate window — live 3D view', () => {
     expect(errors).toEqual([]);
   });
 
+  test('14b · closed and reopened inside the hold: the first frame back is full size and full detail, then rest', async ({ page }) => {
+    const errors = collectErrors(page);
+    await countFrames(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    await settle(page);
+    const canvas = page.locator('canvas[data-estate-canvas]');
+    const size = () => canvas.evaluate((node: HTMLCanvasElement) => [node.width, node.height]);
+    const open = await size();
+    const tris = await readout(page, 'tris');
+    expect(open[0]).toBeGreaterThan(100);
+    await page.getByRole('button', { name: 'Close Estate' }).click();
+    await expect(win).toBeHidden();
+    await expect(phase(page)).toHaveAttribute('data-estate-phase', 'frozen');
+    await page.waitForTimeout(400); // past the 150 ms resize debounce, with the section display:none
+    // A closed window has no box; its buffer keeps its size rather than shrinking to 1 × 1.
+    expect(await size()).toEqual(open);
+    await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
+    await waitLive(page);
+    expect(await size()).toEqual(open);
+    // Same pose, same files: the same detail, without any input (a held level
+    // step that came due at rest once waited for the next keypress).
+    await expect.poll(() => readout(page, 'tris'), { timeout: 3_000 }).toBe(tris);
+    await page.waitForTimeout(1_000);
+    const restFrames = await frames(page);
+    await page.waitForTimeout(1_000);
+    expect(await frames(page) - restFrames, 'requestAnimationFrame calls in 1 s at rest after reopening').toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('17 · an engine chunk that failed to download offers Reload, which loads it', async ({ page }) => {
+    // Chromium logs the failed fetch itself; that line is expected here.
+    const errors = collectErrors(page, [/Failed to load resource: the server responded with a status of 503/]);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const block = /\/assets\/estate-engine-[\w-]+\.js$/;
+    await page.route(block, (route) => route.fulfill({ status: 503, body: 'unavailable' }));
+    let win = await openEstate(page);
+    await win.getByRole('button', { name: /^Load the 3D estate · / }).click();
+    await expect(phase(page)).toHaveAttribute('data-estate-phase', 'error', { timeout: LIVE_TIMEOUT });
+    await expect(win.locator('.wb-estate-state')).toHaveText('The 3D viewer did not download. Reload to try again.');
+    // A browser never fetches a failed module URL again in the same document, so
+    // the only action offered is the one that can work.
+    const reload = win.getByRole('button', { name: 'Reload' });
+    await expect(reload).toBeVisible();
+    await expect(win.getByRole('button', { name: 'Retry' })).toHaveCount(0);
+    await page.unroute(block);
+    await Promise.all([page.waitForEvent('load'), reload.click()]);
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
+    win = page.getByRole('dialog', { name: 'Estate' });
+    await win.getByRole('button', { name: /^Load the 3D estate · / }).click();
+    await waitLive(page);
+    expect(errors).toEqual([]);
+  });
+
   test('15 · under Save-Data one Load click downloads no more than its label says', async ({ page }) => {
+
     const errors = collectErrors(page);
     await page.addInitScript(() => {
       Object.defineProperty(navigator, 'connection', {

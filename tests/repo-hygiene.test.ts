@@ -8,7 +8,8 @@ import ts from 'typescript';
 import { normalizePath, resolveConfig, type UserConfig } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, checkBundle, findEntryScript, readEngineBudgets, staticImports,
+  ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, catalogueUrls, checkBundle, checkEstateCatalogue, findEntryScript,
+  readEngineBudgets, staticImports,
 } from '../scripts/check-bundle.mjs';
 import viteConfig from '../vite.config';
 
@@ -292,7 +293,38 @@ describe('build hygiene', () => {
     }
   });
 
+  it('fails the build on a catalogue whose pack is not in it, and on a dev catalogue on Vercel or CI', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'check-bundle-catalogue-'));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const catalogueFile = path.join(dir, 'catalogue.generated.ts');
+      const dist = path.join(dir, 'dist');
+      const text = (dev: boolean) => `export const ESTATE_CATALOGUE = {\n  packUrl: "/estate/v1.2/pack.0000aaaa.json",\n  dev: ${dev},\n  poster: { src: "/estate/v1.2/poster/a-800.0000bbbb.jpg", srcSet: "/estate/v1.2/poster/a-800.0000cccc.webp 800w, /estate/v1.2/poster/a-1600.0000dddd.webp 1600w" },\n} as const;\n`;
+      await writeFile(catalogueFile, text(false));
+      expect(catalogueUrls(text(false))).toEqual([
+        '/estate/v1.2/pack.0000aaaa.json', '/estate/v1.2/poster/a-800.0000bbbb.jpg',
+        '/estate/v1.2/poster/a-800.0000cccc.webp', '/estate/v1.2/poster/a-1600.0000dddd.webp',
+      ]);
+      // Nothing of the pack in the build: one failure per URL.
+      expect(await checkEstateCatalogue(dist, { catalogueFile, env: {} })).toHaveLength(4);
+      for (const url of catalogueUrls(text(false))) {
+        await mkdir(path.dirname(path.join(dist, url)), { recursive: true });
+        await writeFile(path.join(dist, url), 'x');
+      }
+      expect(await checkEstateCatalogue(dist, { catalogueFile, env: {} })).toEqual([]);
+      // A dev catalogue builds locally (the dev pack copied in), never on Vercel or CI.
+      await writeFile(catalogueFile, text(true));
+      expect(await checkEstateCatalogue(dist, { catalogueFile, env: {} })).toEqual([]);
+      expect(await checkEstateCatalogue(dist, { catalogueFile, env: { VERCEL: '1' } })).toEqual([expect.stringMatching(/generated from a dev pack/)]);
+      expect(await checkEstateCatalogue(dist, { catalogueFile, env: { CI: 'true' } })).toHaveLength(1);
+    } finally {
+      log.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('reads both engine budgets from packBudgets.json and refuses a missing one', async () => {
+
     const budgets = await readEngineBudgets();
     const file = JSON.parse(await read('lib/estate/packBudgets.json')) as Record<string, unknown>;
     expect(budgets).toEqual({ engineGzip: file.engineGzip, engineMinified: file.engineMinified });

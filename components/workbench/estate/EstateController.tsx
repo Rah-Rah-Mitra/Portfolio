@@ -22,7 +22,7 @@ import {
 import type { EstateEngine, EstateEngineEvent, EstateResume, EstateRuntime } from './engineApi';
 import { EstateLoadError, loadEngine } from './loadEngine';
 import { ESTATE_SECTION, ESTATE_STAGE, usePanePresence } from './usePanePresence';
-import { debugFromSearch, onDocumentComplete, qualityFromSearch, readTokenColours, releaseMsFromSearch, whenIdle } from './shellDom';
+import { debugFromSearch, onDocumentComplete, qualityFromSearch, readTokenColours, releaseMsFromSearch, reloadPage, whenIdle } from './shellDom';
 import type { EstateControllerProps, EstateModel, EstateModelAction, EstateModelHandlers } from './estateModel';
 
 // The Estate window's controller (WIN-07, #world): a lazy chunk the window
@@ -49,6 +49,18 @@ import type { EstateControllerProps, EstateModel, EstateModelAction, EstateModel
 
 const LOAD_BYTES = { stage0: ESTATE_CATALOGUE.bytes.stage0, f: ESTATE_CATALOGUE.bytes.f } as const;
 const FLY_THERE = 'Load the 3D estate to fly there.';
+/**
+ * The engine chunk did not load. A failed import() is final for the document's
+ * life (the module map keeps the failure; importing the URL again rejects with
+ * no request), so the policy's Retry would be a dead end: the action becomes
+ * Reload. Failures after the chunk evaluated (pack files, engine errors) fetch
+ * afresh and keep Retry.
+ */
+const MODULE_FAILED = 'The 3D viewer did not download. Reload to try again.';
+const LIVE_TEXT = '3D view live: drag to orbit, or use the keys listed below.';
+const FAILURE_PHASES: ReadonlySet<EstatePhase> = new Set(['lost', 'error', 'stale', 'unavailable']);
+/** Where the AI and FX panels mount their .panel-backdrop: beside their dock buttons. */
+const DOCK_TRIGGERS = '[data-open-assistant], .effects-dock';
 
 // Controls with their own keyboard behaviour (input.ts KeyTargetKind 'button').
 const BUTTONISH = 'button, a, summary, input, select, textarea, [role="button"]';
@@ -108,6 +120,11 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   // Why a ready engine was latched unavailable (two resets, no restore): the
   // policy's own reason for engine 'unavailable' is the capability one.
   const [latchedReason, setLatchedReason] = React.useState<string | null>(null);
+  // The engine chunk itself failed to load (MODULE_FAILED): only a reload helps.
+  const [moduleFailed, setModuleFailed] = React.useState(false);
+  // Has the window been live this mount? The status line keeps "live" while
+  // frozen after that, so reopening does not announce it again.
+  const [beenLive, setBeenLive] = React.useState(false);
 
   const result = resolveEstatePhase({
     open: presence.open,
@@ -149,6 +166,8 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   const lossTimesRef = React.useRef<number[]>([]);
   const restoreTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const onEventRef = React.useRef<(event: EstateEngineEvent) => void>(() => {});
+  /** Whether the last element focused on the page was inside this window (focus that fell to the body stays "inside"). */
+  const focusInsideRef = React.useRef(false);
 
   const stageEl = () => rootRef.current?.querySelector<HTMLElement>(ESTATE_STAGE) ?? null;
 
@@ -207,7 +226,9 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
       loadingRef.current = false;
       if (!mountedRef.current) return;
       console.warn('[estate]', error);
-      setEngineState(error instanceof EstateLoadError && error.kind === 'stale' ? 'stale' : 'failed');
+      const stale = error instanceof EstateLoadError && error.kind === 'stale';
+      setModuleFailed(!stale);
+      setEngineState(stale ? 'stale' : 'failed');
     });
   }, []);
 
@@ -370,8 +391,13 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     if (!result.claimGpu) return undefined;
     const sync = () => (document.querySelector('.panel-backdrop') ? releaseGpu('estate') : claimGpu('estate'));
     sync();
+    // Only where a backdrop can appear: beside the dock buttons, and the body.
+    // A subtree watch on the body ran this on every React commit on the page and
+    // on the desk clock's tick, once a second, at rest.
     const panels = new MutationObserver(sync);
-    panels.observe(document.body, { childList: true, subtree: true });
+    const parents = new Set<Node>([document.body]);
+    for (const trigger of document.querySelectorAll(DOCK_TRIGGERS)) if (trigger.parentNode) parents.add(trigger.parentNode);
+    for (const parent of parents) panels.observe(parent, { childList: true });
     return () => {
       panels.disconnect();
       releaseGpu('estate');
@@ -391,8 +417,29 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
 
   // Focus follows a click-initiated load (§8.3): onto the stage when the Load
   // button disappears and when it goes live; onto the action button when it
-  // fails. Never on an automatic load or a focus request.
+  // fails. Never on an automatic load or a focus request, and never once the
+  // visitor has pressed or focused anything outside this window meanwhile: a
+  // load that lands after they moved to another window must not pull focus
+  // (and the window) back over it.
   const moveFocus = (target: 'stage' | 'action') => setFocusMove((prev) => ({ target, seq: (prev?.seq ?? 0) + 1 }));
+  React.useEffect(() => {
+    const section = rootRef.current?.closest<HTMLElement>(ESTATE_SECTION) ?? rootRef.current;
+    if (!section) return undefined;
+    const onFocusIn = (event: FocusEvent) => {
+      const inside = section.contains(event.target as Node);
+      focusInsideRef.current = inside;
+      if (!inside) setFocusIntent(false);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (!section.contains(event.target as Node)) setFocusIntent(false);
+    };
+    document.addEventListener('focusin', onFocusIn, true);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn, true);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, []);
   React.useEffect(() => {
     if (!focusIntent) return;
     if (phase === 'loading' || phase === 'live') {
@@ -403,6 +450,23 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     if (phase !== 'poster') moveFocus('action');
     setFocusIntent(false);
   }, [phase, focusIntent]);
+
+  // A live window that fails (GPU reset, a download, a redeploy) takes the
+  // stage's focusability with it: if focus was in the window, it goes to the
+  // side panel's Retry or Reload (which the view scrolls into sight). Back to
+  // live from a reset, it returns to the stage. Never from another window.
+  const previousPhase = React.useRef(phase);
+  React.useEffect(() => {
+    const was = previousPhase.current;
+    previousPhase.current = phase;
+    if (phase === 'live') setBeenLive(true);
+    if (was === phase) return;
+    if (FAILURE_PHASES.has(phase) && !FAILURE_PHASES.has(was)) {
+      if ((was === 'live' || was === 'frozen') && focusInsideRef.current) moveFocus('action');
+    } else if (phase === 'live' && was === 'lost' && focusInsideRef.current) {
+      moveFocus('stage');
+    }
+  }, [phase]);
 
   // The assistant's focusEstate (P6 sends it; the event exists now): held until
   // live, delivered once, and never a DOM focus move.
@@ -475,6 +539,10 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   };
 
   const retry = () => {
+    if (moduleFailed) {
+      reloadPage();
+      return;
+    }
     if (engineRef.current) release();
     else setEngineState('none');
     requestLoad();
@@ -496,19 +564,25 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   };
 
   // action and hud stay the same objects while unchanged: the window compares models shallowly.
+  const reloadOnly = moduleFailed && phase === 'error';
   const actionLabel = result.action === 'load' ? consentLabel(LOAD_BYTES, result.lean ? 'lean' : 'full')
-    : result.action === 'retry' ? 'Retry' : result.action === 'reload' ? 'Reload' : null;
+    : result.action === 'retry' ? (reloadOnly ? 'Reload' : 'Retry') : result.action === 'reload' ? 'Reload' : null;
   const action = React.useMemo<EstateModelAction | null>(
     () => (actionLabel ? { label: actionLabel, primary: actionLabel !== 'Retry' && actionLabel !== 'Reload' } : null),
     [actionLabel],
   );
 
+  // One polite status line in the side panel speaks the viewer's phase; the
+  // HUD's own (visually hidden) status speaks where the camera is. Two regions,
+  // two subjects, never the same words.
   let stateText = '';
   if (phase === 'consent') stateText = result.reason ? `Still render · ${result.reason}.` : 'Still render.';
   else if (phase === 'loading') stateText = 'Loading the 3D estate…';
-  else if (phase === 'live') stateText = '3D view live: drag to orbit, or use the keys listed below.';
-  else if (phase === 'frozen') stateText = '3D view paused while the window is closed or off screen.';
-  const reason = phase === 'unavailable' && latchedReason ? latchedReason : result.reason;
+  else if (phase === 'live') stateText = LIVE_TEXT;
+  // Frozen is closed, hidden or off screen: nobody reads it, and a "paused"
+  // line here was re-announced as "live" on every reopen.
+  else if (phase === 'frozen') stateText = beenLive ? LIVE_TEXT : '3D view paused while the window is closed or off screen.';
+  const reason = reloadOnly ? MODULE_FAILED : phase === 'unavailable' && latchedReason ? latchedReason : result.reason;
   if (!stateText && reason) stateText = reason;
 
   // The view's handlers stay the same functions for this controller's life and
@@ -519,7 +593,7 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     onAction: () => {
       if (result.action === 'load') requestLoad();
       else if (result.action === 'retry') retry();
-      else if (result.action === 'reload') window.location.reload();
+      else if (result.action === 'reload') reloadPage();
     },
   };
   const handlers = React.useMemo<EstateModelHandlers>(() => ({

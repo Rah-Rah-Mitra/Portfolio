@@ -214,9 +214,16 @@ building's L1 walk grid, which covers them (`tests/estate-walk-realdata.test.ts`
 Walk files are upstream's SN5W bytes, gzipped unchanged; the tool only checks
 their header and layer tags.
 
-The catalogue lists each site as `{ id, name, kind, typology, heightM, storeys,
-facade: { bytes }, detail: { bytes }, … }` — an `EstateEnterFiles` as it stands
-(`lib/estate/policy.ts`) — and the poster's `w`/`h` as `encodePosters` measured them.
+The catalogue carries only what the main bundle reads before any engine exists
+(every byte ships on every page view, under the 510,000 B main-bundle cap): each
+site as `{ id, name, kind, typology, heightM, levels }`, where `levels` is the
+storey range written out (`'L1–L16 + RF'`, `manifest.mjs storeyRange`), the
+poster with the `w`/`h` `encodePosters` measured, and `bytes: { stage0, f }`, the
+two totals the consent label counts. Per-site and per-class file sizes stay in
+pack.json, which the engine reads (P5's Enter labels take them from there). A
+catalogue built from a dev pack says `dev: true`, which `estate:check`,
+`tests/estate-pack.test.ts` (under CI) and the build's check-bundle (on Vercel)
+refuse.
 
 ## Pipeline notes (§6.2)
 

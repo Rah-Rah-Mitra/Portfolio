@@ -14,6 +14,15 @@ export const ORBIT_TILT_RATE = 40 * DEG;
 export const STEP_TURN = 15 * DEG;
 /** An Overview step button's zoom: the distance times this (in) or divided by it (out). */
 export const STEP_ZOOM = 0.8;
+/** A/D, Shift+arrows held in Overview: the target slides this share of the orbit distance per second. */
+export const ORBIT_PAN_RATE = 0.6;
+/** An Overview pan step: this share of the orbit distance. */
+export const STEP_PAN = 0.15;
+/** An Overview tilt step and a Fly look step, rad. */
+export const STEP_TILT = 10 * DEG;
+/** R/F held in Fly, rad/s. */
+export const LOOK_KEY_RATE = 60 * DEG;
+
 
 // ---- Fly ----------------------------------------------------------------------------------
 

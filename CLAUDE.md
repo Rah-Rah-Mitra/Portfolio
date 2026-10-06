@@ -142,8 +142,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      within a second and every window is closed; closing the last window by hand
      waits the 30 s like any close; and a window seen again with a context lost
      while frozen and never restored, which cannot draw: released and loaded
-     afresh from the HTTP cache, the pose kept, never shown live on the dead
-     canvas — e2e case 9b), lost / unavailable (two live resets a
+     afresh from the HTTP cache with the camera pose kept — Fly and Walk resume,
+     a Plan comes back as Overview from its camera — never shown live on the
+     dead canvas — e2e case 9b), lost / unavailable (two live resets a
      minute, no restore in 5 s) / error / stale (Reload). A failed engine or
      controller **chunk** is Reload too, never Retry: a browser keeps a failed
      `import()` in its module map for the document's life, so importing again
@@ -215,9 +216,19 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        `scene`, `streaming`, `loop`, `governor`, `levels`, `stats` and
        `lifecycle` beside it: one token palette (`lib/estate/palette.json`, read
        at start through `shellDom.readTokenColours`; six programs, every switch a
-       uniform, no colour in engine code); massing → F → D per building by
-       screen-space error within the tier's caps (`lib/estate/{lod,tiers}.ts`:
-       150 draws and 1.2 M triangles at the top tier); downloads through
+       uniform, no colour in engine code; three's flat-shading normal is guarded
+       against a zero screen derivative, `materials.ts FLAT_NORMAL_GUARDED`:
+       SwiftShader gave one at eye-level poses on a heading that is a multiple
+       of 90°, `normalize(0)` is NaN and the face drew black, 17 % of the frame
+       at Blk 509's stair 5 and 21 % in the car park's lobby; e2e 8a and 8b
+       screenshot the canvas there and fail on pure-black pixels); massing → F → D
+       per building by screen-space error within the tier's caps
+       (`lib/estate/{lod,tiers}.ts`: 150 draws and 1.2 M triangles at the top
+       tier; the focus building — selected, flown to, entered, or just walked
+       out of — is never drawn as massing once its F is resident: its step to F
+       is taken first, still within the caps, or an exit arc that lands past
+       F's switch distance at min showed the block just left as a grey box;
+       the min tier draws trees within 15 m whole, crowns beyond); downloads through
        `lib/estate/scheduler.ts` (≤ 4 at once, ≤ 1 geometry upload a frame,
        pre-gzipped files sniffed and inflated by `DecompressionStream`; a file
        whose bytes had all arrived when its want flapped off is decoded and
@@ -352,7 +363,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        Enter, a double-click, the HUD's or the list's Walk in, or 2 /
        WALK walk in (`walkIn`): `plan.ts walkInPoint` takes the walkable cell
        nearest the room's centre on that storey (a stair room's middle is the
-       flight from below, so it looks for the room's own landing), then the
+       flight from below, so it looks for the room's own landing), facing the
+       room's outside wall where one of 16 headings' run of floor ends at it
+       (`walkInYaw`, `meetsFacade` against the footprint: the windows; 8,636 of
+       15,233 rooms), else down its longest run of floor (#05-105's living room
+       had opened on a blank wall with its windows behind); then the
        Enter arc with no rise comes straight down through the cut, which stays
        on until the walker lands. Every room of all 14 buildings lands inside
        itself on its own storey but one closed substation (BLK 505 L1-AM2),
@@ -523,13 +538,14 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   interior, walk and nav file), checked by estate:check and
   `tests/estate-pack.test.ts`: the P5 real-data suites skip without them, so
   the gate is what fails. The engine pins are a tripwire at measured + 5 %
-  (942,000 B for the engine chunk since P5, which measures 907,354 B after the
-  P6/P7 review's fixes; 278,000 B gzip for the Load click since P7, which
-  measures 265,408 B); the plan's 950,000 / 307,200 B are the hard ceiling. The chunk the engine shares with its HUD is named
+  (942,000 B for the engine chunk since P5, which measures 907,791 B after the
+  release round's fixes; 278,000 B gzip for the Load click since P7, which
+  measures 266,035 B); the plan's 950,000 / 307,200 B are the hard ceiling. The chunk the engine shares with its HUD is named
   `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
   whichever pure module it lists first), and the engine chunk is found by the
   module it holds, not by its facade, which Rollup drops once the bench chunk
-  imports from it. Main bundle after the P6/P7 review: 508,174 / 508,834 B.
+  imports from it. Main bundle after the P6/P7 review: 508,174 / 508,834 B (the
+  release round left it unchanged).
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
   `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
   a focused HUD button, and the touch stick), the Estate cases in
@@ -580,12 +596,19 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   what was fetched (1, 6, 10) still wait for idle. Checked 6-way parallel ×2.
   The tour moves by step buttons because they are discrete; its routes assume the
   entrance Enter's arc picks from a landed fly-to at 1280 × 720. Restated constants in
-
   the view (`ESTATE_DISPLAY_NAME`, `ESTATE_REPO_URL`, `ESTATE_FOCUS_EVENT_NAME`,
   the shell's tier list) exist so the main bundle need not import `lib/estate`
   modules that build tables at import; the DOM test pins each to its source
   (AskThePage's catalogue-based storey check and the server's storey table are
   pinned by `tests/estate-assistant.test.ts`).
+  **Known gaps, not yet fixed:** a Plan is not restored after a release (it
+  comes back as Overview from its camera, cut and pick gone); the assistant's
+  local fallback reply does not mention Plan; coplanar flicker under Plan's
+  cut is untested; a download aborted after its headers but before its body
+  was read is requested again on the next want (a disk-cache hit in
+  production, and the bench sees it as a second request). Not yet verified:
+  Firefox, a hardware GPU and pointer lock (plan §12's sign-off; every
+  measurement here is SwiftShader).
 - **FX desk backdrops** (`DeskBackdrop.tsx`, first child of `.wb-desk`, desktop
   only): two FX-panel toggles, both off at boot — the N-body field (`NBodyField.tsx`,
   a 2-D fast multipole solver in `lib/nbody/fmm.ts` run by `workers/nbody.worker.ts`,

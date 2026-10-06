@@ -49,6 +49,6 @@
     { "id": "high", "tauPx": 2.0, "maxTris": 1200000, "maxDraws": 150, "bandK": 2, "treeRadiusM": 80, "furnitureRadiusM": 25, "edges": true, "pixelCap": 2000000, "gpuBytes": 128000000 },
     { "id": "mid", "tauPx": 3.0, "maxTris": 800000, "maxDraws": 120, "bandK": 1, "treeRadiusM": 60, "furnitureRadiusM": 15, "edges": true, "pixelCap": 1400000, "gpuBytes": 80000000 },
     { "id": "low", "tauPx": 4.5, "maxTris": 450000, "maxDraws": 90, "bandK": 1, "treeRadiusM": 30, "furnitureRadiusM": 8, "edges": false, "pixelCap": 1000000, "gpuBytes": 48000000 },
-    { "id": "min", "tauPx": 6.0, "maxTris": 300000, "maxDraws": 60, "bandK": 1, "treeRadiusM": 0, "furnitureRadiusM": 5, "edges": false, "pixelCap": 700000, "gpuBytes": 32000000 }
+    { "id": "min", "tauPx": 6.0, "maxTris": 300000, "maxDraws": 60, "bandK": 1, "treeRadiusM": 15, "furnitureRadiusM": 5, "edges": false, "pixelCap": 700000, "gpuBytes": 32000000 }
   ]
 }

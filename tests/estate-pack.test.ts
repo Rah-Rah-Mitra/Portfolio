@@ -6,6 +6,7 @@ import { gunzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { ESTATE_CATALOGUE } from '../lib/estate/catalogue.generated';
 import { checkCommittedCatalogue, checkShippedClasses, SHIPPED_CLASSES } from '../scripts/estate/check.mjs';
+import { gitlink } from '../scripts/estate/lib/provenance.mjs';
 import { DECODED_CLASSES } from '../components/workbench/estate/engine/streaming';
 
 // The catalogue and the pack it names (plan §10.2 estate-pack): the merge gate
@@ -66,6 +67,19 @@ describe('the Estate catalogue’s merge gate', () => {
     const problems = checkCommittedCatalogue(root);
     expect(problems.some((p: string) => /dev pack/.test(p))).toBe(ESTATE_CATALOGUE.dev);
     expect(problems.filter((p: string) => !/dev pack/.test(p))).toEqual([]);
+  });
+
+  // Plan §4 rule 2 and §10.2: the pack and the catalogue were built from the
+  // upstream commit the submodule's gitlink records. A version move that
+  // commits a new pack and catalogue but forgets the gitlink (or the reverse)
+  // fails here, not only in a manual `estate:check --provenance`. gitlink()
+  // reads the portfolio's own index; the submodule's checkout is never opened.
+  it.skipIf(!existsSync(join(root, '.git')))('was built from the upstream commit the submodule gitlink records', () => {
+    const pack = JSON.parse(readFileSync(onDisk(ESTATE_CATALOGUE.packUrl), 'utf8')) as { source: { commit: string } };
+    const recorded = gitlink(root);
+    expect(recorded, 'no gitlink in the index: is the submodule entry still committed?').toMatch(/^[0-9a-f]{40}$/);
+    expect(pack.source.commit, 'pack.json source.commit against the gitlink').toBe(recorded);
+    expect(ESTATE_CATALOGUE.commit, 'the catalogue’s commit against the gitlink').toBe(recorded);
   });
 });
 

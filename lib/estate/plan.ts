@@ -1,7 +1,7 @@
 import type { Vec2 } from './frames';
 import type { NavRoom } from './nav';
 import { flatRing, pointInRing } from './storeys';
-import { nearestWalkable, type WalkFile, type WalkPose } from './walk';
+import { floorAt, nearestWalkable, type FloorHit, type WalkFile, type WalkPose } from './walk';
 
 // Plan (plan §8.1, §7.3): one storey of one building, seen from 55° above the
 // horizon and cut at its floor + 1.2 m. Pure, so node tests and the engine run
@@ -143,6 +143,99 @@ export const walkInPoint = (
   }
   // No cell on the storey itself: the first answer stands (`out` was only written on a find).
   return best < Infinity || found;
+};
+
+/** Walking in tries this many headings, evenly spaced from the plan's own… */
+export const WALK_IN_HEADINGS = 16;
+/** …and follows each over the room's floor this far, m. */
+export const WALK_IN_SIGHT_M = 20;
+
+const SIGHT_HIT: FloorHit = { z: 0, layer: -1 };
+
+/**
+ * How far the room's floor runs ahead of a walker at `pose` facing `yaw`
+ * (Walk's yaw: 0 faces +y, north; +π/2 faces −x), m: half-cell steps while each
+ * point is inside the room's outline and walkable on the landing's own storey,
+ * up to WALK_IN_SIGHT_M. A wall, a doorway out or a piece of furniture ends it.
+ */
+export const roomSightline = (walk: WalkFile, ring: Float64Array, pose: WalkPose, yaw: number): number => {
+  const step = walk.header.cell / 2;
+  const fx = -Math.sin(yaw);
+  const fy = Math.cos(yaw);
+  let z = pose.z;
+  let run = 0;
+  for (let t = step; t <= WALK_IN_SIGHT_M + 1e-9; t += step) {
+    const x = pose.x + fx * t;
+    const y = pose.y + fy * t;
+    if (!pointInRing(x, y, ring)) break;
+    const f = floorAt(walk, x, y, z, SIGHT_HIT);
+    if (f === null || SIGHT_HIT.layer !== pose.layer) break;
+    z = f;
+    run = t;
+  }
+  return run;
+};
+
+/**
+ * A heading meets the façade when, past the end of its run of floor, the ray
+ * leaves the building's footprint within this far, m: the wall itself and a
+ * ledge outside it.
+ */
+export const WALK_IN_FACADE_REACH_M = 1.5;
+
+/**
+ * Whether the wall that ended a run of `run` m from `pose` along `yaw` is an
+ * outside wall (the ray leaves `footprint`, a flatRing of the block-local
+ * footprint, within WALK_IN_FACADE_REACH_M past it): the wall a flat's
+ * windows are in.
+ */
+export const meetsFacade = (footprint: Float64Array, pose: WalkPose, yaw: number, run: number): boolean => {
+  const fx = -Math.sin(yaw);
+  const fy = Math.cos(yaw);
+  for (let d = 0.1; d <= WALK_IN_FACADE_REACH_M + 1e-9; d += 0.1) {
+    const t = run + d;
+    if (!pointInRing(pose.x + fx * t, pose.y + fy * t, footprint)) return true;
+  }
+  return false;
+};
+
+const wrapYaw = (yaw: number): number => {
+  const wrapped = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+  return wrapped === -Math.PI ? Math.PI : wrapped;
+};
+
+/**
+ * Which way walking into a room faces, as Walk's yaw in (−π, π]. The first
+ * frame should show the room and its windows, not whatever wall the plan's
+ * heading met: #05-105's living room opened on a blank wall 3 m off with its
+ * windows behind the walker. Of WALK_IN_HEADINGS headings starting at the
+ * plan's own (`planYaw`), one whose run of floor ends at the building's
+ * outside wall (meetsFacade on `footprint`, block-local) beats any that does
+ * not; then the longer roomSightline wins. Headings are tried nearest the
+ * plan's first, and a later one must beat the best by more than a cell, so
+ * near-ties keep the plan's direction. Without a footprint only the run
+ * counts; a landing outside its room keeps `planYaw`.
+ */
+export const walkInYaw = (
+  walk: WalkFile, room: Pick<NavRoom, 'poly'>, pose: WalkPose, planYaw: number, footprint?: ArrayLike<ArrayLike<number>>,
+): number => {
+  const ring = flatRing(room.poly);
+  if (!pointInRing(pose.x, pose.y, ring)) return wrapYaw(planYaw);
+  const outline = footprint && footprint.length >= 3 ? flatRing(footprint) : null;
+  const turn = (2 * Math.PI) / WALK_IN_HEADINGS;
+  let bestYaw = planYaw;
+  let bestScore = -Infinity;
+  for (let k = 0; k < WALK_IN_HEADINGS; k += 1) {
+    // 0, +1, −1, +2, −2, … headings away from the plan's.
+    const offset = k === 0 ? 0 : k % 2 === 1 ? (k + 1) / 2 : -k / 2;
+    const yaw = planYaw + offset * turn;
+    const run = roomSightline(walk, ring, pose, yaw);
+    const facade = outline !== null && run < WALK_IN_SIGHT_M && meetsFacade(outline, pose, yaw, run);
+    // A façade heading outranks every other: a run is never longer than WALK_IN_SIGHT_M.
+    const score = run + (facade ? 2 * WALK_IN_SIGHT_M : 0);
+    if (score > bestScore + walk.header.cell) { bestScore = score; bestYaw = yaw; }
+  }
+  return wrapYaw(bestYaw);
 };
 
 /**

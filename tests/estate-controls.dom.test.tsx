@@ -1063,7 +1063,7 @@ describe('the HUD in Plan (P6)', () => {
     expect(engine.walkIn).toHaveBeenCalled();
     // Until the nav file is in, the list waits; failed for good, it says why.
     setView(inPlan({ ready: false, rooms: [] }));
-    expect(section.querySelector('.wb-estate-state')!.textContent).toBe('Loading the rooms…');
+    expect(section.querySelector('.wb-estate-state')!.textContent).toBe('Loading rooms…');
     setView({ interior: { site: 'BLK_509', state: 'failed', storey: 'L5', band: null, reason: FAILED_ROOMS } });
     expect(screen.getByRole('region', { name: 'Rooms of Blk 509, L5' }).querySelector('.wb-estate-state')!.textContent).toBe(FAILED_ROOMS);
     setView({ interior: null });

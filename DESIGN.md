@@ -267,10 +267,10 @@ the FX "Pause all motion").
     its window frames and outline lines drop out while you are in it (or
     peeking through a notch at its other wing), and the opened storeys read as
     an unlined strip; looking straight up a stair well above the walk band
-    shows an empty shaft. Both are accepted for P5 (the band, not the lines, is
-    what the interior is about); a faint dotted line along some flat window
-    heads is a coplanar sliver in the interior geometry, left for the release
-    pack;
+    shows an empty shaft. Both are accepted (the band, not the lines, is what
+    the interior is about). A dotted line once seen along some flat window
+    heads was a seam between the typical-storey and per-storey meshes, closed
+    in the v1.2 release pack by quantising each interior file on one lattice;
   - **Plan is a drawing's plan cut** (P6): one storey seen from 55° above the
     horizon, cut at its floor + 1.2 m (the architectural convention; `[` and `]`
     move it 0.3 m between 0.3 and 2.4 m). Everything above the cut is gone —
@@ -285,7 +285,9 @@ the FX "Pause all motion").
     with ↑/↓ the view also slides to it and closes in (never out) until it
     fills a fifth of the short side, because a room of a 60 m slab is a few
     pixels at the opening view; a click on the floor leaves the view alone. It
-    is named on a "ROOM" chip with Walk in; the cut has its own chip ("CUT +1.20 M", ▼ ▲). The
+    is named on a "ROOM" chip with Walk in, which lands mid-room facing its
+    outside wall (its windows) where it has one, else down its longest run of
+    floor; the cut has its own chip ("CUT +1.20 M", ▼ ▲). The
     storey strip down the right edge, the same one Walk uses, opens Plan from
     Overview on the storey pressed and marks the storey shown. The room list in
     the side panel groups rooms by flat ("#05-104"), then by what they are when
@@ -303,7 +305,14 @@ the FX "Pause all motion").
     route at normal speed; under a 4× CPU slowdown a decode or worker message
     still takes 54–72 ms now and then); a GPU reset shows the "lost" plate and
     comes back on its own, and a context lost while the window was closed is
-    rebuilt unseen when it reopens. While the Estate is in use (live, focused, no panel open) the desk
+    rebuilt when it reopens, the camera where it was (Fly and Walk resume; a
+    Plan comes back as Overview from its camera). The lowest tier, min (what
+    software GL starts on), draws the far blocks as their grey storey-lined
+    massing and only the nearer ones as façades, because its 0.3 M-triangle
+    cap cannot hold all fourteen; so its first live frame is plainer than the
+    poster it fades from. That is accepted rather than holding the poster,
+    which at min would never give way; trees within 15 m of the camera are
+    drawn whole there too, crowns on stubs beyond. While the Estate is in use (live, focused, no panel open) the desk
     backdrops hold still and their caption says so ("HELD · ESTATE").
     `?estate-bench=1` (`=max` maximised) is a debug mode that drives the
     camera by itself and shows the stats row; nothing in the UI links to it;

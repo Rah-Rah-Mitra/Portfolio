@@ -7,18 +7,20 @@ import { ESTATE_SITE_IDS, ESTATE_SITE_STOREYS } from '../lib/estate/ids';
 import { parseNav, roomAt } from '../lib/estate/nav';
 import {
   COMMON_AREAS, cutSpoken, cutText, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_CUT_MAX, PLAN_CUT_MIN, PLAN_ELEVATION_DEG, PLAN_POLAR,
-  rayFloor, ringCentroid, ROOM_KIND_GROUP_MIN, roomAnchor, roomGroups, roomKind, roomSpoken, roomText, stepCut, walkInPoint,
+  meetsFacade, rayFloor, ringCentroid, ROOM_KIND_GROUP_MIN, roomAnchor, roomGroups, roomKind, roomSightline, roomSpoken, roomText, stepCut,
+  walkInPoint, walkInYaw, WALK_IN_HEADINGS,
 } from '../lib/estate/plan';
 import { bandQuads, MARKER_BAND_MAX, MARKER_BAND_MIN, markerBandWidth } from '../components/workbench/estate/engine/controls/plan';
 import { parsePack } from '../lib/estate/schema';
-import { pointInPolygon, siteStoreyTable } from '../lib/estate/storeys';
+import { flatRing, pointInPolygon, siteStoreyTable } from '../lib/estate/storeys';
 import { decodeWalk, type WalkPose } from '../lib/estate/walk';
 import { blankPose, ORBIT_LIMITS, PLAN_FILL, planFrame, positionFromOrbit } from '../components/workbench/estate/engine/controls/tween';
 import type { Vec2 } from '../lib/estate/frames';
 
 // Plan (plan §8.1, §7.3; P6): the pure rules in lib/estate/plan.ts, the pose
 // tween.ts frames a storey with, and, on the committed pack (skipped without
-// one), that walking into a room finds a floor to stand on.
+// one), that walking into a room finds a floor to stand on and faces its
+// windows.
 
 const ring = (points: Array<[number, number]>) => points.map((p) => Object.freeze(p) as Vec2);
 const boxOf = (poly: readonly Vec2[]): [number, number, number, number] => [
@@ -236,7 +238,7 @@ describe.skipIf(!hasData)('walking in from Plan on the pack in public/estate/v1.
       });
     }
     expect(rooms).toBeGreaterThan(15_000);
-    // Measured on the v1.2 rc2(b) pack: 15,234 rooms; the one with no floor is a closed room.
+    // Measured on the v1.2 pack (rc2 through the release; nav unchanged): 15,234 rooms; the one with no floor is a closed room.
     expect(misses).toEqual(['BLK_505 L1-AM2']);
     expect(layers).toEqual([]);
     expect(outside).toEqual([]);
@@ -268,5 +270,48 @@ describe.skipIf(!hasData)('walking in from Plan on the pack in public/estate/v1.
       expect(pose.layer, r.name).toBe(s);
       expect(roomAt(nav, s, pose.x, pose.y)?.name, r.name).toBe(r.name);
     }
+  });
+  it('walks in facing the outside wall where a heading meets it: #05-105’s living room faces its windows from any plan heading', () => {
+    const site = pack!.sites[ESTATE_SITE_IDS.indexOf('BLK_509')];
+    const nav = parseNav(JSON.parse(read(site.nav!.path).toString('utf8')), site.id);
+    const walk = decodeWalk(read(site.walk!.path), site.id);
+    const s = nav.storeys.findIndex((st) => st.tag === 'L5');
+    const outline = flatRing(site.footprint);
+    const living = nav.rooms[s].find((r) => r.flat === '#05-105' && r.label === 'Living / Dining')!;
+    expect(living).toBeDefined();
+    const pose: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
+    expect(walkInPoint(walk, living, nav.storeys[s].ffl, s, pose)).toBe(true);
+    const ring = flatRing(living.poly);
+    const facing = (yaw: number) => meetsFacade(outline, pose, yaw, roomSightline(walk, ring, pose, yaw));
+    for (let k = 0; k < 8; k += 1) {
+      const planYaw = -Math.PI + (k + 0.5) * (Math.PI / 4);
+      const yaw = walkInYaw(walk, living, pose, planYaw, site.footprint);
+      expect(yaw, `plan heading ${k}`).toBeGreaterThan(-Math.PI);
+      expect(yaw, `plan heading ${k}`).toBeLessThanOrEqual(Math.PI);
+      expect(facing(yaw), `plan heading ${k}`).toBe(true);
+      // Its windows are in the block's north face (+y): the heading is within 45° of north.
+      expect(Math.abs(yaw), `plan heading ${k}`).toBeLessThanOrEqual(Math.PI / 4 + 1e-9);
+    }
+    // What the reviewer met: from the plan's southward heading, the longest run alone faces a blank wall.
+    expect(facing(walkInYaw(walk, living, pose, Math.PI))).toBe(false);
+    // A landing outside its room keeps the plan's heading.
+    expect(walkInYaw(walk, living, { ...pose, x: pose.x + 50 }, 0.3, site.footprint)).toBeCloseTo(0.3, 12);
+    // Every Blk 509 L5 room with an outside wall in reach of one of the headings tried faces one.
+    let rooms = 0;
+    let outside = 0;
+    for (const r of nav.rooms[s]) {
+      const at: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
+      walkInPoint(walk, r, nav.storeys[s].ffl, s, at);
+      const rRing = flatRing(r.poly);
+      const turn = (2 * Math.PI) / WALK_IN_HEADINGS;
+      const any = Array.from({ length: WALK_IN_HEADINGS }, (_, i) => i * turn)
+        .some((yaw) => meetsFacade(outline, at, yaw, roomSightline(walk, rRing, at, yaw)));
+      const yaw = walkInYaw(walk, r, at, 0, site.footprint);
+      rooms += 1;
+      if (any) outside += 1;
+      expect(meetsFacade(outline, at, yaw, roomSightline(walk, rRing, at, yaw)), r.name + ' ' + r.label).toBe(any);
+    }
+    expect(rooms).toBe(105);
+    expect(outside).toBeGreaterThan(50);
   });
 });

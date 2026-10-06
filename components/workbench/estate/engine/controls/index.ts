@@ -5,7 +5,7 @@ import { cancelsClimb, dragRole, HeldKeys, stageKey, type EscapeAction, type Sta
 import { ESTATE_VFOV_DEG } from '../../../../../lib/estate/lod';
 import { roomAt } from '../../../../../lib/estate/nav';
 import {
-  cutSpoken, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_POLAR, rayFloor, ringCentroid, roomSpoken, roomText, stepCut, walkInPoint,
+  cutSpoken, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_POLAR, rayFloor, ringCentroid, roomSpoken, roomText, stepCut, walkInPoint, walkInYaw,
 } from '../../../../../lib/estate/plan';
 import type { PackSpawn } from '../../../../../lib/estate/schema';
 import { EYE_HEIGHT } from '../../../../../lib/estate/storeys';
@@ -957,7 +957,9 @@ class EstateControls implements EngineNavigation {
    * Walk into the picked room (or room `index`): the Enter arc (1.2 s, no rise:
    * the camera comes straight down through the cut) to the walkable cell
    * nearest the room's centre on that storey (lib/estate/plan.ts walkInPoint),
-   * facing the way the plan looked, into Walk. A cut when halted.
+   * facing its outside wall where it has one (the windows), else along its
+   * longest run of floor (walkInYaw; the plan's own heading on a near-tie),
+   * into Walk. A cut when halted.
    */
   walkIn(index?: number): boolean {
     const plan = this.plan;
@@ -990,7 +992,7 @@ class EstateControls implements EngineNavigation {
     const camera = this.core.camera;
     const f = threeToEstate(camera.getWorldDirection(this.v1).toArray(this.e2), this.e2);
     const spawn: WalkSpawn = {
-      x: building.at[0] + pose.x, y: building.at[1] + pose.y, z: pose.z, yaw: Math.atan2(-f[0], f[1]), name: roomText(room),
+      x: building.at[0] + pose.x, y: building.at[1] + pose.y, z: pose.z, yaw: walkInYaw(walk, room, pose, Math.atan2(-f[0], f[1]), building.footprint), name: roomText(room),
     };
     const halted = this.core.options.motionHalted();
     const storey = table.tags[plan.storey];

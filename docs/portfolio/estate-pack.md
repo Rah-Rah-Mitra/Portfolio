@@ -39,13 +39,15 @@ The only real input is a **Bonsai-Estate release**: a folder holding
 `SampleTownN5_<tag>_model.zip`, `…_reports.zip` and `release_manifest.json`.
 
 ```powershell
-# P2: the candidate, from upstream's release folder (R2a)
-npm run estate:pack -- --zips ..\Bonsai-Estate-release\v1.2 --out artifacts\estate\v1.2
+# P2: the candidate, from upstream's release folder (R2a). For v1.2, <candidate>
+# was v1.2-rc2 (..\Bonsai-Estate-release\v1.2-rc2), re-packed as
+# artifacts\estate\v1.2-rc2b once P5's pack fixes were in.
+npm run estate:pack -- --zips ..\Bonsai-Estate-release\<candidate> --out artifacts\estate\<candidate>
 # The release pack: the published zips, checked against the candidate's own record.
-# P5 on it carries every class: the engine reads all eight, and estate:check and
+# It carries every class: the engine reads all eight, and estate:check and
 # tests/estate-pack.test.ts refuse a committed pack without them (SHIPPED_CLASSES).
-Copy-Item ..\Bonsai-Estate-release\v1.2\release_manifest.json <downloaded>\
-npm run estate:pack -- --zips <downloaded> --classes poster,s0,f,d,i,w,nav,ground --out public\estate\v1.2 --release --expect-assets artifacts\estate\v1.2\pack.<h8>.json
+Copy-Item ..\Bonsai-Estate-release\<candidate>\release_manifest.json <downloaded>\
+npm run estate:pack -- --zips <downloaded> --classes poster,s0,f,d,i,w,nav,ground --out public\estate\v1.2 --release --expect-assets artifacts\estate\<candidate>\pack.<h8>.json
 npm run estate:pack -- --zips <downloaded> --classes poster,s0,f,d,i,w,nav,ground --out public\estate\v1.2 --verify
 npm run estate:check -- --provenance --zips <downloaded>
 ```
@@ -113,7 +115,8 @@ ancestor of it with the generator unchanged, and records both in
 
 ### Dev mode (`--dev-src`)
 
-Before v1.2 exists, the pipeline is exercised on an **extracted** export:
+For pipeline work without a published release (as before v1.2 existed), it
+runs on an **extracted** export:
 
 ```powershell
 npm run estate:pack -- --dev-src ..\Portfolio\artifacts\estate\src-dev-v1.1 --classes poster,s0,f,d,i,w,nav,ground
@@ -135,12 +138,16 @@ warning. `estate:check` refuses a dev pack anywhere under `public/`.
 
 ## Classes and phases (§6.3)
 
-| Class | Files | Committed in |
+| Class | Files | Engine phase |
 |---|---|---|
 | `poster` | `poster/aerial-1600.<h8>.webp`, `aerial-800.<h8>.webp`, `aerial-800.<h8>.jpg` | P4a |
 | `s0` | `s0/massing.<h8>.glb.gz` (14 meshes), `s0/site.<h8>.glb.gz` | P4b |
 | `f`, `d` | `f/<ID>.<h8>.glb.gz`, `d/<ID>.<h8>.glb.gz` ×14 | P4b |
 | `i`, `w`, `nav`, `ground` | `i/<ID>.<h8>.glb.gz`, `w/<ID>.<h8>.walk.gz`, `nav/<ID>.<h8>.json.gz` ×14, `site/ground.<h8>.bin.gz` | P5 |
+
+The phase is the one whose engine first reads the class. No pack file was
+committed before the release pack: all eight classes landed together in
+`dc21303`, and only `public/estate/LICENSE.txt` came earlier (P4a).
 
 `pack.json` lists only the classes it emitted, and a class is present for all 14
 buildings or not at all. Content is deterministic, so a later run reproduces the
@@ -287,7 +294,7 @@ refuse.
   which alone hung 2.0–4.3 m above the ground, plus a square spike from the
   bark box's foot to the centre of its top, which lies inside the crown on every
   species. The 778 trees cost 3,112 triangles more when all are far (the poster
-  pose, and every pose on the min tier, whose tree radius is 0).
+  pose; the min tier's tree radius was 0 until the release round set it to 15 m).
 - **Edge lines**: at most 6,000 per building, cut only between whole length
   classes (lengths equal to the millimetre), so identical typical storeys keep
   identical line work.
@@ -408,8 +415,8 @@ for byte the same.
 
 **rc2b** is the same rc2 zips re-packed with P5's pack fixes (both panel sides,
 the far tree's trunk stub, and the façade-mask proof, which changes no byte) into
-`artifacts/estate/v1.2-rc2b` (`pack.82695419.json`; `--verify` identical), and is
-the pack copied into `public/estate/v1.2`. Against rc2 only 13 F files (MSCP_513
+`artifacts/estate/v1.2-rc2b` (`pack.82695419.json`; `--verify` identical), and
+was the copy this branch ran on (uncommitted) until the release pack replaced it. Against rc2 only 13 F files (MSCP_513
 has no window), `s0/site` and `pack.json` changed; D, I, walk, nav, ground,
 massing and posters are byte for byte the same. Its `pack.json` also carries this
 branch's palette tokens (block-accent `--color-accent-200`, play-surface
@@ -564,13 +571,17 @@ whose notes say what it could not do; re-record the route in `bench.ts` and in
 `tests/e2e/estate.spec.ts` together.
 
 Measured headless on SwiftShader (Chrome 151, 2026-10-06; software rendering,
-so only the counts and the governor's behaviour carry over to a real GPU):
+so only the counts and the governor's behaviour carry over to a real GPU). The
+first row is the committed release pack after the release round's fixes; the
+other three were measured on rc2b, whose interiors differ only in their
+quantisation lattice and furniture stand-ins, and were not re-run:
 
-| Run | Canvas | Live after engine | Notch changes | Long tasks after live | Stairs/lifts requests | G3 worst dropped % / p99 |
-|---|---|---|---|---|---|---|
-| default, 1280 × 720 | 722 × 531 | 1.7 s | 1 (orbit, → min × 0.75) | 0 | 0 | 19.2 % (mscp-ramp) / 50 ms |
-| maximised (`=max`), 1920 × 1080 | 1482 × 901 | 1.7 s | 1 | 0 | 0 | 74.8 % (orbit) / 117 ms |
-| default, 4× CPU (two runs) | 722 × 531 | 2.2 s | 1 | 2–3 a run, 54–72 ms (GLB decodes, a worker message) | 0 | 30.8 % (void deck) / 83 ms (plan); settled 47 % (orbit) |
+| Run | Pack | Canvas | Live after engine | Notch changes | Long tasks after live | Stairs/lifts requests | G3 worst dropped % / p99 |
+|---|---|---|---|---|---|---|---|
+| default, 1280 × 720 | release | 722 × 531 | 1.8 s | 1 (orbit, → min × 0.75) | 0 | 0 | 19.6 % (mscp-ramp) / 50 ms |
+| default, 1280 × 720 | rc2b | 722 × 531 | 1.7 s | 1 (orbit, → min × 0.75) | 0 | 0 | 19.2 % (mscp-ramp) / 50 ms |
+| maximised (`=max`), 1920 × 1080 | rc2b | 1482 × 901 | 1.7 s | 1 | 0 | 0 | 74.8 % (orbit) / 117 ms |
+| default, 4× CPU (two runs) | rc2b | 722 × 531 | 2.2 s | 1 | 2–3 a run, 54–72 ms (GLB decodes, a worker message) | 0 | 30.8 % (void deck) / 83 ms (plan); settled 47 % (orbit) |
 
 From a forced high start the orbit sweep takes at most 2 notch changes in a leg
 and settles at min × 0.75 by the stairs; no long task after live at normal

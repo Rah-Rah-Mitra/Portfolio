@@ -63,32 +63,28 @@ const HEADINGS = 8;
 const STEP_M = 20;
 
 /**
- * §7.11's scenarios on each pack they were measured on (triangles, draws).
- * S1 is the poster pose at stage 0 (massing and crowns); S2 the poster pose
- * with every building at F (edges on, high tier); S3 street level 6 m off
- * BLK 509's south face, looking at it, high tier, everything resident.
- *  - pack.fd986442.json: the v1.2 candidate rc2 (Bonsai-Estate a6e1acf, not a
- *    dev pack), measured 2026-10-06. Re-pinned from the P4b dev pack
- *    (2fa7069b) unchanged: rc2 ships the same F and D bytes and its
- *    views.aerialNE is upstream's aerial_NE, the dev pack's fallback pose.
- *    S1 34,817 / 24 and S2 549,957 / 38 against §7.11's 37 k / 24 and
- *    549 k / 38 (the browser readout at the poster pose, high tier, read the
- *    same 549,957 on the dev pack); S3 541,489 / 60 against ~677 k / ~87 (the
- *    estate's detail is lighter than the plan's estimate).
- *  - pack.82695419.json: the same rc2 zips re-packed with P5's pack fixes
- *    (rc2b), measured 2026-10-06. Every window panel gained its back pair
- *    (+19,344 F triangles over the 14 façades, 2 per window) and every far
- *    tree a 4-triangle trunk stub (+4 × 778 when all are far): S1 +3,112 is
- *    exactly the stubs, S2 +22,456 both with every building at F, S3 +17,440;
- *    draws unchanged. S1 37,929 / 24, S2 572,413 / 38 and S3 558,929 / 60,
- *    all far inside the high tier's 1.2 M / 150. *  - pack.4a3c0883.json: the published v1.2 release (the same zips, downloaded
- *    from the GitHub release; the committed pack), measured 2026-10-06. Only
- *    the interior files changed (one quantisation lattice per file, profile
- *    stand-ins for furniture), and S1–S3 draw no interior: unchanged.
+ * §7.11's scenarios on the committed pack (triangles, draws). S1 is the
+ * poster pose at stage 0 (massing and crowns); S2 the poster pose with every
+ * building at F (edges on, high tier); S3 street level 6 m off BLK 509's south
+ * face, looking at it, high tier, everything resident.
+ *  - pack.4a3c0883.json: the published v1.2 release (the GitHub release's
+ *    zips, packed with --release; the committed pack), measured 2026-10-06:
+ *    S1 37,929 / 24, S2 572,413 / 38 and S3 558,929 / 60, all far inside the
+ *    high tier's 1.2 M / 150, against §7.11's 37 k / 24, 549 k / 38 and
+ *    ~677 k / ~87 (the estate's detail is lighter than the plan's estimate).
+ * History (candidate packs of the same rc2 zips, never committed, so no
+ * longer selectable here):
+ *  - pack.fd986442.json (rc2, re-pinned unchanged from the P4b dev pack
+ *    2fa7069b): S1 34,817 / 24, S2 549,957 / 38, S3 541,489 / 60.
+ *  - pack.82695419.json (rc2b, P5's pack fixes): every window panel gained its
+ *    back pair (+19,344 F triangles over the 14 façades, 2 per window) and
+ *    every far tree a 4-triangle trunk stub (+4 × 778 when all are far):
+ *    S1 +3,112 is exactly the stubs, S2 +22,456 both with every building at
+ *    F, S3 +17,440; draws unchanged. The release changed only the interior
+ *    files (one quantisation lattice per file, profile stand-ins for
+ *    furniture), and S1–S3 draw no interior, so its pins equal rc2b's.
  */
 const PINNED: Readonly<Record<string, Readonly<Record<'S1' | 'S2' | 'S3', readonly [number, number]>>>> = {
-  'pack.fd986442.json': { S1: [34_817, 24], S2: [549_957, 38], S3: [541_489, 60] },
-  'pack.82695419.json': { S1: [37_929, 24], S2: [572_413, 38], S3: [558_929, 60] },
   'pack.4a3c0883.json': { S1: [37_929, 24], S2: [572_413, 38], S3: [558_929, 60] },
 };
 
@@ -98,26 +94,28 @@ const PINNED: Readonly<Record<string, Readonly<Record<'S1' | 'S2' | 'S3', readon
  * S4 BLK 509 at its L5 lift landing nearest the block's root, eye height, high
  * tier (band L3–L7); S4-min the same pose at the min tier (band L4–L6, k = 1);
  * S5 NC 514's hall at its root, eye height on L1, high tier (band L1–RF).
- *  - pack.fd986442.json (rc2, measured 2026-10-06, first pinned with P5):
- *    S4 708,317 / 46 against §7.11's ~716 k / ~46; S4-min 286,999 / 27
- *    against ≤ 0.3 M / ≤ 60; S5 647,353 / 54 against ~690 k / ~70. The plan
- *    summed every building at F plus near D; the selector draws what the
- *    frustum holds (worst heading kept), within the tier's caps.
- *  - pack.82695419.json (rc2b, the same zips with P5's pack fixes, measured
- *    2026-10-06): S4 730,461 / 46 (+22,144), S4-min 295,749 / 27 (+8,750),
- *    S5 669,561 / 54 (+22,208). The rise is the F windows' back pairs on
- *    every building drawn at F and the far trees' trunk stubs; draws
- *    unchanged, S4-min still under the min tier's 0.3 M. *  - pack.4a3c0883.json (the published v1.2 release, the committed pack,
- *    measured 2026-10-06): S4 730,461 / 46 and S4-min 295,749 / 27
- *    unchanged (BLK 509 has no furniture; its interior's triangles are the
- *    same, only quantised on one lattice); S5 673,569 / 54 (+4,008): the hall's
- *    501 furniture stand-ins beyond the high tier's 25 m are 20 triangles each
- *    (a top over a pedestal or body), not the 12-triangle box.
+ *  - pack.4a3c0883.json (the published v1.2 release, the committed pack,
+ *    measured 2026-10-06): S4 730,461 / 46 against §7.11's ~716 k / ~46;
+ *    S4-min 295,749 / 27 against ≤ 0.3 M / ≤ 60; S5 673,569 / 54 against
+ *    ~690 k / ~70. The plan summed every building at F plus near D; the
+ *    selector draws what the frustum holds (worst heading kept), within the
+ *    tier's caps. The min tier's 15 m tree radius (the fix round after the
+ *    release, was 0) moves none of them: no tree stands within 15 m of S4's
+ *    landing.
+ * History (candidate packs of the same rc2 zips, never committed):
+ *  - pack.fd986442.json (rc2, first pinned with P5): S4 708,317 / 46,
+ *    S4-min 286,999 / 27, S5 647,353 / 54.
+ *  - pack.82695419.json (rc2b, P5's pack fixes): S4 730,461 / 46 (+22,144),
+ *    S4-min 295,749 / 27 (+8,750), S5 669,561 / 54 (+22,208): the F windows'
+ *    back pairs on every building drawn at F and the far trees' trunk stubs;
+ *    draws unchanged. The release left S4 and S4-min as they were (BLK 509 has
+ *    no furniture; its interior's triangles are the same, only quantised on
+ *    one lattice) and moved S5 by +4,008: the hall's 501 furniture stand-ins
+ *    beyond the high tier's 25 m are 20 triangles each (a top over a pedestal
+ *    or body), not the 12-triangle box.
  */
 type InsideId = 'S4' | 'S4-min' | 'S5';
 const PINNED_INSIDE: Readonly<Record<string, Readonly<Record<InsideId, readonly [number, number]>>>> = {
-  'pack.fd986442.json': { S4: [708_317, 46], 'S4-min': [286_999, 27], S5: [647_353, 54] },
-  'pack.82695419.json': { S4: [730_461, 46], 'S4-min': [295_749, 27], S5: [669_561, 54] },
   'pack.4a3c0883.json': { S4: [730_461, 46], 'S4-min': [295_749, 27], S5: [673_569, 54] },
 };
 

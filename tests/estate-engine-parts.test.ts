@@ -1,13 +1,13 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { InstancedMesh, Mesh } from 'three';
+import { ShaderLib, type InstancedMesh, type Mesh, type WebGLProgramParametersWithUniforms, type WebGLRenderer } from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ESTATE_SITE_IDS } from '../lib/estate/ids';
 import { LOD_DETAIL, LOD_FACADE, LOD_MASSING } from '../lib/estate/lod';
 import { parsePack, type EstatePack } from '../lib/estate/schema';
 import { createGlbLoader, parseGlb, readPayload } from '../components/workbench/estate/engine/loaders';
-import { createMaterialKit } from '../components/workbench/estate/engine/materials';
+import { FLAT_NORMAL_GUARDED, createMaterialKit, createStoreyUniforms } from '../components/workbench/estate/engine/materials';
 import { createPalette } from '../components/workbench/estate/engine/palette';
 import {
   detailParts, facadeParts, massingParts, siteParts, type DecodedParts,
@@ -18,9 +18,9 @@ import { fileIndex } from '../components/workbench/estate/engine/streaming';
 // The engine's view of real pack files, decoded in node through the same
 // loader the browser uses (GLTFLoader + MeshoptDecoder on the main thread):
 // every s0, f and d file splits into the parts the scheduler uploads one at a
-// time, and the scene shows exactly the level it is told. Runs on whatever
-// pack sits under public/estate/v1.2 (the dev pack while v1.2 is unpublished,
-// the committed s0/f/d from P4b on) and skips without one.
+// time, and the scene shows exactly the level it is told. Runs on the pack
+// under public/estate/v1.2 (the committed v1.2 release pack, or a local copy)
+// and skips without one.
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const packDir = join(root, 'public', 'estate', 'v1.2');
@@ -28,6 +28,26 @@ const packFile = existsSync(packDir) ? readdirSync(packDir).find((f) => /^pack\.
 const hasGeometry = packFile !== undefined && existsSync(join(packDir, 's0'));
 
 const COLOURS = new Proxy({}, { get: () => 'rgb(140, 150, 160)' }) as Record<string, string>;
+
+describe('the estate shader patch', () => {
+  it('guards the flat-shading normal against a zero screen derivative, which would draw a face black', () => {
+    // normalize( cross( dFdx, dFdy ) ) of a zero vector is NaN; SwiftShader produced
+    // one at axis-aligned walking poses (17 % of the frame black at Blk 509 stair 5).
+    const kit = createMaterialKit(createPalette(COLOURS));
+    for (const material of [kit.opaque(createStoreyUniforms()), kit.glass(createStoreyUniforms())]) {
+      const shader = {
+        uniforms: {},
+        vertexShader: ShaderLib.lambert.vertexShader,
+        fragmentShader: ShaderLib.lambert.fragmentShader,
+      } as unknown as WebGLProgramParametersWithUniforms;
+      material.onBeforeCompile(shader, undefined as unknown as WebGLRenderer);
+      expect(shader.fragmentShader).not.toContain('#include <normal_fragment_begin>');
+      expect(shader.fragmentShader).toContain(FLAT_NORMAL_GUARDED);
+      expect(shader.fragmentShader).not.toContain('normalize( cross( fdx, fdy ) )');
+    }
+    kit.dispose();
+  });
+});
 
 describe.skipIf(!hasGeometry)('the engine on the pack in public/estate/v1.2', () => {
   let pack: EstatePack;

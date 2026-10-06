@@ -643,6 +643,14 @@ const PlanStrip: React.FC<{
 const stageNear = (el: Element | null) => el?.closest('#world')?.querySelector<HTMLElement>('[data-estate-stage]') ?? null;
 
 /**
+ * Why a plan's rooms will never list, or null while they may still come: the
+ * planned building's nav file (or its interior or walk grid) failed for good,
+ * so view.plan stays not ready and "Loading" would wait forever.
+ */
+const roomsFailed = (plan: EstatePlanView, interior: EstateInteriorView | null): string | null =>
+  !plan.ready && interior?.site === plan.site && interior.state === 'failed' ? interior.reason ?? 'The rooms did not download.' : null;
+
+/**
  * Plan's room list (P6, §8.1 "the side-panel room list"), drawn in the side
  * panel above BUILDINGS through the window's side slot, with the HUD's props:
  * every room of the storey, grouped by flat (lib/estate/plan.ts roomGroups:
@@ -659,14 +667,6 @@ const stageNear = (el: Element | null) => el?.closest('#world')?.querySelector<H
  * panel to it, and the picked row is kept in view inside the list's own
  * scroller: only those two scrollers move, never the page.
  */
-/**
- * Why a plan's rooms will never list, or null while they may still come: the
- * planned building's nav file (or its interior or walk grid) failed for good,
- * so view.plan stays not ready and "Loading" would wait forever.
- */
-const roomsFailed = (plan: EstatePlanView, interior: EstateInteriorView | null): string | null =>
-  !plan.ready && interior?.site === plan.site && interior.state === 'failed' ? interior.reason ?? 'The rooms did not download.' : null;
-
 export function EstatePlanRooms({ engine, phase }: EstateHudProps): React.ReactElement | null {
   const [plan, setPlan] = React.useState<EstatePlanView | null>(() => engine.getView().plan ?? null);
   const [interior, setInterior] = React.useState<EstateInteriorView | null>(() => engine.getView().interior ?? null);
@@ -757,7 +757,7 @@ export function EstatePlanRooms({ engine, phase }: EstateHudProps): React.ReactE
       }}
     >
       <p className="wb-estate-head">{`ROOMS — ${siteChipLabel(plan.site)} · ${plan.storey}`}</p>
-      {!plan.ready && <p className="wb-estate-state">{roomsFailed(plan, interior) ?? 'Loading the rooms…'}</p>}
+      {!plan.ready && <p className="wb-estate-state">{roomsFailed(plan, interior) ?? 'Loading rooms…'}</p>}
       {plan.ready && (
         <div
           className="wb-estate-rooms-list"

@@ -1,6 +1,6 @@
 import {
   BufferAttribute, BufferGeometry, DirectionalLight, DoubleSide, Fog, FrontSide, HemisphereLight, InstancedBufferAttribute,
-  InstancedMesh, LineBasicMaterial, LineSegments, Mesh, MeshLambertMaterial, PlaneGeometry, ShaderMaterial, Vector2,
+  InstancedMesh, LineBasicMaterial, LineSegments, Mesh, MeshLambertMaterial, PlaneGeometry, ShaderChunk, ShaderMaterial, Vector2,
   type IUniform, type Material, type Object3D, type WebGLProgramParametersWithUniforms,
 } from 'three';
 import { PALETTE_SIZE, extraSlot } from '../../../../lib/estate/palette';
@@ -139,6 +139,20 @@ if ( uPlanCut < 1e8 && ! gl_FrontFacing && estateColour.a > 0.99 ) gl_FragColor.
 
 const DIFFUSE_LINE = 'vec4 diffuseColor = vec4( diffuse, opacity );';
 
+// three's flat-shading normal is normalize( cross( dFdx( p ), dFdy( p ) ) ) of the
+// view position. Where one screen derivative comes out exactly zero (seen on
+// SwiftShader, the WebGL a GPU-blocklisted or VM visitor gets: an axis-aligned
+// wall at eye-level pitch and a heading on a multiple of 90°), that is
+// normalize( 0 ), NaN, and the face draws black — 17 % of the frame at Blk 509's
+// stair 5 on the release pack. A zero cross product falls back to a normal
+// facing the eye. The chunk is inlined with that one line swapped because
+// onBeforeCompile sees `#include <normal_fragment_begin>`, not its text;
+// FLAT_NORMAL_GUARDED being absent from the result means three changed the line
+// (pinned in tests/estate-engine-parts.test.ts).
+const FLAT_NORMAL_LINE = 'vec3 normal = normalize( cross( fdx, fdy ) );';
+export const FLAT_NORMAL_GUARDED = 'vec3 estateFlat = cross( fdx, fdy ); vec3 normal = dot( estateFlat, estateFlat ) > 0.0 ? normalize( estateFlat ) : vec3( 0.0, 0.0, 1.0 );';
+const NORMAL_BEGIN = ShaderChunk.normal_fragment_begin.replace(FLAT_NORMAL_LINE, FLAT_NORMAL_GUARDED);
+
 // One function object for every estate material: three's program cache key
 // includes customProgramCacheKey(), which defaults to this function's source,
 // so materials that differ only in uniform values share their programs.
@@ -152,6 +166,7 @@ function estateOnBeforeCompile(this: Material, shader: WebGLProgramParametersWit
   shader.fragmentShader = shader.fragmentShader
     .replace('#include <common>', FRAGMENT_HEAD)
     .replace(DIFFUSE_LINE, FRAGMENT_COLOUR)
+    .replace('#include <normal_fragment_begin>', NORMAL_BEGIN)
     .replace('#include <opaque_fragment>', FRAGMENT_CUT_FILL);
 }
 

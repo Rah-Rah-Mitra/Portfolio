@@ -15,7 +15,9 @@ import { gzipSync } from 'node:zlib';
 // fallback (20) and the phone registry's Estate row (10). P7's context loss
 // and the GPU claim (9), and release-and-reopen held to its plan wording (14).
 // The P6/P7 review's: a context lost while closed comes back on a new canvas
-// (9b), and Plan's room list as a keyboard visitor meets it (21).
+// (9b), and Plan's room list as a keyboard visitor meets it (21). The release
+// round's: 8a and 8b screenshot the canvas at an eye-level pose on a heading
+// that is a multiple of 90° and fail on pure-black pixels (blackShare below).
 //
 // No case waits for the network to go idle once it has opened the window: the
 // rest of the page decides that (the résumé builder's preview, stubbed below,
@@ -151,6 +153,32 @@ const settle = async (page: Page) => {
     return performance.now() - scope.__estateQuiet >= hold;
   }, 750, { polling: 50, timeout: 60_000 });
   await page.waitForTimeout(1_500);
+};
+
+/**
+ * The share of the canvas's pixels that are pure black (every channel under 6),
+ * from a screenshot of it: nothing the palette draws is that dark, but a face
+ * whose flat-shading normal came out NaN is. SwiftShader gave such faces a zero
+ * screen derivative at eye-level poses on a heading that is a multiple of 90°,
+ * and three's normalize( cross( dFdx, dFdy ) ) of it is NaN (materials.ts
+ * guards it): 17 % of the frame at stair 5's foot before the guard.
+ */
+const blackShare = async (page: Page) => {
+  const png = await page.locator('[data-estate-stage] canvas').screenshot();
+  return page.evaluate(async (b64) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${b64}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(image, 0, 0);
+    const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+    let black = 0;
+    for (let i = 0; i < data.length; i += 4) if (data[i] < 6 && data[i + 1] < 6 && data[i + 2] < 6) black += 1;
+    return black / (data.length / 4);
+  }, png.toString('base64'));
 };
 
 const serious = async (page: Page) => (await new AxeBuilder({ page }).include('[data-win="world-3d"]').analyze()).violations
@@ -511,6 +539,8 @@ test.describe('estate window — live 3D view', () => {
     await expect(up).toBeVisible();
     // The climb downloads nothing: the building's interior and grid are already here (§3 P5, §12.4).
     await settle(page);
+    // Eye level, facing the stair's doorway on a heading that is a multiple of 90°: no face drawn black.
+    expect(await blackShare(page), 'share of pure-black canvas pixels at stair 5').toBeLessThan(0.001);
     const beforeStairs = estateRequests();
     await up.click();
     await expect(hud(page)).toHaveAttribute('data-transition', 'climb');
@@ -595,7 +625,11 @@ test.describe('estate window — live 3D view', () => {
     await flyToAndLand(page, 'MSCP_513', /^MSCP 513 · /);
     await enterFromRegistry(page, /^Enter Car park 513 · \d+\.\d MB$/, /^MSCP 513 · L1 · .*WALK$/);
     // Entrance E, through the lobby to the walkway, north to the cross aisle, west to the ramp's foot, facing up it.
-    await steps(page, 'f18 r6 f82 l6 f58 r6 f14 r6');
+    // Three steps in, at eye level on a heading that is a multiple of 90°, no face is drawn black (the deck floor was).
+    await steps(page, 'f3');
+    await settle(page);
+    expect(await blackShare(page), 'share of pure-black canvas pixels in the car park lobby').toBeLessThan(0.001);
+    await steps(page, 'f15 r6 f82 l6 f58 r6 f14 r6');
     await expect(chip(page)).toHaveText(/^MSCP 513 · L1 · RAMP LANDING WEST · WALK$/);
     await stage(page).focus();
     await page.keyboard.down('Shift');

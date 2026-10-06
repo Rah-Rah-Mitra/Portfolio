@@ -368,7 +368,33 @@ the SN5W header — are small import-free ports under `scripts/estate/lib/pure/`
 and `tests/estate-pipeline-pure.test.ts` imports **both** sides and proves they
 agree. Change both or neither.
 
-## Measured (v1.2 candidate rc2, re-packed as rc2b, 2026-10-06)
+## Measured (the committed v1.2 release pack, 2026-10-06)
+
+**The committed pack** is `public/estate/v1.2/pack.4a3c0883.json` and its 76
+files, 2,406,539 B (78 files under `public/estate` with `LICENSE.txt`). Built
+from the **published** v1.2 release: both assets downloaded anonymously from
+`github.com/Rah-Rah-Mitra/Bonsai-Estate/releases/download/v1.2/` (model
+105,271,442 B, sha256 `e939dc78f94568c199e95d6f5a74c8b60bcdb80d91bc8913cdba88e33ca98a95`;
+reports 79,803,968 B, `8f6191bc374a3d0e92fb06e8907cbe0fd0de1d6c2203ae900d205f7a08fe5f39`),
+beside the R2a candidate's `release_manifest.json` (its zip hashes equal the
+downloads'), with
+
+```powershell
+npm run estate:pack -- --zips artifacts\estate\zips-v1.2 --classes poster,s0,f,d,i,w,nav,ground --out public\estate\v1.2 --release --expect-assets artifacts\estate\v1.2-rc2b\pack.82695419.json
+npm run estate:pack -- --zips artifacts\estate\zips-v1.2 --classes poster,s0,f,d,i,w,nav,ground --out public\estate\v1.2 --verify   # identical
+npm run estate:check -- --provenance --zips artifacts\estate\zips-v1.2                                                                  # exit 0
+```
+
+`source`: tag `v1.2`, `commit` `a6e1acf` (R, = the gitlink = `v1.2^{commit}`),
+`buildCommit` `a106728` (M). It is rc2b (below) with the release pack's two
+tool fixes ("Fixed in the release pack"): only the 14 I files and `pack.json`
+changed — F, D, walk, nav, ground, massing, site and posters are byte for byte
+rc2b's. I is 434,907 B (max 50,217, BLK_510; rc2b 495,049), 351,360 stored
+triangles (+40: the five kits' stand-ins), quantisation steps 0.93–2.08 mm on
+one lattice per file, and 33,246 vertices T and R share, every one decoding to
+one point. `lib/estate/catalogue.generated.ts` is this run's (`dev: false`,
+first frame 84,711 B). The table below is rc2b; for the release pack read the
+I row and the whole pack from this paragraph.
 
 The R2a candidate: `SampleTownN5_v1.2_{model,reports}.zip` from upstream's
 `release` (M = `a106728`, R = `a6e1acf`, tag not yet created at the time — upstream tagged `v1.2` at `a6e1acf` later that day; model zip
@@ -388,7 +414,7 @@ has no window), `s0/site` and `pack.json` changed; D, I, walk, nav, ground,
 massing and posters are byte for byte the same. Its `pack.json` also carries this
 branch's palette tokens (block-accent `--color-accent-200`, play-surface
 `--color-accent-500`), which `pack.fd986442.json`, built before the P4b review,
-did not. The table is rc2b. Bytes as stored (gzip for `.gz`), decimal KB/MB as the caps count.
+did not. The table is rc2b (the committed pack differs only in I, above). Bytes as stored (gzip for `.gz`), decimal KB/MB as the caps count.
 Plan §6.5's "expected" assumed 3.2 B per stored triangle; F stores 1.76 B and I
 1.41 B. Every class that landed more than 25% from it has its expected figure
 re-set to the measurement (§12.2; also `expected` in `lib/estate/packBudgets.json`,

@@ -69,7 +69,7 @@ export interface EstateEngineOptions {
   token: number;
   /**
    * ESTATE_CATALOGUE.packUrl: the content-hashed pack.json, e.g.
-   * '/estate/v1.2/pack.82695419.json'. The engine fetches and parsePack()s it;
+   * '/estate/v1.2/pack.4a3c0883.json'. The engine fetches and parsePack()s it;
    * every FileRef.path resolves against this URL's folder.
    */
   packUrl: string;

@@ -4,7 +4,7 @@
 
 export const ESTATE_CATALOGUE = {
   edition: "v1.2",
-  packUrl: "/estate/v1.2/pack.82695419.json",
+  packUrl: "/estate/v1.2/pack.4a3c0883.json",
   commit: "a6e1acf603c69b7bc9a34a72c8f6b92081268932",
   dev: false,
   poster: { src: "/estate/v1.2/poster/aerial-800.53f2560a.jpg", srcSet: "/estate/v1.2/poster/aerial-800.0660a80c.webp 800w, /estate/v1.2/poster/aerial-1600.04327dbd.webp 1600w", w: 1600, h: 1200, alt: "Still render of Sample Town N5 from the north-east: a generated sample HDB neighbourhood, not a real town." },
@@ -26,7 +26,7 @@ export const ESTATE_CATALOGUE = {
     { id: "MSCP_513", name: "Multi-storey car park 513", kind: "mscp", typology: null, heightM: 28.04, levels: "L1–L7 + RF" },
     { id: "NC_514", name: "Sample Town N5 neighbourhood centre", kind: "nc", typology: null, heightM: 9.3, levels: "L1–L2 + RF" },
   ],
-  bytes: {"stage0":84706,"f":953855},
+  bytes: {"stage0":84711,"f":953855},
 } as const;
 
 export type EstateCatalogue = typeof ESTATE_CATALOGUE;

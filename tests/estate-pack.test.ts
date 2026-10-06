@@ -14,8 +14,8 @@ import { DECODED_CLASSES } from '../components/workbench/estate/engine/streaming
 // public/, or production shows a broken poster and a Load that 404s into "the
 // site was updated". There is no skip-when-absent path: a checkout that carries
 // the catalogue without its pack fails here, which is exactly the branch to stop
-// (the dev pack the P4b branch runs on is copied in locally and never
-// committed). A catalogue generated from a dev pack (`dev: true`) also fails
+// (a dev pack is only ever copied in locally, never committed; the committed
+// pack is v1.2's release, packed with --release). A catalogue generated from a dev pack (`dev: true`) also fails
 // where CI or Vercel runs this; scripts/estate/check.mjs (estate:check) fails
 // it everywhere, and scripts/check-bundle.mjs fails the Vercel build on it.
 //

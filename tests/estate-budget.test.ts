@@ -48,9 +48,8 @@ import { fallbackAerialPose, posterPose } from '../components/workbench/estate/e
 // the reserve before any building (§7.4 step 1), and the building itself is
 // held at F (§7.5) — the same path the engine's frame takes.
 //
-// Runs on whatever pack sits under public/estate/v1.2 (a local, uncommitted
-// copy of the candidate pack while v1.2 is unpublished, the committed pack once
-// it is) and skips without one.
+// Runs on the committed pack under public/estate/v1.2 (Bonsai-Estate v1.2's
+// published release, packed with --release) and skips without one.
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const packDir = join(root, 'public', 'estate', 'v1.2');
@@ -82,11 +81,15 @@ const STEP_M = 20;
  *    tree a 4-triangle trunk stub (+4 × 778 when all are far): S1 +3,112 is
  *    exactly the stubs, S2 +22,456 both with every building at F, S3 +17,440;
  *    draws unchanged. S1 37,929 / 24, S2 572,413 / 38 and S3 558,929 / 60,
- *    all far inside the high tier's 1.2 M / 150.
+ *    all far inside the high tier's 1.2 M / 150. *  - pack.4a3c0883.json: the published v1.2 release (the same zips, downloaded
+ *    from the GitHub release; the committed pack), measured 2026-10-06. Only
+ *    the interior files changed (one quantisation lattice per file, profile
+ *    stand-ins for furniture), and S1–S3 draw no interior: unchanged.
  */
 const PINNED: Readonly<Record<string, Readonly<Record<'S1' | 'S2' | 'S3', readonly [number, number]>>>> = {
   'pack.fd986442.json': { S1: [34_817, 24], S2: [549_957, 38], S3: [541_489, 60] },
   'pack.82695419.json': { S1: [37_929, 24], S2: [572_413, 38], S3: [558_929, 60] },
+  'pack.4a3c0883.json': { S1: [37_929, 24], S2: [572_413, 38], S3: [558_929, 60] },
 };
 
 /**
@@ -104,12 +107,18 @@ const PINNED: Readonly<Record<string, Readonly<Record<'S1' | 'S2' | 'S3', readon
  *    2026-10-06): S4 730,461 / 46 (+22,144), S4-min 295,749 / 27 (+8,750),
  *    S5 669,561 / 54 (+22,208). The rise is the F windows' back pairs on
  *    every building drawn at F and the far trees' trunk stubs; draws
- *    unchanged, S4-min still under the min tier's 0.3 M.
+ *    unchanged, S4-min still under the min tier's 0.3 M. *  - pack.4a3c0883.json (the published v1.2 release, the committed pack,
+ *    measured 2026-10-06): S4 730,461 / 46 and S4-min 295,749 / 27
+ *    unchanged (BLK 509 has no furniture; its interior's triangles are the
+ *    same, only quantised on one lattice); S5 673,569 / 54 (+4,008): the hall's
+ *    501 furniture stand-ins beyond the high tier's 25 m are 20 triangles each
+ *    (a top over a pedestal or body), not the 12-triangle box.
  */
 type InsideId = 'S4' | 'S4-min' | 'S5';
 const PINNED_INSIDE: Readonly<Record<string, Readonly<Record<InsideId, readonly [number, number]>>>> = {
   'pack.fd986442.json': { S4: [708_317, 46], 'S4-min': [286_999, 27], S5: [647_353, 54] },
   'pack.82695419.json': { S4: [730_461, 46], 'S4-min': [295_749, 27], S5: [669_561, 54] },
+  'pack.4a3c0883.json': { S4: [730_461, 46], 'S4-min': [295_749, 27], S5: [673_569, 54] },
 };
 
 interface SpeciesCost { centres: Float32Array; count: number; fullTris: number; crownTris: number }

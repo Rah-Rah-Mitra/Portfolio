@@ -500,19 +500,22 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   resumed) from the controller chunk; the main bundle pays 8 B for it.
   The pack (`public/estate/v1.2/`, raw-content-hashed immutable names; P4b loads
   `poster`, `s0`, `f` and `d`, P5 adds `i`, `w`, `nav` and `ground`) comes only from the pack tool (see the
-  Bonsai-Estate section). Upstream tagged **v1.2 at `a6e1acf`** (= the gitlink,
-  `v1.2^{commit}`) and published its release with the rc2 zips unchanged. On
-  this branch the window still runs on those zips' pack as re-packed with P5's
-  pack fixes (rc2b, `pack.82695419.json`, `dev: false`) copied into
-  `public/estate/v1.2/` and excluded in `.git/info/exclude` — never commit that
-  copy — and the committed `catalogue.generated.ts` is generated from it. The
-  one step left is the landing plan's: on `feat/estate-window`, commit the pack
-  re-packed with `--release` from the downloaded v1.2 zips (with the deferred
-  pack fixes), the regenerated catalogue and the S1–S5 re-pins
-  (`npm run estate:check -- --provenance --zips <downloaded v1.2>`). That is gated three ways: `tests/estate-pack.test.ts` fails when any
-  `/estate/` URL the catalogue names is missing under `public/` (every CI and
-  Vercel checkout until the pack is committed) and on a dev catalogue under
-  CI/Vercel; `npm run estate:check` fails on both everywhere; and
+  Bonsai-Estate section). **The pack is committed**: `pack.4a3c0883.json` and
+  its 76 files (2,406,539 B; with `public/estate/LICENSE.txt`, the 78 files
+  `git ls-files public/estate` lists, all `-text`), packed with `--release`
+  from Bonsai-Estate **v1.2's published release** — the two assets downloaded
+  from the GitHub release (sha256 `e939dc78…` model, `8f6191bc…` reports,
+  equal to the R2a candidate's `release_manifest.json`), tag `v1.2` = `a6e1acf`
+  = the gitlink (`source.commit`; `buildCommit` `a106728`) — with `--verify`
+  identical and `estate:check --provenance --zips` green; the committed
+  `catalogue.generated.ts` (`dev: false`) is that run's. The site builds and
+  tests from these files alone: a clone without the submodule passes
+  `npm run build` and `npm test`. S1–S5 are pinned to this pack's name in
+  `tests/estate-budget.test.ts`; replacing it is the runbook's "Moving to a new
+  version" (one `public/estate/v*` folder, pack + catalogue + gitlink + re-pins
+  in one commit). It is gated three ways: `tests/estate-pack.test.ts` fails
+  when any `/estate/` URL the catalogue names is missing under `public/` and on
+  a dev catalogue under CI/Vercel; `npm run estate:check` fails on both everywhere; and
   `scripts/check-bundle.mjs` (the build) fails when a catalogue URL is missing
   from `dist/`, and on a dev catalogue on Vercel or CI. A committed pack must
   also carry every class this engine reads (`SHIPPED_CLASSES` in

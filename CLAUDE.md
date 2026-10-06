@@ -404,7 +404,7 @@ date in `experienceStartById`. `tests/portfolio-data.test.ts` asserts the
 newest organization and ordering; `tests/semantic-render.test.ts` pins
 `experienceRecords` length — update both, then `npm run snapshot`.
 
-## Bonsai-Estate submodule
+## Bonsai-Estate submodule and estate pack
 
 - `external/Bonsai-Estate` is a git submodule (`--name Bonsai-Estate`, https URL,
   no `branch`/`shallow`/`update` keys) of the public `Rah-Rah-Mitra/Bonsai-Estate`
@@ -412,8 +412,9 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   pack is built from — and no build, test or deploy step reads it. Why: upstream
   does not track its `model/` export (it ships as release zips), so the submodule
   holds nothing the site could use, and a clone without it must build and pass the
-  tests. It is pinned at `85dd3cb` (v1.1) until the pack lands, and only ever
-  moves to a tagged commit. Never add it with a local path, `file://` or
+  tests. It is pinned at `a6e1acf`, R of the v1.2 candidate rc2, which upstream tags
+  `v1.2` once the pack's checks pass (plan R2b); apart from that one step it only
+  ever moves to a tagged commit. Never add it with a local path, `file://` or
   `--reference`.
 - Optional locally: `git submodule update --init external/Bonsai-Estate`.
 - `external/` is excluded from `tsc` (`tsconfig.json` `exclude`), from Vite's
@@ -433,6 +434,41 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
 - `vercel.json` caches `/assets/*` and `/estate/v<major>.<minor>/*` for a year as
   `immutable` — only those files are content-hashed. Anything else under
   `/estate/` (the licence notice) keeps Vercel's default.
+- **The pack tool** (`scripts/estate/`, runbook `docs/portfolio/estate-pack.md`)
+  is its own package with exact pins and its own lockfile: `npm run estate:setup`
+  (`npm --prefix scripts/estate ci`), `npm run estate:pack -- …` (Node 24.x only),
+  `npm run estate:check` (`scripts/estate/check.mjs`, no dependencies — its
+  functions are for `tests/estate-pack.test.ts`), `npm --prefix scripts/estate
+  test` (`node --test`). Never move its dependencies into the root
+  `package.json`: `@gltf-transform/functions` pulls in `sharp`, which every Vercel
+  install would then download.
+- The pack's only real input is a Bonsai-Estate **release** (`--zips`: the two
+  zips and `release_manifest.json`, every hash and the gitlink gated). `--dev-src`
+  packs an extracted folder for pipeline work only: it skips provenance, stamps
+  `source.dev: true` with an all-zero commit, refuses `--release`, `--catalogue`
+  and any output under any `public/` folder (links resolved), and writes to
+  `artifacts/estate/v1.2-dev/` (gitignored). Never commit a dev pack. A release
+  pack goes under `public/` only at `public/estate/v1.2` and only with
+  `--release`; a failed run empties only a folder that run itself emptied and
+  took over (never "clean up public/"). Exactly one `public/estate/v*` folder
+  exists; nav, build, blend, IFC and building LOD0 files are never opened, let
+  alone shipped.
+- The tool decodes every GLB it writes and refuses one whose triangles moved
+  more than a quantisation step or whose quantisation made two faces of
+  different slots coplanar (`lib/pure/quantcheck.mjs`): that is why F and the
+  site are 16-bit — at 14 bits 5 mm road markings fell onto the asphalt.
+- The few rules the tool shares with `lib/estate` (`packPathProblem`, storey-tag
+  normalisation, the palette slot lookup, the SN5W header) are import-free ports
+  in `scripts/estate/lib/pure/` — Node cannot load `lib/estate/*.ts` (extensionless
+  imports) — and `tests/estate-pipeline-pure.test.ts` proves each port agrees
+  with its TypeScript twin. Change both or neither. Root tests may import
+  `scripts/estate/check.mjs` and `lib/pure/*`, never a module that needs
+  `scripts/estate/node_modules`; and no `.mjs` there may start with a `#!` line,
+  which vitest cannot load.
+- Instance attributes are 4 bytes wide on purpose: `_STOREY` is u8 × 4 (x =
+  storey) because gltf-transform 4.5.1's meshopt writer pads a 1-byte instance
+  attribute to a 4-byte stride without recording it, and every reader then
+  decodes garbage. The tool decodes each batch it writes and compares.
 
 ## Gotchas
 

@@ -35,8 +35,9 @@ import {
 // walkable-over-blocked both round-trip. That is this decoder's reading of the
 // plan's "0x7FFF = blocked (mode 1: value − ref, wrapping)"; the other reading
 // (a stored 0x7FFF always means blocked) disagrees on a floor 2 mm below a
-// blocked reference cell. Upstream's golden sn5w_sample.bin must confirm it
-// before walk grids ship (tests/estate-walk.test.ts' it.todo).
+// blocked reference cell. Upstream's golden sn5w_sample.bin confirms this one
+// (tests/fixtures/estate/, decoded in tests/estate-walk.test.ts): its L1 stores
+// −100 over a blocked L2 cell as 32669 and a blocked cell over L2's 0 as 0x7FFF.
 
 // ---- SN5W v1 layout (little-endian) -------------------------------------------
 

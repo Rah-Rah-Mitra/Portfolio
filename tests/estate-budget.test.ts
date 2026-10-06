@@ -38,8 +38,9 @@ import { fallbackAerialPose, posterPose } from '../components/workbench/estate/e
 // only with a written reason beside it. S4, S4-min and S5 are inside buildings,
 // which only P5's interiors can draw; they join with P5.
 //
-// Runs on whatever pack sits under public/estate/v1.2 (the dev pack while v1.2
-// is unpublished, the committed s0/f/d from P4b on) and skips without one.
+// Runs on whatever pack sits under public/estate/v1.2 (a local, uncommitted
+// copy of the candidate pack while v1.2 is unpublished, the committed pack once
+// it is) and skips without one.
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const packDir = join(root, 'public', 'estate', 'v1.2');
@@ -54,18 +55,20 @@ const STEP_M = 20;
 
 /**
  * §7.11's scenarios on each pack they were measured on (triangles, draws).
- *  - pack.2fa7069b.json: the DEV pack (v1.1 geometry, source.dev) the P4b
- *    branch runs on. S1 is the poster pose at stage 0 (massing and crowns);
- *    S2 the poster pose with every building at F (edges on, high tier); S3
- *    street level 6 m off BLK 509's south face, looking at it, high tier,
- *    everything resident. Re-pin from the release pack before merge.
- *    Measured 2026-10-06: S1 34,817 / 24 and S2 549,957 / 38 against §7.11's
- *    37 k / 24 and 549 k / 38 (the browser readout at the poster pose, high
- *    tier, read the same 549,957); S3 541,489 / 60 against ~677 k / ~87 (the
- *    dev pack's v1.1 detail is lighter than the plan's estimate).
+ * S1 is the poster pose at stage 0 (massing and crowns); S2 the poster pose
+ * with every building at F (edges on, high tier); S3 street level 6 m off
+ * BLK 509's south face, looking at it, high tier, everything resident.
+ *  - pack.fd986442.json: the v1.2 candidate rc2 (Bonsai-Estate a6e1acf, not a
+ *    dev pack), measured 2026-10-06. Re-pinned from the P4b dev pack
+ *    (2fa7069b) unchanged: rc2 ships the same F and D bytes and its
+ *    views.aerialNE is upstream's aerial_NE, the dev pack's fallback pose.
+ *    S1 34,817 / 24 and S2 549,957 / 38 against §7.11's 37 k / 24 and
+ *    549 k / 38 (the browser readout at the poster pose, high tier, read the
+ *    same 549,957 on the dev pack); S3 541,489 / 60 against ~677 k / ~87 (the
+ *    estate's detail is lighter than the plan's estimate).
  */
 const PINNED: Readonly<Record<string, Readonly<Record<'S1' | 'S2' | 'S3', readonly [number, number]>>>> = {
-  'pack.2fa7069b.json': { S1: [34_817, 24], S2: [549_957, 38], S3: [541_489, 60] },
+  'pack.fd986442.json': { S1: [34_817, 24], S2: [549_957, 38], S3: [541_489, 60] },
 };
 
 interface SpeciesCost { centres: Float32Array; count: number; fullTris: number; crownTris: number }

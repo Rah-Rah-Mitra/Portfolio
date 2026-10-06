@@ -242,14 +242,17 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   The pack (`public/estate/v1.2/`, raw-content-hashed immutable names; P4b loads
   `poster`, `s0`, `f` and `d`) comes only from the pack tool (see the
   Bonsai-Estate section). Until the v1.2 release is published, the window runs on
-  a dev pack copied into `public/estate/v1.2/` and excluded in `.git/info/exclude`
-  — never commit it — and the committed `catalogue.generated.ts` says `dev: true`;
-  both are replaced from the real release pack before merge. That is gated three
-  ways: `tests/estate-pack.test.ts` fails when any `/estate/` URL the catalogue
-  names is missing under `public/` (a checkout without the pack) and on a dev
-  catalogue under CI/Vercel; `npm run estate:check` fails on a dev catalogue
-  everywhere; `scripts/check-bundle.mjs` (the build) fails when a catalogue URL
-  is missing from `dist/`, and on a dev catalogue on Vercel or CI.
+  the v1.2 candidate rc2 pack (`pack.fd986442.json`, `dev: false`, built from the
+  candidate zips) copied into `public/estate/v1.2/` and excluded in
+  `.git/info/exclude` — never commit it — and the committed
+  `catalogue.generated.ts` is generated from it; the pack is committed only from
+  the published release (`estate:check --provenance` passes once upstream tags
+  v1.2). That is gated three ways: `tests/estate-pack.test.ts` fails when any
+  `/estate/` URL the catalogue names is missing under `public/` (every CI and
+  Vercel checkout until the pack is committed) and on a dev catalogue under
+  CI/Vercel; `npm run estate:check` fails on both everywhere; and
+  `scripts/check-bundle.mjs` (the build) fails when a catalogue URL is missing
+  from `dist/`, and on a dev catalogue on Vercel or CI.
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine), the Estate cases in
   `tests/workbench-deeplink.dom.test.tsx` and `tests/workbench-links.test.ts`
   (exact links, no hex anywhere under `estate/`, identical double render),

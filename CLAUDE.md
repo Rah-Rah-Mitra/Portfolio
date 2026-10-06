@@ -47,7 +47,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   no 3D there: `estate:sample-town-n5` is a text row (PROJECTS, modelled on
   `resume:builder`, its detail the window's pinned description) whose OPEN ON
   DESKTOP is `/?app=world-3d`, and `APP_TO_ROW['world-3d']` expands it when that
-  link comes back to a phone.
+  link comes back to a phone, and when the assistant opens `world-3d` there (a
+  window with a row of its own opens that row, whatever the command's
+  `targetId`; the resume builder's likewise).
 - **Mechanism bench** (`components/workbench/MechanismBench.tsx`, inside the
   Systems Lab window — no new app id, no new anchor). Six live mechanisms drawn
   from a planar projective geometric algebra: `lib/pga.ts` (core), `lib/pgaDraw.ts`
@@ -138,7 +140,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      live, frozen (closed, hidden, off screen), released (closed 30 s, or the
      rail's DESK — a close counts as DESK only when `.wb-rail-desk` was pressed
      within a second and every window is closed; closing the last window by hand
-     waits the 30 s like any close), lost / unavailable (two live resets a
+     waits the 30 s like any close; and a window seen again with a context lost
+     while frozen and never restored, which cannot draw: released and loaded
+     afresh from the HTTP cache, the pose kept, never shown live on the dead
+     canvas — e2e case 9b), lost / unavailable (two live resets a
      minute, no restore in 5 s) / error / stale (Reload). A failed engine or
      controller **chunk** is Reload too, never Retry: a browser keeps a failed
      `import()` in its module map for the document's life, so importing again
@@ -157,7 +162,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      the stage on restore; the HUD hands focus to the stage (or, from inside a
      popover, to the control that opened it: KEYS, or the lift chip) whenever
      the focused control vanishes or is disabled, so focus never falls to the
-     body and the next Esc never skips the window's layers. The registry mirrors
+     body and the next Esc never skips the window's layers. Plan's room list in
+     the side panel (outside the HUD's root) has the same rescue of its own, and
+     its "Walk into …" puts the keys on the stage, pointer or keyboard. The registry mirrors
      the HUD's Enter and Exit under one row (`EstateModel.rowAction`: Enter on
      the selected row, Exit on the row of the building Walk stands in), and a
      registry Enter, like a registry fly-to, puts the keys on the stage.
@@ -167,7 +174,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      held until live and delivered once, and never move DOM focus; in consent
      they highlight the row and say "Load the 3D estate to fly there". A request
      with `enter` walks in (at its storey, by lift, when it names one), one with
-     a storey alone opens Plan there, anything else flies to the building.
+     a storey alone opens Plan there (the plan already on screen counts as done:
+     a model repeats its command on a follow-up, and `planView` refuses the
+     storey it shows), anything else flies to the building.
      **`focusEstate`** (P6) is the assistant's way to send them:
      `{type:'focusEstate', site, storey?, enter?}`, checked in three places
      that cannot share code and must agree — `AskThePage.tsx validatePageCommand`
@@ -180,9 +189,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      as a boolean. `applyCommand` opens `world-3d` with `targetId: 'world'` and,
      80 ms later, dispatches the event: a building id never goes into
      `targetId`. Both local fallbacks route a named building word for word the
-     same: "blk 501"–"blk 512" → that block, car park / mscp → MSCP_513, hawker /
-     neighbourhood centre → NC_514, with `enter: true` for into / enter / walk /
-     inside, and otherwise `openDesktopApp world-3d`; the reply is the same
+     same: "blk 501"–"blk 512" (also "block 509", "blk-509", "blk. 509", "blk
+     0509") → that block, car park / carpark / mscp → MSCP_513, hawker /
+     neighbourhood (or neighborhood) centre / nc 514 → NC_514, with `enter: true`
+     for into / enter / walk / inside, and otherwise `openDesktopApp world-3d`
+     (513 is the car park's number, never a block); the reply is the same
      Estate description either way. The model is told the command in the
      prompt's list and in SITE_EXHIBITS' Estate line. Pinned by
      `tests/{assistant,page-agent-server,estate-assistant}.test.ts` (the 14 ×
@@ -208,7 +219,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        screen-space error within the tier's caps (`lib/estate/{lod,tiers}.ts`:
        150 draws and 1.2 M triangles at the top tier); downloads through
        `lib/estate/scheduler.ts` (≤ 4 at once, ≤ 1 geometry upload a frame,
-       pre-gzipped files sniffed and inflated by `DecompressionStream`). It
+       pre-gzipped files sniffed and inflated by `DecompressionStream`; a file
+       whose bytes had all arrived when its want flapped off is decoded and
+       kept, never fetched again — only an abort while the body is still being
+       read loses it; downloads plus a compile in hand are the stage's
+       `data-estate-pending`, written as they change). It
        renders only on change (`lib/estate/frameLoop.ts`) — **at rest it requests
        no animation frames**; a level step held by lod's 400 ms dwell is woken by
        one timeout (`LodSelector.holdUntil`), not by rAF — and its governor
@@ -319,10 +334,20 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        and the side panel. Rooms are picked by a click on the floor (the ray
        meets the floor plane, `nav.ts roomAt`), ↑/↓ (W/S) on the stage (said with
        its place, "Unit 05-101, Bedroom, 2 of 105", as a `quiet` announce: no
-       notice chip) or the list (`pickRoom`); the pick is outlined on its floor
-       (`PlanMarker`: outline in the edge colour, translucent fill in the
-       interior-glass colour, the line and glass programs, geometry made per
-       pick). Enter, a double-click, the HUD's or the list's Walk in, or 2 /
+       notice chip) or the list (`pickRoom`). The pick is marked where Plan's
+       section is, just under the cut, not on its floor, which the cut walls
+       hide from 55° (`PlanMarker`: a lid over the room in `--color-accent-700`
+       at 22 % and a solid band of it inside the outline, ~3 px wide at the
+       distance it is seen from; both with interior glass's program, so still
+       six; geometry made per pick and per cut step). A pick from the list or
+       the stage's ↑/↓ is also framed — the view slides 0.6 s (a cut when
+       halted) to the room's middle and closes in until it fills 0.2 of the
+       short side (a room under 5 m either way framed as one of 5 m), never
+       further out than it was, tilt and heading kept — because a room of a
+       60 m slab is a few pixels at Plan's opening view; a click on the floor
+       never moves the view. PLAN while walking on a building's grid plans the
+       storey underfoot; from Overview, the selection's first typical storey.
+       Enter, a double-click, the HUD's or the list's Walk in, or 2 /
        WALK walk in (`walkIn`): `plan.ts walkInPoint` takes the walkable cell
        nearest the room's centre on that storey (a stair room's middle is the
        flight from below, so it looks for the room's own landing), then the
@@ -405,10 +430,21 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        there: "L5 +12.00, plan view") and in Plan (the one shown current), the
        room chip with Walk in, the cut chip with ▼ ▲ (`setCut`), Overview's
        steps, and `EstatePlanRooms` — the side panel's room list, grouped by
-       flat, each a toggle (`pickRoom`), with "Walk into …" — which the
-       controller hands the view as `EstateModel.side` (the runtime's
-       `EstatePlanRooms`, the HUD's props) and the registry draws above
-       BUILDINGS; a new plan scrolls the side panel to it. The strips carry
+       `lib/estate/plan.ts roomGroups` (each flat under its number; outside the
+       flats a kind with six or more rooms under its plural — "Hawker stalls",
+       "Shop units", "Car lots", "Motorcycle lots" — and the rest "Common
+       areas"), each a toggle (`pickRoom`). The list is ONE Tab stop (a roving
+       tabindex on a vertical `role="toolbar"`): ↑/↓ (←/→) move to the next room
+       and pick it, wrapping, Home/End go to the ends, and focus moves after the
+       commit that marks the row pressed. "Walk into …" sits under the list in a
+       slot that is always drawn ("Pick a room to walk in", disabled), so a first
+       pick moves no row; walking in from it puts the keys on the stage, and a
+       focused control of the list that vanishes or is disabled (Esc on a room
+       ends Plan) hands focus to the stage, never the page. The controller hands
+       the view the list as `EstateModel.side` (the runtime's
+       `EstatePlanRooms`, the HUD's props) and the registry draws it above
+       BUILDINGS; a new plan scrolls the side panel to it. Its scroller chains
+       to the side panel's at either end (DESIGN.md's one-scroller exception). The strips carry
        `data-estate-strip="walk|plan"`. The root carries `data-mode`, `data-transition` and
        `data-flight` for the stylesheet and the e2e. Nothing in the top-right
        row may change width between a press and its release — the KEYS chip
@@ -420,11 +456,18 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        stats row. Its CSS is the `.wb-estate-hud*` block in `index.css`.
      Test seams: `?estate-quality=` and `?estate-release-ms=` (100 ms–30 s; only
      ever shortens the 30 s release hold).
-     **`?estate-bench=1`** (P7, plan §12.4) turns on the debug readouts and,
+     **`?estate-bench=1`** (P7, plan §12.4; `=max` runs it in the maximised
+     window, the bench pressing Maximize itself) turns on the debug readouts and,
      once live, runs the benchmark route by itself: `engine/bench.ts`, a chunk
      of its own (`estate-bench-<hash>.js`) that `engine/index.ts` imports only
      when the shell passed `bench`, so no visitor downloads it (never import it
-     statically; `tests/estate-bench.test.ts` checks). It drives the public
+     statically, in any spelling: `tests/estate-boundary.test.ts` resolves every
+     reference in the app with the TypeScript parser, and the build's
+     `check-bundle` fails a main bundle or Load click that carries its schema
+     string `portfolio/estate-bench/1`). One run per page: an engine released
+     mid-route stops it at its next step (every wait checks `core.isDisposed`;
+     the report says "engine disposed"), and a later instance does not start
+     another. It drives the public
      engine handle — S1 → an orbit sweep → BS1 → Enter Blk 509 → stair 5 to L2 →
      the strip's lift to L5 → Plan L5 → walk into #05-105 → L12 → Esc → fly to
      NC 514 → the hall → the car park's ramps L1 → L3, plus a 16 s
@@ -436,9 +479,15 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      (Chrome), long animation frames with their script, frame gaps over 50 ms
      (Firefox's stand-in), programs and governor changes; and a verdict
      (`lib/estate/bench.ts`: ≤ 2 changes a segment, 0 requests on stairs and
-     lifts). The render core feeds it through `core.probe` (null otherwise).
-     SwiftShader numbers are software-rendering numbers: the route, the byte
-     and governor checks hold there; the timings are for real GPUs.
+     lifts). Each segment carries G3's figures beside the raw ones: `g3` leaves
+     out the frames that uploaded, compiled or followed a resize (the core's
+     own `excluded`, passed through `core.probe`), `settled` also the first 5 s
+     after live and after each notch change (G3's 4× CPU row); the verdict's
+     `gaps` and its `g3` worst-segment figures read those, over §12.4's route
+     (`s1-first-frame` and `bs1-recovery` left out). The render core feeds it
+     through `core.probe` (null otherwise). SwiftShader numbers are
+     software-rendering numbers: the route, the byte and governor checks hold
+     there; the timings are for real GPUs.
   The GPU claim (`lib/gpuClaim.ts`, event `portfolio:gpu-claim`): while live,
   focused and under no `.panel-backdrop`, the controller holds
   `claimGpu('estate')`, and a mounted desk backdrop yields — it keeps its context
@@ -449,13 +498,16 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   resumed) from the controller chunk; the main bundle pays 8 B for it.
   The pack (`public/estate/v1.2/`, raw-content-hashed immutable names; P4b loads
   `poster`, `s0`, `f` and `d`, P5 adds `i`, `w`, `nav` and `ground`) comes only from the pack tool (see the
-  Bonsai-Estate section). Until the v1.2 release is published, the window runs on
-  the v1.2 candidate rc2 zips' pack as re-packed with P5's pack fixes (rc2b,
-  `pack.82695419.json`, `dev: false`) copied into `public/estate/v1.2/` and excluded in
-  `.git/info/exclude` — never commit it — and the committed
-  `catalogue.generated.ts` is generated from it; the pack is committed only from
-  the published release (`estate:check --provenance` passes once upstream tags
-  v1.2). That is gated three ways: `tests/estate-pack.test.ts` fails when any
+  Bonsai-Estate section). Upstream tagged **v1.2 at `a6e1acf`** (= the gitlink,
+  `v1.2^{commit}`) and published its release with the rc2 zips unchanged. On
+  this branch the window still runs on those zips' pack as re-packed with P5's
+  pack fixes (rc2b, `pack.82695419.json`, `dev: false`) copied into
+  `public/estate/v1.2/` and excluded in `.git/info/exclude` — never commit that
+  copy — and the committed `catalogue.generated.ts` is generated from it. The
+  one step left is the landing plan's: on `feat/estate-window`, commit the pack
+  re-packed with `--release` from the downloaded v1.2 zips (with the deferred
+  pack fixes), the regenerated catalogue and the S1–S5 re-pins
+  (`npm run estate:check -- --provenance --zips <downloaded v1.2>`). That is gated three ways: `tests/estate-pack.test.ts` fails when any
   `/estate/` URL the catalogue names is missing under `public/` (every CI and
   Vercel checkout until the pack is committed) and on a dev catalogue under
   CI/Vercel; `npm run estate:check` fails on both everywhere; and
@@ -466,13 +518,13 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   interior, walk and nav file), checked by estate:check and
   `tests/estate-pack.test.ts`: the P5 real-data suites skip without them, so
   the gate is what fails. The engine pins are a tripwire at measured + 5 %
-  (942,000 B for the engine chunk since P5, which measures 905,212 B after P7;
-  278,000 B gzip for the Load click since P7, which measures 263,917 B); the
-  plan's 950,000 / 307,200 B are the hard ceiling. The chunk the engine shares with its HUD is named
+  (942,000 B for the engine chunk since P5, which measures 907,354 B after the
+  P6/P7 review's fixes; 278,000 B gzip for the Load click since P7, which
+  measures 265,408 B); the plan's 950,000 / 307,200 B are the hard ceiling. The chunk the engine shares with its HUD is named
   `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
   whichever pure module it lists first), and the engine chunk is found by the
   module it holds, not by its facade, which Rollup drops once the bench chunk
-  imports from it. Main bundle after P7: 508,088 / 508,834 B.
+  imports from it. Main bundle after the P6/P7 review: 508,174 / 508,834 B.
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
   `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
   a focused HUD button, and the touch stick), the Estate cases in
@@ -501,15 +553,27 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   whole, "Streaming interior…", then the reason, and Enter refused), and P6's
   Plan (18: Blk 509 L5 from the Overview strip, ↓ cycling rooms aloud, the cut,
   six programs, a clean axe scan, Enter walking into the bedroom with nothing of
-  Blk 509 fetched again; 19: Esc out of Plan clears the selection, the next Esc
-  minimises), the assistant's local fallback walking into the hawker centre
+  Blk 509 fetched again, then PLAN from Walk planning L5; 19: Esc out of Plan
+  clears the selection, the next Esc minimises; 21: the room list by keyboard —
+  the same focusEstate twice keeps the plan, one Tab stop, arrows pick, the
+  first pick moves no row, "Walk into …" puts the keys on the stage so Esc goes
+  to Overview, Esc on a room lands on the stage and the next Esc minimises),
+  the assistant's local fallback walking into the hawker centre
   (20) and the phone's Estate row at 390 × 844 (10), and P7's GPU reset (9:
   WEBGL_lose_context lose → `lost` → restore → `live` on the same canvas with
   the same triangles, never `unavailable`; then the FX smoke switched on runs
   under the FX panel and reads `yielded` / "HELD · ESTATE" once the panel
   closes) and release-and-reopen (14: `?estate-release-ms=1000`, closed 2 s,
-  the canvas gone, live again within 10 s, never `unavailable`). The tour
-  moves by step buttons because they are discrete; its routes assume the
+  the canvas gone, live again within 10 s, never `unavailable`), and 9b (a
+  context lost while closed, never restored: reopened, live on a new canvas).
+  No case waits for the network to go idle once the window is open — the rest
+  of the page decides that (the closed résumé builder POSTs `/api/resume` and
+  previews a PDF, which headless Chromium takes as a download; the spec stubs
+  it) — "booted" is the page hydrated (`.fi-root` gone) and "settled" is the
+  engine's own report: `data-estate-pending` (downloads plus a compile, written
+  as it changes) at 0 and no `data-flight` for 750 ms. Only the cases that count
+  what was fetched (1, 6, 10) still wait for idle. Checked 6-way parallel ×2.
+  The tour moves by step buttons because they are discrete; its routes assume the
   entrance Enter's arc picks from a landed fly-to at 1280 × 720. Restated constants in
 
   the view (`ESTATE_DISPLAY_NAME`, `ESTATE_REPO_URL`, `ESTATE_FOCUS_EVENT_NAME`,
@@ -858,8 +922,8 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   pack is built from — and no build, test or deploy step reads it. Why: upstream
   does not track its `model/` export (it ships as release zips), so the submodule
   holds nothing the site could use, and a clone without it must build and pass the
-  tests. It is pinned at `a6e1acf`, R of the v1.2 candidate rc2, which upstream tags
-  `v1.2` once the pack's checks pass (plan R2b); apart from that one step it only
+  tests. It is pinned at `a6e1acf`, R of the v1.2 candidate rc2, which upstream
+  tagged `v1.2` (plan R2b, done: `git ls-remote … 'refs/tags/v1.2^{}'` = `a6e1acf`); apart from that one step it only
   ever moves to a tagged commit. Never add it with a local path, `file://` or
   `--reference`.
 - Optional locally: `git submodule update --init external/Bonsai-Estate`.
@@ -954,10 +1018,11 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   cap. Both budgets were re-pinned in P4b and again in P5 (interiors, Walk and
   the Walk HUD) at the measured size + 5%, and `engineGzip` alone in P7
   (278,000); a re-pin may move them but never above the plan's 307,200 B /
-  950,000 B. The main cap is NOT re-pinnable: after P7 the main bundle is
-  508,088 B of 508,834 B (P6 spent ~1.3 KB: the `focusEstate` check, routing
-  and dispatch in AskThePage, the phone row, the registry's Plan keys and the
-  side slot; P7 8 B, the `estate_live` export), so **746 B are left** —
+  950,000 B. The main cap is NOT re-pinnable: after the P6/P7 review the main
+  bundle is 508,174 B of 508,834 B (P6 spent ~1.3 KB: the `focusEstate` check,
+  routing and dispatch in AskThePage, the phone row, the registry's Plan keys and
+  the side slot; P7 8 B, the `estate_live` export; the review 86 B, the wider
+  local routing and the phone's assistant row), so **660 B are left** —
   anything bigger goes into the controller, engine or HUD chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).

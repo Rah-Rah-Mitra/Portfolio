@@ -14,6 +14,15 @@ import { gzipSync } from 'node:zlib';
 // Plan and the selection together), the assistant's focusEstate on the local
 // fallback (20) and the phone registry's Estate row (10). P7's context loss
 // and the GPU claim (9), and release-and-reopen held to its plan wording (14).
+// The P6/P7 review's: a context lost while closed comes back on a new canvas
+// (9b), and Plan's room list as a keyboard visitor meets it (21).
+//
+// No case waits for the network to go idle once it has opened the window: the
+// rest of the page decides that (the résumé builder's preview, stubbed below,
+// held 'networkidle' open past the budget under load). "Booted" is the page
+// hydrated; "settled" is what the engine itself reports (data-estate-pending,
+// data-flight). Only the cases that assert nothing was fetched still wait for
+// the network to go idle, before they count.
 //
 // The tour moves with the HUD's step buttons (half a metre, 15°): they are
 // discrete, so a route of presses lands in the same place every run, where a
@@ -62,9 +71,14 @@ const countFrames = (page: Page) => page.addInitScript(() => {
 });
 const frames = (page: Page) => page.evaluate(() => (window as Window & { __estateRaf?: number }).__estateRaf ?? 0);
 
+/** Loaded and hydrated: App drops the phone registry once it knows the surface, so the rail's handlers are live. */
+const booted = (page: Page) => page.waitForFunction(
+  () => document.readyState === 'complete' && !document.querySelector('.fi-root'), undefined, { timeout: LIVE_TIMEOUT },
+);
+
 const openEstate = async (page: Page, search = '?estate-quality=min') => {
   await page.goto(`/${search}`);
-  await page.waitForLoadState('networkidle');
+  await booted(page);
   await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
   const win = page.getByRole('dialog', { name: 'Estate' });
   await expect(win).toBeVisible();
@@ -118,9 +132,24 @@ const watchPhases = async (page: Page): Promise<string[]> => {
   return phases;
 };
 
-/** Settled: nothing in flight, and the readouts written since. */
+/**
+ * Settled, as the engine reports it: no flight, and nothing downloading or
+ * compiling (the stage's data-estate-pending) for 750 ms on end; then the
+ * readouts written since.
+ */
 const settle = async (page: Page) => {
-  await page.waitForLoadState('networkidle');
+  await page.evaluate(() => { delete (window as Window & { __estateQuiet?: number }).__estateQuiet; });
+  await page.waitForFunction((hold) => {
+    const scope = window as Window & { __estateQuiet?: number };
+    const pending = document.querySelector('[data-estate-stage]')?.getAttribute('data-estate-pending') ?? '0';
+    const flying = document.querySelector('.wb-estate-hud')?.hasAttribute('data-flight') === true;
+    if (pending !== '0' || flying) {
+      scope.__estateQuiet = undefined;
+      return false;
+    }
+    if (scope.__estateQuiet === undefined) scope.__estateQuiet = performance.now();
+    return performance.now() - scope.__estateQuiet >= hold;
+  }, 750, { polling: 50, timeout: 60_000 });
   await page.waitForTimeout(1_500);
 };
 
@@ -131,6 +160,14 @@ const allFindings = async (page: Page) => (await new AxeBuilder({ page }).includ
   .map((violation) => `${violation.id} (${violation.impact})`);
 
 test.describe('estate window — live 3D view', () => {
+  // The résumé builder window is mounted (closed) on every desktop page and POSTs
+  // /api/resume about 450 ms in, then previews the PDF in an iframe, which
+  // headless Chromium takes as a download. Nothing here is about résumés: a
+  // plain-text answer keeps that off the network and out of the console.
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/resume*', (route) => route.fulfill({ status: 200, contentType: 'text/plain', body: 'estate.spec: the résumé preview is stubbed' }));
+  });
+
   test('1 · boot fetches nothing of the estate or its engine', async ({ page }) => {
     const errors = collectErrors(page);
     const paths = collectPaths(page);
@@ -368,6 +405,33 @@ test.describe('estate window — live 3D view', () => {
     await expect(win).toHaveAttribute('data-focused');
     await expect(page.locator('[data-backdrop-state="yielded"]')).toHaveCount(1);
     await expect(smoke).toContainText('HELD · ESTATE');
+    expect(errors).toEqual([]);
+  });
+
+  test('9b · a context lost while the window is closed, and never restored, comes back on reopen live on a new canvas', async ({ page }) => {
+    const errors = collectErrors(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    await settle(page);
+    const canvas = page.locator('canvas[data-estate-canvas]');
+    await canvas.evaluate((node) => node.setAttribute('data-lost-one', ''));
+    await page.getByRole('button', { name: 'Close Estate' }).click();
+    await expect(win).toBeHidden();
+    await expect(phase(page)).toHaveAttribute('data-estate-phase', 'frozen');
+    const phases = await watchPhases(page);
+    // Lost while frozen: uncounted and unseen. WEBGL_lose_context sends no restore of its own.
+    await canvas.evaluate((node: HTMLCanvasElement) => { node.getContext('webgl2')!.getExtension('WEBGL_lose_context')!.loseContext(); });
+    await page.waitForTimeout(500);
+    await expect(phase(page)).toHaveAttribute('data-estate-phase', 'frozen');
+    await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
+    // Released and loaded afresh (pose kept, files from the HTTP cache): a new canvas, live, drawing.
+    await expect(page.locator('canvas[data-estate-canvas]:not([data-lost-one])')).toHaveCount(1, { timeout: LIVE_TIMEOUT });
+    await waitLive(page);
+    await expect(page.locator('canvas[data-estate-canvas]')).toHaveCount(1);
+    expect(await page.locator('canvas[data-estate-canvas]').evaluate((node: HTMLCanvasElement) => node.getContext('webgl2')!.isContextLost())).toBe(false);
+    await expect.poll(() => readout(page, 'tris'), { timeout: 15_000 }).toBeGreaterThan(0);
+    // Never live on the lost one, never a failure: (released, a commit the view may not draw) loading, then live.
+    expect(phases.filter((value) => value !== 'released')).toEqual(['loading', 'live']);
     expect(errors).toEqual([]);
   });
 
@@ -614,7 +678,7 @@ test.describe('estate window — live 3D view', () => {
     await expect(win.getByRole('button', { name: 'Retry' })).toHaveCount(0);
     await page.unroute(block);
     await Promise.all([page.waitForEvent('load'), reload.click()]);
-    await page.waitForLoadState('networkidle');
+    await booted(page);
     await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
     win = page.getByRole('dialog', { name: 'Estate' });
     await win.getByRole('button', { name: /^Load the 3D estate · / }).click();
@@ -636,13 +700,15 @@ test.describe('estate window — live 3D view', () => {
     const load = win.getByRole('button', { name: /^Load the 3D estate · \d+\.\d MB$/ });
     const label = await load.textContent();
     const limit = Number(/(\d+\.\d) MB$/.exec(label ?? '')![1]) * 1_000_000;
-    await page.waitForLoadState('networkidle');
 
     // What travels: a pack file is stored gzipped and sent as is; anything else
-    // (pack.json, the engine's chunks) is counted as gzip -9 would send it.
+    // (pack.json, the engine's chunks) is counted as gzip -9 would send it. The
+    // poster is on screen before the click and the label leaves it out (policy.ts
+    // consentBytes), so it is left out here too, wherever its response lands.
     const sizes: Promise<number>[] = [];
     const onResponse = (response: Response) => {
       const path = new URL(response.url()).pathname;
+      if (/^\/estate\/v\d+\.\d+\/poster\//.test(path)) return;
       if (!ESTATE_FILES.test(path) && !ENGINE_CHUNKS.test(path)) return;
       sizes.push(response.body().then((body) => (body[0] === 0x1f && body[1] === 0x8b ? body.length : gzipSync(body, { level: 9 }).length)));
     };
@@ -723,6 +789,9 @@ test.describe('estate window — live 3D view', () => {
     expect(walkIn.filter((path) => /\/BLK_509\./.test(path)), 'Blk 509 files downloaded again for the walk-in').toEqual([]);
     expect(walkIn.every((path) => /\/site\/ground\.|\/(?:i|w|nav)\/BLK_5\d\d\./.test(path)), walkIn.join(' ')).toBe(true);
     expect(await stage(page).getAttribute('data-estate-band')).toMatch(/^L[34]–L[67]$/);
+    // PLAN while walking plans the storey underfoot (L5), not the block's first typical storey (L2).
+    await hud(page).getByRole('group', { name: 'Camera mode' }).getByRole('button', { name: 'Plan' }).click();
+    await expect(chip(page)).toHaveText('BLK 509 · L5 · PLAN');
     expect(errors).toEqual([]);
   });
 
@@ -753,7 +822,7 @@ test.describe('estate window — live 3D view', () => {
     const errors = collectErrors(page, [/Failed to load resource: net::ERR_FAILED/]);
     await page.route('**/api/page-agent', (route) => route.abort());
     await page.goto('/?estate-quality=min');
-    await page.waitForLoadState('networkidle');
+    await booted(page);
     await page.getByRole('button', { name: 'AI, open Ask this portfolio' }).click();
     await page.getByLabel('Question or page command').fill('take me into the hawker centre');
     await page.getByRole('button', { name: 'Send' }).click();
@@ -766,6 +835,66 @@ test.describe('estate window — live 3D view', () => {
     await expect(win.locator('[data-estate-row-action="exit"]')).toHaveText('Exit Hawker centre');
     // The building travelled in the event only: the workbench was asked for #world, never a building id.
     expect(page.url()).not.toMatch(/NC_514/);
+    expect(errors).toEqual([]);
+  });
+
+  test('21 · Plan’s room list by keyboard: the same plan asked twice stays; one Tab stop whose arrows pick; Walk into hands the keys to the stage, so Esc goes back to Overview', async ({ page }) => {
+    const errors = collectErrors(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    // The assistant's focusEstate with a storey (as AskThePage sends it) opens Plan there.
+    const ask = () => page.evaluate(() => { window.dispatchEvent(new CustomEvent('portfolio:estate-focus', { detail: { site: 'BLK_509', storey: 'L05' } })); });
+    await ask();
+    await expect(chip(page)).toHaveText('BLK 509 · L5 · PLAN', { timeout: LIVE_TIMEOUT });
+    const rooms = win.getByRole('region', { name: 'Rooms of Blk 509, L5' });
+    await expect(rooms.locator('[data-estate-room]')).toHaveCount(105, { timeout: LIVE_TIMEOUT });
+    await expect.poll(() => hud(page).getAttribute('data-flight')).toBeNull();
+    // Asked again, as a model does on a follow-up: the plan stays, no fly-to back to Overview.
+    await ask();
+    await page.waitForTimeout(1_500);
+    await expect(chip(page)).toHaveText('BLK 509 · L5 · PLAN');
+    await expect(hud(page)).toHaveAttribute('data-mode', 'plan');
+    // One stop in the tab order, and "Walk into …" waiting in its slot under the list.
+    const room = (i: number) => rooms.locator(`[data-estate-room="${i}"]`);
+    const walkInto = rooms.locator('[data-estate-rooms-walkin]');
+    await expect(rooms.locator('[data-estate-room][tabindex="0"]')).toHaveCount(1);
+    await expect(walkInto).toBeDisabled();
+    await expect(walkInto).toHaveText('Pick a room to walk in');
+    const top = () => room(0).evaluate((node) => Math.round(node.getBoundingClientRect().top));
+    const before = await top();
+    // ↓ moves to the next room and picks it, the stage's way; the first pick moves no row.
+    await room(0).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(room(1)).toBeFocused();
+    await expect(room(1)).toHaveAttribute('aria-pressed', 'true');
+    await expect(win.locator('[data-estate-plan-room]')).toContainText('#05-101 · Bedroom');
+    expect(await top()).toBe(before);
+    await page.keyboard.press('ArrowUp');
+    await expect(room(0)).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    // Tab leaves the list for Walk into; Enter walks in, and the keys go to the stage, not the page.
+    await page.keyboard.press('Tab');
+    await expect(walkInto).toBeFocused();
+    await expect(walkInto).toHaveText('Walk into #05-101 · Bedroom');
+    await page.keyboard.press('Enter');
+    await expect(chip(page)).toHaveText(/^BLK 509 · L5 · #05-101 · BEDROOM · WALK$/, { timeout: 20_000 });
+    await expect(stage(page)).toBeFocused();
+    await expect.poll(() => hud(page).getAttribute('data-flight')).toBeNull();
+    // Esc in Walk is Walk → Overview; the window stays.
+    await page.keyboard.press('Escape');
+    await expect(chip(page)).toHaveText(/ · OVERVIEW$/);
+    await expect(win).toBeVisible();
+    // Plan again; Esc on a room leaves it with the keys on the stage, and the next Esc minimises.
+    await ask();
+    await expect(chip(page)).toHaveText('BLK 509 · L5 · PLAN', { timeout: LIVE_TIMEOUT });
+    await expect(rooms.locator('[data-estate-room]')).toHaveCount(105);
+    await rooms.locator('[data-estate-room][tabindex="0"]').focus();
+    await page.keyboard.press('Escape');
+    await expect(chip(page)).toHaveText(/ · OVERVIEW$/);
+    await expect(stage(page)).toBeFocused();
+    await expect(win).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(win).toBeHidden();
     expect(errors).toEqual([]);
   });
 

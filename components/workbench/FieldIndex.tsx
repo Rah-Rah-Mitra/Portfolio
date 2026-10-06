@@ -292,7 +292,9 @@ const FieldIndex: React.FC = () => {
     const onOpenEvent = (event: Event) => {
       const detail = (event as CustomEvent<WorkbenchOpenDetail>).detail;
       if (!detail?.appId || detail.action === 'minimize') return;
-      applyTarget(APP_TO_KIND[detail.appId] ?? 'ALL', detail.targetId);
+      // A window with a row of its own opens that row, as its ?app= link does
+      // (the assistant's Estate command targets the window's anchor, #world).
+      applyTarget(APP_TO_KIND[detail.appId] ?? 'ALL', APP_TO_ROW[detail.appId] ?? detail.targetId);
     };
     const onHash = () => {
       const id = window.location.hash.slice(1);

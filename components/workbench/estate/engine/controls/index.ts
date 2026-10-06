@@ -5,7 +5,7 @@ import { cancelsClimb, dragRole, HeldKeys, stageKey, type EscapeAction, type Sta
 import { ESTATE_VFOV_DEG } from '../../../../../lib/estate/lod';
 import { roomAt } from '../../../../../lib/estate/nav';
 import {
-  cutSpoken, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_POLAR, rayFloor, roomSpoken, roomText, stepCut, walkInPoint,
+  cutSpoken, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_POLAR, rayFloor, ringCentroid, roomSpoken, roomText, stepCut, walkInPoint,
 } from '../../../../../lib/estate/plan';
 import type { PackSpawn } from '../../../../../lib/estate/schema';
 import { EYE_HEIGHT } from '../../../../../lib/estate/storeys';
@@ -22,10 +22,10 @@ import { FlyController, type Bounds2 } from './firstPerson';
 import { northRotation, wheelSteps } from './motion';
 import { OrbitController } from './orbit';
 import { buildPrisms, ClickTracker, pickPrism, siteAround, siteNear, type Prism } from './picking';
-import { PlanMarker, planRooms } from './plan';
+import { markerBandWidth, PlanMarker, planRooms } from './plan';
 import {
   blankPose, clampOrbit, FLY_TO_SECONDS, flightDone, flightPose, FOV_SECONDS, frameBuilding, HOME_SECONDS, ORBIT_LIMITS,
-  orbitFromLookAt, planFlight, planFrame, PLAN_STOREY_SECONDS, positionFromOrbit, type Flight, type OrbitPose,
+  orbitFromLookAt, PICK_FILL, PICK_FRAME_SECONDS, PICK_MIN_HALF, planFlight, planFrame, PLAN_STOREY_SECONDS, positionFromOrbit, type Flight, type OrbitPose,
 } from './tween';
 import { WalkMode, type WalkSpawn } from './walkMode';
 
@@ -800,8 +800,17 @@ class EstateControls implements EngineNavigation {
     return true;
   }
 
-  /** setMode('plan'): the selected building, else the one the overview frames, on its first typical storey. */
+  /**
+   * setMode('plan'): walking on a building's grid, the storey underfoot of that
+   * building; else the selected building, or the one the overview frames, on
+   * its first typical storey.
+   */
   private planSelected(): boolean {
+    const walk = this.walk;
+    if (this.mode === 'walk' && !this.arc && walk?.active && walk.walker.site >= 0) {
+      const tag = this.core.interiors?.table(walk.walker.site)?.tags[walk.walker.layer];
+      if (tag) return this.planView(ESTATE_SITE_IDS[walk.walker.site], tag);
+    }
     const selection = this.view.get().selection;
     const index = selection ? ESTATE_SITE_IDS.indexOf(selection) : this.siteFor();
     const table = index >= 0 ? this.core.interiors?.table(index) : null;
@@ -858,11 +867,16 @@ class EstateControls implements EngineNavigation {
   }
 
   /**
-   * Pick room `index` of the storey (null clears): its outline marked on the
-   * floor, and, when `say` (a key or a click on the stage), its name and place
-   * in the list said. A pick from the list is said by the list itself.
+   * Pick room `index` of the storey (null clears): marked just under the cut
+   * (controls/plan.ts PlanMarker), and, when `say` (a key or a click on the stage), its name and place
+   * in the list said. A pick from the list is said by the list itself. When
+   * `frame` (the list, the stage's ↑/↓: picks whose room the visitor has not
+   * pointed at), the view slides to it and closes in until its half-diagonal
+   * fills PICK_FILL of the short side — never further out than it was, the
+   * tilt and heading kept — so a room of a 60 m slab is found at Plan's
+   * opening view (the P6/P7 review). A click on the floor never moves it.
    */
-  pickRoom(index: number | null, say = false): boolean {
+  pickRoom(index: number | null, say = false, frame = false): boolean {
     const plan = this.plan;
     if (!this.live || this.mode !== 'plan' || !plan) return false;
     const nav = this.core.interiors?.nav(plan.site);
@@ -871,14 +885,58 @@ class EstateControls implements EngineNavigation {
     if (!(i >= -1 && i < rooms.length) || (i | 0) !== i || i === plan.room) return false;
     plan.room = i;
     const room = i >= 0 ? rooms[i] : null;
-    const building = this.core.pack?.sites[plan.site];
-    const table = this.core.interiors?.table(plan.site);
-    if (room && building && table) this.marker?.show(room.poly, building.at, table.ffl[plan.storey] + room.z);
-    else this.marker?.hide();
+    this.markPicked(room && frame ? this.framePick(room) : undefined);
     this.publishPlan();
     if (room && say) this.view.announce(false, roomSpoken(room, i, rooms.length), true);
     this.core.invalidate();
     return true;
+  }
+
+  /**
+   * The view onto a picked room (pickRoom's `frame`): a PICK_FRAME_SECONDS slide
+   * to its middle on the storey's floor, closer only. Returns the distance it
+   * ends at (the marker's band is sized for that).
+   */
+  private framePick(room: { box: readonly [number, number, number, number] }): number | undefined {
+    const plan = this.plan;
+    const orbit = this.orbit;
+    const building = plan ? this.core.pack?.sites[plan.site] : undefined;
+    const table = plan ? this.core.interiors?.table(plan.site) : null;
+    if (!plan || !orbit || !building || !table) return undefined;
+    const [x0, y0, x1, y1] = room.box;
+    const [ax, ay] = building.at;
+    // A household shelter or a car lot is framed as a room of PICK_MIN_HALF m a side would be: the flat around it stays in view.
+    const cx = ax + (x0 + x1) / 2;
+    const cy = ay + (y0 + y1) / 2;
+    const hx = Math.max((x1 - x0) / 2, PICK_MIN_HALF);
+    const hy = Math.max((y1 - y0) / 2, PICK_MIN_HALF);
+    const from = orbit.currentOrbit(this.fromPose);
+    const camera = this.core.camera;
+    const to = planFrame([[cx - hx, cy - hy], [cx + hx, cy + hy]], table.ffl[plan.storey], from.polar, from, camera.fov, camera.aspect, ORBIT_LIMITS, this.toPose, PICK_FILL);
+    to.distance = Math.min(to.distance, Math.max(from.distance, ORBIT_LIMITS.minDistance));
+    this.startFlight(to, PICK_FRAME_SECONDS, plan.site, this.core.options.motionHalted());
+    return to.distance;
+  }
+
+  /** The marker on Plan's picked room, at the cut (re-drawn when the cut moves), or none; its band sized for `distance` when given (a framed pick's end), else the camera's. */
+  private markPicked(distance?: number): void {
+    const plan = this.plan;
+    const room = plan && plan.room >= 0 ? this.core.interiors?.nav(plan.site)?.rooms[plan.storey]?.[plan.room] : null;
+    const building = plan ? this.core.pack?.sites[plan.site] : undefined;
+    const table = plan ? this.core.interiors?.table(plan.site) : null;
+    if (!plan || !room || !building || !table) {
+      this.marker?.hide();
+      return;
+    }
+    const cutZ = table.ffl[plan.storey] + plan.cut;
+    const camera = this.core.camera;
+    let seen = distance;
+    if (seen === undefined) {
+      const centre = ringCentroid(room.poly, [0, 0]);
+      seen = camera.position.distanceTo(this.v1.set(building.at[0] + centre[0], cutZ, -(building.at[1] + centre[1])));
+    }
+    const width = markerBandWidth(seen, camera.fov, this.canvas?.clientHeight || 600);
+    this.marker?.show(room.poly, building.at, cutZ, width);
   }
 
   /** The cut one step lower or higher ([ and ]). */
@@ -889,6 +947,7 @@ class EstateControls implements EngineNavigation {
     if (cut === plan.cut) return false;
     plan.cut = cut;
     this.core.setPlan(plan.site, plan.storey, cut);
+    if (plan.room >= 0) this.markPicked();
     this.publishPlan();
     this.view.announce(false, cutSpoken(cut), true);
     return true;
@@ -1328,7 +1387,7 @@ class EstateControls implements EngineNavigation {
         this.setMode(action.mode);
         return;
       case 'cycle-room':
-        if (this.plan) this.pickRoom(cycleRoom(this.plan.room, action.step, this.planRoomCount()), true);
+        if (this.plan) this.pickRoom(cycleRoom(this.plan.room, action.step, this.planRoomCount()), true, true);
         return;
       case 'storey':
         this.setStorey(action.step);

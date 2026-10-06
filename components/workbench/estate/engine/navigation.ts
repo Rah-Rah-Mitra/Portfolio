@@ -38,7 +38,8 @@ export interface EngineNavigation {
   takeLift?(level: EstateStoreyTag): boolean;
   takeStairs?(direction: EstateStep): boolean;
   planView?(site: EstateSiteId, storey: EstateStoreyTag, options?: EstateFlyOptions): boolean;
-  pickRoom?(index: number | null): boolean;
+  /** `say`: speak it (a key or a click on the stage); `frame`: bring it into view (the list, the stage's ↑/↓). */
+  pickRoom?(index: number | null, say?: boolean, frame?: boolean): boolean;
   walkIn?(index?: number): boolean;
   setCut?(step: EstateStep): boolean;
   walkStep?(step: EstateWalkStep): boolean;

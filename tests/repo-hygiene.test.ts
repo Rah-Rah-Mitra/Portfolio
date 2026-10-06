@@ -8,7 +8,7 @@ import ts from 'typescript';
 import { normalizePath, resolveConfig, type UserConfig } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, catalogueUrls, checkBundle, checkEstateCatalogue, findEntryScript,
+  BENCH_MARKER, ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, catalogueUrls, checkBundle, checkEstateCatalogue, findEntryScript,
   readEngineBudgets, staticImports,
 } from '../scripts/check-bundle.mjs';
 import viteConfig from '../vite.config';
@@ -287,6 +287,13 @@ describe('build hygiene', () => {
       // The HUD and controller chunks are found by their source names; losing one is a failure, not a smaller sum.
       const { 'EstateHud-f6.js': _hud, ...withoutHud } = base;
       expect((await run(withoutHud)).failures.join(' | ')).toMatch(/expected one EstateHud-\*\.js chunk, found 0/);
+      // The bench is its own chunk: lazy from the engine it passes; pulled into the Load click or the main bundle it fails.
+      const bench = `const s="${BENCH_MARKER}";`;
+      expect((await run({ ...base, 'estate-bench-h8.js': bench, 'estate-engine-d4.js': `${base['estate-engine-d4.js']}const b=()=>import("./estate-bench-h8.js");` })).failures).toEqual([]);
+      expect((await run({ ...base, 'announce-e5.js': `${base['announce-e5.js']}${bench}` })).failures)
+        .toEqual([expect.stringMatching(/assets\/announce-e5\.js is in the Load click and carries the bench/)]);
+      expect((await run({ ...base, 'shared-b2.js': `${shared(10)}${bench}` })).failures)
+        .toEqual([expect.stringMatching(/shared-b2\.js is in the main bundle and carries the bench/)]);
     } finally {
       log.mockRestore();
       await rm(dist, { recursive: true, force: true });

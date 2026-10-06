@@ -144,13 +144,19 @@ export const frameBuilding = (
 export const PLAN_FILL = 0.85;
 /** A storey change in Plan slides the target this long, s. */
 export const PLAN_STOREY_SECONDS = 0.4;
+/** A room picked from the list or the stage's ↑/↓ is framed so its half-diagonal fills this much of the short side, at most… */
+export const PICK_FILL = 0.2;
+/** …over this long, s (a cut when motion is halted); a room smaller than this many metres either way of its middle is framed as if it were this big. */
+export const PICK_FRAME_SECONDS = 0.6;
+export const PICK_MIN_HALF = 2.5;
 
 /**
  * Plan's pose (§8.1): aimed at the middle of the building's outline on the
  * storey's floor (`floorY`, three Y = block-local Z), `polar` from straight down
  * (lib/estate/plan.ts PLAN_POLAR, 55° above the horizon), the same azimuth as
  * now, and far enough that a disc of the outline's half-diagonal fills
- * PLAN_FILL of the short side: the whole storey in frame from any azimuth.
+ * `fill` (PLAN_FILL) of the short side: the whole storey in frame from any
+ * azimuth. A picked room is framed with PICK_FILL.
  */
 export const planFrame = (
   bounds: readonly [ArrayLike<number>, ArrayLike<number>],
@@ -161,6 +167,7 @@ export const planFrame = (
   aspect: number,
   limits: OrbitLimits = ORBIT_LIMITS,
   out: OrbitPose = blankPose(),
+  fill = PLAN_FILL,
 ): OrbitPose => {
   const [lo, hi] = bounds;
   out.target[0] = (lo[0] + hi[0]) / 2;
@@ -169,7 +176,7 @@ export const planFrame = (
   const radius = Math.max(1, Math.hypot(hi[0] - lo[0], hi[1] - lo[1]) / 2);
   const halfV = (clamp(vfovDeg, 10, 120) * DEG) / 2;
   const halfH = Math.atan(Math.tan(halfV) * (aspect > 0 ? aspect : 1));
-  const silhouette = Math.atan(PLAN_FILL * Math.tan(Math.min(halfV, halfH)));
+  const silhouette = Math.atan(clamp(fill, 0.01, 1) * Math.tan(Math.min(halfV, halfH)));
   out.distance = clamp(radius / Math.sin(silhouette), limits.minDistance, limits.maxDistance);
   out.azimuth = current.azimuth;
   out.polar = clamp(polar, 0, limits.maxPolar);

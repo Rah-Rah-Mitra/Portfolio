@@ -168,12 +168,12 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     // replaced it, and what an old ?mode=scan link still does
     // (lib/experienceMode.ts keeps it on purpose).
     reply = 'The FX panel holds Pause all motion, sound cues, and two desk backgrounds that stay off until switched on: an N-body gravity field computed with a fast multipole method, and a WebGL2 fluid. There is no Quick Scan switch any more: every window is plain, readable HTML, and Pause all motion halts the site’s animation. An old ?mode=scan link still opens the page without the desk backgrounds or sound cues, and without ?app= deep links.';
-  } else if (/world|map|estate|hdb|bonsai|hawker|neighbourhood centre|car park|mscp|\bblk(?![a-z])/.test(text)) {
+  } else if (/world|map|estate|hdb|bonsai|hawker|neighbou?rhood centre|car ?park|mscp|\bnc\s*514|\bblk(?![a-z])|\bblock\.?[\s-]*0?5[01]\d\b/.test(text)) {
     reply = 'The Estate window shows Sample Town N5, a generated sample HDB neighbourhood (not a real town or HDB’s own plans) built as IFC4X3 by Rahul’s Bonsai-Estate pipeline with IfcOpenShell, Bonsai and Blender: 12 residential blocks with 1,206 flats, a multi-storey car park and a hawker centre. Orbit it or fly to a building, and walk in through void decks, stairs and lifts; detail loads as you get closer. It is a desktop window (881px and wider).';
     references = [{ label: 'Explore the estate', href: '#world' }];
     // A named building flies there (or walks in), plan §9.4; otherwise the window opens.
-    const blk = /\bblk\s*(50[1-9]|51[0-2])\b/.exec(text)?.[1];
-    const site = blk ? `BLK_${blk}` : /car park|mscp/.test(text) ? 'MSCP_513' : /hawker|neighbourhood centre/.test(text) ? 'NC_514' : null;
+    const blk = /\b(?:blk|block)\.?[\s-]*0?(50[1-9]|51[0-2])\b/.exec(text)?.[1];
+    const site = blk ? `BLK_${blk}` : /car ?park|mscp/.test(text) ? 'MSCP_513' : /hawker|neighbou?rhood centre|\bnc\s*514/.test(text) ? 'NC_514' : null;
     commands.push(site ? { type: 'focusEstate', site, ...(/\b(into|enter|walk|inside)\b/.test(text) ? { enter: true } : {}) } : { type: 'openDesktopApp', appId: 'world-3d' });
   } else if (text.includes('project') || text.includes('work')) {
     reply = 'The selected work is organized as evidence-led briefs covering context, contribution, engineering approach, and inspectable proof.';

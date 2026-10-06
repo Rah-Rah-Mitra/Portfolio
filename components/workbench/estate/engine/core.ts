@@ -23,7 +23,7 @@ import {
 } from './renderer';
 import { StaticRig, type CameraRig } from './rig';
 import { EstateScene } from './scene';
-import { clearReadouts, readoutValues, ReadoutThrottle, writeReadouts, type FrameStats } from './stats';
+import { clearReadouts, READOUT_ATTRIBUTES, readoutValues, ReadoutThrottle, writeReadouts, type FrameStats } from './stats';
 import { Streaming, type DecodedFile } from './streaming';
 import { GeometryUploader } from './upload';
 import { LevelWiring, type LevelFrame } from './levels';
@@ -86,7 +86,11 @@ export interface CoreHooks {
  * one property read a frame.
  */
 export interface EngineProbe {
-  frame(time: number, continuous: boolean, cpuMs: number, stats: FrameStats, governor: EngineGovernor): void;
+  /**
+   * `excluded`: the frame uploaded, compiled, followed a resize or waited on a
+   * notch's resize — what G3 leaves out, as the governor does (governor.sample).
+   */
+  frame(time: number, continuous: boolean, cpuMs: number, stats: FrameStats, governor: EngineGovernor, excluded: boolean): void;
   notch(change: GovernorChange): void;
 }
 
@@ -611,7 +615,7 @@ export class EstateCore {
       this.resized = false;
       const change = this.ready ? governor.sample(time, continuous, cpuMs, excluded) : null;
       if (change) this.applyNotch(change, now);
-      this.probe?.frame(time, continuous, cpuMs, stats, governor);
+      this.probe?.frame(time, continuous, cpuMs, stats, governor, excluded);
       // The calibration burst draws nothing for 8 frames: never under the visitor's hand.
       if (governor.wantsCalibration && !moving) this.recalibrate();
     }
@@ -826,6 +830,9 @@ export class EstateCore {
     const streaming = this.streaming;
     if (!streaming || this.isDisposed) return;
     const pending = streaming.pending + (this.compiling ? 1 : 0);
+    // Downloads and compiles in hand, unthrottled, for the e2e's "settled" (it no
+    // longer waits on the network going idle, which the rest of the page decides).
+    writeReadouts(this.options.host, { [READOUT_ATTRIBUTES.pending]: String(pending) });
     if (pending > 0) this.progressBurst = true;
     else if (!this.progressBurst) return;
     const now = this.loopHost.now();
@@ -1018,7 +1025,9 @@ export class EstateCore {
         this.uploader?.dispose();
         created.renderer.dispose();
       } : undefined,
-      loseContext: created ? () => created.renderer.forceContextLoss() : undefined,
+      // Already lost (a GPU reset latched unavailable, a release while lost):
+      // nothing to free, and three would warn that WEBGL_lose_context is missing.
+      loseContext: created ? () => { if (!created.gl.isContextLost()) created.renderer.forceContextLoss(); } : undefined,
       removeCanvas: () => {
         this.canvas?.remove();
         clearReadouts(this.options.host);

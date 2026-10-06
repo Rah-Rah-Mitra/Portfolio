@@ -200,7 +200,12 @@ export class Streaming {
         signal: controller.signal,
         priority: fetchPriority(this.priorityOf(info.id)),
       });
-      if (this.closed || controller.signal.aborted) return;
+      // Every byte is here: a want that flapped off meanwhile (setWants aborted
+      // this fetch) does not throw them away. The scheduler keeps a late arrival
+      // for an aborted fetch that has not restarted (complete() with this token),
+      // so decode and offer it; only a closed stream drops it. An abort while the
+      // body was still arriving rejected above, and lands in the catch.
+      if (this.closed) return;
       this.receivedBytes += info.bytes;
       if (info.klass === 's0') this.stage0Received += info.bytes;
       const payload = await readPayload(stored, url);
@@ -210,7 +215,11 @@ export class Streaming {
       if (this.closed) return;
       const parts = decoded.parts;
       if (this.flights.get(info.id)?.token === token) this.flights.delete(info.id);
-      if (!this.scheduler.complete(info.id, parts.map((p) => ({ bytes: p.bytes, role: p.role })), token)) return;
+      if (!this.scheduler.complete(info.id, parts.map((p) => ({ bytes: p.bytes, role: p.role })), token)) {
+        // Superseded: nothing to keep, but one fewer in flight (data-estate-pending).
+        options.hooks.progress();
+        return;
+      }
       const file = { info, decoded, parts };
       this.decoded.set(info.id, file);
       options.hooks.decoded(file);
@@ -218,6 +227,7 @@ export class Streaming {
       options.hooks.wake();
     } catch (error) {
       if (this.flights.get(info.id)?.token === token) this.flights.delete(info.id);
+      if (!this.closed) options.hooks.progress();
       if (this.closed || isAbort(error)) return;
       const status = error instanceof PackFetchError ? error.status ?? undefined : undefined;
       const outcome = this.scheduler.fail(info.id, options.now(), status, token);

@@ -45,14 +45,11 @@ export const qualityFromSearch = (search: string): EstateTier | undefined => {
   return SHELL_TIERS.find((tier) => tier === value);
 };
 
-/** `?estate-debug=1` or `?estate-bench=1`: the engine's debug readouts and the HUD's debug row. */
-export const debugFromSearch = (search: string): boolean => {
-  const params = new URLSearchParams(search);
-  return params.get('estate-debug') === '1' || params.get('estate-bench') === '1';
-};
+/** `?estate-bench=1`: the engine runs the §12.4 benchmark route by itself once live (engineApi `bench`); `=max` runs it maximised. */
+export const benchFromSearch = (search: string): boolean => /^(?:1|max)$/.test(new URLSearchParams(search).get('estate-bench') ?? '');
 
-/** `?estate-bench=1`: the engine runs the §12.4 benchmark route by itself once live (engineApi `bench`). */
-export const benchFromSearch = (search: string): boolean => new URLSearchParams(search).get('estate-bench') === '1';
+/** `?estate-debug=1` or the bench: the engine's debug readouts and the HUD's debug row. */
+export const debugFromSearch = (search: string): boolean => new URLSearchParams(search).get('estate-debug') === '1' || benchFromSearch(search);
 
 /** The shortest and longest `?estate-release-ms=` honoured. */
 export const RELEASE_OVERRIDE_RANGE = [100, 30_000] as const;

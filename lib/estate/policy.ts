@@ -89,7 +89,7 @@ export interface EstatePolicyInput {
   engine: EstateEngineState;
   /** The engine's context is lost and not yet restored. Read only while the engine is 'ready'. */
   contextLost: boolean;
-  /** …and it was lost while frozen: not counted, re-created silently on reopen. */
+  /** …and it was lost while frozen: not counted; seen again unrestored, it is released and loaded afresh. */
   lostWhileFrozen: boolean;
   /** How long the window has been closed, ms. Ignored while open; NaN counts as just closed. */
   closedMs: number;
@@ -212,7 +212,12 @@ export const resolveEstatePhase = (input: EstatePolicyInput): EstatePhaseResult 
       const liveLoss = input.contextLost && !input.lostWhileFrozen;
       if (liveLoss && (input.lostMs ?? 0) >= RESTORE_TIMEOUT_MS) return result('unavailable', lean, ESTATE_REASONS.noRestore);
       if (input.open && input.onscreen && !input.hidden) {
-        // A loss taken while frozen is the engine's to re-create on resume, unseen.
+        // A loss taken while frozen and not restored by the time the window is
+        // seen again cannot draw: a browser that dropped a background context,
+        // or WEBGL_lose_context, may never send the restore. The instance is
+        // released (pose kept) and loaded afresh from the HTTP cache, unseen
+        // (§7.10's "re-creates silently on reopen"), never shown live on a dead canvas.
+        if (input.contextLost && input.lostWhileFrozen) return result('released', lean);
         return liveLoss ? result('lost', lean, ESTATE_REASONS.lost) : result('live', lean, undefined, { claimGpu: input.focused });
       }
       if (!input.open && (input.closedByDesk === true || input.closedMs >= RELEASE_AFTER_MS)) return result('released', lean);
@@ -226,8 +231,9 @@ export const resolveEstatePhase = (input: EstatePolicyInput): EstatePhaseResult 
 /**
  * The shell's loss record after a loss at nowMs: earlier times still inside the
  * reset window, plus this one unless it happened while frozen. A frozen loss is
- * not counted (§7.10): browsers drop background contexts freely, and the
- * engine re-creates its own on resume. Rare, so it returns a fresh array.
+ * not counted (§7.10): browsers drop background contexts freely, and an
+ * instance seen again unrestored is released and loaded afresh
+ * (resolveEstatePhase). Rare, so it returns a fresh array.
  */
 export const noteContextLoss = (lossTimesMs: readonly number[], nowMs: number, frozen: boolean): number[] => {
   const kept = lossTimesMs.filter((t) => t <= nowMs && nowMs - t <= RESET_WINDOW_MS);

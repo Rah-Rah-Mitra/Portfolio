@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
-  BenchSegment, benchVerdict, GAP_MS, isEstatePath, MAX_CHANGES_PER_SEGMENT, percentile, segmentAt, summariseSegment,
+  BenchSegment, benchVerdict, GAP_MS, isEstatePath, MAX_CHANGES_PER_SEGMENT, OFF_ROUTE_SEGMENTS, percentile, segmentAt, summariseSegment,
   ZERO_BYTE_SEGMENTS, type BenchFrame, type BenchSegmentReport,
 } from '../lib/estate/bench';
 import { DROP_FACTOR } from '../lib/estate/governorCore';
@@ -20,7 +20,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 
 const frame = (overrides: Partial<BenchFrame> = {}): BenchFrame => ({
   interval: 16.7, continuous: true, judgedMs: 16.7, cpuMs: 1, gpuMs: Number.NaN, draws: 20, tris: 1000, gpuBytes: 12e6,
-  programs: 6, tier: 'min', pixelRatio: 1, ...overrides,
+  programs: 6, tier: 'min', pixelRatio: 1, excluded: false, settling: false, ...overrides,
 });
 
 describe('BenchSegment and its summary', () => {
@@ -60,11 +60,25 @@ describe('BenchSegment and its summary', () => {
     expect(r.droppedPct).toBe(75);
   });
 
+  it('keeps G3’s figures beside the raw ones: upload, compile and resize frames left out, and the first 5 s after a notch for "settled"', () => {
+    const s = new BenchSegment('blk509-void-deck', 0);
+    s.frame(frame({ interval: 120, excluded: true })); // an upload frame: a drop and a gap, raw only
+    s.frame(frame({ interval: 60, settling: true })); // after a notch: G3, not settled
+    for (let i = 0; i < 8; i += 1) s.frame(frame()); // clean
+    s.endMs = 1000;
+    const r = summariseSegment(s);
+    expect(r).toMatchObject({ sampled: 10, droppedPct: 20, gaps: 2 });
+    expect(r.g3).toEqual({ sampled: 9, excluded: 1, droppedPct: 11.1, intervalP99: 60, cpuP95: 1, gaps: 1 });
+    expect(r.settled).toEqual({ sampled: 8, droppedPct: 0, intervalP99: 16.7 });
+  });
+
   it('says nothing it did not measure', () => {
     const s = new BenchSegment('esc-overview', 0);
     s.endMs = 10;
     const r = summariseSegment(s);
     expect([r.droppedPct, r.intervalP50, r.cpuP95, r.gpuP95, r.gpuMB, r.longTasks.maxMs]).toEqual([null, null, null, null, null, null]);
+    expect(r.g3).toEqual({ sampled: 0, excluded: 0, droppedPct: null, intervalP99: null, cpuP95: null, gaps: 0 });
+    expect(r.settled).toEqual({ sampled: 0, droppedPct: null, intervalP99: null });
     expect(s.ok).toBe(true);
     s.note('not in Overview', true);
     expect(summariseSegment(s).ok).toBe(false);
@@ -98,21 +112,41 @@ describe('benchVerdict (§12.4 pass)', () => {
     return { ...summariseSegment(s), ...overrides };
   };
 
+  const NO_G3 = { dropped: null, p99: null, settledDropped: null, settledP99: null };
+
   it('passes a clean route', () => {
     expect(benchVerdict(['s1-first-frame', ...ZERO_BYTE_SEGMENTS].map((name) => report(name)))).toEqual({
-      routeOk: true, governorOk: true, bytesOnMoves: [], longTasks: [], gaps: [],
+      routeOk: true, governorOk: true, bytesOnMoves: [], longTasks: [], gaps: [], g3: NO_G3,
+    });
+  });
+
+  it('names the worst G3 figures on §12.4’s route, leaving out the load and the recovery leg', () => {
+    const g3 = (droppedPct: number, intervalP99: number) => ({ sampled: 100, excluded: 0, droppedPct, intervalP99, cpuP95: 1, gaps: 0 });
+    const verdict = benchVerdict([
+      report('s1-first-frame', { g3: g3(90, 900) }),
+      report('s2-orbit', { g3: g3(4, 30), settled: { sampled: 50, droppedPct: 1, intervalP99: 20 } }),
+      report('nc514-hall', { g3: g3(2, 45), settled: { sampled: 50, droppedPct: 3, intervalP99: 40 } }),
+      report('bs1-recovery', { g3: g3(50, 200) }),
+    ]);
+    expect(OFF_ROUTE_SEGMENTS).toEqual(['s1-first-frame', 'bs1-recovery']);
+    expect(verdict.g3).toEqual({
+      dropped: { pct: 4, segment: 's2-orbit' },
+      p99: { ms: 45, segment: 'nc514-hall' },
+      settledDropped: { pct: 3, segment: 'nc514-hall' },
+      settledP99: { ms: 40, segment: 'nc514-hall' },
     });
   });
 
   it(`fails more than ${MAX_CHANGES_PER_SEGMENT} notch changes in a segment, a download on a storey move, a refused leg`, () => {
     const verdict = benchVerdict([
-      report('s2-orbit', { governorChanges: MAX_CHANGES_PER_SEGMENT + 1, gaps: 3 }),
+      report('s2-orbit', { governorChanges: MAX_CHANGES_PER_SEGMENT + 1, gaps: 3, g3: { sampled: 10, excluded: 2, droppedPct: null, intervalP99: null, cpuP95: null, gaps: 1 } }),
+      report('bs1-street', { gaps: 2 }), // raw gaps only (upload frames): not G3's
       report('lift-l12', { requests: 1, bytes: 300 }),
       report('blk509-void-deck', { requests: 16 }), // entering downloads, by design
       report('mscp-ramp', { ok: false, longTasks: { count: 1, maxMs: 80, totalMs: 80 } }),
     ]);
     expect(verdict).toEqual({
-      routeOk: false, governorOk: false, bytesOnMoves: ['lift-l12'], longTasks: ['mscp-ramp'], gaps: ['s2-orbit'],
+      routeOk: false, governorOk: false, bytesOnMoves: ['lift-l12'], longTasks: ['mscp-ramp'], gaps: ['s2-orbit'], g3: NO_G3,
     });
   });
 });
@@ -191,6 +225,9 @@ describe('?estate-bench=1', () => {
     expect(benchFromSearch('?app=world-3d&estate-bench=1')).toBe(true);
     expect(debugFromSearch('?app=world-3d&estate-bench=1')).toBe(true);
     expect(benchFromSearch('?estate-bench=true')).toBe(false);
+    // Maximised (§12.4's "default size and maximised"): the bench presses Maximize itself.
+    expect(benchFromSearch('?estate-bench=max')).toBe(true);
+    expect(debugFromSearch('?estate-bench=max')).toBe(true);
     expect(benchFromSearch('?estate-debug=1')).toBe(false);
     expect(benchFromSearch('')).toBe(false);
   });
@@ -200,11 +237,8 @@ describe('?estate-bench=1', () => {
     expect(index).toMatch(/if \(options\.bench\) \{[\s\S]{0,200}import\('\.\/bench'\)/);
     const controller = await readFile(path.join(root, 'components/workbench/estate/EstateController.tsx'), 'utf8');
     expect(controller).toContain('bench: benchFromSearch(search)');
-    // No static import of the bench anywhere: it must stay a chunk of its own.
-    const files = ['engine/index.ts', 'engine/core.ts', 'engine/controls/index.ts', 'live/EstateHud.tsx', 'EstateController.tsx', 'loadEngine.ts'];
-    for (const file of files) {
-      const text = await readFile(path.join(root, 'components/workbench/estate', file), 'utf8');
-      expect(text, file).not.toMatch(/from ['"][./]*bench['"]/);
-    }
+    // No static import of the bench anywhere, in any spelling: tests/estate-boundary.test.ts
+    // checks every file of the app with the TypeScript parser, and the build's
+    // check-bundle fails a Load click or main bundle that carries its schema string.
   });
 });

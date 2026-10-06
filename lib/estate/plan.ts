@@ -159,6 +159,59 @@ export const rayFloor = (origin: ArrayLike<number>, direction: ArrayLike<number>
   return out;
 };
 
+/** A run of this many rooms of one kind outside any flat gets a heading of its own in the room list. */
+export const ROOM_KIND_GROUP_MIN = 6;
+/** The heading of the rooms that belong to no flat and to no kind numerous enough for its own. */
+export const COMMON_AREAS = 'Common areas';
+
+/**
+ * What a room outside a flat is, from its label: the words before the first one
+ * that carries a number, a '#' or a bracket ('Car lot L2-001 (S)' → 'Car lot',
+ * 'Shop unit #02-01' → 'Shop unit', 'Seating area north' as it stands).
+ */
+export const roomKind = (label: string): string => {
+  const words = label.split(' ');
+  const end = words.findIndex((word) => /[\d#(]/.test(word));
+  return (end < 0 ? words : words.slice(0, end)).join(' ') || label;
+};
+
+export interface RoomGroup {
+  /** The heading and the group's accessible name: '#05-101', 'Car lots', 'Common areas'. */
+  name: string;
+  /** Indices into the storey's room list, in list order. */
+  rooms: number[];
+}
+
+/**
+ * The room list's groups (§8.1 "the side-panel room list"): each flat's rooms
+ * under its number; outside the flats, a kind with at least ROOM_KIND_GROUP_MIN
+ * rooms under its plural ('Hawker stalls', 'Shop units', 'Car lots',
+ * 'Motorcycle lots'), and everything else under COMMON_AREAS. Groups come in the
+ * order their first room does, so the hawker centre's L1 reads stalls, shops,
+ * then its common areas, and a block's typical storey its flats, then its
+ * corridor, chutes and stairs. Rooms keep their list order inside a group.
+ */
+export const roomGroups = (rooms: readonly { label: string; flat: string | null }[]): RoomGroup[] => {
+  const counts = new Map<string, number>();
+  for (const room of rooms) {
+    if (room.flat) continue;
+    const kind = roomKind(room.label);
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  const groups = new Map<string, RoomGroup>();
+  rooms.forEach((room, index) => {
+    let name = room.flat;
+    if (!name) {
+      const kind = roomKind(room.label);
+      name = (counts.get(kind) ?? 0) >= ROOM_KIND_GROUP_MIN ? (kind.endsWith('s') ? kind : `${kind}s`) : COMMON_AREAS;
+    }
+    let group = groups.get(name);
+    if (!group) groups.set(name, (group = { name, rooms: [] }));
+    group.rooms.push(index);
+  });
+  return [...groups.values()];
+};
+
 /** A room as the HUD and the list show it: '#05-104 · Living / Dining', or 'Common corridor'. */
 export const roomText = (room: { label: string; flat: string | null }): string =>
   room.flat ? `${room.flat} · ${room.label}` : room.label;

@@ -4,7 +4,7 @@ import {
 } from '../../../../lib/estate/announce';
 import type { EstateViewMode } from '../../../../lib/estate/frames';
 import { ESTATE_SITE_STOREYS, ESTATE_STOREY_FFL, type EstateSiteId, type EstateStoreyTag } from '../../../../lib/estate/ids';
-import { cutText, roomText } from '../../../../lib/estate/plan';
+import { cutText, roomGroups, roomText } from '../../../../lib/estate/plan';
 import { enterLabel } from '../../../../lib/estate/policy';
 import type {
   EstateEngine, EstateEngineEvent, EstateHudProps, EstatePlanView, EstatePopover, EstateProgressEvent, EstateStatsEvent, EstateView,
@@ -639,20 +639,48 @@ const PlanStrip: React.FC<{
   );
 };
 
+/** The window's stage, from anything inside div#world (the side panel is outside the HUD's root). */
+const stageNear = (el: Element | null) => el?.closest('#world')?.querySelector<HTMLElement>('[data-estate-stage]') ?? null;
+
 /**
  * Plan's room list (P6, §8.1 "the side-panel room list"), drawn in the side
  * panel above BUILDINGS through the window's side slot, with the HUD's props:
- * every room of the storey, grouped by flat, each a toggle that picks it (the
- * pick's outline on the floor, as a click or the arrows would), and Walk in
- * beside the list for the picked one. It subscribes to the engine itself and
- * draws nothing outside Plan. A new plan scrolls the side panel to it, and the
- * picked row is kept in view inside the list's own scroller: only those two
- * scrollers move, never the page.
+ * every room of the storey, grouped by flat (lib/estate/plan.ts roomGroups:
+ * a building's stalls, shops and lots under their own headings), each a toggle
+ * that picks it (the engine marks it under the cut and frames it), and
+ * "Walk into …" under the list for the picked one, in a slot that
+ * is always there so a first pick moves no row. The list is ONE Tab stop
+ * (a roving tabindex): ↑/↓ (and ←/→) move to the next room and pick it, as
+ * the stage's ↑/↓ do, wrapping at the ends; Home/End go to the first and last.
+ * Walking in hands the keys to the stage, and when Plan ends under a focused
+ * control (Esc on a room, Walk in) focus goes to the stage, never the page,
+ * so the next Esc never skips the window's layers. It subscribes to the
+ * engine itself and draws nothing outside Plan. A new plan scrolls the side
+ * panel to it, and the picked row is kept in view inside the list's own
+ * scroller: only those two scrollers move, never the page.
  */
 export function EstatePlanRooms({ engine, phase }: EstateHudProps): React.ReactElement | null {
   const [plan, setPlan] = React.useState<EstatePlanView | null>(() => engine.getView().plan ?? null);
   const listRef = React.useRef<HTMLDivElement>(null);
   const sectionRef = React.useRef<HTMLElement>(null);
+  // The roving stop's fallback when nothing is picked: the room last focused, for this plan only.
+  const [cursor, setCursor] = React.useState<{ key: string; index: number } | null>(null);
+  // An arrow's move: focus the room after the commit that marks it pressed, so it is read as such.
+  const focusAfter = React.useRef<number | null>(null);
+  // The control that last held focus here, and the stage to hand it to if it dies.
+  const lastFocus = React.useRef<{ el: HTMLElement; stage: HTMLElement | null } | null>(null);
+  React.useLayoutEffect(() => {
+    const index = focusAfter.current;
+    focusAfter.current = null;
+    if (index !== null) listRef.current?.querySelector<HTMLElement>(`[data-estate-room="${index}"]`)?.focus({ preventScroll: true });
+    const last = lastFocus.current;
+    if (!last || (last.el.isConnected && (last.el as HTMLButtonElement).disabled !== true)) return;
+    lastFocus.current = null;
+    const active = document.activeElement;
+    if (active !== null && active !== document.body && active !== last.el) return;
+    if (last.stage?.isConnected) last.stage.focus({ preventScroll: true });
+  });
+  const groups = React.useMemo(() => roomGroups(plan?.rooms ?? []), [plan?.rooms]);
   // A new plan (building or storey) brings the list into the side panel's view:
   // the panel was likely scrolled to the building rows that led here.
   const shown = plan ? `${plan.site} ${plan.storey}` : null;
@@ -677,44 +705,93 @@ export function EstatePlanRooms({ engine, phase }: EstateHudProps): React.ReactE
     if (top < list.scrollTop) list.scrollTop = Math.max(0, top - 4);
     else if (top + picked.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = top + picked.offsetHeight + 4 - list.clientHeight;
   }, [plan?.room, plan?.rooms]);
-  if (!plan) return null;
+  if (!plan || !shown) return null;
   const live = phase === 'live';
-  const groups: Array<{ flat: string | null; items: Array<{ index: number; label: string }> }> = [];
-  plan.rooms.forEach((room, index) => {
-    const last = groups[groups.length - 1];
-    if (last && last.flat === room.flat) last.items.push({ index, label: room.label });
-    else groups.push({ flat: room.flat, items: [{ index, label: room.label }] });
-  });
-  const picked = plan.room >= 0 ? plan.rooms[plan.room] : null;
+  const order = groups.flatMap((group) => group.rooms);
+  const picked = plan.room >= 0 ? plan.rooms[plan.room] ?? null : null;
+  const remembered = cursor?.key === shown && cursor.index < plan.rooms.length ? cursor.index : -1;
+  const tabStop = picked ? plan.room : remembered >= 0 ? remembered : order[0] ?? -1;
   const where = `${siteSpokenName(plan.site)}, ${plan.storey}`;
+  /** ↑/↓ (←/→) to the next room, wrapping, Home/End to the ends: each move picks, as the stage's arrows do. */
+  const onListKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const from = Number((event.target as HTMLElement).getAttribute?.('data-estate-room'));
+    const at = order.indexOf(from);
+    if (at < 0 || event.altKey || event.ctrlKey || event.metaKey) return;
+    let to: number;
+    switch (event.key) {
+      case 'ArrowDown': case 'ArrowRight': to = (at + 1) % order.length; break;
+      case 'ArrowUp': case 'ArrowLeft': to = (at - 1 + order.length) % order.length; break;
+      case 'Home': to = 0; break;
+      case 'End': to = order.length - 1; break;
+      default: return;
+    }
+    event.preventDefault();
+    const index = order[to];
+    setCursor({ key: shown, index });
+    // A pick re-renders the row as pressed (the engine reports it synchronously):
+    // focus it after that commit, so it is read pressed. Refused or already
+    // picked, there is nothing to wait for.
+    if (index !== plan.room && engine.pickRoom(index)) focusAfter.current = index;
+    else listRef.current?.querySelector<HTMLElement>(`[data-estate-room="${index}"]`)?.focus({ preventScroll: true });
+  };
   return (
-    <section className="wb-estate-rooms" ref={sectionRef} aria-label={`Rooms of ${where}`} data-estate-rooms>
+    <section
+      className="wb-estate-rooms"
+      ref={sectionRef}
+      aria-label={`Rooms of ${where}`}
+      data-estate-rooms
+      onFocus={(event) => { lastFocus.current = { el: event.target as HTMLElement, stage: stageNear(event.currentTarget) }; }}
+      onBlur={(event) => {
+        const next = event.relatedTarget as Node | null;
+        if (next && !event.currentTarget.contains(next)) lastFocus.current = null;
+      }}
+    >
       <p className="wb-estate-head">{`ROOMS — ${siteChipLabel(plan.site)} · ${plan.storey}`}</p>
       {!plan.ready && <p className="wb-estate-state">Loading the rooms…</p>}
-      {picked && (
-        <button type="button" className="btn btn-secondary wb-estate-site-act" disabled={!live} data-estate-rooms-walkin onClick={() => engine.walkIn()}>
-          {`Walk into ${roomText(picked)}`}
-        </button>
-      )}
       {plan.ready && (
-        <div className="wb-estate-rooms-list" ref={listRef} data-estate-scroll>
+        <div
+          className="wb-estate-rooms-list"
+          ref={listRef}
+          role="toolbar"
+          aria-orientation="vertical"
+          aria-label="Rooms: arrows move and pick"
+          data-estate-scroll
+          onKeyDown={onListKey}
+        >
           {groups.map((group) => (
-            <div key={group.flat ?? 'common'} className="wb-estate-rooms-group" role="group" aria-label={group.flat ?? 'Common areas'}>
-              <p className="wb-estate-rooms-flat" aria-hidden="true">{group.flat ?? 'Common areas'}</p>
-              {group.items.map((item) => (
+            <div key={group.name} className="wb-estate-rooms-group" role="group" aria-label={group.name}>
+              <p className="wb-estate-rooms-flat" aria-hidden="true">{group.name}</p>
+              {group.rooms.map((index) => (
                 <button
-                  key={item.index}
+                  key={index}
                   type="button"
                   className="wb-estate-room"
                   disabled={!live}
-                  aria-pressed={item.index === plan.room}
-                  data-estate-room={item.index}
-                  onClick={() => engine.pickRoom(item.index === plan.room ? null : item.index)}
-                >{item.label}</button>
+                  tabIndex={index === tabStop ? 0 : -1}
+                  aria-pressed={index === plan.room}
+                  data-estate-room={index}
+                  onFocus={() => setCursor({ key: shown, index })}
+                  onClick={() => engine.pickRoom(index === plan.room ? null : index)}
+                >{plan.rooms[index].label}</button>
               ))}
             </div>
           ))}
         </div>
+      )}
+      {plan.ready && (
+        <button
+          type="button"
+          className="btn btn-secondary wb-estate-site-act"
+          disabled={!live || !picked}
+          data-estate-rooms-walkin
+          onClick={(event) => {
+            // The list goes with Plan either way: the keys go to the stage, pointer or keyboard.
+            const stage = stageNear(event.currentTarget);
+            if (engine.walkIn()) stage?.focus({ preventScroll: true });
+          }}
+        >
+          {picked ? `Walk into ${roomText(picked)}` : 'Pick a room to walk in'}
+        </button>
       )}
     </section>
   );

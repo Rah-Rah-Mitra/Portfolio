@@ -1,5 +1,5 @@
 import {
-  benchVerdict, BenchSegment, segmentAt, summariseSegment, type BenchSegmentReport, type BenchVerdict,
+  benchVerdict, BenchSegment, segmentAt, SETTLED_AFTER_MS, summariseSegment, type BenchSegmentReport, type BenchVerdict,
 } from '../../../../lib/estate/bench';
 import { judgedPeriod } from '../../../../lib/estate/governorCore';
 import type { EstateSiteId, EstateStoreyTag } from '../../../../lib/estate/ids';
@@ -29,6 +29,13 @@ import type { EngineInternals } from './index';
 // fly-to lands and so which entrance Enter picks, cannot change the route: the
 // step-button routes are the e2e tour's. A leg that cannot run as written says
 // so in its notes and is marked not ok; the route goes on.
+//
+// `?estate-bench=max` runs it in the maximised window (§12.4's "default size and
+// maximised"): the bench presses the window's Maximize before the first frame,
+// and the report's meta says which and gives the canvas's CSS size. One run per
+// page: an engine released mid-route (the window closed 30 s, DESK) ends it at
+// its next step — every wait checks the core — and the report says so; a later
+// instance on the same page does not start another (reload to run again).
 
 export const BENCH_SCHEMA = 'portfolio/estate-bench/1';
 
@@ -42,6 +49,9 @@ export interface BenchReport {
 }
 
 type BenchWindow = Window & { __estateBench?: BenchReport };
+
+/** The page's one run (see above). */
+let started = false;
 
 const SETTLE_QUIET_MS = 700;
 const SETTLE_TIMEOUT_MS = 30_000;
@@ -94,22 +104,38 @@ export const runBench = async (internals: EngineInternals, startedAt: number): P
   const scope = window as BenchWindow;
   const segments: BenchSegment[] = [];
   const report: BenchReport = { schema: BENCH_SCHEMA, state: 'running', meta: {}, segments: [], verdict: null, error: null };
+  if (started) {
+    report.state = 'failed';
+    report.error = 'one bench per page: this one already ran or is running (reload to run again)';
+    console.info('[estate-bench]', report.error);
+    return report;
+  }
+  started = true;
   scope.__estateBench = report;
   let current: BenchSegment | null = null;
   let lastFrame = Number.NaN;
   let failure: string | null = null;
+  // Frames before this + SETTLED_AFTER_MS are "settling" (live, then each notch change).
+  let settleFrom = Number.POSITIVE_INFINITY;
+  const maximised = new URLSearchParams(location.search).get('estate-bench') === 'max';
+  if (maximised) {
+    const section = host.closest('section[data-win="world-3d"]');
+    section?.querySelector<HTMLButtonElement>('button[aria-label^="Maximize"]')?.click();
+  }
 
   // The render core's tap: one call per drawn frame and per notch change.
   const probe: EngineProbe = {
-    frame: (time, continuous, cpuMs, stats, governor) => {
+    frame: (time, continuous, cpuMs, stats, governor, excluded) => {
       const interval = time - lastFrame;
       lastFrame = time;
       current?.frame({
         interval, continuous, judgedMs: judgedPeriod(governor.state), cpuMs, gpuMs: governor.lastGpuMs,
         draws: stats.draws, tris: stats.tris, gpuBytes: stats.gpuBytes, programs: stats.programs, tier: stats.tier, pixelRatio: stats.pixelRatio,
+        excluded, settling: time < settleFrom + SETTLED_AFTER_MS,
       });
     },
     notch: (change) => {
+      settleFrom = performance.now();
       current?.changes.push(`${change.decision} → ${change.notch.tier} ×${change.notch.pixelRatio}`);
     },
   };
@@ -136,11 +162,21 @@ export const runBench = async (internals: EngineInternals, startedAt: number): P
   };
   const pending = (): number => core.streaming?.pending ?? 0;
 
+  /** Throws once the engine has gone (released, failed): the route stops at its next step. */
+  const alive = () => {
+    if (core.isDisposed) throw new Error('engine disposed: the window was released mid-route');
+    if (failure) throw new Error(`engine ${failure}`);
+  };
+  /** A pause in a leg, ended early by nothing, checked on waking. */
+  const wait = async (ms: number) => {
+    await sleep(ms);
+    alive();
+  };
   /** Poll until `test` holds (true) or the timeout passes (false). */
   const until = async (test: () => boolean, timeoutMs: number): Promise<boolean> => {
     const end = performance.now() + timeoutMs;
     for (;;) {
-      if (failure) throw new Error(`engine ${failure}`);
+      alive();
       if (test()) return true;
       if (performance.now() > end) return false;
       await sleep(POLL_MS);
@@ -199,6 +235,7 @@ export const runBench = async (internals: EngineInternals, startedAt: number): P
   };
   /** Hold keys on the stage (keydown on it, keyup on window, as the controls listen) for at most `ms` or until `test`. */
   const hold = async (codes: string[], ms: number, test: () => boolean): Promise<boolean> => {
+    alive();
     const shiftKey = codes.some((code) => code.startsWith('Shift'));
     for (const code of codes) host.dispatchEvent(new KeyboardEvent('keydown', { code, shiftKey, bubbles: false, cancelable: true }));
     try {
@@ -218,7 +255,11 @@ export const runBench = async (internals: EngineInternals, startedAt: number): P
   try {
     const s1 = begin('s1-first-frame', startedAt);
     if (!(await until(() => core.isReady, 120_000))) s1.note('not live within 120 s', true);
+    settleFrom = performance.now();
     report.meta = {
+      token: core.options.token,
+      window: maximised ? 'maximised' : 'default',
+      viewport: `${innerWidth}×${innerHeight}`,
       userAgent: navigator.userAgent,
       renderer: rendererName(host),
       tierStart: core.tier,
@@ -243,11 +284,11 @@ export const runBench = async (internals: EngineInternals, startedAt: number): P
       // A full turn in 24 steps of 15°, then three zooms in and out: every building at F.
       for (let i = 0; i < 24; i += 1) {
         if (!engine.walkStep('turn-left')) segment.note('orbit step refused', true);
-        await sleep(150);
+        await wait(150);
       }
       for (const kind of ['forward', 'forward', 'forward', 'back', 'back', 'back'] as const) {
         engine.walkStep(kind);
-        await sleep(250);
+        await wait(250);
       }
     });
 
@@ -255,8 +296,11 @@ export const runBench = async (internals: EngineInternals, startedAt: number): P
       if (!check(segment, engine.walkFrom('BS1'), 'walkFrom BS1')) return;
       await settle(segment);
       engine.setStick(0, 1);
-      await sleep(3000);
-      engine.setStick(0, 0);
+      try {
+        await wait(3000);
+      } finally {
+        engine.setStick(0, 0);
+      }
     });
 
     await leg('blk509-void-deck', async (segment) => {

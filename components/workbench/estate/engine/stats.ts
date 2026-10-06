@@ -32,6 +32,8 @@ export const READOUT_ATTRIBUTES = {
   ms: 'data-estate-ms',
   programs: 'data-estate-programs',
   band: 'data-estate-band',
+  /** Downloads in flight plus a compile under way (core.ts progress), written as it changes, not per frame. */
+  pending: 'data-estate-pending',
 } as const;
 
 /** What a readout write puts on the host: attribute → value, null to remove. */

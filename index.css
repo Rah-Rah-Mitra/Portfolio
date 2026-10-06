@@ -1039,11 +1039,14 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 /* The HUD's Enter or Exit, mirrored under the row it acts on. */
 .wb-estate-site-act { margin: 4px 0 6px 6px; font-size: 11px; padding: 4px 8px; }
 /* Plan's room list (P6), above BUILDINGS while in Plan: grouped by flat, in a
-   scroller of its own (padding keeps the focus ring and its offset unclipped). */
+   scroller of its own (padding keeps the focus ring and its offset unclipped).
+   Its scroll chains to the side panel at either end (no overscroll-behavior), so
+   a wheel over it still reaches BUILDINGS. "Walk into …" sits under it in a slot
+   that is always drawn, so the first pick moves no row under the pointer. */
 .wb-estate-rooms { margin: 0 0 12px; }
-.wb-estate-rooms .wb-estate-site-act { margin: 2px 0 6px; text-align: left; }
+.wb-estate-rooms .wb-estate-site-act { margin: 6px 0 0; text-align: left; }
 .wb-estate-rooms-list {
-  max-height: 260px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+  max-height: 260px; overflow-y: auto; scrollbar-width: thin;
   padding: 0 5px 4px 4px; border-top: 1px solid var(--ink-8);
 }
 .wb-estate-rooms-group { display: flex; flex-wrap: wrap; gap: 3px; padding: 5px 0 7px; border-bottom: 1px solid var(--ink-8); }

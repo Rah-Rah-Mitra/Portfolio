@@ -387,6 +387,35 @@ describe('Estate window — lifecycle', () => {
     expect(instances[1].token).not.toBe(engine.token);
   });
 
+  it('a context lost while closed and never restored is released on reopen and loaded afresh, never shown live on the dead one', async () => {
+    const { container, engine, rerender } = await mountLive();
+    const resumes = vi.mocked(engine.resume).mock.calls.length;
+    rerender(<Desk open={false} />);
+    await flush();
+    engine.emit({ type: 'lost', frozen: true });
+    await flush();
+    expect(phaseOf(container)).toBe('frozen'); // uncounted, unseen
+    const seen: string[] = [];
+    const observer = new MutationObserver(() => seen.push(String(phaseOf(container))));
+    observer.observe(container.querySelector('#world')!, { attributes: true, attributeFilter: ['data-estate-phase'] });
+    rerender(<Desk open />);
+    await flush();
+    expect(engine.dispose).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(engine.resume).mock.calls.length).toBe(resumes);
+    runIdle();
+    await flush();
+    expect(instances).toHaveLength(2);
+    expect(instances[1].options.resume).toEqual({ mode: 'overview', selection: null, position: [1, 2, 3], target: [4, 5, 6] });
+    instances[1].emit({ type: 'ready', tier: 'mid', msaa: false, programs: 6 });
+    await flush();
+    observer.disconnect();
+    expect(phaseOf(container)).toBe('live');
+    // Live only once the new instance is: never on the lost one, never a failure.
+    expect(seen.indexOf('live')).toBe(seen.length - 1);
+    expect(seen).not.toContain('lost');
+    expect(seen).not.toContain('unavailable');
+  });
+
   it('holds the GPU only while live, focused and under no panel', async () => {
     const { engine, rerender } = await mountLive();
     expect(isGpuClaimed()).toBe(true);
@@ -508,14 +537,19 @@ describe('Estate window — failures', () => {
     expect(engine.dispose).toHaveBeenCalledTimes(1);
   });
 
-  it('a loss while frozen is not counted and shows nothing', async () => {
+  it('a loss while frozen is not counted and shows nothing: restored meanwhile, the same instance is live on reopen', async () => {
     const { container, engine, rerender } = await mountLive();
     rerender(<Desk open={false} />);
     await flush();
     engine.emit({ type: 'lost', frozen: true });
+    await flush();
+    expect(phaseOf(container)).toBe('frozen');
+    engine.emit({ type: 'restored' });
     rerender(<Desk open />);
     await flush();
     expect(phaseOf(container)).toBe('live');
+    expect(engine.dispose).not.toHaveBeenCalled();
+    // (Not restored by the time it is seen: released and loaded afresh, the lifecycle case above.)
   });
 
   it('no WebGL2: unavailable, the engine disposed, the registry still there', async () => {
@@ -1026,6 +1060,126 @@ describe('Estate window — Walk, with the real HUD module inside the workbench'
     act(() => engine.setView({ location: { site: 'BLK_509', storey: 'L5', unit: null, room: null, mode: 'walk' }, selection: 'BLK_509', walk: WALK }));
     expect(container.querySelector('[data-estate-enter]')).toBeNull();
     expect(container.querySelector('[data-estate-row-action="exit"]')).not.toBeNull();
+  });
+});
+
+describe('Estate window — Plan’s room list, with the real HUD module inside the workbench (the P6/P7 review)', () => {
+  const ROOMS = Object.freeze([
+    Object.freeze({ name: '#05-101 LD', label: 'Living / Dining', flat: '#05-101' }),
+    Object.freeze({ name: '#05-101 BED', label: 'Bedroom', flat: '#05-101' }),
+    Object.freeze({ name: 'L5-CORR', label: 'Common corridor', flat: null }),
+  ]);
+  const PLAN_LOCATION = { site: 'BLK_509' as const, storey: 'L5' as const, unit: null, room: null, mode: 'plan' as const };
+
+  /** FieldWorkbench with the real HUD and room list over a fake engine in Plan on Blk 509 L5, whose walkIn, pickRoom and Esc layers act. */
+  const mountPlan = async () => {
+    window.history.replaceState(null, '', '/?app=world-3d');
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal('IntersectionObserver', class { observe = vi.fn(); unobserve = vi.fn(); disconnect = vi.fn(); });
+    const ctx = new Proxy({} as Record<string | symbol, unknown>, { get: (target, key) => (target[key] ??= vi.fn()) });
+    vi.mocked(HTMLCanvasElement.prototype.getContext).mockImplementation(() => ctx as never);
+    const runFrames = () => act(() => { for (let i = 0; i < frames.length && i < 200; i += 1) frames[i]!(16 * i); frames.length = 0; });
+    const { EstateHud, EstatePlanRooms } = await import('../components/workbench/estate/live/EstateHud');
+    const { default: FieldWorkbench } = await import('../components/workbench/FieldWorkbench');
+    loadMock.mockResolvedValue({ createEngine: runtime.createEngine, EstateHud, EstatePlanRooms });
+    const view = render(<ExperienceModeProvider capabilities={ALLOWED}><FieldWorkbench /></ExperienceModeProvider>);
+    runFrames();
+    await flush();
+    runIdle();
+    await flush();
+    const engine = instances[0];
+    Object.assign(engine.features, { walk: true, enter: true, interiors: true, plan: true });
+    const inPlan = (room = -1): Partial<EstateView> => ({
+      location: PLAN_LOCATION, selection: 'BLK_509',
+      plan: { site: 'BLK_509', storey: 'L5', cut: 1.2, rooms: ROOMS, ready: true, room },
+    });
+    engine.pickRoom = vi.fn((index: number | null) => { engine.setView(inPlan(index ?? -1)); return true; });
+    engine.walkIn = vi.fn(() => {
+      engine.setView({ plan: null, location: { site: 'BLK_509', storey: 'L5', unit: '#05-101', room: 'Bedroom', mode: 'walk' } });
+      return true;
+    });
+    engine.escape = vi.fn((action) => {
+      if (action === 'exit-plan') engine.setView({ plan: null, selection: null, location: { ...PLAN_LOCATION, storey: null, mode: 'overview' } });
+      else if (action === 'overview') engine.setView({ location: { ...engine.getView().location, mode: 'overview' } });
+      else if (action === 'clear-selection') engine.setView({ selection: null });
+      return action !== 'none';
+    });
+    engine.emit({ type: 'ready', tier: 'mid', msaa: false, programs: 6 });
+    await flush();
+    runFrames();
+    act(() => engine.setView(inPlan()));
+    const win = view.container.querySelector<HTMLElement>('[data-win="world-3d"]')!;
+    return { ...view, engine, win };
+  };
+
+  afterEach(() => { window.history.replaceState(null, '', '/'); });
+
+  it('is one Tab stop; its arrows pick; Walk into from the keyboard hands the keys to the stage, so Esc goes to Overview and keeps the window', async () => {
+    const { container, engine, win } = await mountPlan();
+    expect(phaseOf(container)).toBe('live');
+    const list = container.querySelector<HTMLElement>('aside [data-estate-rooms] [role="toolbar"]')!;
+    const room = (i: number) => list.querySelector<HTMLButtonElement>(`[data-estate-room="${i}"]`)!;
+    const walkInto = container.querySelector<HTMLButtonElement>('aside [data-estate-rooms-walkin]')!;
+    // One stop in the tab order; the slot under the list is there before any pick.
+    expect([0, 1, 2].map((i) => room(i).tabIndex)).toEqual([0, -1, -1]);
+    expect(walkInto.disabled).toBe(true);
+    expect(walkInto.textContent).toBe('Pick a room to walk in');
+    expect(walkInto.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    // ↓ picks the next room and moves there (after the commit that marks it pressed); End and ↓ wrap.
+    act(() => { room(0).focus(); });
+    act(() => { fireEvent.keyDown(room(0), { key: 'ArrowDown', code: 'ArrowDown' }); });
+    expect(engine.pickRoom).toHaveBeenLastCalledWith(1);
+    expect(document.activeElement).toBe(room(1));
+    expect(room(1).getAttribute('aria-pressed')).toBe('true');
+    expect([0, 1, 2].map((i) => room(i).tabIndex)).toEqual([-1, 0, -1]);
+    act(() => { fireEvent.keyDown(room(1), { key: 'End', code: 'End' }); });
+    expect(document.activeElement).toBe(room(2));
+    act(() => { fireEvent.keyDown(room(2), { key: 'ArrowDown', code: 'ArrowDown' }); });
+    expect(engine.pickRoom).toHaveBeenLastCalledWith(0);
+    expect(document.activeElement).toBe(room(0));
+    act(() => { fireEvent.keyDown(room(0), { key: 'ArrowDown', code: 'ArrowDown' }); });
+    // Walk into, from the keyboard (a click with detail 0): Walk, and the keys on the stage, not the page.
+    expect(walkInto.textContent).toBe('Walk into #05-101 · Bedroom');
+    act(() => { walkInto.focus(); });
+    act(() => { fireEvent.click(walkInto, { detail: 0 }); });
+    expect(engine.walkIn).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('[data-estate-rooms]')).toBeNull();
+    const stage = stageOf(container);
+    expect(document.activeElement).toBe(stage);
+    // Esc in Walk is Walk → Overview: the window stays.
+    act(() => { fireEvent.keyDown(stage, { key: 'Escape', code: 'Escape' }); });
+    expect(engine.escape).toHaveBeenLastCalledWith('overview');
+    await flush();
+    expect(win.style.display).toBe('flex');
+  });
+
+  it('Esc on a room leaves Plan with the keys on the stage; the next Esc minimises the window', async () => {
+    const { container, engine, win } = await mountPlan();
+    const room = container.querySelector<HTMLButtonElement>('aside [data-estate-room="0"]')!;
+    act(() => { room.focus(); });
+    act(() => { fireEvent.keyDown(room, { key: 'Escape', code: 'Escape' }); });
+    expect(engine.escape).toHaveBeenLastCalledWith('exit-plan');
+    expect(container.querySelector('[data-estate-rooms]')).toBeNull();
+    const stage = stageOf(container);
+    expect(document.activeElement).toBe(stage);
+    expect(win.style.display).toBe('flex');
+    act(() => { fireEvent.keyDown(stage, { key: 'Escape', code: 'Escape' }); });
+    await flush();
+    expect(win.style.display).toBe('none');
+  });
+
+  it('a focus request for the plan already shown is done: no fly-to back to Overview', async () => {
+    const { engine } = await mountPlan();
+    engine.planView = vi.fn(() => false); // the engine refuses the storey it already shows
+    act(() => { window.dispatchEvent(new CustomEvent(ESTATE_FOCUS_EVENT, { detail: { site: 'BLK_509', storey: 'L05' } })); });
+    expect(engine.planView).not.toHaveBeenCalled();
+    expect(engine.flyTo).not.toHaveBeenCalled();
+    expect(engine.getView().location.mode).toBe('plan');
+    // Another storey is a new plan.
+    act(() => { window.dispatchEvent(new CustomEvent(ESTATE_FOCUS_EVENT, { detail: { site: 'BLK_509', storey: 'L6' } })); });
+    expect(engine.planView).toHaveBeenLastCalledWith('BLK_509', 'L6');
   });
 });
 

@@ -587,6 +587,62 @@ describe.skipIf(!hasInteriors)('streaming the interior classes (engine/streaming
   }, 30_000);
 });
 
+describe.skipIf(!hasInteriors)('streaming: a want that flaps off after the bytes arrived (the P6/P7 review)', () => {
+  it('keeps the file, decodes it, and never asks for it again', async () => {
+    const pack = parsePack(JSON.parse(readFileSync(join(packDir, packFile as string), 'utf8')));
+    const scheduler = new EstateScheduler({ tier: 'high' });
+    const navPath = pack.sites[B509].nav!.path;
+    const calls = new Map<string, number>();
+    let release: (() => void) | null = null;
+    // The nav file's response is held until the test lets it go, and ignores the
+    // abort signal: its bytes had arrived when the want flapped.
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      const path = String(input).replace(/^\/estate\/v1\.2\//, '');
+      calls.set(path, (calls.get(path) ?? 0) + 1);
+      const body = readFileSync(join(packDir, ...path.split('/')));
+      if (path === navPath) await new Promise<void>((resolve) => { release = resolve; });
+      return new Response(body);
+    }) as typeof fetch;
+    const walking = { focus: 'BLK_509' as const, mode: 'walk' as const, lean: true, frozen: false };
+    const away = { focus: null, mode: 'overview' as const, lean: true, frozen: false };
+    let context: typeof walking | typeof away = walking;
+    const decoded: DecodedFile[] = [];
+    let progress = 0;
+    let streaming: Streaming;
+    const pump = () => streaming.pump(null, context);
+    streaming = new Streaming({
+      pack, base: '/estate/v1.2/', fetchImpl, scheduler, loader: createGlbLoader(), now: () => 0,
+      setTimer: () => undefined,
+      hooks: {
+        decoded: (file) => decoded.push(file),
+        wake: () => pump(),
+        fatal: (message) => { throw new Error(message); },
+        stale: (url) => { throw new Error(`stale ${url}`); },
+        progress: () => { progress += 1; },
+      },
+    });
+    pump();
+    for (let i = 0; i < 200 && !release; i += 1) await new Promise((r) => setTimeout(r, 5));
+    expect(release).not.toBeNull();
+    // The want goes (an overview with nothing focused): the fetch is aborted…
+    context = away;
+    pump();
+    // …and its bytes land anyway.
+    const before = progress;
+    release!();
+    for (let i = 0; i < 400 && !scheduler.isDone(navPath); i += 1) await new Promise((r) => setTimeout(r, 5));
+    expect(scheduler.isDone(navPath)).toBe(true);
+    expect(decoded.some((file) => file.info.id === navPath)).toBe(true);
+    expect(progress).toBeGreaterThan(before);
+    // Wanted again (the walker comes back): nothing is fetched twice.
+    context = walking;
+    pump();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(calls.get(navPath)).toBe(1);
+    streaming.close();
+  }, 30_000);
+});
+
 describe.skipIf(!hasInteriors)('the repeated storeys against the facade, as the engine places them (the P5 review)', () => {
   // Both files decoded with the engine's loader and parts, T placed by the
   // engine's own applyBand + writeTypical, then compared with F triangle by

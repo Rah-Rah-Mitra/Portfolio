@@ -6,9 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { ESTATE_SITE_IDS, ESTATE_SITE_STOREYS } from '../lib/estate/ids';
 import { parseNav, roomAt } from '../lib/estate/nav';
 import {
-  cutSpoken, cutText, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_CUT_MAX, PLAN_CUT_MIN, PLAN_ELEVATION_DEG, PLAN_POLAR,
-  rayFloor, ringCentroid, roomAnchor, roomSpoken, roomText, stepCut, walkInPoint,
+  COMMON_AREAS, cutSpoken, cutText, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_CUT_MAX, PLAN_CUT_MIN, PLAN_ELEVATION_DEG, PLAN_POLAR,
+  rayFloor, ringCentroid, ROOM_KIND_GROUP_MIN, roomAnchor, roomGroups, roomKind, roomSpoken, roomText, stepCut, walkInPoint,
 } from '../lib/estate/plan';
+import { bandQuads, MARKER_BAND_MAX, MARKER_BAND_MIN, markerBandWidth } from '../components/workbench/estate/engine/controls/plan';
 import { parsePack } from '../lib/estate/schema';
 import { pointInPolygon, siteStoreyTable } from '../lib/estate/storeys';
 import { decodeWalk, type WalkPose } from '../lib/estate/walk';
@@ -106,6 +107,61 @@ describe('Plan rules (lib/estate/plan.ts)', () => {
     expect(cutText(1.2)).toBe('+1.20 M');
     expect(cutSpoken(1.5)).toBe('Cut 1.5 metres above the floor');
   });
+
+  it('groups the room list by flat, then by a kind with six or more rooms, and calls the rest common areas', () => {
+    expect(roomKind('Car lot L2-001 (S)')).toBe('Car lot');
+    expect(roomKind('Shop unit #02-01')).toBe('Shop unit');
+    expect(roomKind('Stair 3')).toBe('Stair');
+    expect(roomKind('Seating area north-east')).toBe('Seating area north-east');
+    expect(roomKind('#05-101')).toBe('#05-101');
+    const lots = Array.from({ length: ROOM_KIND_GROUP_MIN }, (_, i) => ({ label: `Car lot L2-00${i} (S)`, flat: null }));
+    const rooms = [
+      { label: 'Living / Dining', flat: '#05-101' },
+      ...lots.slice(0, 3),
+      { label: 'Drive aisle', flat: null },
+      ...lots.slice(3),
+      { label: 'Bedroom', flat: '#05-101' },
+      { label: 'Stair 1', flat: null },
+      { label: 'Stair 2', flat: null },
+    ];
+    expect(roomGroups(rooms)).toEqual([
+      { name: '#05-101', rooms: [0, 8] },
+      { name: 'Car lots', rooms: [1, 2, 3, 5, 6, 7] },
+      { name: COMMON_AREAS, rooms: [4, 9, 10] },
+    ]);
+    // Five lots are not enough for a heading of their own.
+    expect(roomGroups(lots.slice(1)).map((g) => g.name)).toEqual([COMMON_AREAS]);
+    expect(roomGroups([])).toEqual([]);
+  });
+});
+
+describe('Plan’s room marker (controls/plan.ts)', () => {
+  it('makes its band about three pixels wide at the distance of the pick, within its limits', () => {
+    // 100 m away at 45°: 2·100·tan(22.5°) = 82.8 m over 600 px, × 3 px.
+    expect(markerBandWidth(100, 45, 600)).toBeCloseTo((3 * 2 * 100 * Math.tan(Math.PI / 8)) / 600, 9);
+    expect(markerBandWidth(1, 45, 600)).toBe(MARKER_BAND_MIN);
+    expect(markerBandWidth(10_000, 45, 600)).toBe(MARKER_BAND_MAX);
+    expect(markerBandWidth(Number.NaN, 45, 600)).toBe(MARKER_BAND_MIN);
+  });
+
+  it('runs its band inside the outline, whichever way the ring winds', () => {
+    const ccw: Vec2[] = [[0, 0], [4, 0], [4, 3], [0, 3]];
+    const cw = [...ccw].reverse();
+    for (const ring of [ccw, cw]) {
+      const quads = bandQuads(ring, 0.5);
+      expect(quads).toHaveLength(16);
+      for (const [x, y] of quads) {
+        expect(x).toBeGreaterThanOrEqual(-1e-9);
+        expect(x).toBeLessThanOrEqual(4 + 1e-9);
+        expect(y).toBeGreaterThanOrEqual(-1e-9);
+        expect(y).toBeLessThanOrEqual(3 + 1e-9);
+      }
+    }
+    // The first edge of the counter-clockwise ring, (0,0)→(4,0): its band reaches 0.5 m in, to y = 0.5.
+    expect(bandQuads(ccw, 0.5).slice(0, 4)).toEqual([[0, 0], [4, 0], [4, 0.5], [0, 0.5]]);
+    // A zero-length edge (a repeated vertex) adds nothing.
+    expect(bandQuads([[0, 0], [0, 0], [4, 0], [4, 3]], 0.5)).toHaveLength(12);
+  });
 });
 
 describe('Plan pose (controls/tween.ts planFrame)', () => {
@@ -184,6 +240,20 @@ describe.skipIf(!hasData)('walking in from Plan on the pack in public/estate/v1.
     expect(misses).toEqual(['BLK_505 L1-AM2']);
     expect(layers).toEqual([]);
     expect(outside).toEqual([]);
+  });
+
+  it('names the room list’s groups by what they hold: stalls, shops and lots apart from the common areas', () => {
+    const groupsOf = (id: (typeof ESTATE_SITE_IDS)[number], tag: string) => {
+      const site = pack!.sites[ESTATE_SITE_IDS.indexOf(id)];
+      const nav = parseNav(JSON.parse(read(site.nav!.path).toString('utf8')), site.id);
+      return roomGroups(nav.rooms[nav.storeys.findIndex((st) => st.tag === tag)]).map((g) => `${g.name} ×${g.rooms.length}`);
+    };
+    expect(groupsOf('NC_514', 'L1')).toEqual(['Hawker stalls ×48', 'Shop units ×10', 'Common areas ×18']);
+    expect(groupsOf('NC_514', 'L2')).toEqual(['Shop units ×10', 'Common areas ×4']);
+    expect(groupsOf('MSCP_513', 'L3')).toEqual(['Car lots ×126', 'Common areas ×14', 'Motorcycle lots ×51']);
+    const blk509 = groupsOf('BLK_509', 'L5');
+    expect(blk509.slice(-1)).toEqual(['Common areas ×9']);
+    expect(blk509.slice(0, -1).every((g) => /^#05-1\d\d ×\d+$/.test(g))).toBe(true);
   });
 
   it('lands in each of Blk 509 L5’s 105 rooms, on L5', () => {

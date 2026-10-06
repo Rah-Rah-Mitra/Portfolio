@@ -248,7 +248,14 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     const site = request.site;
     if (!site) return false;
     if (request.enter === true && instance.features.enter && instance.enter(site, request.storey ? { storey: request.storey } : undefined)) return true;
-    if (request.enter !== true && request.storey && instance.features.plan && instance.planView(site, request.storey)) return true;
+    if (request.enter !== true && request.storey && instance.features.plan) {
+      // The plan already on screen is done, not a fly-to: a model repeats its
+      // command on a follow-up ("what rooms are on this floor?"), and planView
+      // refuses the storey it already shows. (request.storey is canonical.)
+      const shown = instance.getView().plan;
+      if (shown && shown.site === site && shown.storey === request.storey) return true;
+      if (instance.planView(site, request.storey)) return true;
+    }
     if (instance.features.flyTo && instance.flyTo(site)) return true;
     return instance.select(site);
   };
@@ -385,6 +392,9 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
         break;
       }
       case 'frozen': instance.freeze(); break;
+      // Closed 30 s or DESK; or seen again with a context lost while frozen and
+      // never restored (the policy): disposed, and an open window loads afresh.
+      // A held focus request waits for the next instance.
       case 'released': release(); break;
       // Reached from resets or a missed restore: latched, or the count aging
       // out of its window would hand the window back.

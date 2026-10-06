@@ -182,7 +182,8 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
     takeLift: (level) => live() && nav.takeLift !== undefined && nav.takeLift(level),
     takeStairs: (direction) => live() && nav.takeStairs !== undefined && nav.takeStairs(direction),
     planView: (site, storey, planOptions) => live() && nav.planView !== undefined && nav.planView(site, storey, planOptions),
-    pickRoom: (index) => live() && nav.pickRoom !== undefined && nav.pickRoom(index),
+    // The list's pick (and the bench's): framed, said by the list itself.
+    pickRoom: (index) => live() && nav.pickRoom !== undefined && nav.pickRoom(index, false, true),
     walkIn: (index) => live() && nav.walkIn !== undefined && nav.walkIn(index),
     setCut: (step) => live() && nav.setCut !== undefined && nav.setCut(step),
     walkStep: (step) => live() && nav.walkStep !== undefined && nav.walkStep(step),

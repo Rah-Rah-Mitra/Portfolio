@@ -334,7 +334,7 @@ agree. Change both or neither.
 ## Measured (v1.2 candidate rc2, re-packed as rc2b, 2026-10-06)
 
 The R2a candidate: `SampleTownN5_v1.2_{model,reports}.zip` from upstream's
-`release` (M = `a106728`, R = `a6e1acf`, tag not yet created; model zip
+`release` (M = `a106728`, R = `a6e1acf`, tag not yet created at the time — upstream tagged `v1.2` at `a6e1acf` later that day; model zip
 105,271,442 B, `e939dc78…`, reports zip 79,803,968 B, `8f6191bc…`), packed with
 every class into `artifacts/estate/v1.2-rc2` (`pack.fd986442.json`; `--verify`
 identical). It replaces the first candidate (M = `2a533c1`, R = `d3152af`,
@@ -461,11 +461,34 @@ URL downloads) and logs one JSON report to the console and to
 p50/p99, CPU and GPU p95, draws, triangles, GPU MB with the drawing buffer,
 `/estate/` bytes and requests, long tasks and long animation frames (Chrome),
 frame gaps over 50 ms (all browsers; Firefox's only signal), programs and
-governor changes, then a verdict. Add `&estate-quality=high` to start at the
-top tier. Run it in Chrome and Firefox, at the default size and maximised, and
-once under 4× CPU slowdown. A pack is fit when the verdict has `routeOk`,
-`governorOk` (≤ 2 notch changes in any leg) and an empty `bytesOnMoves` (the
-stairs and both lift legs request nothing).
+governor changes, then a verdict. `estate-bench=max` runs it in the maximised
+window (the bench presses Maximize itself; `meta.window` and the canvas's
+`meta.cssWidth × cssHeight` say what was measured — the window's own default
+bounds, not the viewport, set the canvas size, so a 1920 × 1080 viewport alone
+still measures the default 722 × 531 canvas). Add `&estate-quality=high` to
+start at the top tier. One run per page: a window released mid-route ends it
+("engine disposed"); reload to run again.
+
+Each leg reports two sets of figures. The raw ones count every continuous
+frame. `g3` leaves out what G3 (plan §1) leaves out — frames that uploaded
+geometry, compiled a shader or followed a resize, the render core's own
+`excluded` — and `settled` also leaves out the first 5 s after live and after
+each notch change (G3's 4× CPU row). The verdict reads those:
+
+| Verdict field | Means | Fit when |
+|---|---|---|
+| `routeOk` | every leg ran as written | true |
+| `governorOk` | ≤ 2 notch changes in any leg | true |
+| `bytesOnMoves` | the stairs and lift legs that requested anything | empty |
+| `longTasks` | legs with a task over 50 ms (Chrome) | only `s1-first-frame` (before live; G3 counts from live) |
+| `gaps` | legs with a G3 frame gap over 50 ms outside upload frames (Firefox's measure) | judged with the G3 row below |
+| `g3` | the worst leg's G3 dropped % and p99, raw and settled, over §12.4's route (`s1-first-frame` and `bs1-recovery` left out) | default window ≤ 2 % and p99 ≤ 2 periods; maximised ≤ 5 %; 4× CPU, settled, ≤ 10 % and p99 ≤ 50 ms |
+
+The first three are this repo's gate and hold on any machine. `longTasks`,
+`gaps` and `g3` are G3's timing figures: judge them on Rahul's hardware, in
+Chrome and Firefox, at the default size, maximised (`estate-bench=max`) and
+once under DevTools' 4× CPU slowdown. A software renderer fails them by
+construction.
 
 The walked legs reuse the e2e tour's step routes from named spawns (Blk 509's
 Void deck entrance E, the car park's Entrance E, the hawker centre's Entrance
@@ -473,15 +496,26 @@ E 2), so a re-pack that moves a spawn, a doorway or a ramp shows up as a leg
 whose notes say what it could not do; re-record the route in `bench.ts` and in
 `tests/e2e/estate.spec.ts` together.
 
-Measured headless on SwiftShader (Chrome 151, 1280 × 720, 2026-10-06; software
-rendering, so only the counts and the governor's behaviour carry over to a real
-GPU): live 0.8–1.7 s after the engine is made; 0 requests on stairs and lifts;
-at most 2 notch changes in a leg (both in the orbit sweep from a forced high
-start, which settles at min × 0.75 by the stairs); no long task after live once
-a notch's resize waits for the GPU to drain and warm-up links every program;
-one ~1 s task before live at the default start, the GPU probe's context
-creation, which no browser API makes asynchronous. On Fast 4G the poster lands
-at 0.9 s and the first live frame at 2.9 s after navigation.
+Measured headless on SwiftShader (Chrome 151, 2026-10-06; software rendering,
+so only the counts and the governor's behaviour carry over to a real GPU):
+
+| Run | Canvas | Live after engine | Notch changes | Long tasks after live | Stairs/lifts requests | G3 worst dropped % / p99 |
+|---|---|---|---|---|---|---|
+| default, 1280 × 720 | 722 × 531 | 1.7 s | 1 (orbit, → min × 0.75) | 0 | 0 | 19.2 % (mscp-ramp) / 50 ms |
+| maximised (`=max`), 1920 × 1080 | 1482 × 901 | 1.7 s | 1 | 0 | 0 | 74.8 % (orbit) / 117 ms |
+| default, 4× CPU (two runs) | 722 × 531 | 2.2 s | 1 | 2–3 a run, 54–72 ms (GLB decodes, a worker message) | 0 | 30.8 % (void deck) / 83 ms (plan); settled 47 % (orbit) |
+
+From a forced high start the orbit sweep takes at most 2 notch changes in a leg
+and settles at min × 0.75 by the stairs; no long task after live at normal
+speed once a notch's resize waits for the GPU to drain and warm-up links every
+program. One ~1 s task before live at the default start is the GPU probe's
+context creation, which no browser API makes asynchronous. At min × 0.75 a
+maximised canvas is 0.75 Mpx, over min's 0.7 Mpx pixel cap with no lower notch
+(the 0.75 floor wins), so a slow GPU maximised has nowhere left to go. The 4×
+CPU long tasks are a GLB decode's `Response.arrayBuffer` continuation and a
+meshopt worker message during the Enter and Plan legs. On Fast 4G the poster
+lands at 0.9 s and the first live frame at 2.9 s after navigation. Firefox and
+real GPUs: not run here (Rahul's §12 sign-off).
 
 ## Moving to a new version
 

@@ -22,6 +22,11 @@ export const MAIN_LIMIT = Math.min(MAIN_BASELINE + ESTATE_SHELL_ALLOWANCE, MAIN_
 // the main bundle; WebGLRenderer must appear in exactly one chunk, the engine's.
 export const ENGINE_MARKERS = ['WebGLRenderer', 'GLTFLoader', 'MeshoptDecoder', 'camera-controls'];
 export const ENGINE_MARKER = 'WebGLRenderer';
+// The §12.4 bench's report schema (engine/bench.ts BENCH_SCHEMA), which survives
+// minification: the bench is a chunk only ?estate-bench= downloads, so it may be
+// in neither the main bundle nor the Load click (a static import of it anywhere
+// in the engine would put it there; tests/estate-boundary.test.ts checks the source).
+export const BENCH_MARKER = 'portfolio/estate-bench/1';
 
 // Rollup names a chunk after its facade module, so these follow the source file
 // names (components/workbench/estate/EstateController.tsx, live/EstateHud.tsx). The
@@ -157,6 +162,7 @@ export const checkBundle = async (distDirectory, options = {}) => {
     const code = (await load(file)).toString('utf8');
     const found = ENGINE_MARKERS.filter((marker) => code.includes(marker));
     if (found.length) failures.push(`${file} is in the main bundle and contains ${found.join(', ')}: the Estate engine must stay in its lazy chunk`);
+    if (code.includes(BENCH_MARKER)) failures.push(`${file} is in the main bundle and carries the bench (${BENCH_MARKER}): it must stay a chunk of its own`);
   }
 
   const assets = (await readdir(path.join(distDirectory, 'assets'))).filter((name) => name.endsWith('.js')).sort().map((name) => `assets/${name}`);
@@ -183,6 +189,11 @@ export const checkBundle = async (distDirectory, options = {}) => {
     console.log(`estate Load click ${runtimeFiles.join(' + ')}: gzip ${format(runtime.gzipped)} B / ${format(budgets.engineGzip)} B`);
     if (runtime.gzipped > budgets.engineGzip) {
       failures.push(`the Load click downloads ${runtime.gzipped} B gzipped (${runtimeFiles.join(', ')}), over engineGzip ${budgets.engineGzip} B, which the consent label counts`);
+    }
+    for (const asset of runtimeFiles) {
+      if ((await load(asset)).toString('utf8').includes(BENCH_MARKER)) {
+        failures.push(`${asset} is in the Load click and carries the bench (${BENCH_MARKER}): only ?estate-bench= may download it`);
+      }
     }
     engine = { file, ...own, runtimeFiles, runtime };
   }

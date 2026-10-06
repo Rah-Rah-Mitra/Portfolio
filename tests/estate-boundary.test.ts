@@ -220,6 +220,21 @@ describe('the Estate lazy-chunk boundary (§7.1)', () => {
     expect(crossings.map((ref) => ref.specifier)).toEqual(['./engine', './live/EstateHud']);
   });
 
+  it('reaches the bench (engine/bench.ts) only through engine/index.ts’s import(), from no other file in the app', async () => {
+    // Its own chunk, which only ?estate-bench= downloads: a static import anywhere
+    // (an engine file included) would put it in the Load click. scripts/check-bundle.mjs
+    // also fails a build whose main bundle or Load click carries its schema string.
+    const BENCH = `${ESTATE}/engine/bench`;
+    const refs = (await Promise.all((await appFiles()).map(async (file) => moduleRefs(file, await read(file))
+      .filter((ref) => ref.kind !== 'type' && resolveRef(file, ref.specifier)?.replace(/\.[cm]?[jt]sx?$/, '') === BENCH)
+      .map((ref) => `${file}: ${ref.kind} '${ref.specifier}'`)))).flat();
+    expect(refs).toEqual([`${ESTATE}/engine/index.ts: dynamic './bench'`]);
+    // The scanner sees every spelling of the path.
+    for (const [from, specifier] of [[`${ESTATE}/engine/streaming.ts`, './bench'], [`${ESTATE}/live/EstateHud.tsx`, '../engine/bench'], [`${ESTATE}/loadEngine.ts`, './engine/bench.ts'], ['App.tsx', '@/components/workbench/estate/engine/bench']]) {
+      expect(resolveRef(from, specifier)?.replace(/\.[cm]?[jt]sx?$/, ''), `${from} → ${specifier}`).toBe(BENCH);
+    }
+  });
+
   it('keeps engineApi.ts types only, so importing it costs the main bundle nothing', async () => {
     const source = parse(API, await read(API));
     const valueStatements = source.statements.filter((statement) => !(

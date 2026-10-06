@@ -166,8 +166,10 @@ The desktop frame is a 46px header, a 96px tool rail and the desk. Windows open
 at fixed cascade positions, move by their titlebar, and each owns one internal
 scroller. **The one exception is the Estate:** its sheet does not scroll (the
 viewer fills it), and its side panel is its own scroller with
-`overscroll-behavior: contain`; below 620px of window width the panel stacks
-under the stage. A window's body may carry a hoist rig across its top; hoisted cards
+`overscroll-behavior: contain`; inside it, in Plan, the room list is a 260px
+scroller of its own that chains to the panel at either end (no
+`overscroll-behavior`), so a wheel over it still reaches BUILDINGS. Below 620px
+of window width the panel stacks under the stage. A window's body may carry a hoist rig across its top; hoisted cards
 (`[data-hoist]`) hang from it. The desk carries a 24px minor and 120px major
 grid, the desk shortcuts and the title-block plate.
 
@@ -276,23 +278,35 @@ the FX "Pause all motion").
     wall, slab edge or cabinet its section is filled flat
     `--color-accent-900`, unlit, as poché, so the walls read as solid black-blue
     lines and the rooms as the light floor between them. The storeys below show
-    their façade. A picked room is outlined on its floor in the edge colour
-    (`--color-accent-700`) over a light accent-300 wash at 35 %, and named on a
-    "ROOM" chip with Walk in; the cut has its own chip ("CUT +1.20 M", ▼ ▲). The
+    their façade. A picked room is marked where the section is, just under
+    the cut (its floor is hidden by the cut walls from 55°): a lid of
+    `--color-accent-700` at 22 % over the room and a solid band of it inside
+    its outline, about 3 px wide where it is seen from; picked from the list or
+    with ↑/↓ the view also slides to it and closes in (never out) until it
+    fills a fifth of the short side, because a room of a 60 m slab is a few
+    pixels at the opening view; a click on the floor leaves the view alone. It
+    is named on a "ROOM" chip with Walk in; the cut has its own chip ("CUT +1.20 M", ▼ ▲). The
     storey strip down the right edge, the same one Walk uses, opens Plan from
     Overview on the storey pressed and marks the storey shown. The room list in
-    the side panel groups rooms by flat ("#05-104", then "Common areas") as
-    square toggle buttons, the picked one with the selected row's accent-100
-    fill and inset accent-700 border; it scrolls inside its own 260px box, and
-    the side panel brings it into view when a plan opens;
-  - **quality changes are silent and never freeze the page** (P7): when the
+    the side panel groups rooms by flat ("#05-104"), then by what they are when
+    there are six or more of a kind ("Hawker stalls", "Shop units", "Car lots",
+    "Motorcycle lots"), then "Common areas", as square toggle buttons, the
+    picked one with the selected row's accent-100 fill and inset accent-700
+    border. It is one Tab stop (arrows move through it and pick, as on the
+    stage), "Walk into …" sits under it in a slot that is always there (so a
+    first pick never moves a row under the pointer), it scrolls inside its own
+    260px box, and the side panel brings it into view when a plan opens;
+  - **quality changes are silent and do not freeze the page** (P7): when the
     governor lowers detail or resolution nothing announces it, and a
     resolution step holds the last frame while the GPU catches up rather than
-    blocking input; a GPU reset shows the "lost" plate and comes back on its
-    own. While the Estate is in use (live, focused, no panel open) the desk
+    blocking input (measured: no task over 50 ms after live on the bench's
+    route at normal speed; under a 4× CPU slowdown a decode or worker message
+    still takes 54–72 ms now and then); a GPU reset shows the "lost" plate and
+    comes back on its own, and a context lost while the window was closed is
+    rebuilt unseen when it reopens. While the Estate is in use (live, focused, no panel open) the desk
     backdrops hold still and their caption says so ("HELD · ESTATE").
-    `?estate-bench=1` is a debug mode that drives the camera by itself and
-    shows the stats row; nothing in the UI links to it;
+    `?estate-bench=1` (`=max` maximised) is a debug mode that drives the
+    camera by itself and shows the stats row; nothing in the UI links to it;
   - **one palette:** every 3D material role maps onto the design tokens
     (walls `--color-neutral-100`, slabs and paving `--color-neutral-300`, doors
     `--color-neutral-500`, asphalt `--color-neutral-700`, grass and foliage

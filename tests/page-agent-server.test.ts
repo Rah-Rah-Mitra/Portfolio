@@ -113,8 +113,19 @@ describe('server page-agent command parity', () => {
     ['fly to blk501', { type: 'focusEstate', site: 'BLK_501' }],
     ['enter the MSCP', { type: 'focusEstate', site: 'MSCP_513', enter: true }],
     ['show me the neighbourhood centre', { type: 'focusEstate', site: 'NC_514' }],
+    // The ways a visitor names a building that the first fallback missed (P6/P7 review).
+    ['take me to block 509', { type: 'focusEstate', site: 'BLK_509' }],
+    ['walk into block 505', { type: 'focusEstate', site: 'BLK_505', enter: true }],
+    ['blk-509 please', { type: 'focusEstate', site: 'BLK_509' }],
+    ['blk. 509', { type: 'focusEstate', site: 'BLK_509' }],
+    ['show blk 0509', { type: 'focusEstate', site: 'BLK_509' }],
+    ['show me the multi-storey carpark', { type: 'focusEstate', site: 'MSCP_513' }],
+    ['fly to MSCP 513', { type: 'focusEstate', site: 'MSCP_513' }],
+    ['show me the neighborhood centre', { type: 'focusEstate', site: 'NC_514' }],
+    ['fly to NC 514', { type: 'focusEstate', site: 'NC_514' }],
     // Blk 513 is the car park's number, not a block: the window opens, nothing is flown to.
     ['show me blk 513', { type: 'openDesktopApp', appId: 'world-3d' }],
+    ['show me block 513', { type: 'openDesktopApp', appId: 'world-3d' }],
     ['show generic project work', { type: 'focusGuideChapter', chapterId: 'work' }],
   ])('keeps client/server fallback parity for %s', (message, expected) => {
     const clientCommand = clientAgent(message).commands?.[0];
@@ -132,6 +143,8 @@ describe('server page-agent command parity', () => {
     'take me into the hawker centre',
     'show me blk 509',
     'walk into the car park',
+    'take me to block 509',
+    'fly to NC 514',
     'what is in the systems lab?',
     'open the Camera Lab stereo depth model',
     'How does the Zhang calibration work?',

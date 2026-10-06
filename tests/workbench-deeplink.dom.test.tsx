@@ -4,6 +4,7 @@ import FieldWorkbench from '../components/workbench/FieldWorkbench';
 import FieldIndex from '../components/workbench/FieldIndex';
 import { ExperienceModeProvider } from '../contexts/ExperienceModeContext';
 import { loadEngine } from '../components/workbench/estate/loadEngine';
+import { dispatchWorkbenchOpen } from '../lib/workbench';
 
 // The Estate engine is a lazy chunk; here only whether, and when, the window
 // asks for it matters, so the loader is a spy that never resolves.
@@ -123,6 +124,19 @@ describe('field index — ?app= deep links', () => {
     // The row that produced the link is the row that opens.
     expect(screen.getByRole('button', { name: /Resume Builder/, expanded: true })).not.toBeNull();
     expect(screen.queryByRole('button', { name: /Churp/ })).toBeNull();
+  });
+
+  it('opens a window’s own row when the assistant opens that window, as its ?app= link does', () => {
+    setup('/');
+    render(<FieldIndex />);
+    expect(screen.getByRole('button', { name: /Sample Town N5/, expanded: false })).not.toBeNull();
+    // The Estate command on a phone: world-3d, targeting the window's anchor (never a building id).
+    act(() => { dispatchWorkbenchOpen({ appId: 'world-3d', targetId: 'world' }); });
+    expect(screen.getByRole('button', { name: 'PROJECTS' }).getAttribute('data-active')).toBe('true');
+    expect(screen.getByRole('button', { name: /Sample Town N5/, expanded: true })).not.toBeNull();
+    act(() => { dispatchWorkbenchOpen({ appId: 'resume-builder', targetId: 'resume-builder' }); });
+    expect(screen.getByRole('button', { name: 'RESUMES' }).getAttribute('data-active')).toBe('true');
+    expect(screen.getByRole('button', { name: /Resume Builder/, expanded: true })).not.toBeNull();
   });
 
   it('still opts out of deep links under ?mode=scan', () => {

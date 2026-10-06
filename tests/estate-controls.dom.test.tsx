@@ -603,6 +603,40 @@ describe('the controls, in Plan (P6)', () => {
     expect(h.view().plan).toBeNull();
   });
 
+  it('frames a room picked by ↑ ↓ or the list (closer only, tilt and heading kept); a click on the floor leaves the view alone', () => {
+    h.setHalted(true);
+    h.nav.planView?.('BLK_509', 'L2');
+    h.frames(1);
+    const site = SITES[B509];
+    const orbitNow = () => {
+      const target = h.rig().getTarget(new Vector3());
+      const d = h.camera.position.clone().sub(target);
+      return { target, distance: d.length(), polar: Math.atan2(Math.hypot(d.x, d.z), d.y), azimuth: Math.atan2(d.x, d.z) };
+    };
+    const opening = orbitNow();
+    key(h.host, 'ArrowDown'); // the living room, (−8, −8)…(0, 0) on L2
+    h.frames(1);
+    const framed = orbitNow();
+    expect(framed.target.x).toBeCloseTo(site.at[0] - 4, 6);
+    expect(framed.target.y).toBeCloseTo(3.6, 6);
+    expect(framed.target.z).toBeCloseTo(-(site.at[1] - 4), 6);
+    expect(framed.distance).toBeLessThanOrEqual(opening.distance + 1e-6);
+    expect(framed.polar).toBeCloseTo(opening.polar, 6);
+    expect(framed.azimuth).toBeCloseTo(opening.azimuth, 6);
+    // The handle's pick (the list's) frames too.
+    expect(h.nav.pickRoom?.(1, false, true)).toBe(true);
+    h.frames(1);
+    expect(orbitNow().target.x).toBeCloseTo(site.at[0] + 4, 6);
+    // A click on the living room's floor picks it where it is.
+    const v = new Vector3(site.at[0] - 4, 3.6, -(site.at[1] - 4)).project(h.camera);
+    const at = orbitNow();
+    press(h.canvas, ((v.x + 1) / 2) * 800, ((1 - v.y) / 2) * 600, 0);
+    h.frames(1);
+    expect(h.view().plan?.room).toBe(0);
+    expect(orbitNow().target.distanceTo(at.target)).toBeLessThan(1e-6);
+    expect(orbitNow().distance).toBeCloseTo(at.distance, 6);
+  });
+
   it('picks the room under a click on the floor', () => {
     h.setHalted(true);
     h.nav.planView?.('BLK_509', 'L2');

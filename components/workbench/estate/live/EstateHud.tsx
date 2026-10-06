@@ -1,8 +1,13 @@
 import React from 'react';
-import { chipText, LocationAnnouncer, siteChipLabel, siteSpokenName, type AnnounceResult } from '../../../../lib/estate/announce';
+import {
+  chipText, LocationAnnouncer, siteChipLabel, siteShortName, siteSpokenName, type AnnounceResult,
+} from '../../../../lib/estate/announce';
 import type { EstateViewMode } from '../../../../lib/estate/frames';
+import type { EstateSiteId } from '../../../../lib/estate/ids';
+import { enterLabel } from '../../../../lib/estate/policy';
 import type {
-  EstateEngine, EstateEngineEvent, EstateHudProps, EstateProgressEvent, EstateStatsEvent, EstateView, EstateWalkStep,
+  EstateEngine, EstateEngineEvent, EstateHudProps, EstatePopover, EstateProgressEvent, EstateStatsEvent, EstateView,
+  EstateWalkLevel, EstateWalkStep, EstateWalkView,
 } from '../engineApi';
 
 // The Estate viewer's HUD (plan §8.6, §8.7): drawn over the stage while an
@@ -11,22 +16,34 @@ import type {
 // whole input; it subscribes to the engine itself.
 //
 //   top left      location chip (no live role) · the selection, with its
-//                 mirrored Fly-to / Enter / Clear · debug readouts
+//                 mirrored Fly to / Enter / Clear · in Walk, Exit · debug
 //   top right     [OVERVIEW | WALK | FLY] (.wb-domainseg, the active one filled
-//                 accent-700) · HOME · KEYS (help popover, next in tab order) ·
-//                 CAPTURE · FULLSCREEN on div#world · north arrow · KEYS ACTIVE
-//   right         storey strip (P5: drawn once Walk or Plan is in the build)
-//   bottom left   pointer-lock state · STREAMING … with a 1 px accent-700
-//                 progress line · lean mode's Load full detail · mode prompt
+//                 accent-700) · HOME (in Walk: START) · START AT BS1 · KEYS
+//                 (help popover, next in tab order) · CAPTURE · FULLSCREEN on
+//                 div#world · north arrow · KEYS ACTIVE
+//   right         Walk's storey strip, 'RF +45.60 … L1 ±0.00', from the data:
+//                 each button rides, climbs or both (setStorey); a storey no
+//                 route reaches is disabled and says why
+//   bottom left   what Walk offers here (the stair chip with ▲ ▼, the lift chip
+//                 and its level panel), PREPARING WALKWAY… and STREAMING
+//                 INTERIOR… while files are on their way, a refusal or failure
+//                 notice, the pointer-lock state, STREAMING … with a 1 px
+//                 accent-700 progress line, lean mode's Load full detail, the
+//                 mode prompt
+//   centre        a lift ride's caption over the engine's paper fade
 //   bottom right  step buttons, for everyone: the DOM equivalent of every drag
 //                 (§8.7). Overview: pan pad, zoom, orbit, tilt. Fly: move pad,
-//                 strafe, climb and sink, look. P5's Walk: steps and turns.
+//                 climb and sink, strafe, look. Walk: 0.5 m steps and 15° turns,
+//                 strafe, look
+//   Walk, touch   the 96 px stick (.wb-estate-stick), shown on the stage's first
+//                 touch or under (any-pointer: coarse); a drag elsewhere looks
 //
 // Rules it keeps: chips are opaque --paper-55 tags with a 1 px divider border
 // and square corners, in survey-annotation language (no crosshair, minimap or
 // score chrome); the smallest text is --color-neutral-700, and the one solid
 // fill (the active mode) is accent-700 under white; every pointer action is a
-// button with an accessible name; one visually hidden role="status" node takes
+// button with an accessible name (the stick is the one exception, and the step
+// buttons do everything it does); one visually hidden role="status" node takes
 // the LocationAnnouncer's text, and the chip itself has no live role. Every
 // control is disabled (and dimmed) outside the live phase, and the KEYS chip
 // and prompt, which describe a live stage, are not drawn outside it.
@@ -38,12 +55,16 @@ import type {
 // therefore reserves the width of its longer label.
 //
 // Focus: a control that had focus and then vanishes or is disabled (Clear,
-// Load full detail, Capture once the mouse is held, any control a mode change
-// removes) hands focus to the stage rather than to the page, or the next Esc
-// would skip the window's layers and minimise it. The north arrow is turned by
-// the engine itself (its [data-estate-north] dial, a composited transform), so
-// orbiting re-renders nothing here. No colour is written in this file:
-// index.css's .wb-estate-hud* rules hold them, all tokens.
+// Load full detail, Capture once the mouse is held, a lift level once the ride
+// starts, any control a mode change removes) hands focus on rather than to the
+// page, or the next Esc would skip the window's layers and minimise it: from
+// inside a popover to the control that opened it, else to the stage. The north
+// arrow is turned by the engine itself (its [data-estate-north] dial, a
+// composited transform), so orbiting re-renders nothing here. No colour is
+// written in this file: index.css's .wb-estate-hud* rules hold them, all tokens.
+//
+// The root carries data-mode, data-transition and data-flight (what the view
+// says), which the stylesheet and the end-to-end tests read.
 
 const MODE_LABEL: Readonly<Record<EstateViewMode, string>> = { overview: 'Overview', walk: 'Walk', fly: 'Fly', plan: 'Plan' };
 
@@ -79,11 +100,27 @@ const KEY_HELP: Readonly<Partial<Record<EstateViewMode, ReadonlyArray<readonly [
     ['← →', 'Rotate'],
     ['A D', 'Pan sideways'],
     ['Shift + arrows', 'Pan'],
-    ['Enter', 'Fly to the selected building'],
+    ['Enter', 'Fly to the selected building; again, walk in'],
     ['Home', 'Aerial view'],
-    ['1 · 3', 'Overview · Fly'],
+    ['1 · 2 · 3', 'Overview · Walk · Fly'],
     ['I', 'Say where you are'],
     ['Esc', 'Clear the selection, then minimise'],
+  ],
+  walk: [
+    ['W S · ↑ ↓', 'Forward · back'],
+    ['A D', 'Strafe'],
+    ['← →', 'Turn'],
+    ['Shift', 'Walk faster'],
+    ['Drag', 'Look'],
+    ['Right- or Shift-drag', 'Strafe'],
+    ['Wheel', 'Half-metre steps'],
+    ['PgUp PgDn', 'Stairs or lift up · down; hold to keep climbing'],
+    ['Enter', 'Take the offered lift or stair'],
+    ['L', 'Capture the mouse'],
+    ['Home', 'Back to the start'],
+    ['1 · 2 · 3', 'Overview · Walk · Fly'],
+    ['I', 'Say where you are'],
+    ['Esc', 'Close the lift panel, stop a climb, then back to Overview'],
   ],
   fly: [
     ['W S · ↑ ↓', 'Forward · back'],
@@ -97,7 +134,7 @@ const KEY_HELP: Readonly<Partial<Record<EstateViewMode, ReadonlyArray<readonly [
     ['Wheel', 'Speed'],
     ['L', 'Capture the mouse'],
     ['Home', 'Back to the aerial view'],
-    ['1 · 3', 'Overview · Fly'],
+    ['1 · 2 · 3', 'Overview · Walk · Fly'],
     ['I', 'Say where you are'],
     ['Esc', 'Back to Overview'],
   ],
@@ -109,20 +146,22 @@ const KEY_HELP: Readonly<Partial<Record<EstateViewMode, ReadonlyArray<readonly [
  * under KEYS and in the side panel's #estate-keys.
  */
 const KEY_SUMMARY: Readonly<Record<EstateViewMode, string>> = {
-  overview: 'Arrow keys rotate and tilt; A and D, or Shift with the arrows, pan; Enter flies to the selected building; 3 switches to Fly; Esc steps back. The full list is under Keys.',
+  overview: 'Arrow keys rotate and tilt; A and D, or Shift with the arrows, pan; Enter flies to the selected building, and again walks in; 2 walks, 3 flies; Esc steps back. The full list is under Keys.',
   fly: 'W A S D move; the arrows turn; R and F look up and down; E and C climb and sink; Home returns to the aerial view; Esc goes back to Overview. The full list is under Keys.',
-  walk: 'W A S D walk; the arrows turn; Page Up and Page Down take stairs and lifts; Esc goes back to Overview. The full list is under Keys.',
+  walk: 'W A S D walk and the arrows turn; Page Up and Page Down take the stairs or the lift; Enter takes the one offered; Home goes back to the start; Esc closes the lift panel, stops a climb, then goes back to Overview. The full list is under Keys.',
   plan: 'Up and down arrows cycle rooms; Enter walks in; Esc leaves the plan. The full list is under Keys.',
 };
 
 /** The id the live stage's aria-describedby names (EstateWindow.tsx). */
 export const ESTATE_KEYS_DESC_ID = 'estate-keys-desc';
 
+/** How long a refusal or event notice ("No lift or stair reaches RF") stays up, ms. */
+const NOTICE_MS = 5000;
 
 /** One step button: what it does (its accessible name) and its icon. */
 interface StepButton { step: EstateWalkStep; label: string; icon: string; area: string }
 
-// Two clusters: a pad (the four arrows) and a 2 × 3 block of pairs.
+// Two clusters: a pad (the four arrows) and a block of pairs.
 const STEPS: Readonly<Partial<Record<EstateViewMode, readonly StepButton[]>>> = {
   overview: [
     { step: 'up', label: 'Pan ahead', icon: 'arrowUp', area: 'pu' },
@@ -148,15 +187,22 @@ const STEPS: Readonly<Partial<Record<EstateViewMode, readonly StepButton[]>>> = 
     { step: 'look-up', label: 'Look up', icon: 'tiltUp', area: 'a3' },
     { step: 'look-down', label: 'Look down', icon: 'tiltDown', area: 'b3' },
   ],
+  // ▲ ▼ half a metre, ◀ ▶ 15°; the pairs strafe half a metre and look 10°.
   walk: [
     { step: 'forward', label: 'Step forward', icon: 'up', area: 'pu' },
     { step: 'turn-left', label: 'Turn left', icon: 'left', area: 'pl' },
     { step: 'back', label: 'Step back', icon: 'down', area: 'pd' },
     { step: 'turn-right', label: 'Turn right', icon: 'right', area: 'pr' },
+    { step: 'left', label: 'Step left', icon: 'arrowLeft', area: 'a1' },
+    { step: 'right', label: 'Step right', icon: 'arrowRight', area: 'b1' },
+    { step: 'look-up', label: 'Look up', icon: 'tiltUp', area: 'a2' },
+    { step: 'look-down', label: 'Look down', icon: 'tiltDown', area: 'b2' },
   ],
 };
 
-const STEP_GROUP: Readonly<Partial<Record<EstateViewMode, string>>> = { overview: 'Pan, zoom, orbit and tilt', fly: 'Move, climb and look', walk: 'Move and turn' };
+const STEP_GROUP: Readonly<Partial<Record<EstateViewMode, string>>> = {
+  overview: 'Pan, zoom, orbit and tilt', fly: 'Move, climb and look', walk: 'Step, turn and look',
+};
 
 // Lucide-style strokes (24-unit box, stroke 1.5 in CSS).
 const ICON: Readonly<Record<string, string>> = {
@@ -202,13 +248,30 @@ const progressState = (event: EstateProgressEvent): ProgressState | null => {
   };
 };
 
+/** 'Enter Blk 509 · 0.2 MB' from the pack's sizes (policy.ts enterLabel), or plain 'Enter' before the pack is read. */
+export const enterText = (engine: EstateEngine, site: EstateSiteId): string => {
+  const files = engine.siteFiles(site);
+  return files ? enterLabel({ ...files, name: siteShortName(site) }) : `Enter ${siteShortName(site)}`;
+};
+
+/** A storey's height above L1 as the strip prints it: '+45.60', '±0.00'. */
+export const fflText = (ffl: number): string => (Math.abs(ffl) < 0.005 ? '±0.00' : `${ffl > 0 ? '+' : '−'}${Math.abs(ffl).toFixed(2)}`);
+
+const ROUTE_TEXT: Readonly<Record<Exclude<EstateWalkLevel['route'], null | 'here'>, string>> = {
+  lift: 'by lift',
+  stairs: 'by the stairs',
+  'lift+stairs': 'by lift, then the stairs',
+};
+
 /**
- * The view, kept current from `location` events, and the announcer's text for
- * the live region. Going live says nothing: the first view is taken as heard.
+ * The view, kept current from `location` events, the announcer's text for the
+ * live region, and the last refusal or event notice (shown NOTICE_MS). Going
+ * live says nothing: the first view is taken as heard.
  */
 const useEngineView = (engine: EstateEngine, debug: boolean) => {
   const [view, setView] = React.useState<EstateView>(() => engine.getView());
   const [spoken, setSpoken] = React.useState('');
+  const [notice, setNotice] = React.useState<string | null>(null);
   const [progress, setProgress] = React.useState<ProgressState | null>(null);
   const [stats, setStats] = React.useState<EstateStatsEvent | null>(null);
 
@@ -218,6 +281,7 @@ const useEngineView = (engine: EstateEngine, debug: boolean) => {
     setView(first);
     announcer.reset(first.location);
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let noticeTimer: ReturnType<typeof setTimeout> | null = null;
     let alive = true;
     const speak = (result: AnnounceResult) => {
       // The announcer reuses its result object: read both fields now.
@@ -241,7 +305,13 @@ const useEngineView = (engine: EstateEngine, debug: boolean) => {
           break;
         case 'announce':
           if (event.full) speak(announcer.full(nowMs()));
-          else if (event.text) speak(announcer.say(event.text, nowMs()));
+          else if (event.text) {
+            speak(announcer.say(event.text, nowMs()));
+            // Said, and shown: a refusal ("No lift or stair reaches RF") is news to a sighted visitor too.
+            setNotice(event.text);
+            if (noticeTimer !== null) clearTimeout(noticeTimer);
+            noticeTimer = setTimeout(() => { noticeTimer = null; if (alive) setNotice(null); }, NOTICE_MS);
+          }
           break;
         case 'progress':
           setProgress(progressState(event));
@@ -258,18 +328,20 @@ const useEngineView = (engine: EstateEngine, debug: boolean) => {
       alive = false;
       off();
       if (timer !== null) clearTimeout(timer);
+      if (noticeTimer !== null) clearTimeout(noticeTimer);
     };
   }, [engine, debug]);
 
-  return { view, spoken, progress, stats };
+  return { view, spoken, notice, progress, stats };
 };
 
 const stageOf = (rootRef: React.RefObject<HTMLDivElement | null>) => rootRef.current?.closest<HTMLElement>('[data-estate-stage]') ?? null;
 
-/** Stage focus (the KEYS ACTIVE chip), and whether the stage has seen a finger (touch wording). */
+/** Stage focus (the KEYS ACTIVE chip), and whether the stage has seen a finger (touch wording, the stick). */
 const useStageInput = (rootRef: React.RefObject<HTMLDivElement | null>) => {
   const [active, setActive] = React.useState(false);
   const [touch, setTouch] = React.useState(false);
+  const [coarse, setCoarse] = React.useState(false);
   React.useEffect(() => {
     const stage = stageOf(rootRef);
     if (!stage) return undefined;
@@ -282,31 +354,41 @@ const useStageInput = (rootRef: React.RefObject<HTMLDivElement | null>) => {
     stage.addEventListener('focus', sync);
     stage.addEventListener('blur', sync);
     stage.addEventListener('pointerdown', onPointer, { capture: true, passive: true });
+    // A coarse pointer anywhere (a tablet with a mouse too) shows the stick from the start.
+    const query = typeof window.matchMedia === 'function' ? window.matchMedia('(any-pointer: coarse)') : null;
+    const syncCoarse = () => setCoarse(query?.matches === true);
+    syncCoarse();
+    query?.addEventListener?.('change', syncCoarse);
     return () => {
       stage.removeEventListener('focus', sync);
       stage.removeEventListener('blur', sync);
       stage.removeEventListener('pointerdown', onPointer, { capture: true });
+      query?.removeEventListener?.('change', syncCoarse);
     };
   }, [rootRef]);
-  return { active, touch };
+  return { active, touch, coarse };
 };
+
+/** Where focus goes when a control inside a popover dies: the control that opened it. */
+type PopoverOpeners = Readonly<Record<EstatePopover, React.RefObject<HTMLButtonElement | null>>>;
 
 /**
  * A control that held focus and then left the DOM or was disabled drops focus
- * to the page; this hands it on instead (preventScroll): to KEYS when it was
- * inside the help popover (its Close, or Esc on one of its controls), else to
- * the stage. Only while focus really is nowhere (body, or still the dead
- * control), so it never takes focus from anything the visitor chose. Checked
- * after every commit.
+ * to the page; this hands it on instead (preventScroll): to the popover's
+ * opener when it was inside one (its Close, a lift level, or Esc on one of its
+ * controls), else to the stage. Only while focus really is nowhere (body, or
+ * still the dead control), so it never takes focus from anything the visitor
+ * chose. Checked after every commit.
  */
-const useFocusRescue = (rootRef: React.RefObject<HTMLDivElement | null>, keysRef: React.RefObject<HTMLButtonElement | null>) => {
-  const lastRef = React.useRef<{ el: HTMLElement; inPopover: boolean } | null>(null);
+const useFocusRescue = (rootRef: React.RefObject<HTMLDivElement | null>, openers: PopoverOpeners) => {
+  const lastRef = React.useRef<{ el: HTMLElement; popover: EstatePopover | null } | null>(null);
   React.useEffect(() => {
     const root = rootRef.current;
     if (!root) return undefined;
     const onFocusIn = (event: FocusEvent) => {
       const el = event.target as HTMLElement;
-      lastRef.current = { el, inPopover: el.closest?.('.wb-estate-popover') != null };
+      const popover = (el.closest?.('[data-estate-popover]')?.getAttribute('data-estate-popover') ?? null) as EstatePopover | null;
+      lastRef.current = { el, popover };
     };
     root.addEventListener('focusin', onFocusIn);
     return () => root.removeEventListener('focusin', onFocusIn);
@@ -319,8 +401,8 @@ const useFocusRescue = (rootRef: React.RefObject<HTMLDivElement | null>, keysRef
     lastRef.current = null;
     const active = document.activeElement;
     if (active !== null && active !== document.body && active !== last.el) return;
-    const keys = keysRef.current;
-    if (last.inPopover && keys?.isConnected && !keys.disabled) keys.focus({ preventScroll: true });
+    const opener = last.popover ? openers[last.popover].current : null;
+    if (opener?.isConnected && !opener.disabled) opener.focus({ preventScroll: true });
     else stageOf(rootRef)?.focus({ preventScroll: true });
   });
 };
@@ -376,28 +458,114 @@ const useLockNotes = (mode: EstateViewMode, locked: boolean, unlockedAt: number 
 };
 
 /**
- * P5 slots in here: the storey strip ("RF +45.60 … L1 ±0.00", from the data),
- * which opens Plan from Overview and routes lifts and stairs in Walk (§8.5).
- * Nothing to draw until Walk or Plan is in the build.
+ * Walk's storey strip (§8.5, §8.6 right): every storey of the building
+ * underfoot, top down, 'RF +45.60 … L1 ±0.00', from the data. A button takes
+ * the route the engine planned (one ride, the stair line, or a ride to the
+ * highest served level then the stairs); the storey underfoot is current and
+ * disabled; a storey nothing reaches is disabled and its name says why. P6
+ * adds Overview's strip, which opens Plan.
  */
-const StoreyStrip: React.FC<{ engine: EstateEngine; view: EstateView }> = ({ engine, view }) => {
-  if (!(engine.features.walk || engine.features.plan) || view.location.site === null) return null;
-  return null;
+const StoreyStrip: React.FC<{
+  engine: EstateEngine; walk: EstateWalkView; live: boolean; onPress: (event: React.MouseEvent) => void;
+}> = ({ engine, walk, live, onPress }) => {
+  if (walk.site === null || walk.levels.length === 0) return null;
+  const levels = [...walk.levels].reverse();
+  return (
+    <div className="wb-estate-strip" role="group" aria-label={`Storeys of ${siteSpokenName(walk.site)}`} data-estate-scroll>
+      {levels.map((level) => {
+        const here = level.route === 'here';
+        const text = `${level.tag} ${fflText(level.ffl)}`;
+        const name = here ? `${text}, here` : level.route === null ? `${text}, ${level.reason ?? 'no route'}` : `${text}, ${ROUTE_TEXT[level.route]}`;
+        return (
+          <button
+            key={level.tag}
+            type="button"
+            className="wb-estate-strip-btn"
+            disabled={!live || here || level.route === null}
+            aria-current={here ? 'location' : undefined}
+            aria-label={name}
+            title={level.route === null ? level.reason ?? undefined : undefined}
+            data-route={level.route ?? 'none'}
+            onClick={(event) => { if (engine.setStorey(level.tag)) onPress(event); }}
+          >
+            <span className="wb-estate-strip-tag">{level.tag}</span>
+            <span className="wb-estate-strip-ffl">{fflText(level.ffl)}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+/** The 96 px touch stick (§8.7): its deflection, −1…1 each way (x strafe, y forward), goes to setStick; letting go releases it. */
+const STICK_RADIUS_PX = 34;
+const Stick: React.FC<{ engine: EstateEngine; live: boolean }> = ({ engine, live }) => {
+  const knobRef = React.useRef<HTMLSpanElement>(null);
+  const pointer = React.useRef<number | null>(null);
+  const centre = React.useRef({ x: 0, y: 0 });
+  const place = (dx: number, dy: number) => {
+    const knob = knobRef.current;
+    if (knob) knob.style.transform = dx === 0 && dy === 0 ? '' : `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+  };
+  const end = (event?: React.PointerEvent) => {
+    if (event && pointer.current !== event.pointerId) return;
+    if (pointer.current === null) return;
+    pointer.current = null;
+    place(0, 0);
+    engine.setStick(0, 0);
+  };
+  const move = (event: React.PointerEvent) => {
+    if (pointer.current !== event.pointerId) return;
+    let dx = event.clientX - centre.current.x;
+    let dy = event.clientY - centre.current.y;
+    const length = Math.hypot(dx, dy);
+    if (length > STICK_RADIUS_PX) { dx *= STICK_RADIUS_PX / length; dy *= STICK_RADIUS_PX / length; }
+    place(dx, dy);
+    // `|| 0`: never a negative zero.
+    engine.setStick(dx / STICK_RADIUS_PX || 0, -dy / STICK_RADIUS_PX || 0);
+  };
+  // Leaving the HUD (a mode change, the phase) lets the stick go.
+  React.useEffect(() => () => { if (pointer.current !== null) engine.setStick(0, 0); }, [engine]);
+  return (
+    <div
+      className="wb-estate-stick"
+      // Pointer-only by nature; the step buttons beside it are its keyboard and screen-reader equivalent.
+      aria-hidden="true"
+      data-estate-stick
+      onPointerDown={(event) => {
+        if (!live || pointer.current !== null) return;
+        event.preventDefault();
+        const box = event.currentTarget.getBoundingClientRect();
+        centre.current = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+        pointer.current = event.pointerId;
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+        move(event);
+      }}
+      onPointerMove={move}
+      onPointerUp={end}
+      onPointerCancel={end}
+      onLostPointerCapture={end}
+    >
+      <span className="wb-estate-stick-knob" ref={knobRef} />
+    </div>
+  );
 };
 
 export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps): React.ReactElement {
   const rootRef = React.useRef<HTMLDivElement>(null);
   const keysToggleRef = React.useRef<HTMLButtonElement>(null);
+  const liftToggleRef = React.useRef<HTMLButtonElement>(null);
+  const openers = React.useMemo<PopoverOpeners>(() => ({ help: keysToggleRef, lift: liftToggleRef }), []);
   const popoverId = React.useId();
-  const { view, spoken, progress, stats } = useEngineView(engine, debug);
-  const { active: keysActive, touch } = useStageInput(rootRef);
+  const liftPanelId = React.useId();
+  const { view, spoken, notice, progress, stats } = useEngineView(engine, debug);
+  const { active: keysActive, touch, coarse } = useStageInput(rootRef);
   const fullscreen = useFullscreen(rootRef);
   const mode = view.location.mode;
   const lock = useLockNotes(mode, view.pointerLocked, view.pointerUnlockedAtMs);
   const live = phase === 'live';
   const { features } = engine;
-  useFocusRescue(rootRef, keysToggleRef);
-
+  useFocusRescue(rootRef, openers);
 
   const focusStage = () => stageOf(rootRef)?.focus({ preventScroll: true });
   /** A control pressed with the pointer hands the keys back to the stage; one pressed from the keyboard keeps focus. */
@@ -411,11 +579,18 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
   if (features.walk) modes.push('walk');
   if (features.fly) modes.push('fly');
 
-  const firstPerson = mode === 'fly' || mode === 'walk';
+  const walking = mode === 'walk';
+  const walk = walking ? view.walk ?? null : null;
+  const firstPerson = mode === 'fly' || walking;
   const canCapture = firstPerson && (features.fly || features.walk);
   const selection = view.selection;
   const steps = STEPS[mode];
   const help = KEY_HELP[mode];
+  const interior = view.interior ?? null;
+  // An arc or a ride is under way: Walk's offers wait for it.
+  const busy = view.flight || view.transition !== null;
+  const showStick = walking && features.walk && (touch || coarse);
+  const strip = walk && walk.site !== null && walk.levels.length > 0 ? walk : null;
 
   let lockLine: string | null = null;
   if (firstPerson) {
@@ -430,7 +605,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
 
   const helpPopover = view.popover === 'help' && help ? (
     <div className="wb-estate-popover-slot">
-      <div className="wb-estate-popover" id={popoverId} role="region" aria-label={`${MODE_LABEL[mode]} keys`} data-estate-scroll>
+      <div className="wb-estate-popover" id={popoverId} role="region" aria-label={`${MODE_LABEL[mode]} keys`} data-estate-scroll data-estate-popover="help">
         <div className="wb-estate-popover-head">
           <span>{`${MODE_LABEL[mode]} keys`}</span>
           <button type="button" className="wb-estate-hud-btn" disabled={!live} onClick={() => engine.setPopover(null)}>Close</button>
@@ -447,15 +622,62 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
     </div>
   ) : null;
 
+  // The lift and its served levels (§8.5): the chip opens the panel; the
+  // storey underfoot is listed but disabled. The panel closes with a ride, a
+  // step away from the landing, Esc, or Close.
+  const lift = walk && !busy ? walk.lift : null;
+  const liftOpen = lift !== null && view.popover === 'lift';
+  const liftPanel = liftOpen && lift ? (
+    <div className="wb-estate-popover wb-estate-lift" id={liftPanelId} role="region" aria-label={`${lift.name}, levels`} data-estate-scroll data-estate-popover="lift">
+      <div className="wb-estate-popover-head">
+        <span>{lift.text}</span>
+        <button type="button" className="wb-estate-hud-btn" disabled={!live} onClick={() => engine.setPopover(null)}>Close</button>
+      </div>
+      <div className="wb-estate-lift-levels">
+        {[...lift.served].reverse().map((level) => (
+          <button
+            key={level}
+            type="button"
+            className="wb-estate-hud-btn"
+            disabled={!live || level === lift.current}
+            aria-current={level === lift.current ? 'location' : undefined}
+            aria-label={level === lift.current ? `${level}, here` : `${lift.name} to ${level}`}
+            onClick={(event) => { if (engine.takeLift(level)) toStage(event); }}
+          >{level}</button>
+        ))}
+      </div>
+    </div>
+  ) : null;
+  const stair = walk && !busy ? walk.stair : null;
+
   return (
-    <div className="wb-estate-hud" ref={rootRef} data-phase={phase}>
+    <div
+      className="wb-estate-hud"
+      ref={rootRef}
+      data-phase={phase}
+      data-mode={mode}
+      data-transition={view.transition ?? undefined}
+      data-flight={view.flight ? '' : undefined}
+      data-strip={strip ? '' : undefined}
+      data-stick={showStick ? '' : undefined}
+    >
       <p className="sr-only" role="status">{spoken}</p>
       <p id={ESTATE_KEYS_DESC_ID} hidden>{KEY_SUMMARY[mode]}</p>
 
       <div className="wb-estate-hud-top">
         <div className="wb-estate-hud-col">
           <p className="wb-estate-chip wb-estate-chip-loc" data-estate-location>{chipText(view.location)}</p>
-          {selection && (
+          {walking && features.walk && (
+            <button
+              type="button"
+              className="wb-estate-hud-btn"
+              disabled={!live}
+              data-estate-exit
+              aria-label={walk?.site ? `Exit ${siteSpokenName(walk.site)} to the overview` : 'Exit to the overview'}
+              onClick={(event) => { if (engine.setMode('overview')) toStage(event); }}
+            >{walk?.site ? `Exit ${siteShortName(walk.site)}` : 'Exit'}</button>
+          )}
+          {selection && !walking && (
             <div className="wb-estate-chip wb-estate-chip-sel">
               <span className="wb-estate-chip-key">Selected</span>
               <span>{siteChipLabel(selection)}</span>
@@ -473,9 +695,9 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
                   type="button"
                   className="wb-estate-hud-btn"
                   disabled={!live}
-                  aria-label={`Enter ${siteSpokenName(selection)}`}
+                  data-estate-enter={selection}
                   onClick={(event) => { if (engine.enter(selection)) toStage(event); }}
-                >Enter</button>
+                >{enterText(engine, selection)}</button>
               )}
               <button
                 type="button"
@@ -512,14 +734,21 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
                 ))}
               </div>
             )}
-            {mode !== 'walk' && (
+            <button
+              type="button"
+              className="wb-estate-hud-btn"
+              disabled={!live}
+              aria-label={walking ? 'Back to where this walk started' : 'Home: the aerial view'}
+              onClick={(event) => { if (engine.home()) toStage(event); }}
+            >{walking ? 'Start' : 'Home'}</button>
+            {features.walk && !walking && (
               <button
                 type="button"
                 className="wb-estate-hud-btn"
                 disabled={!live}
-                aria-label="Home: the aerial view"
-                onClick={(event) => { if (engine.home()) toStage(event); }}
-              >Home</button>
+                aria-label="Start walking at bus stop BS1"
+                onClick={(event) => { if (engine.walkFrom('BS1')) toStage(event); }}
+              >Start at BS1</button>
             )}
             {help && (
               <button
@@ -540,7 +769,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
                 className="wb-estate-hud-btn"
                 disabled={!live || view.pointerLocked}
                 aria-label="Capture the mouse to look around (Esc releases it)"
-                // The stage takes the keys first, so W A S D fly while the mouse is held.
+                // The stage takes the keys first, so W A S D move while the mouse is held.
                 onClick={() => { focusStage(); engine.capture(); }}
               >Capture</button>
             )}
@@ -577,9 +806,53 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
         </div>
       </div>
 
-      <StoreyStrip engine={engine} view={view} />
+      {strip && <StoreyStrip engine={engine} walk={strip} live={live} onPress={toStage} />}
+
+      {walk?.ride && <p className="wb-estate-chip wb-estate-ride" data-estate-ride>{walk.ride}</p>}
 
       <div className="wb-estate-hud-bottom">
+        {stair && (
+          <div className="wb-estate-chip wb-estate-chip-sel wb-estate-chip-offer" data-estate-stair>
+            <span>{stair.label}</span>
+            {stair.up && (
+              <button
+                type="button"
+                className="wb-estate-hud-btn"
+                disabled={!live}
+                aria-label={`Take ${stair.label.toLowerCase()} up to ${stair.up}`}
+                onClick={(event) => { if (engine.takeStairs(1)) toStage(event); }}
+              >{`▲ ${stair.up}`}</button>
+            )}
+            {stair.down && (
+              <button
+                type="button"
+                className="wb-estate-hud-btn"
+                disabled={!live}
+                aria-label={`Take ${stair.label.toLowerCase()} down to ${stair.down}`}
+                onClick={(event) => { if (engine.takeStairs(-1)) toStage(event); }}
+              >{`▼ ${stair.down}`}</button>
+            )}
+          </div>
+        )}
+        {lift && (
+          <button
+            ref={liftToggleRef}
+            type="button"
+            className="wb-estate-hud-btn wb-estate-chip-offer"
+            disabled={!live}
+            data-estate-lift
+            aria-expanded={liftOpen}
+            aria-controls={liftOpen ? liftPanelId : undefined}
+            onClick={() => engine.setPopover(liftOpen ? null : 'lift')}
+          >{lift.text}</button>
+        )}
+        {liftPanel}
+        {walk?.preparing && <p className="wb-estate-chip wb-estate-chip-lock" data-estate-preparing>Preparing walkway…</p>}
+        {interior?.state === 'streaming' && <p className="wb-estate-chip wb-estate-chip-lock" data-estate-interior="streaming">Streaming interior…</p>}
+        {interior?.state === 'failed' && interior.reason && (
+          <p className="wb-estate-chip wb-estate-chip-lock" data-estate-interior="failed">{interior.reason}</p>
+        )}
+        {notice && notice !== interior?.reason && <p className="wb-estate-chip wb-estate-chip-lock" data-estate-notice>{notice}</p>}
         {fullDetail && (
           <button type="button" className="wb-estate-hud-btn" disabled={!live} onClick={fullDetail.onLoad}>{fullDetail.label}</button>
         )}
@@ -595,6 +868,8 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
         {live && <p className="wb-estate-chip wb-estate-chip-quiet wb-estate-prompt">{prompt}</p>}
       </div>
 
+      {showStick && <Stick engine={engine} live={live} />}
+
       {steps && (
         <div className="wb-estate-steps" data-mode={mode} role="group" aria-label={STEP_GROUP[mode]}>
           {steps.map(({ step, label, icon, area }) => (
@@ -603,7 +878,6 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
               type="button"
               className={`wb-estate-hud-btn wb-estate-step-${area}`}
               disabled={!live}
-
               aria-label={label}
               title={label}
               onClick={() => engine.walkStep(step)}

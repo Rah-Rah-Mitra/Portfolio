@@ -4,7 +4,7 @@ import type { EstateSiteId, EstateStoreyTag } from '../../../lib/estate/ids';
 import type { EscapeAction, EstateInputState } from '../../../lib/estate/input';
 import type { EstateLocation } from '../../../lib/estate/announce';
 import type { TokenColours } from '../../../lib/estate/palette';
-import type { EstatePhase } from '../../../lib/estate/policy';
+import type { EstateEnterFiles, EstatePhase } from '../../../lib/estate/policy';
 import type { EstateTier } from '../../../lib/estate/tiers';
 
 // The contract between the Estate window's shell (main bundle, prerendered:
@@ -69,7 +69,7 @@ export interface EstateEngineOptions {
   token: number;
   /**
    * ESTATE_CATALOGUE.packUrl: the content-hashed pack.json, e.g.
-   * '/estate/v1.2/pack.fd986442.json'. The engine fetches and parsePack()s it;
+   * '/estate/v1.2/pack.82695419.json'. The engine fetches and parsePack()s it;
    * every FileRef.path resolves against this URL's folder.
    */
   packUrl: string;
@@ -260,6 +260,14 @@ export interface EstateEngine {
   getView(): EstateView;
   /** Listen to this instance's events (the HUD does). Returns the unsubscribe. Nothing is delivered after dispose(). */
   subscribe(listener: (event: EstateEngineEvent) => void): () => void;
+  /**
+   * P5: what entering `site` can download — its F, D, interior, walk and nav
+   * file sizes from pack.json, with its name — for lib/estate/policy.ts
+   * enterLabel ('Enter Blk 509 · 0.4 MB', the HUD's and the registry's Enter).
+   * Per-site sizes live only in pack.json (the catalogue carries the totals), so
+   * null until the pack is parsed, and for a site the pack does not have.
+   */
+  siteFiles(site: EstateSiteId): EstateEnterFiles | null;
 
   // -- navigation (§8.1) --
 

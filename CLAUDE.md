@@ -150,9 +150,13 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      outside the window meanwhile (it must not pull a window the visitor left
      back over the one they chose). A live window that fails moves focus from
      inside it to the side panel's Retry/Reload (scrolled into sight) and back to
-     the stage on restore; the HUD hands focus to the stage (or to KEYS from its
-     popover) whenever the focused control vanishes or is disabled, so focus
-     never falls to the body and the next Esc never skips the window's layers.
+     the stage on restore; the HUD hands focus to the stage (or, from inside a
+     popover, to the control that opened it: KEYS, or the lift chip) whenever
+     the focused control vanishes or is disabled, so focus never falls to the
+     body and the next Esc never skips the window's layers. The registry mirrors
+     the HUD's Enter and Exit under one row (`EstateModel.rowAction`: Enter on
+     the selected row, Exit on the row of the building Walk stands in), and a
+     registry Enter, like a registry fly-to, puts the keys on the stage.
      The side panel's polite status line speaks phase changes (a row pressed
      before live says "Load the 3D estate to fly there" there); the HUD's hidden
      status speaks the camera's location. `portfolio:estate-focus` (`lib/estate/events.ts`) requests are
@@ -280,12 +284,31 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        the real-stair case in `tests/estate-storeys.test.ts`.
      - `live/EstateHud.tsx`: survey-annotation chips over the canvas — location
        (no live role; one visually hidden `role="status"` node speaks through
-       `lib/estate/announce.ts`), selection with mirrored Fly to, OVERVIEW | FLY,
-       Home, a KEYS popover (an Esc layer, next in tab order after KEYS),
+       `lib/estate/announce.ts`: building, storey and mode at once, a room only
+       after 1.5 s standing still; the chip itself shows the room as it changes),
+       selection with mirrored Fly to and Enter ('Enter Blk 509 · 0.2 MB':
+       `lib/estate/policy.ts enterLabel` over `engine.siteFiles(site)`, the
+       per-site sizes only pack.json carries, with `announce.ts siteShortName`),
+       OVERVIEW | WALK | FLY, Home (Walk: Start, back to the walk's spawn), Start
+       at BS1, a KEYS popover (an Esc layer, next in tab order after KEYS),
        CAPTURE (which gives the stage the keys first), FULLSCREEN on `#world`,
        north arrow, KEYS ACTIVE, step buttons (every drag has one: Overview pans,
        zooms, orbits and tilts; Fly moves, strafes, climbs and looks), the
-       streaming line and lean mode's "Load full detail". Nothing in the top-right
+       streaming line and lean mode's "Load full detail". Walk (P5) adds Exit,
+       the storey strip on the right (`view.walk.levels` top down, 'RF +45.60 …
+       L1 ±0.00'; each button calls `setStorey`, the storey underfoot is
+       `aria-current` and disabled, an unreachable one disabled with its reason
+       in its name), the stair chip with ▲ / ▼ (`takeStairs`), the lift chip and
+       its level panel (`view.popover === 'lift'`, an Esc layer the engine closes
+       itself when the offer goes; `takeLift`, the storey underfoot disabled),
+       the ride caption over the engine's paper fade, "Preparing walkway…",
+       "Streaming interior…" / the failed interior's reason (`view.interior`),
+       a notice chip for 5 s after any spoken refusal ("No lift or stair reaches
+       RF"), Walk's steps (▲ ▼ 0.5 m, ◀ ▶ 15°, strafe, look) and the 96 px touch
+       stick (`.wb-estate-stick`, `setStick`; shown on the stage's first touch
+       or under `(any-pointer: coarse)`, `aria-hidden` because the steps do all
+       it does). The root carries `data-mode`, `data-transition` and
+       `data-flight` for the stylesheet and the e2e. Nothing in the top-right
        row may change width between a press and its release — the KEYS chip
        reserves its longer label's width — or the row reflows under the pointer
        and the click is lost. The north arrow is an HTML dial the engine turns
@@ -316,7 +339,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   CI/Vercel; `npm run estate:check` fails on both everywhere; and
   `scripts/check-bundle.mjs` (the build) fails when a catalogue URL is missing
   from `dist/`, and on a dev catalogue on Vercel or CI.
-  Pinned by `tests/estate-window.dom.test.tsx` (fake engine), the Estate cases in
+  Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
+  `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
+  a focused HUD button, and the touch stick), the Estate cases in
   `tests/workbench-deeplink.dom.test.tsx` and `tests/workbench-links.test.ts`
   (exact links, no hex anywhere under `estate/`, identical double render),
   `tests/estate-boundary.test.ts` (the import rules above),
@@ -334,7 +359,14 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   no-WebGL, **zero animation frames at rest**, a fly-to that cuts while motion
   is paused, the Save-Data byte count against its label, stale, HUD mouse
   clicks with the stage focused, a fully clean axe scan, a reopen drawn at full
-  size and detail, and Reload after a failed engine chunk. Restated constants in
+  size and detail, Reload after a failed engine chunk, and P5's tour (8a: Enter
+  Blk 509 from the registry, step buttons to stair 5, ▲ L2, the strip's lift to
+  L5 with 0 requests, the lift panel, a clean axe scan in Walk, then the Esc
+  layers out to a minimised window; 8b: the car park's ramp from L1 to L2 by
+  holding W; 8c: the hawker hall) and slow-then-failed interiors (13: F stays
+  whole, "Streaming interior…", then the reason, and Enter refused). The tour
+  moves by step buttons because they are discrete; its routes assume the
+  entrance Enter's arc picks from a landed fly-to at 1280 × 720. Restated constants in
 
   the view (`ESTATE_DISPLAY_NAME`, `ESTATE_REPO_URL`, `ESTATE_FOCUS_EVENT_NAME`,
   the shell's tier list) exist so the main bundle need not import `lib/estate`
@@ -773,11 +805,14 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   `lib/estate/packBudgets.json` `engineMinified` and `engineGzip`; and what the
   Load click downloads (engine and HUD chunks plus what they import that the page
   has not loaded) within `engineGzip`, because the consent label counts that
-  cap. Both budgets were re-pinned in P4b at the measured size + 5%; a re-pin may
-  move them but never above the plan's 307,200 B / 950,000 B. The main cap is
-  NOT re-pinnable: after P4b the main bundle is 505,928 B of 508,834 B, so P5
-  and P6's main-bundle code (Walk rows, assistant wording, `focusEstate` checks,
-  the phone row) must fit in ~2.9 KB or move into the controller chunk. The
+  cap. Both budgets were re-pinned in P4b and again in P5 (interiors, Walk and
+  the Walk HUD) at the measured size + 5%; a re-pin may move them but never
+  above the plan's 307,200 B / 950,000 B — and after P5 the engine chunk's pin
+  sits within 1 % of that 950,000 B, so P6's Plan must pay for itself. The main
+  cap is NOT re-pinnable: after P5 the main bundle is 506,673 B of 508,834 B
+  (P5 spent 691 B: the registry's Enter/Exit row, Walk's keys and the assistant's
+  "walk in"), so P6's main-bundle code (`focusEstate` checks, the phone row)
+  must fit in ~2.1 KB or move into the controller chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).
 - `npm run test:e2e` runs two Playwright projects: `chromium` (everything but the

@@ -38,6 +38,7 @@ export const POSTER_MODEL: EstateModel = Object.freeze({
   interactive: false,
   focusable: false,
   rowsFly: false,
+  rowAction: null,
   focus: null,
   hud: null,
 });
@@ -78,7 +79,8 @@ export const EstateView: React.FC<{
   rootRef?: React.Ref<HTMLDivElement>;
   onSite: (site: EstateSiteId) => void;
   onAction: () => void;
-}> = ({ model, rootRef, onSite, onAction }) => {
+  onRowAction?: () => void;
+}> = ({ model, rootRef, onSite, onAction, onRowAction }) => {
   const { poster } = ESTATE_CATALOGUE;
   const { hud } = model;
   return (
@@ -113,6 +115,7 @@ export const EstateView: React.FC<{
           action={model.action ? { ...model.action, onClick: onAction } : null}
           selected={model.selected}
           rowsFly={model.rowsFly}
+          rowAction={model.rowAction && onRowAction ? { ...model.rowAction, onClick: onRowAction } : null}
           onSite={onSite}
           notice={model.notice}
         />
@@ -219,6 +222,8 @@ export const EstateWindow: React.FC = () => {
     loadController();
   }, [loadController]);
 
+  const onRowAction = React.useCallback(() => handlersRef.current?.onRowAction(), []);
+
   const onAction = React.useCallback(() => {
     if (handlersRef.current) handlersRef.current.onAction();
     // Before the controller the only action is the failed import's: only a reload refetches it.
@@ -227,7 +232,7 @@ export const EstateWindow: React.FC = () => {
 
   return (
     <>
-      <EstateView model={model} rootRef={rootRef} onSite={onSite} onAction={onAction} />
+      <EstateView model={model} rootRef={rootRef} onSite={onSite} onAction={onAction} onRowAction={onRowAction} />
       {Controller && <Controller rootRef={rootRef} onModel={onModel} takePending={takePending} />}
     </>
   );

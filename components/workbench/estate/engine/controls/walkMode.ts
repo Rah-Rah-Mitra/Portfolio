@@ -174,7 +174,8 @@ export class WalkMode {
     this.liftLift = null;
     this.levels = [];
     this.levelsKey = '';
-    this.view.set({ walk: null, transition: null });
+    // The lift popover belongs to Walk: it goes with it (help stays).
+    this.view.set({ walk: null, transition: null, ...(this.view.get().popover === 'lift' ? { popover: null } : {}) });
   }
 
   /** Frozen: a climb or ride lands at its end now; keys and the stick let go. */
@@ -328,10 +329,14 @@ export class WalkMode {
         stair: next.stair ? Object.freeze(next.stair) : null,
       });
     }
+    // The lift popover answers the offer: walked away from the landing (or a ride
+    // under way), it closes, so Esc never peels a popover no one can see.
+    const closeLift = this.view.get().popover === 'lift' && this.walkView?.lift == null;
     this.view.set({
       location: { site: siteId, storey: storeyTag, unit: loc.unit, room: loc.room, mode: 'walk' },
       walk: this.walkView,
       transition: this.transition,
+      ...(closeLift ? { popover: null } : {}),
     }, via);
   }
 

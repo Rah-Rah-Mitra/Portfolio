@@ -5,6 +5,7 @@ import { motionHalted } from '../../../lib/motion';
 import { claimGpu, releaseGpu } from '../../../lib/gpuClaim';
 import { ESTATE_CATALOGUE } from '../../../lib/estate/catalogue.generated';
 import type { EstateSiteId } from '../../../lib/estate/ids';
+import { siteShortName } from '../../../lib/estate/announce';
 import { ESTATE_FOCUS_EVENT, validateEstateFocus, type EstateFocusDetail } from '../../../lib/estate/events';
 import { decideEscape, type KeyTargetKind } from '../../../lib/estate/input';
 import {
@@ -12,6 +13,7 @@ import {
   RELEASE_AFTER_MS,
   RESTORE_TIMEOUT_MS,
   consentLabel,
+  enterLabel,
   fullDetailLabel,
   liveResetCount,
   noteContextLoss,
@@ -23,7 +25,7 @@ import type { EstateEngine, EstateEngineEvent, EstateResume, EstateRuntime } fro
 import { EstateLoadError, loadEngine } from './loadEngine';
 import { ESTATE_SECTION, ESTATE_STAGE, usePanePresence } from './usePanePresence';
 import { debugFromSearch, onDocumentComplete, qualityFromSearch, readTokenColours, releaseMsFromSearch, reloadPage, whenIdle } from './shellDom';
-import type { EstateControllerProps, EstateModel, EstateModelAction, EstateModelHandlers } from './estateModel';
+import type { EstateControllerProps, EstateModel, EstateModelAction, EstateModelHandlers, EstateModelRowAction } from './estateModel';
 
 // The Estate window's controller (WIN-07, #world): a lazy chunk the window
 // imports when it first opens (estateModel.ts says why the view and this are
@@ -111,6 +113,8 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     return request.site ? request : null;
   });
   const [selected, setSelected] = React.useState<EstateSiteId | null>(pending?.site ?? null);
+  // Walk's building underfoot (null outdoors), or undefined outside Walk: the registry's Exit row.
+  const [walkSite, setWalkSite] = React.useState<EstateSiteId | null | undefined>(undefined);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [progress, setProgress] = React.useState<number | null>(null);
   const [focusIntent, setFocusIntent] = React.useState(false);
@@ -255,6 +259,7 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
         break;
       case 'location':
         setSelected(event.selection);
+        setWalkSite(event.location.mode === 'walk' ? event.walk?.site ?? event.location.site : undefined);
         break;
       case 'lost': {
         const now = performance.now();
@@ -572,6 +577,25 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     [actionLabel],
   );
 
+  // The registry's mirror of the HUD's Enter and Exit (§8.6): Exit on the row of
+  // the building Walk stands in, else Enter on the selected row, labelled with
+  // what entering downloads (pack.json's sizes, so only once the engine has it).
+  const canEnter = phase === 'live' && engine?.features.enter === true;
+  let rowSite: EstateSiteId | null = null;
+  let rowKind: EstateModelRowAction['kind'] = 'enter';
+  let rowLabel = '';
+  if (canEnter && walkSite !== undefined) {
+    if (walkSite) { rowSite = walkSite; rowKind = 'exit'; rowLabel = `Exit ${siteShortName(walkSite)}`; }
+  } else if (canEnter && selected && engine) {
+    const files = engine.siteFiles(selected);
+    rowSite = selected;
+    rowLabel = files ? enterLabel({ ...files, name: siteShortName(selected) }) : `Enter ${siteShortName(selected)}`;
+  }
+  const rowAction = React.useMemo<EstateModelRowAction | null>(
+    () => (rowSite ? { site: rowSite, kind: rowKind, label: rowLabel } : null),
+    [rowSite, rowKind, rowLabel],
+  );
+
   // One polite status line in the side panel speaks the viewer's phase; the
   // HUD's own (visually hidden) status speaks where the camera is. Two regions,
   // two subjects, never the same words.
@@ -587,9 +611,16 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
 
   // The view's handlers stay the same functions for this controller's life and
   // call the latest closures.
-  const latest = React.useRef({ onSite, onAction: () => {} });
+  const latest = React.useRef({ onSite, onAction: () => {}, onRowAction: () => {} });
   latest.current = {
     onSite,
+    onRowAction: () => {
+      const instance = engineRef.current;
+      if (!instance || phase !== 'live' || !rowAction) return;
+      // Enter and Exit from the registry leave the keys on the stage (§8.3), as a row's fly-to does.
+      const acted = rowAction.kind === 'exit' ? instance.setMode('overview') : instance.enter(rowAction.site);
+      if (acted) moveFocus('stage');
+    },
     onAction: () => {
       if (result.action === 'load') requestLoad();
       else if (result.action === 'retry') retry();
@@ -599,6 +630,7 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   const handlers = React.useMemo<EstateModelHandlers>(() => ({
     onSite: (site) => latest.current.onSite(site),
     onAction: () => latest.current.onAction(),
+    onRowAction: () => latest.current.onRowAction(),
   }), []);
   const loadFullDetail = React.useCallback(() => {
     setFullDetail(true);
@@ -628,6 +660,7 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     focusable: focusIntent && phase === 'loading',
     focus: focusMove,
     rowsFly: phase === 'live' && engine?.features.flyTo === true,
+    rowAction,
     hud,
   };
   // Before paint, so a phase change and its focus move land in one frame.

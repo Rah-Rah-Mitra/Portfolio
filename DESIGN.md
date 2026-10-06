@@ -106,8 +106,8 @@ lens distortion, pose and homography, thin-lens depth of field, rectified stereo
 and a Zhang calibration), and inside the Systems Lab a mechanism bench, a
 flow-shop sequencing model and a contained drop test. The Estate window shows
 Sample Town N5, a generated sample HDB neighbourhood, as a duotone still render
-with a text registry of its fourteen buildings, and a 3D viewer to orbit it or
-fly to a building. The FX panel can switch on two desk backdrops, an N-body
+with a text registry of its fourteen buildings, and a 3D viewer to orbit it,
+fly to a building and walk in through its void decks, stairs and lifts. The FX panel can switch on two desk backdrops, an N-body
 gravity field and a fluid; both are off at boot.
 
 **Key characteristics:**
@@ -234,9 +234,12 @@ the FX "Pause all motion").
 - **Estate** (FIG. 07): the poster and registry are prerendered text; the 3D
   viewer is a lazy chunk. Rules a 3D viewport adds to the ones above:
   - a keyboard viewport is `role="application"` with an `aria-label` and an
-    `aria-describedby` pointing at a prerendered key list (`#estate-keys`), and
-    only while there is a viewer to drive; the same facts (buildings, storeys,
-    heights) are text beside it, and every pointer action is a button;
+    `aria-describedby` pointing at a short per-mode key summary
+    (`#estate-keys-desc`, the full list prerendered as `#estate-keys`), and only
+    while there is a viewer to drive; the same facts (buildings, storeys,
+    heights) are text beside it, and every pointer action is a button — Walk's
+    0.5 m steps and 15° turns included; the touch stick is the one pointer-only
+    control, and the step buttons beside it do everything it does;
   - halted motion turns every flight into a cut and nothing moves by itself, but
     a visitor-driven viewer still redraws on input (drag, keys);
   - text over a scene sits on opaque chips (`--paper-55`, a hairline border,
@@ -246,6 +249,16 @@ the FX "Pause all motion").
     stays inside the sheet's clip;
   - **HUD language is survey annotation** — location chips, storey strips,
     north arrow, plain prompts. No crosshair, minimap, score or game chrome;
+  - **Walk offers what is where the walker stands**, as chips: a stair chip
+    with ▲ / ▼ buttons, a lift chip that opens a level panel (the storey
+    underfoot listed and disabled), the storey strip down the right edge
+    ('RF +45.60 … L1 ±0.00', from the data) whose unreachable storeys are
+    disabled and say why, "Preparing walkway…" and "Streaming interior…" while
+    files arrive. A lift ride is a 250 ms fade to the paper ground with its
+    caption over it. Enter and Exit appear twice — on the HUD and under the
+    building's registry row — and Enter's label says what it downloads. The
+    touch stick is a 96px square pad, square-cornered like every control, shown
+    only once the stage has seen a finger (or the pointer is coarse);
   - **one palette:** every 3D material role maps onto the design tokens
     (walls `--color-neutral-100`, slabs and paving `--color-neutral-300`, doors
     `--color-neutral-500`, asphalt `--color-neutral-700`, grass and foliage

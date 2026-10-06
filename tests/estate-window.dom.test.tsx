@@ -9,7 +9,7 @@ import { ESTATE_NAME } from '../lib/estate/ids';
 import { RELEASE_OVERRIDE_RANGE, SHELL_TIERS, qualityFromSearch, releaseMsFromSearch, reloadPage } from '../components/workbench/estate/shellDom';
 import { EstateLoadError, loadEngine } from '../components/workbench/estate/loadEngine';
 import type {
-  EstateEngine, EstateEngineEvent, EstateEngineOptions, EstateHudProps, EstateRuntime, EstateView,
+  EstateEngine, EstateEngineEvent, EstateEngineOptions, EstateHudProps, EstateRuntime, EstateView, EstateWalkView,
 } from '../components/workbench/estate/engineApi';
 import { ESTATE_FOCUS_EVENT } from '../lib/estate/events';
 import { ESTATE_REPO } from '../lib/estate/schema';
@@ -58,6 +58,8 @@ let instances: FakeEngine[];
 
 const createFake = (options: EstateEngineOptions): FakeEngine => {
   let view: EstateView = { ...INITIAL_VIEW, lean: options.lean };
+  // The HUD subscribes; the shell hears everything first through options.onEvent.
+  const listeners = new Set<(event: EstateEngineEvent) => void>();
   const fake: FakeEngine = {
     token: options.token,
     options,
@@ -81,7 +83,10 @@ const createFake = (options: EstateEngineOptions): FakeEngine => {
     }),
     getResume: vi.fn(() => ({ mode: 'overview' as const, selection: view.selection, position: [1, 2, 3] as [number, number, number], target: [4, 5, 6] as [number, number, number] })),
     getView: () => view,
-    subscribe: () => () => {},
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
     flyTo: vi.fn((site) => {
       fake.setView({ selection: site, location: { ...view.location, site } });
       return true;
@@ -95,6 +100,7 @@ const createFake = (options: EstateEngineOptions): FakeEngine => {
     walkStep: vi.fn(() => false),
     setStick: vi.fn(() => false),
     walkFrom: vi.fn(() => false),
+    siteFiles: vi.fn(() => null),
     select: vi.fn((site) => {
       fake.setView({ selection: site });
       return true;
@@ -112,7 +118,9 @@ const createFake = (options: EstateEngineOptions): FakeEngine => {
     emit: (event) => act(() => { options.onEvent({ ...event, token: options.token } as EstateEngineEvent); }),
     setView: (patch) => {
       view = { ...view, ...patch };
-      options.onEvent({ type: 'location', token: options.token, ...view });
+      const event: EstateEngineEvent = { type: 'location', token: options.token, ...view };
+      options.onEvent(event);
+      for (const listener of listeners) listener(event);
     },
   };
   instances.push(fake);
@@ -746,6 +754,153 @@ describe('Estate window — inside the workbench, with the real HUD module', () 
     } finally {
       window.history.replaceState(null, '', '/');
     }
+  });
+});
+
+describe('Estate window — Walk, with the real HUD module inside the workbench', () => {
+  const LEVELS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'L10', 'L11', 'L12', 'L13', 'L14', 'L15', 'L16'] as const;
+  const WALK: EstateWalkView = {
+    site: 'BLK_509',
+    storey: 'L5',
+    preparing: false,
+    lift: { name: 'Lift 3', text: 'LIFT 3 · CHOOSE A LEVEL', current: 'L5', served: LEVELS },
+    stair: null,
+    ride: null,
+    levels: [
+      ...LEVELS.map((tag, i) => ({ tag, ffl: i === 0 ? 0 : 0.8 + 2.8 * i, route: tag === 'L5' ? 'here' as const : 'lift' as const, reason: null })),
+      { tag: 'RF', ffl: 45.6, route: null, reason: 'No lift or stair reaches RF' },
+    ],
+  };
+
+  /** FieldWorkbench with the real HUD over a fake engine that has Walk and Enter, live and walking on Blk 509's L5 by Lift 3. */
+  const mountWalking = async () => {
+    window.history.replaceState(null, '', '/?app=world-3d');
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal('IntersectionObserver', class { observe = vi.fn(); unobserve = vi.fn(); disconnect = vi.fn(); });
+    const ctx = new Proxy({} as Record<string | symbol, unknown>, { get: (target, key) => (target[key] ??= vi.fn()) });
+    vi.mocked(HTMLCanvasElement.prototype.getContext).mockImplementation(() => ctx as never);
+    const runFrames = () => act(() => { for (let i = 0; i < frames.length && i < 200; i += 1) frames[i]!(16 * i); frames.length = 0; });
+    const { EstateHud } = await import('../components/workbench/estate/live/EstateHud');
+    const { default: FieldWorkbench } = await import('../components/workbench/FieldWorkbench');
+    loadMock.mockResolvedValue({ createEngine: runtime.createEngine, EstateHud });
+    const view = render(<ExperienceModeProvider capabilities={ALLOWED}><FieldWorkbench /></ExperienceModeProvider>);
+    runFrames();
+    await flush();
+    runIdle();
+    await flush();
+    const engine = instances[0];
+    Object.assign(engine.features, { walk: true, enter: true, interiors: true });
+    // The engine's own popover rule: the lift panel only with a lift on offer.
+    engine.setPopover = vi.fn((popover) => {
+      if (popover === engine.getView().popover || (popover === 'lift' && !engine.getView().walk?.lift)) return false;
+      engine.setView({ popover, popoverOpen: popover !== null });
+      return true;
+    });
+    engine.setStorey = vi.fn(() => true);
+    engine.setStick = vi.fn(() => true);
+    engine.siteFiles = vi.fn(() => ({ name: 'Blk 509', facade: { bytes: 89_117 }, detail: { bytes: 21_153 }, interior: { bytes: 47_728 }, walk: { bytes: 16_732 }, nav: { bytes: 14_580 } }));
+    engine.emit({ type: 'ready', tier: 'mid', msaa: false, programs: 6 });
+    await flush();
+    runFrames();
+    act(() => engine.setView({
+      location: { site: 'BLK_509', storey: 'L5', unit: null, room: 'Common corridor', mode: 'walk' },
+      selection: 'BLK_509',
+      walk: WALK,
+      interior: { site: 'BLK_509', state: 'ready', storey: 'L5', band: 'L4–L6', reason: null },
+    }));
+    const win = view.container.querySelector<HTMLElement>('[data-win="world-3d"]')!;
+    return { ...view, engine, win };
+  };
+
+  afterEach(() => { window.history.replaceState(null, '', '/'); });
+
+  it('Tab to a lift level, Esc closes the panel and keeps the window; Esc in Overview at last minimises it', async () => {
+    const { container, engine, win } = await mountWalking();
+    expect(phaseOf(container)).toBe('live');
+    const lift = container.querySelector<HTMLButtonElement>('[data-estate-lift]')!;
+    expect(lift.textContent).toBe('LIFT 3 · CHOOSE A LEVEL');
+    act(() => { fireEvent.click(lift); });
+    expect(engine.setPopover).toHaveBeenLastCalledWith('lift');
+    const panel = container.querySelector<HTMLElement>('[data-estate-popover="lift"]')!;
+    expect(panel.getAttribute('aria-label')).toBe('Lift 3, levels');
+    expect(lift.getAttribute('aria-expanded')).toBe('true');
+    // The storey underfoot is listed and disabled; the others ride.
+    const here = [...panel.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'L5, here')!;
+    expect(here.disabled).toBe(true);
+    const l12 = [...panel.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Lift 3 to L12')!;
+    expect(l12.disabled).toBe(false);
+    // Every control in the window has a name a screen reader can say, panel open.
+    for (const button of win.querySelectorAll('button')) {
+      const name = (button.getAttribute('aria-label') ?? button.textContent ?? '').trim();
+      expect(name, button.outerHTML.slice(0, 80)).not.toBe('');
+    }
+
+    // A keyboard visitor in the panel: Esc closes it (layer 1), the window stays, focus goes back to the lift chip.
+    act(() => { l12.focus(); });
+    act(() => { fireEvent.keyDown(l12, { key: 'Escape', code: 'Escape' }); });
+    expect(engine.escape).toHaveBeenLastCalledWith('close-popover');
+    expect(container.querySelector('[data-estate-popover="lift"]')).toBeNull();
+    expect(win.style.display).toBe('flex');
+    expect(document.activeElement).toBe(container.querySelector('[data-estate-lift]'));
+
+    // From that HUD button: Walk → Overview, then the selection, then the window.
+    act(() => { fireEvent.keyDown(document.activeElement!, { key: 'Escape', code: 'Escape' }); });
+    expect(engine.escape).toHaveBeenLastCalledWith('overview');
+    expect(win.style.display).toBe('flex');
+    const stage = stageOf(container);
+    act(() => { stage.focus(); });
+    act(() => { fireEvent.keyDown(stage, { key: 'Escape', code: 'Escape' }); });
+    expect(engine.escape).toHaveBeenLastCalledWith('clear-selection');
+    expect(win.style.display).toBe('flex');
+    act(() => { fireEvent.keyDown(stage, { key: 'Escape', code: 'Escape' }); });
+    await flush();
+    expect(win.style.display).toBe('none');
+  });
+
+  it('Enter on a focused HUD button is the button’s, never a stage action; the strip routes and explains', async () => {
+    const { container, engine } = await mountWalking();
+    const strip = container.querySelector<HTMLElement>('.wb-estate-strip')!;
+    expect(strip.getAttribute('aria-label')).toBe('Storeys of Blk 509');
+    const names = [...strip.querySelectorAll('button')].map((b) => b.getAttribute('aria-label'));
+    // Top down, from the data; the storey underfoot current, a storey nothing reaches disabled with why.
+    expect(names[0]).toBe('RF +45.60, No lift or stair reaches RF');
+    expect(names.at(-1)).toBe('L1 ±0.00, by lift');
+    const rf = strip.querySelector<HTMLButtonElement>('[data-route="none"]')!;
+    expect(rf.disabled).toBe(true);
+    const here = strip.querySelector<HTMLButtonElement>('[aria-current]')!;
+    expect(here.getAttribute('aria-label')).toBe('L5 +12.00, here');
+    expect(here.disabled).toBe(true);
+    const l12 = [...strip.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'L12 +31.60, by lift')!;
+    act(() => { l12.focus(); });
+    const enter = fireEvent.keyDown(l12, { key: 'Enter', code: 'Enter' });
+    // Not consumed by any stage listener, and no engine command ran on the keydown.
+    expect(enter).toBe(true);
+    expect(engine.setStorey).not.toHaveBeenCalled();
+    expect(engine.enter).not.toHaveBeenCalled();
+    act(() => { fireEvent.click(l12); });
+    expect(engine.setStorey).toHaveBeenLastCalledWith('L12');
+    // Enter and Exit, mirrored: in Walk the HUD offers Exit and the registry's row says the same.
+    expect(container.querySelector('[data-estate-exit]')!.textContent).toBe('Exit Blk 509');
+    expect(container.querySelector('[data-estate-row-action="exit"]')!.textContent).toBe('Exit Blk 509');
+  });
+
+  it('a first touch shows the 96 px stick in Walk; its deflection goes to setStick, and letting go releases it', async () => {
+    const { container, engine } = await mountWalking();
+    expect(container.querySelector('[data-estate-stick]')).toBeNull();
+    const stage = stageOf(container);
+    act(() => { fireEvent.pointerDown(stage, { pointerType: 'touch', pointerId: 7 }); });
+    const stick = container.querySelector<HTMLElement>('[data-estate-stick]')!;
+    expect(stick).not.toBeNull();
+    expect(stick.getAttribute('aria-hidden')).toBe('true');
+    // jsdom lays nothing out: the stick's centre is (0, 0), and 34 px is a full deflection.
+    act(() => { fireEvent.pointerDown(stick, { pointerType: 'touch', pointerId: 9, clientX: 0, clientY: -34 }); });
+    expect(engine.setStick).toHaveBeenLastCalledWith(0, 1);
+    act(() => { fireEvent.pointerMove(stick, { pointerType: 'touch', pointerId: 9, clientX: 17, clientY: 0 }); });
+    expect(engine.setStick).toHaveBeenLastCalledWith(0.5, 0);
+    act(() => { fireEvent.pointerUp(stick, { pointerType: 'touch', pointerId: 9 }); });
+    expect(engine.setStick).toHaveBeenLastCalledWith(0, 0);
   });
 });
 

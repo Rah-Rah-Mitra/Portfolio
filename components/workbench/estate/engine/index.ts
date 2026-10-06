@@ -1,4 +1,5 @@
 import type { EstateLocation } from '../../../../lib/estate/announce';
+import { ESTATE_SITE_IDS } from '../../../../lib/estate/ids';
 import type {
   CreateEngine, EstateEngine, EstateEngineFeatures, EstateEngineOptions, EstateInteriorView, EstatePopover, EstateResume,
   EstateView,
@@ -132,6 +133,8 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
 
   const setPopover = (popover: EstatePopover | null): boolean => {
     if (!live() || popover === view.popover) return false;
+    // The lift panel lists what the offered lift serves: no offer, no panel.
+    if (popover === 'lift' && !view.walk?.lift) return false;
     access.set({ popover });
     return true;
   };
@@ -161,6 +164,8 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
     },
     getView: () => view,
     subscribe: (listener) => emitter.subscribe(listener),
+    // Sites come back from parsePack in ESTATE_SITE_IDS order.
+    siteFiles: (site) => engineCore.pack?.sites[ESTATE_SITE_IDS.indexOf(site)] ?? null,
 
     flyTo: (site, flyOptions) => live() && nav.flyTo !== undefined && nav.flyTo(site, flyOptions),
     enter: (site, enterOptions) => live() && nav.enter !== undefined && nav.enter(site, enterOptions),

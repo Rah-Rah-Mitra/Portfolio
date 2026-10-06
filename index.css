@@ -1036,6 +1036,8 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 .wb-estate-site[aria-pressed='true'] { background: var(--color-accent-100); border-color: var(--color-accent-700); }
 .wb-estate-site-name { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 13.5px; letter-spacing: 0.03em; text-transform: uppercase; }
 .wb-estate-site-meta { font-size: 10px; letter-spacing: 0.06em; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
+/* The HUD's Enter or Exit, mirrored under the row it acts on. */
+.wb-estate-site-act { margin: 4px 0 6px 6px; font-size: 11px; padding: 4px 8px; }
 .wb-estate-keys { margin: 0 0 12px; }
 .wb-estate-keys > summary { list-style: none; cursor: pointer; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.13em; color: var(--color-accent-700); }
 .wb-estate-keys > summary::-webkit-details-marker { display: none; }
@@ -1131,14 +1133,55 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 .wb-estate-streaming { flex-direction: column; align-items: stretch; gap: 4px; min-width: 180px; }
 .wb-estate-hud-progress { display: block; height: 1px; background: var(--color-divider); }
 .wb-estate-hud-progress > span { display: block; height: 1px; background: var(--color-accent-700); }
-/* Step buttons: an arrow pad, a gap, then three pairs (zoom, orbit, tilt in
-   Overview; climb, strafe, look in Fly). Walk (P5) has the pad only. */
+/* Step buttons: an arrow pad, a gap, then the pairs (zoom, orbit, tilt in
+   Overview; climb, strafe, look in Fly; strafe and look in Walk, whose pad
+   steps half a metre and turns 15°). */
 .wb-estate-steps {
   position: absolute; right: 10px; bottom: 40px; display: grid; gap: 3px;
   grid-template-columns: repeat(3, 28px) 4px repeat(2, 28px); grid-template-rows: repeat(3, 28px);
   grid-template-areas: '. pu . . a1 b1' 'pl pd pr . a2 b2' '. . . . a3 b3';
 }
-.wb-estate-steps[data-mode='walk'] { grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(2, 28px); grid-template-areas: '. pu .' 'pl pd pr'; }
+.wb-estate-steps[data-mode='walk'] { grid-template-rows: repeat(2, 28px); grid-template-areas: '. pu . . a1 b1' 'pl pd pr . a2 b2'; }
+/* Walk's storey strip, right, top down from RF to L1, bottom-aligned (the
+   first row's auto margin, which still lets an overflowing strip scroll to
+   RF); the steps move in beside it. */
+.wb-estate-strip {
+  position: absolute; right: 10px; top: 84px; bottom: 40px; display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; pointer-events: auto;
+}
+.wb-estate-strip > :first-child { margin-top: auto; }
+.wb-estate-strip-btn {
+  flex: none; display: grid; grid-template-columns: 26px auto; align-items: center; gap: 4px; min-width: 76px; height: 20px; padding: 0 6px;
+  border: 1px solid var(--color-divider); border-radius: 0; background: var(--paper-55); color: var(--color-text); cursor: pointer;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; line-height: 1; letter-spacing: 0.06em; text-align: left;
+}
+.wb-estate-strip-btn:hover:not(:disabled) { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-estate-strip-ffl { font-family: var(--font-body); font-weight: 400; font-size: 10px; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
+.wb-estate-strip-btn[aria-current] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); cursor: default; }
+.wb-estate-strip-btn:disabled:not([aria-current]) { opacity: 0.45; cursor: not-allowed; }
+.wb-estate-hud[data-strip] .wb-estate-steps { right: 96px; }
+.wb-estate-hud[data-strip] .wb-estate-hud-bottom { max-width: calc(100% - 276px); }
+/* The lift's level panel, under its chip in the bottom column. */
+.wb-estate-lift { width: 214px; max-height: 210px; }
+.wb-estate-lift-levels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+.wb-estate-lift-levels .wb-estate-hud-btn { padding: 3px 0; }
+.wb-estate-lift-levels .wb-estate-hud-btn[aria-current] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
+.wb-estate-chip-offer { border-color: var(--color-accent-700); }
+/* A lift ride's caption, over the engine's paper fade (which sits under the HUD). */
+.wb-estate-ride {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 6px 12px;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 14px; letter-spacing: 0.08em; color: var(--color-text);
+}
+/* The touch stick (§8.7): 96 px, bottom left, square like every control here. */
+.wb-estate-stick {
+  position: absolute; left: 10px; bottom: 40px; width: 96px; height: 96px; display: grid; place-items: center;
+  border: 1px solid var(--color-divider); background: var(--paper-55); pointer-events: auto; touch-action: none;
+}
+.wb-estate-stick-knob { position: relative; z-index: 1; width: 28px; height: 28px; border: 1px solid var(--color-accent-700); background: var(--color-accent-100); }
+/* With the stick in the thumb's corner the bottom column stands above it, clear
+   of the step buttons, so it can take the stage's width (less the strip's). */
+.wb-estate-hud[data-stick] .wb-estate-hud-bottom { bottom: 144px; max-width: calc(100% - 20px); }
+.wb-estate-hud[data-stick][data-strip] .wb-estate-hud-bottom { max-width: calc(100% - 106px); }
 .wb-estate-steps .wb-estate-hud-btn { min-height: 0; padding: 0; }
 .wb-estate-step-pu { grid-area: pu; }
 .wb-estate-step-pl { grid-area: pl; }

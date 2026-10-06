@@ -685,5 +685,6 @@ describe.skipIf(realPackDir === null)('stair band on the real walking lines (§1
     // Every storey pair of every building has its stairs (five cores in a slab block, three in the car park, two at the NC).
     expect(stairs).toBeGreaterThan(14 * 2);
     expect(samples).toBeGreaterThan(stairs * 4 * 100);
-  });
+    // ~0.9 s alone; the full suite's parallel load has pushed it past vitest's 5 s default.
+  }, 30_000);
 });

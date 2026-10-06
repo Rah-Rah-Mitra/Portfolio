@@ -7,8 +7,17 @@ import { gzipSync } from 'node:zlib';
 // 1–7, 11, 12, 15 and 16, plus P7's release-and-reopen (14), whose release P4b
 // built, and the P4b review's: HUD clicks with the stage focused (5b), the
 // stage's description and a fully clean axe scan (5c), a reopen drawn at full
-// size and detail (14b), and Reload after a failed engine chunk (17). The P5 tour (8), interior streaming (13), context loss (9) and the phone
-// row (10) land with the phases that build them.
+// size and detail (14b), and Reload after a failed engine chunk (17). P5's
+// tour (8: Blk 509's stairs and lift, the car park's ramp, the hawker hall)
+// and its slow and failed interiors (13). Context loss (9) and the phone row
+// (10) land with the phases that build them.
+//
+// The tour moves with the HUD's step buttons (half a metre, 15°): they are
+// discrete, so a route of presses lands in the same place every run, where a
+// held key's distance depends on the frame rate. Only the car park's ramp is
+// climbed by holding W, as the plan asks. The routes start where Enter's arc
+// lands from a landed fly-to at Playwright's 1280 × 720 (Blk 509: the east
+// void-deck entrance; the car park: Entrance E; the hawker centre: Entrance E 2).
 //
 // `?estate-quality=min` starts the engine on its lowest tier, which is also what
 // it picks for SwiftShader unasked; the caps checked are the top tier's (§7.11),
@@ -62,6 +71,35 @@ const waitLive = (page: Page) => expect(phase(page)).toHaveAttribute('data-estat
 const stage = (page: Page) => page.locator('[data-estate-stage]');
 const chip = (page: Page) => page.locator('[data-estate-location]');
 const readout = async (page: Page, name: string) => Number(await stage(page).getAttribute(`data-estate-${name}`));
+const hud = (page: Page) => page.locator('.wb-estate-hud');
+const spoken = (page: Page) => page.locator('.wb-estate-hud [role="status"]');
+
+/** Press the HUD's step buttons in order: 'f' step forward, 'b' back, 'l' / 'r' turn 15°, each with a count ('f6'). */
+const steps = (page: Page, route: string) => page.evaluate((plan) => {
+  const label: Record<string, string> = { f: 'Step forward', b: 'Step back', l: 'Turn left', r: 'Turn right' };
+  for (const move of plan.split(' ')) {
+    const button = document.querySelector<HTMLButtonElement>(`.wb-estate-steps button[aria-label="${label[move[0]]}"]`);
+    if (!button) throw new Error(`no ${label[move[0]]} button`);
+    for (let i = 0; i < Number(move.slice(1)); i += 1) button.click();
+  }
+}, route);
+
+/** Select a building from the registry and let its fly-to land (Enter's arc starts from the framed pose). */
+const flyToAndLand = async (page: Page, site: string, label: RegExp) => {
+  await page.locator(`[data-estate-site="${site}"]`).click();
+  await expect(chip(page)).toHaveText(label);
+  await expect.poll(() => hud(page).getAttribute('data-flight')).toBeNull();
+};
+
+/** The registry's Enter for the selected row, then the arc: Walk on the building's L1, its walk grid here (the strip is drawn). */
+const enterFromRegistry = async (page: Page, name: RegExp, inside: RegExp) => {
+  const enter = page.locator('[data-estate-row-action="enter"]');
+  await expect(enter).toHaveText(name);
+  await enter.click();
+  await expect(chip(page)).toHaveText(inside, { timeout: LIVE_TIMEOUT });
+  await expect.poll(() => hud(page).getAttribute('data-flight')).toBeNull();
+  await expect(page.locator('.wb-estate-strip')).toBeVisible({ timeout: LIVE_TIMEOUT });
+};
 
 /** Settled: nothing in flight, and the readouts written since. */
 const settle = async (page: Page) => {
@@ -328,6 +366,147 @@ test.describe('estate window — live 3D view', () => {
     const restFrames = await frames(page);
     await page.waitForTimeout(1_000);
     expect(await frames(page) - restFrames, 'requestAnimationFrame calls in 1 s at rest after reopening').toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('8a · the P5 tour: Enter Blk 509, the stairs to L2, the lift to L5, and Esc back out', async ({ page }) => {
+    const errors = collectErrors(page);
+    const paths = collectPaths(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    await flyToAndLand(page, 'BLK_509', /^BLK 509 · /);
+    // Enter is mirrored: the HUD's and the registry's carry the same label, with what entering downloads.
+    await expect(win.locator('[data-estate-enter="BLK_509"]')).toHaveText(/^Enter Blk 509 · \d+\.\d MB$/);
+    await enterFromRegistry(page, /^Enter Blk 509 · \d+\.\d MB$/, /^BLK 509 · L1 · .*WALK$/);
+    // Registry Enter puts the keys on the stage (§8.3); its row now offers Exit.
+    await expect.poll(() => stage(page).evaluate((node) => document.activeElement === node)).toBe(true);
+    await expect(win.locator('[data-estate-row-action="exit"]')).toHaveText('Exit Blk 509');
+    for (const kind of ['i', 'w', 'nav']) {
+      expect(paths.some((path) => path.includes(`/${kind}/BLK_509.`)), `${kind}/BLK_509 requested`).toBe(true);
+    }
+    // The strip, from the data: RF by lift then the stairs, L1 here.
+    await expect(win.getByRole('button', { name: 'RF +45.60, by lift, then the stairs' })).toBeEnabled();
+    await expect(win.getByRole('button', { name: 'L1 ±0.00, here' })).toBeDisabled();
+
+    // From the east void-deck entrance: along the deck, then into stair 5's doorway.
+    await steps(page, 'f6 r6 f2');
+    const up = win.getByRole('button', { name: 'Take stair 5 up to L2' });
+    await expect(up).toBeVisible();
+    await up.click();
+    await expect(hud(page)).toHaveAttribute('data-transition', 'climb');
+    await expect(chip(page)).toHaveText(/^BLK 509 · L2 · /, { timeout: 20_000 });
+    await expect.poll(() => hud(page).getAttribute('data-transition'), { timeout: 10_000 }).toBeNull();
+
+    // L5 by the strip: one lift ride behind the paper, and nothing downloaded for it.
+    await settle(page);
+    const before = paths.filter((path) => ESTATE_FILES.test(path)).length;
+    await win.getByRole('button', { name: 'L5 +12.00, by lift' }).click();
+    await expect(chip(page)).toHaveText(/^BLK 509 · L5 · /, { timeout: 10_000 });
+    await expect.poll(() => hud(page).getAttribute('data-transition'), { timeout: 10_000 }).toBeNull();
+    await settle(page);
+    expect(paths.filter((path) => ESTATE_FILES.test(path)).length - before, 'requests for a lift ride').toBe(0);
+    // The arrival was one utterance with the lift's name; the corridor follows once standing still.
+    await expect(spoken(page)).toHaveText(/^Common corridor/, { timeout: 5_000 });
+    expect(await readout(page, 'draws')).toBeLessThanOrEqual(150);
+    expect(await readout(page, 'tris')).toBeLessThanOrEqual(1_200_000);
+    expect(await stage(page).getAttribute('data-estate-band')).toMatch(/^L[34]–L[67]$/);
+
+    // The lift the ride left us at: its panel lists what it serves, this level disabled.
+    const lift = win.locator('[data-estate-lift]');
+    await expect(lift).toHaveText(/^LIFT \d · CHOOSE A LEVEL$/);
+    await lift.click();
+    const panel = win.getByRole('region', { name: /^Lift \d, levels$/ });
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'L5, here' })).toBeDisabled();
+    await expect(panel.getByRole('button', { name: /^Lift \d to L12$/ })).toBeEnabled();
+    // Walk's HUD (location, Exit, the strip, the lift chip and its open panel, the steps) is as clean for axe as Overview's.
+    expect(await allFindings(page)).toEqual([]);
+    // Esc layers from a HUD button: the panel, then Walk, then the selection, then the window.
+    await page.keyboard.press('Tab');
+    await expect.poll(() => panel.evaluate((node) => node.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(win).toBeVisible();
+    await expect.poll(() => lift.evaluate((node) => document.activeElement === node)).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(chip(page)).toHaveText(/ · OVERVIEW$/, { timeout: 10_000 });
+    await expect(win).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(win.locator('[data-estate-site="BLK_509"]')).toHaveAttribute('aria-pressed', 'false');
+    await expect(win).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(win).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test('8b · the car park: up its ramp from L1 to L2 by holding W', async ({ page }) => {
+    const errors = collectErrors(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    await flyToAndLand(page, 'MSCP_513', /^MSCP 513 · /);
+    await enterFromRegistry(page, /^Enter Car park 513 · \d+\.\d MB$/, /^MSCP 513 · L1 · .*WALK$/);
+    // Entrance E, through the lobby to the walkway, north to the cross aisle, west to the ramp's foot, facing up it.
+    await steps(page, 'f18 r6 f82 l6 f58 r6 f14 r6');
+    await expect(chip(page)).toHaveText(/^MSCP 513 · L1 · RAMP LANDING WEST · WALK$/);
+    await stage(page).focus();
+    await page.keyboard.down('Shift');
+    await page.keyboard.down('KeyW');
+    try {
+      await expect(chip(page)).toHaveText(/^MSCP 513 · L2 · /, { timeout: 20_000 });
+    } finally {
+      await page.keyboard.up('KeyW');
+      await page.keyboard.up('Shift');
+    }
+    await expect(win.getByRole('button', { name: 'L2 +3.00, here' })).toBeDisabled();
+    expect(errors).toEqual([]);
+  });
+
+  test('8c · the hawker centre: in at an entrance and along the walkway into the hall', async ({ page }) => {
+    const errors = collectErrors(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    await flyToAndLand(page, 'NC_514', /^NC 514 · /);
+    await enterFromRegistry(page, /^Enter Hawker centre · \d+\.\d MB$/, /^NC 514 · L1 · .*WALK$/);
+    // The roof is no one's storey: the strip says so rather than offering it.
+    await expect(win.getByRole('button', { name: 'RF +8.20, No lift or stair reaches RF' })).toBeDisabled();
+    await steps(page, 'f140');
+    await expect(chip(page)).toHaveText(/^NC 514 · L1 · SEATING AREA [A-Z -]+ · WALK$/);
+    await settle(page);
+    expect(await readout(page, 'draws')).toBeLessThanOrEqual(150);
+    expect(await readout(page, 'tris')).toBeLessThanOrEqual(1_200_000);
+    expect(errors).toEqual([]);
+  });
+
+  test('13 · a slow, then failed, interior keeps the facade whole, says so, and Enter reports it', async ({ page }) => {
+    // Chromium logs each aborted request itself; those lines are expected here.
+    const errors = collectErrors(page, [/Failed to load resource: net::ERR_FAILED/]);
+    let held = 0;
+    await page.route(/\/estate\/v\d+\.\d+\/i\//, async (route) => {
+      held += 1;
+      await new Promise((resolve) => setTimeout(resolve, 5_000));
+      await route.abort();
+    });
+    const win = await openEstate(page);
+    await waitLive(page);
+    await flyToAndLand(page, 'BLK_509', /^BLK 509 · /);
+    await win.locator('[data-estate-row-action="enter"]').click();
+    await expect(chip(page)).toHaveText(/^BLK 509 · .*WALK$/, { timeout: LIVE_TIMEOUT });
+    // Streaming: the facade stays whole (no band opens) and the HUD says why.
+    await expect(win.locator('[data-estate-interior="streaming"]')).toHaveText('Streaming interior…', { timeout: 10_000 });
+    expect(await stage(page).getAttribute('data-estate-band')).toBeNull();
+    // Two retries later it has failed for good: still no band, and the reason is shown.
+    await expect(win.locator('[data-estate-interior="failed"]')).toHaveText(/^Blk 509 cannot be entered: its interior did not download/, { timeout: 60_000 });
+    expect(held).toBeGreaterThanOrEqual(3);
+    expect(await stage(page).getAttribute('data-estate-band')).toBeNull();
+    // Back out, and Enter again: refused, said and shown.
+    await stage(page).focus();
+    await page.keyboard.press('Escape');
+    await expect(chip(page)).toHaveText(/ · OVERVIEW$/, { timeout: 10_000 });
+    await win.locator('[data-estate-enter="BLK_509"]').click();
+    await expect(spoken(page)).toHaveText(/cannot be entered/);
+    await expect(win.locator('[data-estate-notice]')).toHaveText(/^Blk 509 cannot be entered/);
+    await expect(chip(page)).toHaveText(/ · OVERVIEW$/);
+    expect(await stage(page).getAttribute('data-estate-band')).toBeNull();
     expect(errors).toEqual([]);
   });
 

@@ -23,6 +23,17 @@ export interface EstateModelAction {
   readonly primary: boolean;
 }
 
+/**
+ * The registry's Enter or Exit beside one row (the HUD's, mirrored, §8.6):
+ * 'Enter Blk 509 · 0.2 MB' on the selected row, or 'Exit Blk 509' on the row of
+ * the building Walk stands in. Live only, with Enter in the build.
+ */
+export interface EstateModelRowAction {
+  readonly site: EstateSiteId;
+  readonly kind: 'enter' | 'exit';
+  readonly label: string;
+}
+
 /** The HUD the lazy runtime supplies, and its props: drawn as the stage's last child. */
 export interface EstateModelHud {
   readonly Hud: ComponentType<EstateHudProps>;
@@ -48,6 +59,8 @@ export interface EstateModel {
   readonly focusable: boolean;
   /** Rows fly the camera: their names say so to a screen reader. */
   readonly rowsFly: boolean;
+  /** Enter or Exit beside one row, or null. Kept the same object while unchanged. */
+  readonly rowAction: EstateModelRowAction | null;
   /**
    * Move DOM focus to the stage or the action button once the view has
    * committed this model: a new `seq` is a new request. Only when focus is free
@@ -62,6 +75,8 @@ export interface EstateModel {
 export interface EstateModelHandlers {
   onSite: (site: EstateSiteId) => void;
   onAction: () => void;
+  /** The row action (model.rowAction) was pressed. */
+  onRowAction: () => void;
 }
 
 /** What EstateWindow hands its controller. */

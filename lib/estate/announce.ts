@@ -63,6 +63,18 @@ export const siteSpokenName = (site: EstateSiteId): string => {
   return `${ESTATE_NAME} neighbourhood centre`;
 };
 
+/**
+ * The short name a button carries ('Enter Blk 509 · 0.2 MB', 'Exit Car park
+ * 513'): 'Blk 509', 'Car park 513', 'Hawker centre'. The spoken names of the
+ * car park and the neighbourhood centre are too long for a HUD chip.
+ */
+export const siteShortName = (site: EstateSiteId): string => {
+  const kind = siteKindOf(site);
+  if (kind === 'block') return `Blk ${site.slice('BLK_'.length)}`;
+  if (kind === 'mscp') return `Car park ${site.slice('MSCP_'.length)}`;
+  return 'Hawker centre';
+};
+
 /** 'L5' → 'level 5', 'RF' → 'roof'. */
 export const storeySpoken = (tag: EstateStoreyTag): string => (tag === 'RF' ? 'roof' : `level ${tag.slice(1)}`);
 

@@ -31,6 +31,12 @@ import { ESTATE_TIERS, ESTATE_TIER_TABLE, type EstateTier } from './tiers';
 //     order of error removed per triangle added, while the tier's triangle and
 //     draw caps hold. A step that does not fit ends that building's climb; the
 //     room left only shrinks, so it would not fit later either.
+// The focus building (selected, flown to, inside, or just walked out of) is
+// the one the visitor is looking at: once its F is resident its target is at
+// least F whatever its distance says, and that step is taken with the holds,
+// still under its ceiling and the caps. Without it an exit arc that landed
+// past F's switch distance (min tier after a pixel-ratio notch) showed the
+// block just left as its grey massing box.
 
 export type LodLevel = 0 | 1 | 2;
 export const LOD_NONE = -1;
@@ -145,7 +151,11 @@ export interface LodBuildingInput {
   tris: ArrayLike<number>;
   /** Draw calls likewise; F's include its edge lines when the tier draws them. */
   draws: ArrayLike<number>;
-  /** Selected, or the target of a fly-to or Enter. In lean mode only these leave massing. */
+  /**
+   * Selected, or the target of a fly-to or Enter, or the building the camera is
+   * in. In lean mode only these leave massing; with F resident it never shows
+   * as massing (its target is at least F, taken first, within the caps).
+   */
   focus?: boolean;
   /** A ceiling: LOD_FACADE for the building the camera is inside (§7.5 holds its exterior at F). */
   maxLevel?: LodLevel;
@@ -191,12 +201,20 @@ export class LodSelector {
   draws = 0;
   /** The reserve plus every visible building's coarsest resident level already break a cap. Upgrades never do. */
   overBudget = false;
+  /**
+   * The earliest `now` at which a hold that is keeping a visible building off
+   * the level it would otherwise take runs out (since + DWELL_MS), or Infinity
+   * when no such hold exists. A caller that renders only on change must draw a
+   * frame then, or the step waits for the next input: nothing else moves.
+   */
+  holdUntil = Infinity;
 
   // Scratch for one select(): the level reached so far, the level this frame
   // climbs toward, whether that goal is a hold, and whether a step is pending.
   private readonly cur: Int8Array;
   private readonly goal: Int8Array;
   private readonly held: Uint8Array;
+  private readonly firm: Int8Array;
   private readonly open: Uint8Array;
 
   constructor(count: number) {
@@ -210,6 +228,7 @@ export class LodSelector {
     this.cur = new Int8Array(count);
     this.goal = new Int8Array(count);
     this.held = new Uint8Array(count);
+    this.firm = new Int8Array(count);
     this.open = new Uint8Array(count);
     this.reset();
   }
@@ -224,6 +243,7 @@ export class LodSelector {
     this.tris = 0;
     this.draws = 0;
     this.overBudget = false;
+    this.holdUntil = Infinity;
   }
 
   select(buildings: ArrayLike<LodBuildingInput>, frame: LodFrame): this {
@@ -233,6 +253,7 @@ export class LodSelector {
     const lean = frame.lean === true;
     let tris = frame.reserveTris ?? 0;
     let draws = frame.reserveDraws ?? 0;
+    let holdUntil = Infinity;
 
     // Pass 1: wants, ceilings, hidden buildings, and the floor every visible
     // building starts from.
@@ -241,8 +262,11 @@ export class LodSelector {
       const want = nextWant(this.want[i], b.massingError, b.distance, k, tier.tauPx);
       this.want[i] = want;
       const ceiling = lean && b.focus !== true ? LOD_MASSING : (b.maxLevel ?? LOD_DETAIL);
-      const target = want < ceiling ? want : ceiling;
+      const firm = b.focus === true && ceiling >= LOD_FACADE && levelAvailable(LOD_FACADE, b.resident) ? LOD_FACADE : LOD_MASSING;
+      const capped = want < ceiling ? want : ceiling;
+      const target = capped > firm ? capped : firm;
       this.target[i] = target;
+      this.firm[i] = firm;
       this.open[i] = 0;
       this.held[i] = 0;
 
@@ -266,7 +290,9 @@ export class LodSelector {
       // A shown level that is still resident is ≥ the floor (the floor is the
       // coarsest resident level), so a hold only ever climbs.
       const holding = shown >= LOD_MASSING && now - this.since[i] < DWELL_MS && shown <= ceiling && levelAvailable(shown, b.resident);
-      const goal = holding ? shown : target > floor ? target : floor;
+      const fresh = target > floor ? target : floor;
+      const goal = holding ? shown : fresh;
+      if (holding && fresh !== shown && this.since[i] + DWELL_MS < holdUntil) holdUntil = this.since[i] + DWELL_MS;
       this.held[i] = holding ? 1 : 0;
       this.goal[i] = goal;
       this.open[i] = goal > floor ? 1 : 0;
@@ -291,8 +317,8 @@ export class LodSelector {
           - screenError(levelError(to, b.massingError), b.distance, k);
         const added = b.tris[to] - b.tris[from];
         const ratio = added > 0 ? gain / added : Infinity;
-        const isHeld = this.held[i];
-        // Holds first, then error removed per triangle, then error removed, then index.
+        const isHeld = this.held[i] === 1 || from < this.firm[i] ? 1 : 0;
+        // Holds (and the focus building's step to F) first, then error removed per triangle, then error removed, then index.
         if (best < 0 || isHeld > bestHeld || (isHeld === bestHeld && (ratio > bestRatio || (ratio === bestRatio && gain > bestGain)))) {
           best = i; bestHeld = isHeld; bestRatio = ratio; bestGain = gain;
         }
@@ -326,6 +352,8 @@ export class LodSelector {
     }
     this.tris = tris;
     this.draws = draws;
+    this.holdUntil = holdUntil;
     return this;
+
   }
 }

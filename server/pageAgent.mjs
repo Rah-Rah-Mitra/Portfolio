@@ -15,6 +15,29 @@ const canonicalExperienceIds = new Set(['career-stmicro-or', 'career-amazon-visi
 const canonicalChapterIds = new Set(['home', 'work', 'experience', 'all-work', 'technical-lab', 'domains', 'proof', 'resumes', 'contact']);
 const canonicalDesktopAppIds = new Set(['home', 'selected-work', 'experience', 'project-archive', 'systems-lab', 'camera-lab', 'world-3d', 'capabilities', 'proof-vault', 'resumes-contact', 'resume-builder']);
 
+// The Estate window's buildings (Sample Town N5) and each one's storeys, bottom
+// up: lib/estate/ids.ts' ESTATE_SITE_STOREYS restated, because an .mjs file
+// cannot import the TS module. tests/estate-assistant.test.ts pins both lists
+// to the catalogue. Every building has numbered storeys L1 up and a roof, RF.
+const estateStoreys = (top) => Object.freeze([...Array.from({ length: top }, (_, i) => `L${i + 1}`), 'RF']);
+export const ESTATE_SITE_STOREYS = Object.freeze({
+  BLK_501: estateStoreys(20), BLK_502: estateStoreys(20), BLK_503: estateStoreys(22), BLK_504: estateStoreys(22),
+  BLK_505: estateStoreys(25), BLK_506: estateStoreys(25), BLK_507: estateStoreys(14), BLK_508: estateStoreys(14),
+  BLK_509: estateStoreys(16), BLK_510: estateStoreys(16), BLK_511: estateStoreys(16), BLK_512: estateStoreys(12),
+  MSCP_513: estateStoreys(7), NC_514: estateStoreys(2),
+});
+export const canonicalEstateSiteIds = new Set(Object.keys(ESTATE_SITE_STOREYS));
+
+/** lib/estate/ids.ts normaliseStoreyTag, restated: 'L05' | 'l5' | 'L5' → 'L5', 'rf' → 'RF', anything else → null. */
+export const normaliseStoreyTag = (raw) => {
+  if (typeof raw !== 'string') return null;
+  const text = raw.trim();
+  if (/^rf$/i.test(text)) return 'RF';
+  const match = /^[Ll](\d{1,3})$/.exec(text);
+  const level = match ? Number(match[1]) : 0;
+  return level >= 1 && level <= 99 ? `L${level}` : null;
+};
+
 const getGeminiModel = () => process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 const getGeminiApiKey = () => process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
@@ -41,6 +64,15 @@ export const sanitizeCommands = (commands, pageState = {}) => {
     if (command.type === 'focusGuideChapter' && chapterIds.has(command.chapterId)) sanitized.push({ type: command.type, chapterId: command.chapterId });
     if (command.type === 'openDesktopApp' && desktopAppIds.has(command.appId)) sanitized.push({ type: command.type, appId: command.appId });
     if (command.type === 'minimizeDesktopApp' && desktopAppIds.has(command.appId)) sanitized.push({ type: command.type, appId: command.appId });
+    // An unknown building drops the command; a storey that building lacks drops only the storey (as the client does).
+    if (command.type === 'focusEstate' && canonicalEstateSiteIds.has(command.site)) {
+      const storey = normaliseStoreyTag(command.storey);
+      sanitized.push({
+        type: command.type, site: command.site,
+        ...(storey && ESTATE_SITE_STOREYS[command.site].includes(storey) ? { storey } : {}),
+        ...(typeof command.enter === 'boolean' ? { enter: command.enter } : {}),
+      });
+    }
   }
   return sanitized;
 };
@@ -64,8 +96,8 @@ export const SITE_EXHIBITS = [
   'Camera Lab (#technical-lab, app camera-lab, command openTechnicalLab): one synthetic, deterministic camera scene with four models: intrinsics (the K matrix and lens distortion), extrinsics (pose and projection), thin-lens optics (depth of field), and rectified stereo depth, plus a Zhang calibration (FIG. 06b) of the configured camera from six seeded synthetic views: one homography per view by normalised DLT, K in closed form, then Levenberg–Marquardt refinement with ±1σ, on synthetic detections with no real camera or image data. A portfolio instrument backed by the CS4277 top-student record, separate from professional work.',
   'Systems Lab (#systems-lab, app systems-lab): an illustrative figure of the Abbott hybrid flow-shop schedule (operating details abstracted), the 15-stage changeover pipeline figure, the Mechanism Bench of six planar mechanisms, an interactive permutation flow-shop teaching model that compares the exact optimum with Johnson’s rule and NEH on synthetic, seeded jobs (not Abbott data), and a contained matter.js drop test.',
   'FX panel: Pause all motion, sound cues, and two desk backgrounds that stay off until switched on: an N-body gravity field computed with a fast multipole method, and a WebGL2 fluid. There is no Quick Scan switch any more: every window is plain, readable HTML, and Pause all motion halts the site’s animation. An old ?mode=scan link still opens the page without the desk backgrounds or sound cues, and without ?app= deep links.',
-  '3D World (#world, app world-3d): a CSS drawing of a bench volume that points to the spatial record. It renders no live 3D scene.',
-  'Surfaces: page state surface field-workbench is the desktop (881px and wider), where every window opens. field-index is the phone registry, which does not show the Camera Lab, the Systems Lab or the 3D World: on field-index say they are desktop windows (881px and wider) instead of offering to open them.',
+  'Estate (#world, app world-3d, command focusEstate): Sample Town N5, a generated sample HDB neighbourhood (not a real town or HDB’s own plans) built as IFC4X3 by Rahul’s Bonsai-Estate pipeline with IfcOpenShell, Bonsai and Blender: 12 residential blocks with 1,206 flats, a multi-storey car park and a hawker centre. Visitors orbit it or fly to a building and walk in through void decks, stairs and lifts, and detail loads as they get closer; a storey also opens in plan, cut at 1.2 m, to pick a room and walk into it. focusEstate flies to one building (BLK_501 to BLK_512, MSCP_513 the car park, NC_514 the hawker centre), opens a storey in plan when given one, and walks in with enter. Desktop only; it shows a still render under Save-Data, reduced motion or ?mode=scan until the visitor asks.',
+  'Surfaces: page state surface field-workbench is the desktop (881px and wider), where every window opens. field-index is the phone registry, which does not show the Camera Lab, the Systems Lab or the Estate: on field-index say they are desktop windows (881px and wider) instead of offering to open them.',
 ];
 
 export const localAgent = (message, reason = 'model_unavailable') => {
@@ -136,10 +168,13 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     // replaced it, and what an old ?mode=scan link still does
     // (lib/experienceMode.ts keeps it on purpose).
     reply = 'The FX panel holds Pause all motion, sound cues, and two desk backgrounds that stay off until switched on: an N-body gravity field computed with a fast multipole method, and a WebGL2 fluid. There is no Quick Scan switch any more: every window is plain, readable HTML, and Pause all motion halts the site’s animation. An old ?mode=scan link still opens the page without the desk backgrounds or sound cues, and without ?app= deep links.';
-  } else if (text.includes('world') || text.includes('map')) {
-    reply = 'Explore World opens the 3D World window at #world: a CSS drawing of a bench volume, not a rendered 3D scene. It points to the spatial record: the CS4277 top-student result in 3D computer vision, the Camera Lab’s synthetic camera models, and 3D builds such as OnTheSpectrum. It is a desktop window (881px and wider).';
-    references = [{ label: 'Explore World', href: '#world' }];
-    commands.push({ type: 'openDesktopApp', appId: 'world-3d' });
+  } else if (/world|map|estate|hdb|bonsai|hawker|neighbou?rhood centre|car ?park|mscp|\bnc\s*514|\bblk(?![a-z])|\bblock\.?[\s-]*0?5[01]\d\b/.test(text)) {
+    reply = 'The Estate window shows Sample Town N5, a generated sample HDB neighbourhood (not a real town or HDB’s own plans) built as IFC4X3 by Rahul’s Bonsai-Estate pipeline with IfcOpenShell, Bonsai and Blender: 12 residential blocks with 1,206 flats, a multi-storey car park and a hawker centre. Orbit it or fly to a building, and walk in through void decks, stairs and lifts; detail loads as you get closer. It is a desktop window (881px and wider).';
+    references = [{ label: 'Explore the estate', href: '#world' }];
+    // A named building flies there (or walks in), plan §9.4; otherwise the window opens.
+    const blk = /\b(?:blk|block)\.?[\s-]*0?(50[1-9]|51[0-2])\b/.exec(text)?.[1];
+    const site = blk ? `BLK_${blk}` : /car ?park|mscp/.test(text) ? 'MSCP_513' : /hawker|neighbou?rhood centre|\bnc\s*514/.test(text) ? 'NC_514' : null;
+    commands.push(site ? { type: 'focusEstate', site, ...(/\b(into|enter|walk|inside)\b/.test(text) ? { enter: true } : {}) } : { type: 'openDesktopApp', appId: 'world-3d' });
   } else if (text.includes('project') || text.includes('work')) {
     reply = 'The selected work is organized as evidence-led briefs covering context, contribution, engineering approach, and inspectable proof.';
     references = [{ label: 'Browse selected engineering work', href: '#work' }];
@@ -168,6 +203,7 @@ Allowed commands:
 - {"type":"focusGuideChapter","chapterId":"a chapter id from page state"}
 - {"type":"openDesktopApp","appId":"a workstation app id from page state"}
 - {"type":"minimizeDesktopApp","appId":"a workstation app id from page state"}
+- {"type":"focusEstate","site":"an Estate building: BLK_501 to BLK_512, MSCP_513 (the car park) or NC_514 (the hawker centre)","storey":"optional storey tag such as L5 or RF","enter":"optional boolean, true to walk in"}
 Never return JavaScript, CSS, selectors, unlisted URLs, or arbitrary commands.
 
 SITE EXHIBITS (describe the site's interactive parts only this way):

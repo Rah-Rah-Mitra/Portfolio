@@ -1,0 +1,318 @@
+import type { Vec2 } from './frames';
+import type { NavRoom } from './nav';
+import { flatRing, pointInRing } from './storeys';
+import { floorAt, nearestWalkable, type FloorHit, type WalkFile, type WalkPose } from './walk';
+
+// Plan (plan §8.1, §7.3): one storey of one building, seen from 55° above the
+// horizon and cut at its floor + 1.2 m. Pure, so node tests and the engine run
+// the same rules: the cut's steps, the storey Plan opens on, cycling through a
+// storey's rooms, where "walk in" aims inside a room, the click's ray meeting
+// the floor, and the words a pick is shown and said with.
+
+/** The cut above the storey's floor, m: §7.3's floor + 1.2 m. */
+export const PLAN_CUT_DEFAULT = 1.2;
+/** `[` and `]` move it this much, m… */
+export const PLAN_CUT_STEP = 0.3;
+/** …between these: low enough to read the furniture, high enough to see the doors' heads cut. */
+export const PLAN_CUT_MIN = 0.3;
+export const PLAN_CUT_MAX = 2.4;
+/** The view's elevation above the horizon (§8.1's 55°), as camera-controls' polar angle from straight down. */
+export const PLAN_ELEVATION_DEG = 55;
+export const PLAN_POLAR = ((90 - PLAN_ELEVATION_DEG) * Math.PI) / 180;
+/** Walking in looks for a walkable cell this far from the room's centre, m. */
+export const WALK_IN_REACH = 4;
+
+/** The cut one step lower (-1) or higher (1), held inside [PLAN_CUT_MIN, PLAN_CUT_MAX], on a 0.1 m grid. */
+export const stepCut = (cut: number, step: -1 | 1): number => {
+  const next = Math.round((cut + step * PLAN_CUT_STEP) * 10) / 10;
+  return Math.min(PLAN_CUT_MAX, Math.max(PLAN_CUT_MIN, next));
+};
+
+/**
+ * The storey Plan opens on when none is named: the first typical storey (a
+ * block's L2, the first flats above the void deck; the car park's L2 deck),
+ * else L1 (the hawker centre, all of whose storeys are special). An index.
+ */
+export const defaultPlanStorey = (typical: readonly boolean[]): number => {
+  const first = typical.indexOf(true);
+  return first >= 0 ? first : 0;
+};
+
+/**
+ * The next room after `current` going `step` (-1 up the list, 1 down it),
+ * wrapping at both ends; from no pick (-1) ↓ starts at the first and ↑ at the
+ * last. -1 when there are no rooms.
+ */
+export const cycleRoom = (current: number, step: -1 | 1, count: number): number => {
+  if (count <= 0) return -1;
+  if (current < 0 || current >= count) return step > 0 ? 0 : count - 1;
+  return (current + step + count) % count;
+};
+
+/** Area centroid of an open ring; the vertex mean for a degenerate one. */
+export const ringCentroid = (ring: readonly Vec2[], out: Vec2 = [0, 0]): Vec2 => {
+  let a = 0;
+  let cx = 0;
+  let cy = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const cross = ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+    a += cross;
+    cx += (ring[j][0] + ring[i][0]) * cross;
+    cy += (ring[j][1] + ring[i][1]) * cross;
+  }
+  if (Math.abs(a) > 1e-9) {
+    out[0] = cx / (3 * a);
+    out[1] = cy / (3 * a);
+    return out;
+  }
+  let sx = 0;
+  let sy = 0;
+  for (const [x, y] of ring) { sx += x; sy += y; }
+  out[0] = ring.length ? sx / ring.length : 0;
+  out[1] = ring.length ? sy / ring.length : 0;
+  return out;
+};
+
+const ANCHOR_GRID = 12;
+
+/**
+ * Where walking into a room aims, block-local: its area centroid when that lies
+ * inside the outline, else the box centre when that does, else the inside
+ * point of a 12 × 12 grid over the box nearest the centroid (an L-shaped room's
+ * centroid can fall in the notch). A vertex as the last resort.
+ */
+export const roomAnchor = (room: Pick<NavRoom, 'poly' | 'box'>, out: Vec2 = [0, 0]): Vec2 => {
+  const ring = flatRing(room.poly);
+  const c = ringCentroid(room.poly, out);
+  if (pointInRing(c[0], c[1], ring)) return c;
+  const [x0, y0, x1, y1] = room.box;
+  const bx = (x0 + x1) / 2;
+  const by = (y0 + y1) / 2;
+  const tx = c[0];
+  const ty = c[1];
+  if (pointInRing(bx, by, ring)) { out[0] = bx; out[1] = by; return out; }
+  let best = Infinity;
+  let px = room.poly[0][0];
+  let py = room.poly[0][1];
+  for (let iy = 0; iy < ANCHOR_GRID; iy += 1) {
+    const y = y0 + ((iy + 0.5) / ANCHOR_GRID) * (y1 - y0);
+    for (let ix = 0; ix < ANCHOR_GRID; ix += 1) {
+      const x = x0 + ((ix + 0.5) / ANCHOR_GRID) * (x1 - x0);
+      if (!pointInRing(x, y, ring)) continue;
+      const d = (x - tx) * (x - tx) + (y - ty) * (y - ty);
+      if (d < best) { best = d; px = x; py = y; }
+    }
+  }
+  out[0] = px;
+  out[1] = py;
+  return out;
+};
+
+const SCRATCH: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
+
+/**
+ * Where walking into a room puts the walker, block-local, into `out`: the
+ * walkable cell nearest roomAnchor (within WALK_IN_REACH) when its floor is on
+ * storey `storey` itself; else, of a 12 × 12 grid of points inside the room, the
+ * one nearest the anchor whose own cell is walkable on that storey (a stair
+ * room's middle is often a tread of the flight coming up, the storey below's);
+ * else the first answer, whatever its storey. False when the room has no floor
+ * within reach at all (a closed substation).
+ */
+export const walkInPoint = (
+  walk: WalkFile, room: Pick<NavRoom, 'poly' | 'box' | 'z'>, ffl: number, storey: number, out: WalkPose,
+): boolean => {
+  const anchor = roomAnchor(room, [0, 0]);
+  const z = ffl + room.z;
+  const found = nearestWalkable(walk, anchor[0], anchor[1], z, WALK_IN_REACH, out);
+  if (found && out.layer === storey) return true;
+  const ring = flatRing(room.poly);
+  const [x0, y0, x1, y1] = room.box;
+  const reach = walk.header.cell * 1.5;
+  let best = Infinity;
+  for (let iy = 0; iy < ANCHOR_GRID; iy += 1) {
+    const y = y0 + ((iy + 0.5) / ANCHOR_GRID) * (y1 - y0);
+    for (let ix = 0; ix < ANCHOR_GRID; ix += 1) {
+      const x = x0 + ((ix + 0.5) / ANCHOR_GRID) * (x1 - x0);
+      if (!pointInRing(x, y, ring)) continue;
+      const d = (x - anchor[0]) * (x - anchor[0]) + (y - anchor[1]) * (y - anchor[1]);
+      if (d >= best || !nearestWalkable(walk, x, y, z, reach, SCRATCH) || SCRATCH.layer !== storey) continue;
+      best = d;
+      out.x = SCRATCH.x; out.y = SCRATCH.y; out.z = SCRATCH.z; out.layer = SCRATCH.layer;
+    }
+  }
+  // No cell on the storey itself: the first answer stands (`out` was only written on a find).
+  return best < Infinity || found;
+};
+
+/** Walking in tries this many headings, evenly spaced from the plan's own… */
+export const WALK_IN_HEADINGS = 16;
+/** …and follows each over the room's floor this far, m. */
+export const WALK_IN_SIGHT_M = 20;
+
+const SIGHT_HIT: FloorHit = { z: 0, layer: -1 };
+
+/**
+ * How far the room's floor runs ahead of a walker at `pose` facing `yaw`
+ * (Walk's yaw: 0 faces +y, north; +π/2 faces −x), m: half-cell steps while each
+ * point is inside the room's outline and walkable on the landing's own storey,
+ * up to WALK_IN_SIGHT_M. A wall, a doorway out or a piece of furniture ends it.
+ */
+export const roomSightline = (walk: WalkFile, ring: Float64Array, pose: WalkPose, yaw: number): number => {
+  const step = walk.header.cell / 2;
+  const fx = -Math.sin(yaw);
+  const fy = Math.cos(yaw);
+  let z = pose.z;
+  let run = 0;
+  for (let t = step; t <= WALK_IN_SIGHT_M + 1e-9; t += step) {
+    const x = pose.x + fx * t;
+    const y = pose.y + fy * t;
+    if (!pointInRing(x, y, ring)) break;
+    const f = floorAt(walk, x, y, z, SIGHT_HIT);
+    if (f === null || SIGHT_HIT.layer !== pose.layer) break;
+    z = f;
+    run = t;
+  }
+  return run;
+};
+
+/**
+ * A heading meets the façade when, past the end of its run of floor, the ray
+ * leaves the building's footprint within this far, m: the wall itself and a
+ * ledge outside it.
+ */
+export const WALK_IN_FACADE_REACH_M = 1.5;
+
+/**
+ * Whether the wall that ended a run of `run` m from `pose` along `yaw` is an
+ * outside wall (the ray leaves `footprint`, a flatRing of the block-local
+ * footprint, within WALK_IN_FACADE_REACH_M past it): the wall a flat's
+ * windows are in.
+ */
+export const meetsFacade = (footprint: Float64Array, pose: WalkPose, yaw: number, run: number): boolean => {
+  const fx = -Math.sin(yaw);
+  const fy = Math.cos(yaw);
+  for (let d = 0.1; d <= WALK_IN_FACADE_REACH_M + 1e-9; d += 0.1) {
+    const t = run + d;
+    if (!pointInRing(pose.x + fx * t, pose.y + fy * t, footprint)) return true;
+  }
+  return false;
+};
+
+const wrapYaw = (yaw: number): number => {
+  const wrapped = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+  return wrapped === -Math.PI ? Math.PI : wrapped;
+};
+
+/**
+ * Which way walking into a room faces, as Walk's yaw in (−π, π]. The first
+ * frame should show the room and its windows, not whatever wall the plan's
+ * heading met: #05-105's living room opened on a blank wall 3 m off with its
+ * windows behind the walker. Of WALK_IN_HEADINGS headings starting at the
+ * plan's own (`planYaw`), one whose run of floor ends at the building's
+ * outside wall (meetsFacade on `footprint`, block-local) beats any that does
+ * not; then the longer roomSightline wins. Headings are tried nearest the
+ * plan's first, and a later one must beat the best by more than a cell, so
+ * near-ties keep the plan's direction. Without a footprint only the run
+ * counts; a landing outside its room keeps `planYaw`.
+ */
+export const walkInYaw = (
+  walk: WalkFile, room: Pick<NavRoom, 'poly'>, pose: WalkPose, planYaw: number, footprint?: ArrayLike<ArrayLike<number>>,
+): number => {
+  const ring = flatRing(room.poly);
+  if (!pointInRing(pose.x, pose.y, ring)) return wrapYaw(planYaw);
+  const outline = footprint && footprint.length >= 3 ? flatRing(footprint) : null;
+  const turn = (2 * Math.PI) / WALK_IN_HEADINGS;
+  let bestYaw = planYaw;
+  let bestScore = -Infinity;
+  for (let k = 0; k < WALK_IN_HEADINGS; k += 1) {
+    // 0, +1, −1, +2, −2, … headings away from the plan's.
+    const offset = k === 0 ? 0 : k % 2 === 1 ? (k + 1) / 2 : -k / 2;
+    const yaw = planYaw + offset * turn;
+    const run = roomSightline(walk, ring, pose, yaw);
+    const facade = outline !== null && run < WALK_IN_SIGHT_M && meetsFacade(outline, pose, yaw, run);
+    // A façade heading outranks every other: a run is never longer than WALK_IN_SIGHT_M.
+    const score = run + (facade ? 2 * WALK_IN_SIGHT_M : 0);
+    if (score > bestScore + walk.header.cell) { bestScore = score; bestYaw = yaw; }
+  }
+  return wrapYaw(bestYaw);
+};
+
+/**
+ * Where a ray (estate frame, any direction length) meets the horizontal plane
+ * z = `floorZ`, into `out` [x, y]; null when it runs level or away from it.
+ */
+export const rayFloor = (origin: ArrayLike<number>, direction: ArrayLike<number>, floorZ: number, out: Vec2 = [0, 0]): Vec2 | null => {
+  const dz = direction[2];
+  if (!(Math.abs(dz) > 1e-9)) return null;
+  const t = (floorZ - origin[2]) / dz;
+  if (!(t > 0)) return null;
+  out[0] = origin[0] + t * direction[0];
+  out[1] = origin[1] + t * direction[1];
+  return out;
+};
+
+/** A run of this many rooms of one kind outside any flat gets a heading of its own in the room list. */
+export const ROOM_KIND_GROUP_MIN = 6;
+/** The heading of the rooms that belong to no flat and to no kind numerous enough for its own. */
+export const COMMON_AREAS = 'Common areas';
+
+/**
+ * What a room outside a flat is, from its label: the words before the first one
+ * that carries a number, a '#' or a bracket ('Car lot L2-001 (S)' → 'Car lot',
+ * 'Shop unit #02-01' → 'Shop unit', 'Seating area north' as it stands).
+ */
+export const roomKind = (label: string): string => {
+  const words = label.split(' ');
+  const end = words.findIndex((word) => /[\d#(]/.test(word));
+  return (end < 0 ? words : words.slice(0, end)).join(' ') || label;
+};
+
+export interface RoomGroup {
+  /** The heading and the group's accessible name: '#05-101', 'Car lots', 'Common areas'. */
+  name: string;
+  /** Indices into the storey's room list, in list order. */
+  rooms: number[];
+}
+
+/**
+ * The room list's groups (§8.1 "the side-panel room list"): each flat's rooms
+ * under its number; outside the flats, a kind with at least ROOM_KIND_GROUP_MIN
+ * rooms under its plural ('Hawker stalls', 'Shop units', 'Car lots',
+ * 'Motorcycle lots'), and everything else under COMMON_AREAS. Groups come in the
+ * order their first room does, so the hawker centre's L1 reads stalls, shops,
+ * then its common areas, and a block's typical storey its flats, then its
+ * corridor, chutes and stairs. Rooms keep their list order inside a group.
+ */
+export const roomGroups = (rooms: readonly { label: string; flat: string | null }[]): RoomGroup[] => {
+  const counts = new Map<string, number>();
+  for (const room of rooms) {
+    if (room.flat) continue;
+    const kind = roomKind(room.label);
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  const groups = new Map<string, RoomGroup>();
+  rooms.forEach((room, index) => {
+    let name = room.flat;
+    if (!name) {
+      const kind = roomKind(room.label);
+      name = (counts.get(kind) ?? 0) >= ROOM_KIND_GROUP_MIN ? (kind.endsWith('s') ? kind : `${kind}s`) : COMMON_AREAS;
+    }
+    let group = groups.get(name);
+    if (!group) groups.set(name, (group = { name, rooms: [] }));
+    group.rooms.push(index);
+  });
+  return [...groups.values()];
+};
+
+/** A room as the HUD and the list show it: '#05-104 · Living / Dining', or 'Common corridor'. */
+export const roomText = (room: { label: string; flat: string | null }): string =>
+  room.flat ? `${room.flat} · ${room.label}` : room.label;
+
+/** A pick as it is said: 'Unit 05-104, Living / Dining, 3 of 105'. */
+export const roomSpoken = (room: { label: string; flat: string | null }, index: number, count: number): string =>
+  `${room.flat ? `Unit ${room.flat.replace(/^#/, '')}, ` : ''}${room.label}, ${index + 1} of ${count}`;
+
+/** The cut as the HUD prints it, '+1.20 M', and says it, '1.2 metres above the floor'. */
+export const cutText = (cut: number): string => `+${cut.toFixed(2)} M`;
+export const cutSpoken = (cut: number): string => `Cut ${Number(cut.toFixed(1))} metres above the floor`;

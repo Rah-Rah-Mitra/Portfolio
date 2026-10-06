@@ -235,6 +235,50 @@ export const checkPublicEstate = (repoRoot = REPO_ROOT) => {
 };
 
 /**
+ * The classes the engine on this branch needs (P5: interiors, walk grids, nav
+ * files and the ground beside P4's poster, stage 0, facades and detail), so the
+ * classes a committed pack must carry. Without them Enter is refused on every
+ * building, and every real-data P5 suite skips rather than fails: so the gate
+ * names them, here and in tests/estate-pack.test.ts.
+ */
+export const SHIPPED_CLASSES = Object.freeze(['poster', 's0', 'f', 'd', 'i', 'w', 'nav', 'ground']);
+
+/** A committed pack carries SHIPPED_CLASSES and, per site, its interior, walk grid and nav file. Returns problems. */
+export const checkShippedClasses = (pack) => {
+  const problems = [];
+  const classes = Array.isArray(pack.classes) ? pack.classes : [];
+  const missing = SHIPPED_CLASSES.filter((k) => !classes.includes(k));
+  if (missing.length) problems.push(`pack.classes lacks ${missing.join(', ')}: this engine needs ${SHIPPED_CLASSES.join(',')} (pack with --classes ${SHIPPED_CLASSES.join(',')})`);
+  for (const site of pack.sites ?? []) {
+    const lacking = ['interior', 'walk', 'nav'].filter((key) => !site[key]);
+    if (lacking.length) problems.push(`${site.id}: no ${lacking.join(', ')} file`);
+  }
+  if (!pack.site?.ground) problems.push('site: no ground file');
+  return problems;
+};
+
+/**
+ * The committed catalogue's merge gate (plan §10.2 estate-pack, the P4b review):
+ * lib/estate/catalogue.generated.ts must describe a committed release pack, so
+ * a catalogue generated from a dev pack (`dev: true`) fails, and so does any
+ * /estate/ URL it names that is not on disk under public/. Runs on every
+ * estate:check, with or without a pack, because a branch that carries the
+ * catalogue but not its pack (the dev pack is never committed) is exactly the
+ * one to stop. Returns problems.
+ */
+export const checkCommittedCatalogue = (repoRoot = REPO_ROOT) => {
+  const file = join(repoRoot, 'lib', 'estate', 'catalogue.generated.ts');
+  if (!existsSync(file)) return [];
+  const text = readFileSync(file, 'utf8');
+  const problems = [];
+  if (/^\s*dev: true,/m.test(text)) problems.push('lib/estate/catalogue.generated.ts was generated from a dev pack (dev: true): regenerate it from the published release pack before merging');
+  for (const url of new Set(text.match(/\/estate\/v\d+\.\d+\/[A-Za-z0-9._/-]+/g) ?? [])) {
+    if (!existsSync(join(repoRoot, 'public', ...url.slice(1).split('/')))) problems.push(`lib/estate/catalogue.generated.ts names ${url}, which is not under public/`);
+  }
+  return problems;
+};
+
+/**
  * --provenance --zips: the downloaded release zips hash to the pack's
  * source.assets (plan §6.6), name for name.
  */
@@ -301,7 +345,11 @@ const main = (argv) => {
   let dirs;
   if (args.pack) dirs = [resolve(base, args.pack)];
   else {
+    const catalogue = checkCommittedCatalogue();
+    for (const p of catalogue) console.error(`  FAIL: ${p}`);
+    if (catalogue.length) failed = true;
     const { problems, versions } = checkPublicEstate();
+
     for (const p of problems) console.error(`  FAIL: ${p}`);
     if (problems.length) failed = true;
     if (!versions.length) { console.log('estate:check: no committed pack under public/estate (nothing to check).'); return failed ? 1 : 0; }
@@ -309,7 +357,9 @@ const main = (argv) => {
   }
   for (const dir of dirs) {
     const allowed = existsSync(join(dir, 'catalogue.generated.ts')) && !isUnder(dir, join(REPO_ROOT, 'public')) ? ['catalogue.generated.ts', 'report.json'] : [];
-    const { problems, warnings, measured } = checkPackDir(dir, { allowed, provenance: args.provenance, zips: args.zips });
+    const { problems, warnings, measured, pack } = checkPackDir(dir, { allowed, provenance: args.provenance, zips: args.zips });
+    // The committed pack is the one this engine ships with: it must carry every class the engine reads.
+    if (isUnder(dir, join(REPO_ROOT, 'public'))) problems.push(...checkShippedClasses(pack));
     console.log(`estate:check ${relative(REPO_ROOT, dir).split(sep).join('/')}: ${measured.files} files, ${measured.total} B, first frame ${measured.stage0} B`);
     for (const [klass, bytes] of Object.entries(measured.byClass)) console.log(`  ${klass.padEnd(6)} ${String(bytes).padStart(9)} B`);
     for (const w of warnings) console.log(`  warning: ${w}`);

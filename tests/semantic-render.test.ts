@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allProjects, experienceRecords } from '../portfolioData';
 import { renderSemanticPortfolio } from '../semanticRender';
+import { ESTATE_CATALOGUE } from '../lib/estate/catalogue.generated';
 
 describe('deterministic semantic prerender', () => {
   it('renders the recruiter evidence without browser-only APIs', () => {
@@ -22,5 +23,15 @@ describe('deterministic semantic prerender', () => {
     expect(markup).toContain('LinkedIn');
     expect(markup).not.toContain('<video');
     expect(markup).not.toMatch(/Build lens|Secure lens|switchProfile|data-lens=/i);
+  });
+
+  it('prerenders the Estate window as text: its facts, all 14 buildings and the key list', () => {
+    const markup = renderSemanticPortfolio();
+    expect(markup).toContain('Sample Town N5');
+    for (const site of ESTATE_CATALOGUE.sites) expect(markup, site.id).toContain(site.name);
+    expect(markup).toContain('id="estate-keys"');
+    expect(markup).toContain('data-estate-phase="poster"');
+    // The engine is a lazy chunk: nothing of it, and no canvas, is in the document.
+    expect(markup).not.toMatch(/<canvas[^>]*data-estate|data-estate-draws/);
   });
 });

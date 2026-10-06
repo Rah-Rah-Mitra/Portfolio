@@ -10,6 +10,9 @@ import type { DesktopAppId } from '../types';
 import { workstationApps } from '../lib/workstation';
 import { appForAnchor, dispatchWorkbenchOpen } from '../lib/workbench';
 import { allowedLinks, buildPageState } from '../lib/askPageState';
+import { ESTATE_CATALOGUE } from '../lib/estate/catalogue.generated';
+import type { EstateSiteId, EstateStoreyTag } from '../lib/estate/ids';
+import { ESTATE_FOCUS_EVENT_NAME } from './workbench/estate/EstateWindow';
 
 type Reference = { label: string; href: string };
 type ChatMessage = { role: 'assistant' | 'user'; content: string; references?: Reference[] };
@@ -20,7 +23,8 @@ export type PageCommand =
   | { type: 'openTechnicalLab'; mode?: LabMode }
   | { type: 'focusGuideChapter'; chapterId: string }
   | { type: 'openDesktopApp'; appId: DesktopAppId }
-  | { type: 'minimizeDesktopApp'; appId: DesktopAppId };
+  | { type: 'minimizeDesktopApp'; appId: DesktopAppId }
+  | { type: 'focusEstate'; site: EstateSiteId; storey?: EstateStoreyTag; enter?: boolean };
 type AgentResponse = { reply: string; references?: Reference[]; commands?: PageCommand[]; modelUsed?: boolean; model?: string; reason?: string };
 
 const experienceIds = new Set(experienceRecords.map((record) => record.id));
@@ -40,7 +44,17 @@ export const validatePageCommand = (value: unknown): PageCommand | null => {
   if (command.type === 'focusGuideChapter' && typeof command.chapterId === 'string' && chapterIds.has(command.chapterId)) return { type: 'focusGuideChapter', chapterId: command.chapterId };
   if (command.type === 'openDesktopApp' && typeof command.appId === 'string' && desktopAppIds.has(command.appId as DesktopAppId)) return { type: 'openDesktopApp', appId: command.appId as DesktopAppId };
   if (command.type === 'minimizeDesktopApp' && typeof command.appId === 'string' && desktopAppIds.has(command.appId as DesktopAppId)) return { type: 'minimizeDesktopApp', appId: command.appId as DesktopAppId };
-  return null;
+  // The Estate's buildings and storeys, read off the catalogue the window draws
+  // ('L1–L16 + RF'), so this bundle need not carry lib/estate/ids.ts' tables:
+  // 'L05' and 'l5' are L5, 'rf' is RF, and a storey the building lacks is
+  // dropped while the building is kept, as server/pageAgent.mjs and
+  // lib/estate/events.ts do (tests/estate-assistant.test.ts holds all three).
+  const levels = command.type === 'focusEstate' && ESTATE_CATALOGUE.sites.find((site) => site.id === command.site)?.levels;
+  if (!levels) return null;
+  const raw = typeof command.storey === 'string' ? command.storey.trim().toUpperCase() : '';
+  const level = +(/^L(\d{1,3})$/.exec(raw)?.[1] ?? 0);
+  const storey = raw === 'RF' ? raw : level >= 1 && level <= +(/(\d+) \+/.exec(levels)?.[1] ?? 0) ? `L${level}` : 0;
+  return { type: 'focusEstate', site: command.site as EstateSiteId, ...(storey && { storey: storey as EstateStoreyTag }), ...(typeof command.enter === 'boolean' && { enter: command.enter }) };
 };
 const cleanReferences = (value: unknown): Reference[] => {
   if (!Array.isArray(value)) return [];
@@ -136,10 +150,13 @@ export const localAgent = (message: string): AgentResponse => {
     // replaced it, and what an old ?mode=scan link still does
     // (lib/experienceMode.ts keeps it on purpose).
     reply = 'The FX panel holds Pause all motion, sound cues, and two desk backgrounds that stay off until switched on: an N-body gravity field computed with a fast multipole method, and a WebGL2 fluid. There is no Quick Scan switch any more: every window is plain, readable HTML, and Pause all motion halts the site’s animation. An old ?mode=scan link still opens the page without the desk backgrounds or sound cues, and without ?app= deep links.';
-  } else if (text.includes('world') || text.includes('map')) {
-    reply = 'Explore World opens the 3D World window at #world: a CSS drawing of a bench volume, not a rendered 3D scene. It points to the spatial record: the CS4277 top-student result in 3D computer vision, the Camera Lab’s synthetic camera models, and 3D builds such as OnTheSpectrum. It is a desktop window (881px and wider).';
-    references = [{ label: 'Explore World', href: '#world' }];
-    commands.push({ type: 'openDesktopApp', appId: 'world-3d' });
+  } else if (/world|map|estate|hdb|bonsai|hawker|neighbou?rhood centre|car ?park|mscp|\bnc\s*514|\bblk(?![a-z])|\bblock\.?[\s-]*0?5[01]\d\b/.test(text)) {
+    reply = 'The Estate window shows Sample Town N5, a generated sample HDB neighbourhood (not a real town or HDB’s own plans) built as IFC4X3 by Rahul’s Bonsai-Estate pipeline with IfcOpenShell, Bonsai and Blender: 12 residential blocks with 1,206 flats, a multi-storey car park and a hawker centre. Orbit it or fly to a building, and walk in through void decks, stairs and lifts; detail loads as you get closer. It is a desktop window (881px and wider).';
+    references = [{ label: 'Explore the estate', href: '#world' }];
+    // A named building flies there (or walks in), plan §9.4; otherwise the window opens.
+    const blk = /\b(?:blk|block)\.?[\s-]*0?(50[1-9]|51[0-2])\b/.exec(text)?.[1];
+    const site = blk ? `BLK_${blk}` : /car ?park|mscp/.test(text) ? 'MSCP_513' : /hawker|neighbou?rhood centre|\bnc\s*514/.test(text) ? 'NC_514' : null;
+    commands.push(site ? { type: 'focusEstate', site: site as EstateSiteId, ...(/\b(into|enter|walk|inside)\b/.test(text) ? { enter: true } : {}) } : { type: 'openDesktopApp', appId: 'world-3d' });
   } else if (text.includes('project') || text.includes('work')) {
     reply = 'The selected work is organized as evidence-led briefs covering operating context, Rahul’s contribution, technical approach, and current result or proof.';
     references = [{ label: 'Browse selected engineering work', href: '#work' }];
@@ -149,7 +166,7 @@ export const localAgent = (message: string): AgentResponse => {
   return { reply, references, commands, modelUsed: false, reason: 'client_local_fallback' };
 };
 
-// The Camera Lab, the Systems Lab and the 3D World are desktop windows; ≤880px
+// The Camera Lab, the Systems Lab and the Estate are desktop windows; ≤880px
 // the site is the Field Index registry, which has none of them. Same breakpoint
 // as App.tsx. Read after mount (App is prerendered), and the panel is never open
 // in the prerendered HTML, so the first paint of the starters already knows.
@@ -232,6 +249,12 @@ const AskThePage: React.FC = () => {
       else document.getElementById(valid.chapterId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (valid.type === 'openDesktopApp') dispatchWorkbenchOpen({ appId: valid.appId });
     else if (valid.type === 'minimizeDesktopApp') dispatchWorkbenchOpen({ appId: valid.appId, action: 'minimize' });
+    else if (valid.type === 'focusEstate') {
+      // The building travels only in the event, never in targetId; the viewer holds it until live.
+      dispatchWorkbenchOpen({ appId: 'world-3d', targetId: 'world' });
+      const { type: _type, ...detail } = valid;
+      window.setTimeout(() => window.dispatchEvent(new CustomEvent(ESTATE_FOCUS_EVENT_NAME, { detail })), 80);
+    }
   };
 
   const submitMessage = async (message: string) => {

@@ -264,16 +264,55 @@ export const storeyRoundTrip = async (glb, batches) => {
  * massing; 16 for F, site, D and I — at 14 bits a 200 m site quadrant steps
  * 12 mm and flattens 5 mm road markings onto the asphalt under them); _META is
  * already u8 and is left alone.
+ *
+ * `grid` (pure/grid.mjs interiorGrid: { origin, scale }) puts every mesh of
+ * the document on one lattice instead of one fitted to each mesh's bounds:
+ * quantize()'s 'scene' volume is the bounds of every mesh in the document, so
+ * an unattached anchor mesh spanning origin ± scale on every axis pins it; the
+ * anchor is disposed before prune. Instanced kits are quantised on it too
+ * (their dequantisation goes into the instance TRS, as before).
  * Returns the GLB bytes.
  */
-export const encodeDoc = async (ctx, bits) => {
+export const encodeDoc = async (ctx, bits, { grid = null } = {}) => {
   const io = await getIO();
-  await ctx.doc.transform(
-    weld(),
-    meshopt({ encoder: MeshoptEncoder, level: 'high', quantizePosition: bits }),
-    prune({ keepAttributes: true, keepLeaves: false }),
-  );
+  if (!grid) {
+    await ctx.doc.transform(
+      weld(),
+      meshopt({ encoder: MeshoptEncoder, level: 'high', quantizePosition: bits }),
+      prune({ keepAttributes: true, keepLeaves: false }),
+    );
+    return io.writeBinary(ctx.doc);
+  }
+  await ctx.doc.transform(weld());
+  const [lo, hi] = docBounds(ctx);
+  const { origin: o, scale: s } = grid;
+  for (let k = 0; k < 3; k += 1) {
+    if (lo[k] < o[k] - s || hi[k] > o[k] + s) throw new Error(`encodeDoc: the geometry (${lo[k]}..${hi[k]} on axis ${k}) leaves the lattice's range ${o[k] - s}..${o[k] + s}`);
+  }
+  const anchor = ctx.doc.createMesh('_lattice').addPrimitive(ctx.doc.createPrimitive()
+    .setAttribute('POSITION', ctx.doc.createAccessor().setType('VEC3').setBuffer(ctx.buffer)
+      .setArray(new Float32Array([o[0] - s, o[1] - s, o[2] - s, o[0] + s, o[1] + s, o[2] + s, o[0] + s, o[1] + s, o[2] + s])))
+    .setIndices(ctx.doc.createAccessor().setType('SCALAR').setBuffer(ctx.buffer).setArray(new Uint16Array([0, 1, 2]))));
+  await ctx.doc.transform(meshopt({ encoder: MeshoptEncoder, level: 'high', quantizePosition: bits, quantizationVolume: 'scene' }));
+  for (const prim of anchor.listPrimitives()) prim.dispose();
+  anchor.dispose();
+  await ctx.doc.transform(prune({ keepAttributes: true, keepLeaves: false }));
   return io.writeBinary(ctx.doc);
+};
+
+/** [min, max] over every POSITION of every mesh in the document, each in its own mesh frame. */
+export const docBounds = (ctx) => {
+  const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  for (const mesh of ctx.doc.getRoot().listMeshes()) {
+    for (const prim of mesh.listPrimitives()) {
+      const pos = positions(prim.getAttribute('POSITION'));
+      for (let i = 0; i < pos.length; i += 3) for (let k = 0; k < 3; k += 1) {
+        if (pos[i + k] < lo[k]) lo[k] = pos[i + k];
+        if (pos[i + k] > hi[k]) hi[k] = pos[i + k];
+      }
+    }
+  }
+  return [lo, hi];
 };
 
 // ---- decoding (what a reader gets back) ---------------------------------------------------

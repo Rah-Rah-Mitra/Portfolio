@@ -16,8 +16,11 @@ import { fieldNotes, unifiedPortfolioData } from '../portfolioData';
 const GROUP_IDS = new Set(CERT_GROUPS.map((group) => group.id).filter((id): id is CertGroup => id !== 'ALL'));
 
 describe('certification register', () => {
-  // Nothing else in this repo checks that a /public reference resolves, so a 404
-  // would otherwise ship silently through npm test, the build and the e2e run.
+  // Apart from the estate pack's checks (scripts/estate/check.mjs, run by
+  // `npm run estate:check`, and tests/estate-pack.test.ts, which also fails on a
+  // catalogue URL missing under public/), which cover public/estate only, nothing
+  // else in this repo checks that a /public reference resolves, so a 404 would
+  // otherwise ship silently through npm test, the build and the e2e run.
   it('ships every referenced file', () => {
     for (const certification of certifications) {
       expect(existsSync(join('public', certification.file)), certification.file).toBe(true);

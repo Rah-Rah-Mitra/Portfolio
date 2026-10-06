@@ -34,7 +34,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   the registry by `tests/page-agent-server.test.ts`) and
   `tests/semantic-render.test.ts` pins `experience-<id>`/`project-<id>`. The
   DOM ids are hardcoded in the window bodies (`WorkbenchWindows.tsx`,
-  `ResumeBuilder.tsx`), not derived from the registry, so renaming one passes
+  `ResumeBuilder.tsx` and `estate/EstateWindow.tsx`, whose `id="world"` the
+  Estate keeps), not derived from the registry, so renaming one passes
   the tests and strands the assistant.
   `#flow-shop` and `#drop-test` are in-window targets, not citable anchors; the
   FX panel opens the latter with `dispatchWorkbenchOpen({ appId: 'systems-lab',
@@ -42,7 +43,13 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - Mobile ≤880px: `components/workbench/FieldIndex.tsx` — one searchable
   registry with traverse/crane rigs. SSR renders both surfaces (CSS hides
   one); after hydration `App.tsx` prunes to the active one. Keep `App`
-  render-pass free of `window` access — the build prerenders it.
+  render-pass free of `window` access — the build prerenders it. The Estate has
+  no 3D there: `estate:sample-town-n5` is a text row (PROJECTS, modelled on
+  `resume:builder`, its detail the window's pinned description) whose OPEN ON
+  DESKTOP is `/?app=world-3d`, and `APP_TO_ROW['world-3d']` expands it when that
+  link comes back to a phone, and when the assistant opens `world-3d` there (a
+  window with a row of its own opens that row, whatever the command's
+  `targetId`; the resume builder's likewise).
 - **Mechanism bench** (`components/workbench/MechanismBench.tsx`, inside the
   Systems Lab window — no new app id, no new anchor). Six live mechanisms drawn
   from a planar projective geometric algebra: `lib/pga.ts` (core), `lib/pgaDraw.ts`
@@ -87,6 +94,521 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   the math moved, so justify it against an independent check (e.g. OpenCV
   `calibrateCamera`) before re-pinning — never just update the expectation. No
   animation loop; the prerender is the full Intrinsics view.
+- **Estate (WIN-07)** — app id `world-3d`, anchor `#world`, FIG. 07, retitled
+  "Estate" (label and short label); still 11 windows, no new id or anchor, and a
+  building id never goes into `targetId`. It shows Sample Town N5, the generated
+  HDB estate of the Bonsai-Estate submodule (a sample, "not a real town" — that
+  phrase is pinned in four places). Three layers, each heavier one lazy:
+  1. **View** (main bundle, prerendered): `estate/EstateWindow.tsx` (`EstateView`
+     + a bootstrap) and `estate/EstateRegistry.tsx` — duotone poster
+     (`<picture>`, lazy, from the catalogue), FIG. 07 caption, and a side panel
+     that is its own scroller (the sheet does not scroll: DESIGN.md's
+     one-scroller exception) with the facts, 14 building rows as buttons,
+     `#estate-keys` in a closed `<details>`, the spatial RECORD links, the repo
+     link and the CC BY credit linking `/estate/LICENSE.txt`. Every value is read
+     from `lib/estate/catalogue.generated.ts` (written by the pack tool; never
+     hand-edit it — it carries only what the main bundle reads: one line per
+     site with its storey range written out, and the two byte totals the Load
+     label counts; per-site file sizes stay in pack.json). No canvas is
+     prerendered; no id starts with `experience-`, `project-` or `selected-`; no
+     `Hoist` wraps the stage. The `<figure>` is FIG. 07 (corners, caption); the
+     stage (`[data-estate-stage]`) is a layer inside it holding the poster,
+     plate, HUD and canvas, and gets `role="application"`/`tabIndex=0` only while
+     live or frozen — never on the figure (axe `aria-allowed-role`). Its
+     `aria-describedby` is the HUD's short per-mode summary `#estate-keys-desc`
+     (`hidden`, always in the tree): `#estate-keys` sits in a closed `<details>`,
+     which Chrome keeps out of the accessibility tree. Without JavaScript the
+     poster in the closed window downloads anyway (browsers ignore
+     `loading="lazy"` with scripting off; ~50–70 KB per no-JS desktop visit) —
+     accepted: §9.2 pins the prerendered `src`.
+  2. **Controller** (`estate/EstateController.tsx`, a lazy chunk the bootstrap
+     imports the first time the window is open, or when a focus request or row
+     press comes first): renders nothing, reports an `EstateModel`
+     (`estate/estateModel.ts`, types only) to the view. It exists because the
+     main bundle may grow by at most 12,000 B for the Estate; policy, presence,
+     Esc and the engine lifecycle do not fit in that and decide nothing before
+     the window opens. It runs `lib/estate/policy.ts resolveEstatePhase` on what
+     `estate/usePanePresence.ts` observes (a MutationObserver on the section's
+     `style`/`data-focused`, an IntersectionObserver on the stage,
+     visibilitychange, `onMotionChange`; **never** the `WORKBENCH_WINDOW` event,
+     which belongs to the sound cues) plus `useOptionalExperienceMode()` — whose
+     new `resolved` flag, not `capabilities !== null`, says the policy has
+     resolved, so a deep link never flashes consent. Phases: poster, consent
+     (Save-Data, reduced motion, `?mode=scan`; the Load label is generated from
+     the catalogue and never understates the download; Save-Data loads lean),
+     loading (automatic loads wait for `readyState` complete, then idle),
+     live, frozen (closed, hidden, off screen), released (closed 30 s, or the
+     rail's DESK — a close counts as DESK only when `.wb-rail-desk` was pressed
+     within a second and every window is closed; closing the last window by hand
+     waits the 30 s like any close; and a window seen again with a context lost
+     while frozen and never restored, which cannot draw: released and loaded
+     afresh from the HTTP cache with the camera pose kept — Fly and Walk resume,
+     a Plan comes back as Overview from its camera — never shown live on the
+     dead canvas — e2e case 9b), lost / unavailable (two live resets a
+     minute, no restore in 5 s) / error / stale (Reload). A failed engine or
+     controller **chunk** is Reload too, never Retry: a browser keeps a failed
+     `import()` in its module map for the document's life, so importing again
+     makes no request; Retry stays for failures after the chunk ran (pack files,
+     engine errors), which fetch afresh. Esc is scope 2: one native keydown listener on the section
+     peels one layer per press through `lib/estate/input.ts decideEscape` and
+     stops propagation only for a press it consumes, so FieldWorkbench's handler
+     minimises on exactly the rest. A press or focus in the body raises an
+     unfocused window (`dispatchWorkbenchOpen`), except from the titlebar. Focus
+     moves (to the stage after a clicked Load, a registry fly-to) are requests
+     the view carries out after its commit, never on an automatic load or a
+     focus request, and a clicked load's move is cancelled by any press or focus
+     outside the window meanwhile (it must not pull a window the visitor left
+     back over the one they chose). A live window that fails moves focus from
+     inside it to the side panel's Retry/Reload (scrolled into sight) and back to
+     the stage on restore; the HUD hands focus to the stage (or, from inside a
+     popover, to the control that opened it: KEYS, or the lift chip) whenever
+     the focused control vanishes or is disabled, so focus never falls to the
+     body and the next Esc never skips the window's layers. Plan's room list in
+     the side panel (outside the HUD's root) has the same rescue of its own, and
+     its "Walk into …" puts the keys on the stage, pointer or keyboard. The registry mirrors
+     the HUD's Enter and Exit under one row (`EstateModel.rowAction`: Enter on
+     the selected row, Exit on the row of the building Walk stands in), and a
+     registry Enter, like a registry fly-to, puts the keys on the stage.
+     The side panel's polite status line speaks phase changes (a row pressed
+     before live says "Load the 3D estate to fly there" there); the HUD's hidden
+     status speaks the camera's location. `portfolio:estate-focus` (`lib/estate/events.ts`) requests are
+     held until live and delivered once, and never move DOM focus; in consent
+     they highlight the row and say "Load the 3D estate to fly there". A request
+     with `enter` walks in (at its storey, by lift, when it names one), one with
+     a storey alone opens Plan there (the plan already on screen counts as done:
+     a model repeats its command on a follow-up, and `planView` refuses the
+     storey it shows), anything else flies to the building.
+     **`focusEstate`** (P6) is the assistant's way to send them:
+     `{type:'focusEstate', site, storey?, enter?}`, checked in three places
+     that cannot share code and must agree — `AskThePage.tsx validatePageCommand`
+     (main bundle: reads the catalogue's storey range `'L1–L16 + RF'` rather than
+     carry `lib/estate/ids.ts`), `server/pageAgent.mjs sanitizeCommands`
+     (`canonicalEstateSiteIds`, `ESTATE_SITE_STOREYS` and `normaliseStoreyTag`
+     restated beside the canonical id lists) and `lib/estate/events.ts` (the
+     viewer's): an unknown building drops the command, a storey that building
+     lacks drops only the storey (`L05`/`l5` → `L5`, `rf` → `RF`), `enter` only
+     as a boolean. `applyCommand` opens `world-3d` with `targetId: 'world'` and,
+     80 ms later, dispatches the event: a building id never goes into
+     `targetId`. Both local fallbacks route a named building word for word the
+     same: "blk 501"–"blk 512" (also "block 509", "blk-509", "blk. 509", "blk
+     0509") → that block, car park / carpark / mscp → MSCP_513, hawker /
+     neighbourhood (or neighborhood) centre / nc 514 → NC_514, with `enter: true`
+     for into / enter / walk / inside, and otherwise `openDesktopApp world-3d`
+     (513 is the car park's number, never a block); the reply is the same
+     Estate description either way. The model is told the command in the
+     prompt's list and in SITE_EXHIBITS' Estate line. Pinned by
+     `tests/{assistant,page-agent-server,estate-assistant}.test.ts` (the 14 ×
+     {L5, L05, RF, L99} table, the three checks against the catalogue, phone
+     starters never sending it).
+  3. **Engine + HUD** (`estate/engine/**`, `estate/live/**`: three r186,
+     camera-controls; built as `assets/estate-engine-<hash>.js` plus
+     `EstateHud-<hash>.js`), reached only through `estate/loadEngine.ts` (one
+     shared `import()` of both, not cached on failure; a 404 means the site was
+     redeployed under the page → `stale`, Reload) and known to the shell only
+     through `estate/engineApi.ts` (types only). The controller finds the stage
+     by DOM scan (`[data-estate-stage]`), mints a fresh token per instance and
+     drops events carrying any other. The engine appends its own canvas to the
+     stage, takes pointer and wheel input on that canvas only and keys only when
+     the stage itself is the target (scope 1, so HUD and registry buttons keep
+     native Enter/Space), and writes `data-estate-draws/-tris/-ms/-programs/-band`
+     on the stage at most twice a second.
+     - `engine/core.ts` draws, with `renderer`, `clip`, `loaders`, `materials`,
+       `scene`, `streaming`, `loop`, `governor`, `levels`, `stats` and
+       `lifecycle` beside it: one token palette (`lib/estate/palette.json`, read
+       at start through `shellDom.readTokenColours`; six programs, every switch a
+       uniform, no colour in engine code; three's flat-shading normal is guarded
+       against a zero screen derivative, `materials.ts FLAT_NORMAL_GUARDED`:
+       SwiftShader gave one at eye-level poses on a heading that is a multiple
+       of 90°, `normalize(0)` is NaN and the face drew black, 17 % of the frame
+       at Blk 509's stair 5 and 21 % in the car park's lobby; e2e 8a and 8b
+       screenshot the canvas there and fail on pure-black pixels); massing → F → D
+       per building by screen-space error within the tier's caps
+       (`lib/estate/{lod,tiers}.ts`: 150 draws and 1.2 M triangles at the top
+       tier; the focus building — selected, flown to, entered, or just walked
+       out of — is never drawn as massing once its F is resident: its step to F
+       is taken first, still within the caps, or an exit arc that lands past
+       F's switch distance at min showed the block just left as a grey box;
+       the min tier draws trees within 15 m whole, crowns beyond); downloads through
+       `lib/estate/scheduler.ts` (≤ 4 at once, ≤ 1 geometry upload a frame,
+       pre-gzipped files sniffed and inflated by `DecompressionStream`; a file
+       whose bytes had all arrived when its want flapped off is decoded and
+       kept, never fetched again — only an abort while the body is still being
+       read loses it; downloads plus a compile in hand are the stage's
+       `data-estate-pending`, written as they change). It
+       renders only on change (`lib/estate/frameLoop.ts`) — **at rest it requests
+       no animation frames**; a level step held by lod's 400 ms dwell is woken by
+       one timeout (`LodSelector.holdUntil`), not by rAF — and its governor
+       (`lib/estate/governorCore.ts`) steps pixel ratio and tier down on dropped
+       frames and probes back up. A window over half dropped closes after 1 s and
+       20 frames instead of 2 s and 60 (once a calibration less than 10 s old says
+       the scene, not the display, is slow); a pixel-ratio notch's buffer
+       reallocation waits for the first frame without motion (2 s at most), then
+       for the GPU to drain (`engine/drain.ts`: a fence after the last frame, no
+       frames meanwhile, its status read between tasks): resizing a canvas makes
+       the browser wait on the main thread for every frame still queued, which on
+       SwiftShader was the notch's whole 72–402 ms long task, against 3–5 ms for
+       the same resize of a drained GPU. Never "fix" it with a `getParameter`:
+       every such read is the same wait. Without KHR_parallel_shader_compile
+       (SwiftShader) warm-up links each program in its idle slot (`getUniforms()`),
+       or three links it at its first draw, a 150 ms task mid-walk. The
+       calibration burst never runs under the visitor's hand. A boxless host
+       (a closed window is `display:none`) keeps its last size, and `resume()`
+       reads the size synchronously, so a reopen never draws at 1 × 1. The
+       site's quadrants and trees have one material each (one may never serve a
+       Mesh and an InstancedMesh: three re-resolves the program twice a frame);
+       P5's interiors keep that rule. The
+       starting tier is read from the renderer string in `engine/renderer.ts`
+       (never in `lib/experienceMode.ts`, whose test bans GPU probes) or from
+       `?estate-quality=high|mid|low|min`. On a lost context the engine reports
+       `lost`/`restored` and the shell counts live resets; `dispose()` is the
+       ordered teardown and emits nothing. F triangles and D instances carry
+       their storey (`_meta`, `_STOREY`.x) so P5's façade mask can hide a band:
+       the storey of the interior chunk that holds the same surface, not the
+       band of its height — a stair's top riser and handrail belong to the
+       storey below, NC 514's hall roof to L1 — and the pack tool refuses any
+       tag under which the mask would hide a surface nothing draws or draw one
+       twice (`maskCoverage`; docs/portfolio/estate-pack.md "Façade storeys").
+       Never re-tag F by height. Every F panel is two-sided in the pack, so F's
+       one front-faces-only material still draws glass from indoors.
+     - `engine/interior.ts` (P5, owned by the core as `core.interiors`): the
+       building the camera is inside (footprint + 0.5 m) or peeking at (within
+       6 m), its storey S (eye − 1.6 m with 0.25 m hysteresis, or Walk's floor
+       through `setStoreyHint`), and the band [S − k, S + k] from
+       `lib/estate/storeys.ts` — k ≥ 1 on every tier, 1 when peeking. The band
+       opens only once the interior file is fully on the GPU (and, peeking, the
+       façade is resident): T as two InstancedMeshes (opaque, glass; ≤ 5
+       instances at T(0, FFL, 0) · the node TRS, storey written to `_STOREY`),
+       R and furniture gated by the interior's own `uBand`, specials per storey,
+       and the building's F/D/edges hiding exactly the band through their shared
+       `uStoreyMask` (F's slab of S + k + 1 stays as the ceiling). A band change
+       writes instances and uniforms only — 0 bytes. Until resident, F and D stay
+       whole and `EstateView.interior.state` reads `streaming`; an interior, walk
+       or nav file that fails its 2 retries makes it `failed` with a reason
+       (Enter, Plan and walk-in off for that building). The building the camera
+       is inside is held at F (lod `maxLevel`), and the interior's triangles and
+       draws are booked as the reserve before any building. Furniture: full kits
+       within the tier's radius, stand-ins beyond (the kit's height profile in
+       10–30 triangles: a tile top over a steel pedestal, not a crate), band
+       storeys only.
+       Walk grids (`lib/estate/walk.ts`), nav
+       files (`lib/estate/nav.ts`: rooms with `{S}`/`{SS}` templates expanded,
+       lifts, doors, stairs, spawns) and the SN5G ground (`lib/estate/ground.ts`)
+       live there too, with the Walk controls' queries: `floorQuery` (building
+       grid inside its walk bounds less 0.5 m, else the ground), `locate`
+       (building, storey, flat, room), `entry` (ready / streaming / failed; a
+       failure's reason names what failed: interior, walkway map, or rooms,
+       stairs and lifts). Every walk grid the engine fetched stays decoded, so
+       `decodeWalk` keeps each stored raster run-length coded, never the unzipped
+       file (30.4 MB for the fourteen, 2.0 MB as runs, `cpuBytes()`), and only
+       the current building's and the walker's grids keep expanded storeys
+       (`releaseIdle` on either changing). Polygon tests run over flat
+       `Float64Array` rings (`storeys.ts flatRing`, cached by identity): fed three
+       nested-array shapes they went megamorphic and allocated every frame.
+       Accepted: above the band a stair well is an empty shaft (stairs live in
+       the interior file only), ≤ 0.3 % of a floor, pinned. Pinned by
+       `tests/estate-{interior,nav,ground}.test.ts` (with the engine's own T
+       placement compared with F triangle by triangle, and the band's ceiling)
+       and the S4–S5 rows of `tests/estate-budget.test.ts`.
+     - `engine/controls/`: Overview (camera-controls with its own wheel handler
+       off; the stage's non-passive wheel dollies at the cursor, so the sheet
+       never scrolls; A/D and Shift+arrows pan), Fly (WASD, E/Space up, Q/C
+       down, R/F look, Home back to the aerial view, drag looks; pointer lock
+       only on L or CAPTURE), the 1.2 s fly-to (a cut when `motionHalted()` or
+       `instant`; the bounding sphere's silhouette fills 0.8 of the short side,
+       aimed at the box's middle, so a point block keeps its roof in frame; the
+       chip names the building while the camera rests where the flight landed,
+       even an L-block whose box centre is in its courtyard) and footprint
+       picking (12 px tap slop for touch and pen, 5 px for a mouse). The first
+       live frame and Home are the poster camera with its Blender lens shift
+       turned into the view direction (`engine/views.ts aerialPose`; a pack
+       without views uses upstream's aerial_NE numbers). `engine/navigation.ts` and
+       `engine/rig.ts` are the seam every mode plugs into: `features` names the live
+       commands, and every other one returns false rather than throwing.
+     - Plan (P6, `engine/controls/{index,plan}.ts`, pure rules in
+       `lib/estate/plan.ts`): `planView(site, storey)` flies 1.2 s (a cut when
+       halted) to `tween.ts planFrame` — 55° above the horizon (polar 35°) over
+       the storey's floor, the outline's half-diagonal filling 0.85 of the short
+       side — and Overview's orbit controls stay on; a storey change on the same
+       building only slides the target's height. `core.setPlan` →
+       `interior.ts setPlan`: the building is the current one wherever the
+       camera is, held at F, its interior drawn up to S only (`uBand` top = S),
+       its façade masked from the band's foot to the roof, and its interior cut
+       at FFL_S + the cut (1.2 m; `[`/`]` step 0.3 m within 0.3–2.4 m) through
+       `uPlanCut` — all once the interior **and** the façade are resident. The
+       cut's discard and its fill (back faces of opaque slots, flat
+       `--color-accent-900`, the palette's `cut` slot) live only under
+       `#ifdef DOUBLE_SIDED`, and in Plan `materials.ts setPlanSides` makes the
+       building's two interior opaque materials glass's exact configuration bar
+       `depthWrite` (two-sided, single pass, transparent-sorted, alpha 1), so they
+       draw with glass's programs: **still six programs**, and every other draw
+       keeps its early depth test. Glass parts carry `renderOrder` 1 so they
+       sort after them. `view.plan` (`EstatePlanView`: site, storey, cut, the
+       storey's rooms from its nav file, `ready`, the picked room) feeds the HUD
+       and the side panel. Rooms are picked by a click on the floor (the ray
+       meets the floor plane, `nav.ts roomAt`), ↑/↓ (W/S) on the stage (said with
+       its place, "Unit 05-101, Bedroom, 2 of 105", as a `quiet` announce: no
+       notice chip) or the list (`pickRoom`). The pick is marked where Plan's
+       section is, just under the cut, not on its floor, which the cut walls
+       hide from 55° (`PlanMarker`: a lid over the room in `--color-accent-700`
+       at 22 % and a solid band of it inside the outline, ~3 px wide at the
+       distance it is seen from; both with interior glass's program, so still
+       six; geometry made per pick and per cut step). A pick from the list or
+       the stage's ↑/↓ is also framed — the view slides 0.6 s (a cut when
+       halted) to the room's middle and closes in until it fills 0.2 of the
+       short side (a room under 5 m either way framed as one of 5 m), never
+       further out than it was, tilt and heading kept — because a room of a
+       60 m slab is a few pixels at Plan's opening view; a click on the floor
+       never moves the view. PLAN while walking on a building's grid plans the
+       storey underfoot; from Overview, the selection's first typical storey.
+       Enter, a double-click, the HUD's or the list's Walk in, or 2 /
+       WALK walk in (`walkIn`): `plan.ts walkInPoint` takes the walkable cell
+       nearest the room's centre on that storey (a stair room's middle is the
+       flight from below, so it looks for the room's own landing), facing the
+       room's outside wall where one of 16 headings' run of floor ends at it
+       (`walkInYaw`, `meetsFacade` against the footprint: the windows; 8,636 of
+       15,233 rooms), else down its longest run of floor (#05-105's living room
+       had opened on a blank wall with its windows behind); then the
+       Enter arc with no rise comes straight down through the cut, which stays
+       on until the walker lands. Every room of all 14 buildings lands inside
+       itself on its own storey but one closed substation (BLK 505 L1-AM2),
+       which is refused with the reason (`tests/estate-plan.test.ts`, real
+       data). Esc leaves Plan **and** clears the selection (one layer, per the
+       amendment), so the next Esc minimises; Home, Fly, a fly-to or Enter leave
+       it too. A building whose entry failed refuses Plan with the reason.
+     - Walk (P5, `engine/controls/{walk,walkMode,arc}.ts` and `engine/lifts.ts`):
+       eye 1.6 m, 60°, 1.6 m/s (4.0 with Shift), ≤ 10 m/s² up and 12/s coasting
+       down, ←/→ 90°/s, drag looks, the wheel and step buttons take 0.5 m / 15°.
+       The floor is `core.interiors.floorQuery`: a building's walk grid inside
+       its walk bounds less 0.5 m (`moveWithCollision` in ≤ 0.1 m substeps; the
+       grid already has the walker's radius and the opened leaves blocked), else
+       the ground; a grid not yet here leaves the ground walkable but its
+       footprint blocks (`view.walk.preparing`, "PREPARING WALKWAY…"), and a grid
+       arriving under a walker takes it over (snapped within 1.5 m). The feet ride
+       a spring (snaps when `motionHalted()`). Ways in: `enter()` arcs 1.2 s to
+       the nearest entrance spawn (rise max(20 m, half the height), 45° → 60°,
+       its files at P0 from the start; refused with the reason once its entry
+       failed), 2 cuts to the entrance nearest the orbit target, 2 from Fly drops
+       to a floor within 3 m below, `walkFrom('BS1')` starts at the bus stop; out:
+       Esc or 1 is the 1.0 s reverse arc. Stairs climb for real, or PgUp/PgDn and
+       the stair chip follow the nav file's walking line at 2.0 m/s
+       (`lib/estate/climb.ts`; held keys chain storeys; a movement key, drag,
+       wheel, step or stick stops it there; Esc lands it at the nearer end). The
+       chip needs the line within 1.5 m (3-D) **and** within 2.5 m on foot over
+       the walk grid (`walk.ts walkReaches`), and never offers the storey
+       underfoot: the 3-D reach alone offered stairs in flats and plant rooms
+       beside a core and glided the walker through the wall. An axis slide in
+       `moveWithCollision` counts only where that axis carries real motion, or a
+       heading's float noise (cos(π/2) = 6e-17) skipped the doorway nudge.
+       Lifts: within 1.5 m of a landing `view.walk.lift` offers the served
+       levels; a ride is a 250 ms fade to paper and back (the engine's own
+       `[data-estate-fade]` layer between canvas and HUD), landing 1.2 m out of
+       the car snapped within 1.5 m, announced through `via: 'Lift n'`, 0 bytes.
+       The strip (`view.walk.levels`, `setStorey`) routes by Dijkstra over rides
+       and flights, so RF in a block is lift to L16 then the stair line, and a
+       level nothing reaches is disabled with "No lift or stair reaches RF". The
+       interior's band follows the walk layer underfoot, one storey up once the
+       eye stands 1 m over the next floor (`walkBandStorey`: the top treads of the
+       3.6 m void-deck flights). Pinned by `tests/estate-{walk-mode,walk-sweep,
+       spawns}.test.ts` (the sweep's leaf footprints are
+       `tests/fixtures/estate/walk_leaves.json`, from the release's web.json) and
+       the real-stair case in `tests/estate-storeys.test.ts`.
+     - `live/EstateHud.tsx`: survey-annotation chips over the canvas — location
+       (no live role; one visually hidden `role="status"` node speaks through
+       `lib/estate/announce.ts`: building, storey and mode at once, a room only
+       after 1.5 s standing still; the chip itself shows the room as it changes),
+       selection with mirrored Fly to and Enter ('Enter Blk 509 · 0.2 MB':
+       `lib/estate/policy.ts enterLabel` over `engine.siteFiles(site)`, the
+       per-site sizes only pack.json carries, with `announce.ts siteShortName`),
+       OVERVIEW | WALK | FLY, Home (Walk: Start, back to the walk's spawn), Start
+       at BS1, a KEYS popover (an Esc layer, next in tab order after KEYS),
+       CAPTURE (which gives the stage the keys first), FULLSCREEN on `#world`,
+       north arrow, KEYS ACTIVE, step buttons (every drag has one: Overview pans,
+       zooms, orbits and tilts; Fly moves, strafes, climbs and looks), the
+       streaming line and lean mode's "Load full detail". Walk (P5) adds Exit,
+       the storey strip on the right (`view.walk.levels` top down, 'RF +45.60 …
+       L1 ±0.00'; each button calls `setStorey`, the storey underfoot is
+       `aria-current`, disabled and scrolled into view, an unreachable one
+       `aria-disabled` but focusable, with its reason in its name and spoken when
+       pressed; the strip's top is measured under the top-right row, which wraps
+       at 881 px), the stair chip with ▲ / ▼ (`takeStairs`), the lift chip and
+       its level panel (`view.popover === 'lift'`, an Esc layer the engine closes
+       itself when the offer goes; `takeLift`, the storey underfoot disabled;
+       opened by Enter on the stage, focus moves onto the nearest level and
+       "Lift n: choose a level" is said, and closing hands focus back to the
+       stage), walking outdoors the selection's Enter (registry row too),
+       the ride caption over the engine's paper fade, "Preparing walkway…",
+       "Streaming interior…" / the failed interior's reason (`view.interior`),
+       a notice chip for 5 s after any spoken refusal ("No lift or stair reaches
+       RF"), Walk's steps (▲ ▼ 0.5 m, ◀ ▶ 15°, strafe, look) and the 96 px touch
+       stick (`.wb-estate-stick`, `setStick`; shown on the stage's first touch
+       or under `(any-pointer: coarse)`, `aria-hidden` because the steps do all
+       it does). Plan (P6) adds PLAN to the mode group, the storey strip in
+       Overview (the selection's storeys from ids.ts' table, each opening Plan
+       there: "L5 +12.00, plan view") and in Plan (the one shown current), the
+       room chip with Walk in, the cut chip with ▼ ▲ (`setCut`), Overview's
+       steps, and `EstatePlanRooms` — the side panel's room list, grouped by
+       `lib/estate/plan.ts roomGroups` (each flat under its number; outside the
+       flats a kind with six or more rooms under its plural — "Hawker stalls",
+       "Shop units", "Car lots", "Motorcycle lots" — and the rest "Common
+       areas"), each a toggle (`pickRoom`). The list is ONE Tab stop (a roving
+       tabindex on a vertical `role="toolbar"`): ↑/↓ (←/→) move to the next room
+       and pick it, wrapping, Home/End go to the ends, and focus moves after the
+       commit that marks the row pressed. "Walk into …" sits under the list in a
+       slot that is always drawn ("Pick a room to walk in", disabled), so a first
+       pick moves no row; walking in from it puts the keys on the stage, and a
+       focused control of the list that vanishes or is disabled (Esc on a room
+       ends Plan) hands focus to the stage, never the page. The controller hands
+       the view the list as `EstateModel.side` (the runtime's
+       `EstatePlanRooms`, the HUD's props) and the registry draws it above
+       BUILDINGS; a new plan scrolls the side panel to it. Its scroller chains
+       to the side panel's at either end (DESIGN.md's one-scroller exception). The strips carry
+       `data-estate-strip="walk|plan"`. The root carries `data-mode`, `data-transition` and
+       `data-flight` for the stylesheet and the e2e. Nothing in the top-right
+       row may change width between a press and its release — the KEYS chip
+       reserves its longer label's width — or the row reflows under the pointer
+       and the click is lost. The north arrow is an HTML dial the engine turns
+       per frame (a composited transform; the inherited `--estate-north` is
+       written only at rest, for a dial mounted later — written per frame it
+       restyled the stage subtree, 3.4 ms a frame). `?estate-debug=1` adds the
+       stats row. Its CSS is the `.wb-estate-hud*` block in `index.css`.
+     Test seams: `?estate-quality=` and `?estate-release-ms=` (100 ms–30 s; only
+     ever shortens the 30 s release hold).
+     **`?estate-bench=1`** (P7, plan §12.4; `=max` runs it in the maximised
+     window, the bench pressing Maximize itself) turns on the debug readouts and,
+     once live, runs the benchmark route by itself: `engine/bench.ts`, a chunk
+     of its own (`estate-bench-<hash>.js`) that `engine/index.ts` imports only
+     when the shell passed `bench`, so no visitor downloads it (never import it
+     statically, in any spelling: `tests/estate-boundary.test.ts` resolves every
+     reference in the app with the TypeScript parser, and the build's
+     `check-bundle` fails a main bundle or Load click that carries its schema
+     string `portfolio/estate-bench/1`). One run per page: an engine released
+     mid-route stops it at its next step (every wait checks `core.isDisposed`;
+     the report says "engine disposed"), and a later instance does not start
+     another. It drives the public
+     engine handle — S1 → an orbit sweep → BS1 → Enter Blk 509 → stair 5 to L2 →
+     the strip's lift to L5 → Plan L5 → walk into #05-105 → L12 → Esc → fly to
+     NC 514 → the hall → the car park's ramps L1 → L3, plus a 16 s
+     `bs1-recovery` leg — starting each walked leg from a named spawn
+     (`walkFrom`) so window size cannot change the route, and logs one JSON
+     report to `window.__estateBench` and the console: per segment dropped %
+     (the governor's own rule), interval p50/p99, CPU and GPU p95, draws,
+     triangles, GPU MB with the buffer, /estate/ bytes and requests, long tasks
+     (Chrome), long animation frames with their script, frame gaps over 50 ms
+     (Firefox's stand-in), programs and governor changes; and a verdict
+     (`lib/estate/bench.ts`: ≤ 2 changes a segment, 0 requests on stairs and
+     lifts). Each segment carries G3's figures beside the raw ones: `g3` leaves
+     out the frames that uploaded, compiled or followed a resize (the core's
+     own `excluded`, passed through `core.probe`), `settled` also the first 5 s
+     after live and after each notch change (G3's 4× CPU row); the verdict's
+     `gaps` and its `g3` worst-segment figures read those, over §12.4's route
+     (`s1-first-frame` and `bs1-recovery` left out). The render core feeds it
+     through `core.probe` (null otherwise). SwiftShader numbers are
+     software-rendering numbers: the route, the byte and governor checks hold
+     there; the timings are for real GPUs.
+  The GPU claim (`lib/gpuClaim.ts`, event `portfolio:gpu-claim`): while live,
+  focused and under no `.panel-backdrop`, the controller holds
+  `claimGpu('estate')`, and a mounted desk backdrop yields — it keeps its context
+  and last frame, stops animating, and reads "HELD · ESTATE"
+  (`desktopBackgroundPolicy` reason `yielded`, checked last, just before
+  `running`). Each instance that goes live sends one `estate_live` analytics
+  event (`lib/analytics.ts`: tier, MSAA, ms from start() to live, lean,
+  resumed) from the controller chunk; the main bundle pays 8 B for it.
+  The pack (`public/estate/v1.2/`, raw-content-hashed immutable names; P4b loads
+  `poster`, `s0`, `f` and `d`, P5 adds `i`, `w`, `nav` and `ground`) comes only from the pack tool (see the
+  Bonsai-Estate section). **The pack is committed**: `pack.4a3c0883.json` and
+  its 76 files (2,406,539 B; with `public/estate/LICENSE.txt`, the 78 files
+  `git ls-files public/estate` lists, all `-text`), packed with `--release`
+  from Bonsai-Estate **v1.2's published release** — the two assets downloaded
+  from the GitHub release (sha256 `e939dc78…` model, `8f6191bc…` reports,
+  equal to the R2a candidate's `release_manifest.json`), tag `v1.2` = `a6e1acf`
+  = the gitlink (`source.commit`; `buildCommit` `a106728`) — with `--verify`
+  identical and `estate:check --provenance --zips` green; the committed
+  `catalogue.generated.ts` (`dev: false`) is that run's. The site builds and
+  tests from these files alone: a clone without the submodule passes
+  `npm run build` and `npm test`. S1–S5 are pinned to this pack's name in
+  `tests/estate-budget.test.ts`; replacing it is the runbook's "Moving to a new
+  version" (one `public/estate/v*` folder, pack + catalogue + gitlink + re-pins
+  in one commit). It is gated three ways: `tests/estate-pack.test.ts` fails
+  when any `/estate/` URL the catalogue names is missing under `public/` and on
+  a dev catalogue under CI/Vercel; `npm run estate:check` fails on both everywhere; and
+  `scripts/check-bundle.mjs` (the build) fails when a catalogue URL is missing
+  from `dist/`, and on a dev catalogue on Vercel or CI. A committed pack must
+  also carry every class this engine reads (`SHIPPED_CLASSES` in
+  `scripts/estate/check.mjs`: poster, s0, f, d, i, w, nav, ground, and each site's
+  interior, walk and nav file), checked by estate:check and
+  `tests/estate-pack.test.ts`: the P5 real-data suites skip without them, so
+  the gate is what fails. The engine pins are a tripwire at measured + 5 %
+  (942,000 B for the engine chunk since P5, which measures 907,791 B after the
+  release round's fixes; 278,000 B gzip for the Load click since P7, which
+  measures 266,035 B); the plan's 950,000 / 307,200 B are the hard ceiling. The chunk the engine shares with its HUD is named
+  `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
+  whichever pure module it lists first), and the engine chunk is found by the
+  module it holds, not by its facade, which Rollup drops once the bench chunk
+  imports from it. Main bundle after the P6/P7 review: 508,174 / 508,834 B (the
+  release round left it unchanged).
+  Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
+  `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
+  a focused HUD button, and the touch stick), the Estate cases in
+  `tests/workbench-deeplink.dom.test.tsx` and `tests/workbench-links.test.ts`
+  (exact links, no hex anywhere under `estate/`, identical double render),
+  `tests/estate-boundary.test.ts` (the import rules above),
+  `tests/estate-runtime.test.ts` (the loader), `tests/estate-engine-*.test.ts`
+  (teardown with a fake canvas, the pure helpers, parts decoded from the pack
+  when one is present), `tests/estate-budget.test.ts` (C11's caps over the
+  70,560-pose grid on the pack's numbers, and §7.11's S1–S3 pinned per pack:
+  a re-pack must re-pin them with a reason), `tests/estate-reader.test.ts`
+  (every GLB against pack.json: required extensions, ≤ 65,535 vertices a
+  primitive, `_META`/`_STOREY` u8 × 4), `tests/estate-pack.test.ts` (the merge
+  gate above), `tests/estate-controls*.test.ts`, the Estate shell case
+  in `tests/e2e/quality.spec.ts`, and `tests/e2e/estate.spec.ts`, which runs the
+  real engine in its own Playwright project, `chromium-webgl` (SwiftShader
+  flags): live within 30 s inside the caps, fly-to, Esc layers, axe, consent,
+  no-WebGL, **zero animation frames at rest**, a fly-to that cuts while motion
+  is paused, the Save-Data byte count against its label, stale, HUD mouse
+  clicks with the stage focused, a fully clean axe scan, a reopen drawn at full
+  size and detail, Reload after a failed engine chunk, and P5's tour (8a: Enter
+  Blk 509 from the registry, step buttons to stair 5, ▲ L2, the strip's lift to
+  L5 with 0 requests, the lift panel, a clean axe scan in Walk, then the Esc
+  layers out to a minimised window; 8b: the car park's ramp from L1 to L2 by
+  holding W; 8c: the hawker hall) and slow-then-failed interiors (13: F stays
+  whole, "Streaming interior…", then the reason, and Enter refused), and P6's
+  Plan (18: Blk 509 L5 from the Overview strip, ↓ cycling rooms aloud, the cut,
+  six programs, a clean axe scan, Enter walking into the bedroom with nothing of
+  Blk 509 fetched again, then PLAN from Walk planning L5; 19: Esc out of Plan
+  clears the selection, the next Esc minimises; 21: the room list by keyboard —
+  the same focusEstate twice keeps the plan, one Tab stop, arrows pick, the
+  first pick moves no row, "Walk into …" puts the keys on the stage so Esc goes
+  to Overview, Esc on a room lands on the stage and the next Esc minimises),
+  the assistant's local fallback walking into the hawker centre
+  (20) and the phone's Estate row at 390 × 844 (10), and P7's GPU reset (9:
+  WEBGL_lose_context lose → `lost` → restore → `live` on the same canvas with
+  the same triangles, never `unavailable`; then the FX smoke switched on runs
+  under the FX panel and reads `yielded` / "HELD · ESTATE" once the panel
+  closes) and release-and-reopen (14: `?estate-release-ms=1000`, closed 2 s,
+  the canvas gone, live again within 10 s, never `unavailable`), and 9b (a
+  context lost while closed, never restored: reopened, live on a new canvas).
+  No case waits for the network to go idle once the window is open — the rest
+  of the page decides that (the closed résumé builder POSTs `/api/resume` and
+  previews a PDF, which headless Chromium takes as a download; the spec stubs
+  it) — "booted" is the page hydrated (`.fi-root` gone) and "settled" is the
+  engine's own report: `data-estate-pending` (downloads plus a compile, written
+  as it changes) at 0 and no `data-flight` for 750 ms. Only the cases that count
+  what was fetched (1, 6, 10) still wait for idle. Checked 6-way parallel ×2.
+  The tour moves by step buttons because they are discrete; its routes assume the
+  entrance Enter's arc picks from a landed fly-to at 1280 × 720. Restated constants in
+  the view (`ESTATE_DISPLAY_NAME`, `ESTATE_REPO_URL`, `ESTATE_FOCUS_EVENT_NAME`,
+  the shell's tier list) exist so the main bundle need not import `lib/estate`
+  modules that build tables at import; the DOM test pins each to its source
+  (AskThePage's catalogue-based storey check and the server's storey table are
+  pinned by `tests/estate-assistant.test.ts`).
+  **Known gaps, not yet fixed:** a Plan is not restored after a release (it
+  comes back as Overview from its camera, cut and pick gone); the assistant's
+  local fallback reply does not mention Plan; coplanar flicker under Plan's
+  cut is untested; a download aborted after its headers but before its body
+  was read is requested again on the next want (a disk-cache hit in
+  production, and the bench sees it as a second request). Not yet verified:
+  Firefox, a hardware GPU and pointer lock (plan §12's sign-off; every
+  measurement here is SwiftShader).
 - **FX desk backdrops** (`DeskBackdrop.tsx`, first child of `.wb-desk`, desktop
   only): two FX-panel toggles, both off at boot — the N-body field (`NBodyField.tsx`,
   a 2-D fast multipole solver in `lib/nbody/fmm.ts` run by `workers/nbody.worker.ts`,
@@ -97,6 +619,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   halts. Settings are `BackdropSettings` (`lib/backdropSettings.ts`) in
   `EffectsProvider` (`contexts/PhysicsContext.tsx`); DeskBackdrop reads
   `EffectsContext` directly so a bare `<FieldWorkbench/>` still mounts in tests.
+  A mounted backdrop also freezes (reason `yielded`, "HELD · ESTATE") while the
+  Estate window holds the GPU claim (`lib/gpuClaim.ts`, see the Estate bullet).
 - **Motion rule.** `lib/motion.ts`: `motionHalted()` is prefers-reduced-motion OR
   the FX "Pause all motion" switch (`html[data-motion-paused="true"]`), and
   `onMotionChange()` re-syncs. Every animation loop stops, or draws one still
@@ -107,7 +631,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `wakeRef` (scroll, nudge, drag, focus/layout, resize, motion change, sheet
   content resizing); MechanismBench stops while no canvas is on screen. Both
   are pinned in tests/workbench-rig-idle.dom.test.tsx and
-  tests/mechanism-bench.dom.test.tsx.
+  tests/mechanism-bench.dom.test.tsx. The Estate engine renders only on change
+  and, halted, turns every flight into a cut while a visitor's own drag still
+  redraws; the real engine is pinned idle and cutting by
+  `tests/e2e/estate.spec.ts` (cases 11 and 12), not by a fake.
 - Retained layers: `AskThePage` (AI), `EffectsLabPanel` (FX) and
   `AudioSpriteController` (opt-in sound cues) plus their providers
   (`ExperienceModeProvider`, `EffectsProvider`). The panels reach the workbench via
@@ -116,9 +643,18 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   (`lib/worldEvents.ts`) that only the sound cues listen to (`lib/audioPolicy.ts`).
 - The pre-2026-09 "continuous field test" UI — `PortfolioExperience`,
   `WorkstationShell`, the appearance system, the optical world and Courier, the
-  ASCII background, Three.js and GSAP — was **deleted** in the 2026-10 sweep; the
-  parts worth adapting became the features above. Git history has the rest (last
-  present at `aad91d6`). Don't resurrect it.
+  ASCII background, the retired scene's Three.js and GSAP — was **deleted** in the
+  2026-10 sweep; the parts worth adapting became the features above. Git history
+  has the rest (last present at `aad91d6`). Don't resurrect it. three r186 came
+  back in 2026-10 only as the Estate window's lazy engine: exact pins `three@0.186.1`,
+  `camera-controls@3.1.2` and `@types/three@0.186.0`, held by
+  `tests/world-retirement.test.ts`, which also bans every other WebGL scene and
+  in-browser IFC library (r3f, Babylon, PlayCanvas, OGL, web-ifc, That Open,
+  three-mesh-bvh). Both packages may be imported only under
+  `components/workbench/estate/engine/**` and `estate/live/**`, and those two
+  folders are reached only by the `import(` calls in `estate/loadEngine.ts`
+  (`tests/estate-boundary.test.ts`). The shell talks to the engine through
+  `estate/engineApi.ts`, which is types only.
 
 ## Resume system (NUS CDE style, edition-based)
 
@@ -391,8 +927,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - Nothing here reaches `server/portfolio-snapshot.json`, so nothing reaches
   `ATTESTED` in `jobSearch.mjs`. The two RL certificates stay uncovered by
   `build_tailored_resume` on purpose — a completed course is not applied work.
-- `tests/certifications.test.ts` is the only place in the repo that checks a
-  `/public` reference resolves on disk.
+- Apart from the estate pack's checks (`scripts/estate/check.mjs` and
+  `tests/estate-pack.test.ts`, which cover `public/estate` and the catalogue's
+  URLs only), `tests/certifications.test.ts` is the only place in the repo that
+  checks a `/public` reference resolves on disk.
 
 ## Experience data (site)
 
@@ -412,8 +950,8 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   pack is built from — and no build, test or deploy step reads it. Why: upstream
   does not track its `model/` export (it ships as release zips), so the submodule
   holds nothing the site could use, and a clone without it must build and pass the
-  tests. It is pinned at `a6e1acf`, R of the v1.2 candidate rc2, which upstream tags
-  `v1.2` once the pack's checks pass (plan R2b); apart from that one step it only
+  tests. It is pinned at `a6e1acf`, R of the v1.2 candidate rc2, which upstream
+  tagged `v1.2` (plan R2b, done: `git ls-remote … 'refs/tags/v1.2^{}'` = `a6e1acf`); apart from that one step it only
   ever moves to a tagged commit. Never add it with a local path, `file://` or
   `--reference`.
 - Optional locally: `git submodule update --init external/Bonsai-Estate`.
@@ -457,6 +995,12 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   more than a quantisation step or whose quantisation made two faces of
   different slots coplanar (`lib/pure/quantcheck.mjs`): that is why F and the
   site are 16-bit — at 14 bits 5 mm road markings fell onto the asphalt.
+- Every mesh of an interior file is quantised on **one lattice**
+  (`lib/pure/grid.mjs`: origin on the 0.1 m pitch, step 0.1 m / n, n a multiple
+  of 4), so T drawn at any typical FFL lands on R's points. Fitted per mesh, the
+  vertices T and R share (a face split between them) decoded up to 2.5 mm apart
+  and the seams showed as dotted lines; the tool now refuses a file where any
+  shared vertex decodes apart (`seamGaps`). Never quantise T and R separately.
 - The few rules the tool shares with `lib/estate` (`packPathProblem`, storey-tag
   normalisation, the palette slot lookup, the SN5W header) are import-free ports
   in `scripts/estate/lib/pure/` — Node cannot load `lib/estate/*.ts` (extensionless
@@ -496,9 +1040,32 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
 - `npm run build` ends with `scripts/check-bundle.mjs`, which fails the build
   (Vercel included) when the main bundle — the one module script in
   `dist/index.html` plus every chunk it imports statically, all of which loads on
-  every visit — exceeds 510,000 B (496,834 B when the cap landed, all of it the
-  entry; Vite itself only warns at 500 kB). Do not raise `chunkSizeWarningLimit`
-  instead.
+  every visit — exceeds min(B + 12,000, 510,000) B, where B = 496,834 B is the
+  main bundle when the cap landed (all of it the entry; Vite itself only warns at
+  500 kB) and the 12,000 B are the Estate shell's whole allowance. Do not raise
+  `chunkSizeWarningLimit` instead. The same check holds the Estate engine:
+  none of `WebGLRenderer`, `GLTFLoader`, `MeshoptDecoder` or `camera-controls`
+  in the main bundle; exactly one chunk containing `WebGLRenderer`, within
+  `lib/estate/packBudgets.json` `engineMinified` and `engineGzip`; and what the
+  Load click downloads (engine and HUD chunks plus what they import that the page
+  has not loaded) within `engineGzip`, because the consent label counts that
+  cap. Both budgets were re-pinned in P4b and again in P5 (interiors, Walk and
+  the Walk HUD) at the measured size + 5%, and `engineGzip` alone in P7
+  (278,000); a re-pin may move them but never above the plan's 307,200 B /
+  950,000 B. The main cap is NOT re-pinnable: after the P6/P7 review the main
+  bundle is 508,174 B of 508,834 B (P6 spent ~1.3 KB: the `focusEstate` check,
+  routing and dispatch in AskThePage, the phone row, the registry's Plan keys and
+  the side slot; P7 8 B, the `estate_live` export; the review 86 B, the wider
+  local routing and the phone's assistant row), so **660 B are left** —
+  anything bigger goes into the controller, engine or HUD chunk. The
+  same step also checks the Estate catalogue's URLs are in `dist/` (and that a
+  dev catalogue never builds on Vercel/CI).
+- `npm run test:e2e` runs two Playwright projects: `chromium` (everything but the
+  Estate engine) and `chromium-webgl` (`tests/e2e/estate.spec.ts` only, launched
+  with `--use-angle=swiftshader --enable-unsafe-swiftshader` so headless Chromium
+  has WebGL2). Against your own server: `npm run build`, `npx vite preview --port
+  <p> --strictPort` (with `API_PORT` pointing at a `node server.mjs`), then
+  `PLAYWRIGHT_BASE_URL=http://127.0.0.1:<p> npx playwright test`.
 - The local mirror (`scripts/verify-local-mirror.mjs`) copies `.impeccable/`
   except its untracked `review/`, `resume-qa/` and `resume-facets/` output:
   `tests/world-retirement.test.ts` reads the tracked

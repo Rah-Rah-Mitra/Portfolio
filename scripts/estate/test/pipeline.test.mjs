@@ -7,9 +7,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { analyseBuilding, buildExterior, buildInterior, buildMassing } from '../lib/building.mjs';
-import { bakeMesh, buildPrimitives, classify, countGlb, encodeDoc, instanceAll, newDoc, readGlb, storeyRoundTrip, validateGlb, buildMesh } from '../lib/gltf.mjs';
+import { bakeMesh, buildPrimitives, classify, countGlb, decodeGlb, docBounds, encodeDoc, instanceAll, newDoc, readGlb, storeyRoundTrip, validateGlb, buildMesh } from '../lib/gltf.mjs';
+import { interiorGrid } from '../lib/pure/grid.mjs';
+import { seamGaps } from '../lib/pure/quantcheck.mjs';
 import { gzipDeterministic } from '../lib/files.mjs';
 import { Soup } from '../lib/pure/soup.mjs';
+import { countKeys, soupKeys } from '../lib/pure/trikeys.mjs';
 import { leakScanDir } from '../check.mjs';
 import { FFLS, reader, syntheticBlock } from './fixtures.mjs';
 
@@ -68,35 +71,59 @@ describe('step 4: palette slots', () => {
 });
 
 describe('steps 6b and 6c: F and D', () => {
-  it('puts the window panel on the glass mid-plane across the whole opening, facing out of the flat; the door panel faces both ways', async () => {
+  it('puts the window panel on the glass mid-plane across the whole opening, façade glass facing out of the flat and interior glass facing in; the door panel is its own slot both ways', async () => {
     const { b, a } = await analyse();
     const lod1 = await readGlb(b.files.get('model/TST/TST_lod1.glb'));
     const ext = await buildExterior(a, lod1, b.engine.massing.footprint, b.engine.rooms, budgets, quiet);
     const f = ext.facade;
     assert.equal(f.panels, 2);
-    // The window is faced by the rooms either side; the door is drawn from both sides.
-    assert.deepEqual(f.facing, { byRooms: 1, byFootprint: 0, undecided: 0, doubleSided: 1 });
-    // The panels follow the shell in the F soup: the window's two triangles first.
+    // The window is faced by the rooms either side; the door is not faced.
+    assert.deepEqual(f.facing, { byRooms: 1, byFootprint: 0, undecided: 0, doors: 1 });
+    // The panels follow the shell in the F soup: the window's four triangles first.
     const p = f.soup.pos; const o = f.shellTris * 9;
-    for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(p[o + k * 3 + 2] - -0.04) < 1e-9, 'window panel off the glass mid-plane');
+    for (let t = 0; t < 4; t += 1) for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(p[o + t * 9 + k * 3 + 2] - -0.04) < 1e-9, 'window panel off the glass mid-plane');
     // Facing +z (glTF), which is block-local -y: out of the flat, whose room lies at y > 0.
-    const ux = p[o + 3] - p[o], uy = p[o + 4] - p[o + 1], vx = p[o + 6] - p[o], vy = p[o + 7] - p[o + 1];
-    assert.ok(ux * vy - uy * vx > 0, 'the window panel faces into the flat, not out of it');
+    const nz = (t) => { const q = t * 9; return (p[q + 3] - p[q]) * (p[q + 7] - p[q + 1]) - (p[q + 4] - p[q + 1]) * (p[q + 6] - p[q]); };
+    assert.ok(nz(f.shellTris) > 0, 'the window panel faces into the flat, not out of it');
+    // Both sides, on the same corners: façade glass (11) out, interior glass (29) in,
+    // so F's front-faces-only material still draws the pane from indoors.
+    const win = [0, 1, 2, 3].map((k) => [Math.sign(nz(f.shellTris + k)), f.soup.slot[f.shellTris + k]]);
+    assert.deepEqual(win, [[1, 11], [1, 11], [-1, 29], [-1, 29]]);
     // It spans the opening (the 1.2 m kit, frames included), not just the 1.1 m pane.
     const xs = [0, 1, 2, 3, 4, 5].map((v) => p[o + v * 3]);
     assert.deepEqual([Math.min(...xs), Math.max(...xs)].map((x) => Number(x.toFixed(6))), [6, 7.2]);
     // The front door's panel sits inside its 40 mm leaf, 20 mm from each face.
-    for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(p[o + 18 + k * 3 + 2] - -0.02) < 1e-9, 'door panel off the leaf mid-plane');
-    // Four door triangles: two facing each way, all on L2 like the window's.
-    const nz = (t) => { const q = t * 9; return (p[q + 3] - p[q]) * (p[q + 7] - p[q + 1]) - (p[q + 4] - p[q + 1]) * (p[q + 6] - p[q]); };
-    const door = [2, 3, 4, 5].map((k) => Math.sign(nz(f.shellTris + k)));
+    for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(p[o + 36 + k * 3 + 2] - -0.02) < 1e-9, 'door panel off the leaf mid-plane');
+    // Four door triangles: two facing each way, in one slot, all on L2 like the window's.
+    const door = [4, 5, 6, 7].map((k) => Math.sign(nz(f.shellTris + k)));
     assert.deepEqual(door, [door[0], door[0], -door[0], -door[0]]);
-    for (let k = 0; k < 6; k += 1) assert.equal(f.soup.storey[f.shellTris + k], 1);
+    assert.equal(new Set([4, 5, 6, 7].map((k) => f.soup.slot[f.shellTris + k])).size, 1);
+    for (let k = 0; k < 8; k += 1) assert.equal(f.soup.storey[f.shellTris + k], 1);
     const counts = await countGlb(await encodeDoc(f.ctx, 16));
-    assert.equal(counts.tris, f.shellTris + 6);
+    assert.equal(counts.tris, f.shellTris + 8);
     // L2's slab is in L2's chunk (12); the façade wall's bottom and top faces coincide
     // with L1's and RF's chunk walls (2 + 2). Its sides match nothing and take the band rule.
     assert.equal(f.exactMatched, 16);
+    // The façade mask at every storey and k = 1, 2: what a chunk holds is drawn once.
+    assert.deepEqual({ ...f.mask, opened: undefined }, { bands: 8, ks: [1, 2], holes: 0, doubles: 0, opened: undefined });
+  });
+
+  it('stops the run when a chunk holds an opening under another storey than its band, which the façade mask would misapply', async () => {
+    // Plant the window's kit, where LOD1 places it (y 4.5, L2's band), in a chunk.
+    const plant = async (storey) => {
+      const { b, a } = await analyse();
+      const lod1 = await readGlb(b.files.get('model/TST/TST_lod1.glb'));
+      const node = lod1.getRoot().listNodes().find((n) => n.getName().startsWith('L1WIN_'));
+      const kit = new Soup(64);
+      bakeMesh(node.getMesh(), node.getWorldMatrix(), kit, { skip: (m) => m === 'Glass' });
+      const chunk = a.chunks[storey];
+      for (const [k, c] of countKeys(soupKeys(kit, chunk.ffl))) chunk.counts.set(k, (chunk.counts.get(k) ?? 0) + c);
+      return buildExterior(a, lod1, b.engine.massing.footprint, b.engine.rooms, budgets, quiet);
+    };
+    // Held by L2's chunk: the panel's and the instance's band agree with it.
+    assert.deepEqual([(await plant(1)).facade.mask.holes, (await plant(1)).facade.mask.doubles], [0, 0]);
+    // Held by L3's: F would hide the pane with L2 while the interior draws it with L3.
+    await assert.rejects(plant(2), /façade mask would misapply: \d+ surfaces hidden by F and not drawn by the interior, \d+ drawn by both, over 8 bands \(first: panel of L1WIN__02-101_Bedroom_window_GUIDWIN, tagged L2, held by L3's chunk, at L1 k = 1, band L1–L2\)/);
   });
 
   it('builds D as instances with a _STOREY per instance from its height', async () => {
@@ -206,6 +233,78 @@ describe('steps 7–9: split, encode, validate', () => {
     assert.deepEqual([0, 1, 2].map((i) => st.getElement(i, [])), [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 0, 0]]);
     assert.equal(await storeyRoundTrip(glb, batches), null);
     assert.equal(node.getName(), 'kit');
+  });
+});
+
+describe('step 8: one lattice for an interior file', () => {
+  // T (relative to its floor) and R (where it stands, on storey 1 at 3.6 m)
+  // split one wall face between them, as upstream's chunks do where a face's
+  // triangulation differs between storeys; their bounds differ, so a grid
+  // fitted to each mesh rounds the shared vertices to different points.
+  const make = (withKit = false) => {
+    const ctx = newDoc();
+    const t = new Soup(4); const r = new Soup(4);
+    t.push(-9.0, 2.6, -9.1, -13.0, 2.3, -9.1, -10.7, 2.3, -9.1, 0, 255);
+    t.push(-40.2, 0, 3.3, 22.7, 0, 3.3, 22.7, 2.8, 3.3, 0, 255); // T's own extent
+    r.push(-9.0, 6.2, -9.1, -16.7, 5.9, -9.1, -13.0, 5.9, -9.1, 0, 1); // shares (-9.0, 2.6) and (-13.0, 2.3) at FFL 3.6
+    r.push(31.9, 3.6, -20.4, 31.9, 9.1, -20.4, 30.0, 9.1, -20.4, 0, 1); // R's own extent
+    ctx.scene.addChild(ctx.doc.createNode('typical').setMesh(buildMesh(ctx, 'typical', t)));
+    ctx.scene.addChild(ctx.doc.createNode('residual').setMesh(buildMesh(ctx, 'residual', r)));
+    if (withKit) {
+      const k = new Soup(1); k.push(0, 0, 0, 0.8, 0, 0, 0, 0.75, 0.8, 23, 0);
+      const kit = buildMesh(ctx, 'furniture_k', k);
+      for (const x of [1, 5]) ctx.scene.addChild(ctx.doc.createNode().setMesh(kit).setTranslation([x, 3.6, -2]));
+    }
+    return { ctx, t, r };
+  };
+  const seams = async (glb, t, r) => {
+    const nodes = new Map((await decodeGlb(glb)).map((n) => [n.name, n]));
+    return seamGaps({ builtT: t, builtR: r, decT: nodes.get('typical').soup, decR: nodes.get('residual').soup, typical: [[1, 3.6]], tol: 0.004 });
+  };
+
+  it('fitted per mesh, the vertices T and R share decode apart; on one lattice they coincide, and nothing else changes', async () => {
+    const before = make();
+    const loose = await seams(await encodeDoc(before.ctx, 16), before.t, before.r);
+    assert.equal(loose.shared, 2);
+    assert.ok(loose.apart === 2, `per-mesh grids: ${JSON.stringify(loose)}`);
+
+    const after = make();
+    const grid = interiorGrid(...docBounds(after.ctx), { bits: 16 });
+    const glb = await encodeDoc(after.ctx, 16, { grid });
+    const tight = await seams(glb, after.t, after.r);
+    assert.deepEqual([tight.shared, tight.apart, tight.missing, tight.first], [2, 0, 0, null]);
+    assert.ok(tight.maxApart < 1e-6, `${tight.maxApart} m: float32 decoding only`);
+    assert.equal((await validateGlb(glb)).errors, 0);
+    const doc = await readGlb(glb);
+    // The anchor is gone; both meshes carry the lattice's one origin and scale.
+    assert.deepEqual(doc.getRoot().listMeshes().map((m) => m.getName()).sort(), ['residual', 'typical']);
+    const nodes = doc.getRoot().listNodes();
+    assert.equal(new Set(nodes.map((n) => n.getScale().join())).size, 1);
+    assert.equal(new Set(nodes.map((n) => n.getTranslation().join())).size, 1);
+    for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(nodes[0].getTranslation()[k] - grid.origin[k]) < 1e-5);
+    assert.ok(Math.abs(nodes[0].getScale()[0] - grid.scale) < grid.scale * 1e-6);
+    // Deterministic, like every other file.
+    assert.deepEqual(Buffer.from(await encodeDoc(make().ctx, 16, { grid })), Buffer.from(glb));
+  });
+
+  it('quantises instanced kits on the lattice too, keeping each instance where it stood', async () => {
+    const { ctx } = make(true);
+    await instanceAll(ctx);
+    const grid = interiorGrid(...docBounds(ctx), { bits: 16 });
+    const glb = await encodeDoc(ctx, 16, { grid });
+    assert.equal((await validateGlb(glb)).errors, 0);
+    const kit = (await decodeGlb(glb)).find((n) => n.name === 'furniture_k');
+    assert.equal(kit.copies, 2);
+    const p = kit.soup.pos;
+    const firsts = [[p[0], p[1], p[2]], [p[9], p[10], p[11]]].sort((a, b) => a[0] - b[0]);
+    for (const [got, want] of [[firsts[0], [1, 3.6, -2]], [firsts[1], [5, 3.6, -2]]]) {
+      for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(got[k] - want[k]) <= grid.step, `${got} vs ${want}`);
+    }
+  });
+
+  it('refuses geometry the lattice does not cover', async () => {
+    const { ctx } = make();
+    await assert.rejects(encodeDoc(ctx, 16, { grid: { origin: [0, 0, 0], scale: 10 } }), /leaves the lattice's range/);
   });
 });
 

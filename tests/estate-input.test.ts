@@ -55,18 +55,40 @@ describe('estate keys: the §8.2 table', () => {
     expect(stageKey(key('BracketLeft', 'overview'))).toEqual({ preventDefault: false, action: null });
     expect(action('Home', 'overview')).toEqual({ kind: 'aerial' });
     expect(action('Home', 'walk')).toEqual({ kind: 'respawn' });
+    // Home in Fly goes back to the aerial view, as the HUD's Home button does.
+    expect(action('Home', 'fly')).toEqual({ kind: 'aerial' });
     for (const mode of ['overview', 'plan', 'walk'] as const) {
       expect(action('Enter', mode)).toEqual({ kind: 'activate' });
       expect(action('NumpadEnter', mode)).toEqual({ kind: 'activate' });
     }
     // '—' cells: no action.
     expect(action('Enter', 'fly')).toBeNull();
-    expect(action('KeyA', 'overview')).toBeNull();
     expect(action('KeyQ', 'walk')).toBeNull();
     expect(action('BracketLeft', 'walk')).toBeNull();
     expect(action('KeyL', 'overview')).toBeNull();
     expect(action('ShiftLeft', 'overview')).toBeNull();
     expect(action('PageUp', 'overview')).toBeNull();
+  });
+
+  it('pans the overview from the keyboard and pitches Fly (additions to §8.2: every drag has a key, §8.7)', () => {
+    expect(action('KeyA', 'overview')).toEqual({ kind: 'hold', hold: 'pan-left' });
+    expect(action('KeyD', 'overview')).toEqual({ kind: 'hold', hold: 'pan-right' });
+    // Shift turns the arrows (and W/S) into pans, as it turns a drag into one.
+    const shift = { modifiers: { shift: true } };
+    expect(action('ArrowUp', 'overview', shift)).toEqual({ kind: 'hold', hold: 'pan-ahead' });
+    expect(action('KeyW', 'overview', shift)).toEqual({ kind: 'hold', hold: 'pan-ahead' });
+    expect(action('ArrowDown', 'overview', shift)).toEqual({ kind: 'hold', hold: 'pan-back' });
+    expect(action('ArrowLeft', 'overview', shift)).toEqual({ kind: 'hold', hold: 'pan-left' });
+    expect(action('ArrowRight', 'overview', shift)).toEqual({ kind: 'hold', hold: 'pan-right' });
+    // Unshifted they keep tilting and rotating; in Fly Shift stays the boost.
+    expect(action('ArrowUp', 'overview')).toEqual({ kind: 'hold', hold: 'tilt-up' });
+    expect(action('KeyW', 'fly', shift)).toEqual({ kind: 'hold', hold: 'forward' });
+    expect(action('KeyR', 'fly')).toEqual({ kind: 'hold', hold: 'look-up' });
+    expect(action('KeyF', 'fly')).toEqual({ kind: 'hold', hold: 'look-down' });
+    expect(action('KeyR', 'overview')).toBeNull();
+    // Shift chords are listed as their plain code.
+    expect(STAGE_KEY_CODES.some((code) => code.includes('+'))).toBe(false);
+    expect(STAGE_KEY_CODES).toContain('KeyR');
   });
 
   it('switches mode with 1 / 2 / 3 and announces with I, in every mode', () => {
@@ -94,7 +116,7 @@ describe('estate keys: the §8.2 table', () => {
     expect(stageKey(key('Space', 'walk'))).toEqual({ preventDefault: true, action: null });
     expect(stageKey(key('Space', 'overview'))).toEqual({ preventDefault: true, action: null });
     expect(stageKey(key('PageDown', 'overview'))).toEqual({ preventDefault: true, action: null });
-    expect(stageKey(key('Home', 'fly'))).toEqual({ preventDefault: true, action: null });
+    expect(stageKey(key('PageUp', 'fly'))).toEqual({ preventDefault: true, action: null });
     for (const mode of MODES) expect(stageKey(key('End', mode)).preventDefault).toBe(true);
     // A key with no default and no job is simply passed.
     expect(stageKey(key('KeyQ', 'overview'))).toEqual({ preventDefault: false, action: null });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { describeBackdropHold, hexToRgb, isHexColor, resolveBackdropActivity } from '../lib/desktopBackgroundPolicy';
+import { BACKDROP_YIELD_HOLD, describeBackdropHold, hexToRgb, isHexColor, resolveBackdropActivity } from '../lib/desktopBackgroundPolicy';
+import { claimGpu, isGpuClaimed, releaseGpu } from '../lib/gpuClaim';
 import { resolveExperiencePolicy } from '../lib/experienceMode';
 import { defaultBackdropSettings } from '../lib/backdropSettings';
 
@@ -34,6 +35,31 @@ describe('desk backdrop policy', () => {
     // Mounted-but-frozen is what lets a visitor who pressed "Pause all motion"
     // still see a still frame of the backdrop they switched on.
     expect(resolveBackdropActivity({ ...live, ...override }, false)).toEqual({ mount: true, running: false, reason });
+  });
+
+  it('yields to the Estate window: a mounted backdrop stays mounted and stops', () => {
+    expect(resolveBackdropActivity({ ...live, yielded: true }, true)).toEqual({ mount: true, running: false, reason: 'yielded' });
+    // The existing literals still typecheck and still run: yielded is optional.
+    expect(resolveBackdropActivity({ ...live, yielded: false }, true)).toEqual({ mount: true, running: true, reason: 'running' });
+  });
+
+  it('never mounts a backdrop that was off because the Estate holds the GPU, and every older reason still wins', () => {
+    expect(resolveBackdropActivity({ ...live, enabled: false, yielded: true }, false)).toEqual({ mount: false, running: false, reason: 'off' });
+    expect(resolveBackdropActivity({ ...live, allowHeavyAssets: false, yielded: true }, false)).toEqual({ mount: false, running: false, reason: 'capability' });
+    expect(resolveBackdropActivity({ ...live, documentHidden: true, yielded: true }, true).reason).toBe('hidden');
+    expect(resolveBackdropActivity({ ...live, motionHalted: true, yielded: true }, true).reason).toBe('motion-halted');
+    expect(BACKDROP_YIELD_HOLD).toBe('held: the Estate window is using the GPU');
+  });
+
+  it('keeps one named claim on the GPU, released only by its holder', () => {
+    expect(isGpuClaimed()).toBe(false);
+    claimGpu('estate');
+    claimGpu('estate');
+    expect(isGpuClaimed()).toBe(true);
+    releaseGpu('estate');
+    expect(isGpuClaimed()).toBe(false);
+    releaseGpu('estate');
+    expect(isGpuClaimed()).toBe(false);
   });
 
   it('names why a backdrop is held on every light policy, and says nothing when it may mount', () => {

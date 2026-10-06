@@ -193,6 +193,30 @@ describe('the 400 ms hold', () => {
     expect(sel.level[0]).toBe(LOD_DETAIL);
   });
 
+  it('says when a hold that is keeping a building off its level runs out (holdUntil), so a resting loop can wake for it', () => {
+    const sel = new LodSelector(1);
+    const b = bldg({ distance: 30 });
+    sel.select([b], frame(0));
+    expect(sel.holdUntil).toBe(Infinity); // the first draw starts no hold
+    b.distance = 10;
+    sel.select([b], frame(100));
+    expect(sel.level[0]).toBe(LOD_DETAIL);
+    // The switch itself starts the hold, and nothing differs yet.
+    expect(sel.holdUntil).toBe(Infinity);
+    b.distance = 30;
+    sel.select([b], frame(200));
+    expect(sel.level[0]).toBe(LOD_DETAIL); // held
+    expect(sel.holdUntil).toBe(100 + DWELL_MS);
+    // A camera that stops here draws nothing more; the engine's timer brings
+    // one frame at holdUntil, and that frame takes the step.
+    sel.select([b], frame(sel.holdUntil));
+    expect(sel.level[0]).toBe(LOD_FACADE);
+    expect(sel.holdUntil).toBe(Infinity);
+    // A hold on the level the building wants anyway owes no frame.
+    sel.select([b], frame(sel.since[0] + 10));
+    expect(sel.holdUntil).toBe(Infinity);
+  });
+
   it('does not start on the first draw, nor on a hidden building', () => {
     const sel = new LodSelector(1);
     const b = bldg({ distance: 10, resident: RESIDENT_MASSING });
@@ -464,6 +488,43 @@ describe('lean mode', () => {
     sel.select([bldg({ distance: 0, maxLevel: LOD_FACADE })], frame(0));
     expect(sel.want[0]).toBe(LOD_DETAIL);
     expect(sel.level[0]).toBe(LOD_FACADE);
+  });
+});
+
+describe('the focus building', () => {
+  // Past F's switch distance (697 m at τ 2 for this slab) a building wants massing.
+  const far = 1_000;
+
+  it('never shows as massing once its F is resident, however far it is', () => {
+    const sel = new LodSelector(2);
+    const bs = [bldg({ distance: far }), bldg({ distance: far, focus: true })];
+    sel.select(bs, frame(0));
+    expect(Array.from(sel.want)).toEqual([LOD_MASSING, LOD_MASSING]);
+    expect(Array.from(sel.target)).toEqual([LOD_MASSING, LOD_FACADE]);
+    expect(Array.from(sel.level)).toEqual([LOD_MASSING, LOD_FACADE]);
+    // Selected but its F not yet in: the box stays, and nothing is fetched for it.
+    const waiting = new LodSelector(1);
+    waiting.select([bldg({ distance: far, focus: true, resident: RESIDENT_MASSING })], frame(0));
+    expect([waiting.target[0], waiting.level[0]]).toEqual([LOD_MASSING, LOD_MASSING]);
+  });
+
+  it('keeps its ceiling: lean or not, a massing-only ceiling holds it at massing', () => {
+    const sel = new LodSelector(1);
+    sel.select([bldg({ distance: far, focus: true, maxLevel: LOD_MASSING })], frame(0));
+    expect(sel.level[0]).toBe(LOD_MASSING);
+  });
+
+  it('takes its step to F before any other upgrade, and only while the caps hold', () => {
+    // Room for one F: the near building would win on error per triangle; the focus wins.
+    const tight: LodFrame['tier'] = { tauPx: 2, maxTris: 600 + 600 + 40_000, maxDraws: 100 };
+    const sel = new LodSelector(2);
+    sel.select([bldg({ distance: 50 }), bldg({ distance: far, focus: true })], frame(0, { tier: tight }));
+    expect(Array.from(sel.level)).toEqual([LOD_MASSING, LOD_FACADE]);
+    // No room at all: it stays massing rather than break a cap.
+    const none: LodFrame['tier'] = { tauPx: 2, maxTris: 1_200, maxDraws: 100 };
+    const starved = new LodSelector(1);
+    starved.select([bldg({ distance: far, focus: true })], frame(0, { tier: none }));
+    expect(starved.level[0]).toBe(LOD_MASSING);
   });
 });
 

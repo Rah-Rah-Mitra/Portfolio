@@ -18,16 +18,17 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analyseBuilding, buildExterior, buildInterior, buildMassing } from './lib/building.mjs';
-import { buildMesh, countGlb, decodeGlb, encodeDoc, newDoc, quantStep, readGlb, storeyRoundTrip, validateGlb } from './lib/gltf.mjs';
+import { buildMesh, countGlb, decodeGlb, docBounds, encodeDoc, newDoc, quantStep, readGlb, storeyRoundTrip, validateGlb } from './lib/gltf.mjs';
 import { gunzip, sha256, writeHashed } from './lib/files.mjs';
 import { SITE_IDS, checkExport, openDevSource, openRelease, unanchoredReads } from './lib/inputs.mjs';
 import { ATTRIBUTION, CLASS_ORDER, EDITION, FRAME, PACK_SCHEMA, REPO, boundsRadius, catalogueSource, mm, packFileName, serialisePack, storeyName } from './lib/manifest.mjs';
 import { buildNav } from './lib/nav.mjs';
 import { GLASS_INTERIOR_SLOT, GLASS_SLOT, packPalette } from './lib/palette.mjs';
 import { encodePosters } from './lib/posters.mjs';
+import { GRID_PITCH, interiorGrid, offLattice, offPitch } from './lib/pure/grid.mjs';
 import { panelsNearSoup } from './lib/pure/panels.mjs';
 import { textLeak } from './lib/pure/paths.mjs';
-import { matchMap, matchWithin, quantisationZFights } from './lib/pure/quantcheck.mjs';
+import { matchMap, matchWithin, quantisationZFights, seamGaps } from './lib/pure/quantcheck.mjs';
 import { Soup, concatSoups } from './lib/pure/soup.mjs';
 import { readWalkHeader, writeGround } from './lib/pure/sn5w.mjs';
 import { buildSite } from './lib/site.mjs';
@@ -324,8 +325,8 @@ export const build = async (opts, outDir, log, internal = {}) => {
   const report = { classes: opts.classes, bits: BITS, sites: {}, site: null, posters: [], timings: {} };
   let flats = 0; let storeyCount = 0;
 
-  const emitGlb = async (ctx, bits, stem, expectTris, batches = []) => {
-    const glb = await encodeDoc(ctx, bits);
+  const emitGlb = async (ctx, bits, stem, expectTris, batches = [], encodeOpts = {}) => {
+    const glb = await encodeDoc(ctx, bits, encodeOpts);
     const storeyProblem = await storeyRoundTrip(glb, batches);
     if (storeyProblem) throw new Error(`${stem}: ${storeyProblem}`);
     const v = await validateGlb(glb);
@@ -398,7 +399,7 @@ export const build = async (opts, outDir, log, internal = {}) => {
         stepF = quantStep(dec.scale, BITS.f);
         const decodedF = checkDecoded(`${id} F`, ext.facade.soup, dec.soup, stepF);
         site.facade = { ...out.geo, error: 0.06, edges: ext.facade.edges, exactMatched: ext.facade.exactMatched };
-        rep.facade = { bytes: out.geo.bytes, tris: out.geo.tris, draws: out.geo.draws, panels: ext.facade.panels, facing: ext.facade.facing, exactMatched: ext.facade.exactMatched, banded: ext.facade.banded, decoded: decodedF };
+        rep.facade = { bytes: out.geo.bytes, tris: out.geo.tris, draws: out.geo.draws, panels: ext.facade.panels, facing: ext.facade.facing, exactMatched: ext.facade.exactMatched, banded: ext.facade.banded, offBand: ext.facade.offBand, mask: ext.facade.mask, decoded: decodedF };
       }
       if (classes.has('d')) {
         const out = await emitGlb(ext.detail.ctx, BITS.d, `d/${id}`, ext.detail.storedTris, ext.detail.batches);
@@ -423,12 +424,35 @@ export const build = async (opts, outDir, log, internal = {}) => {
       const I = await buildInterior(a, budgets);
       if (I.problems.length) throw new Error(`${id} interior: ${I.problems.join('; ')}`);
       const storedTris = I.stats.typicalTris + I.stats.residualTris + I.stats.specials.reduce((n, sp) => n + sp.tris, 0) + I.stats.furniture.reduce((n, k) => n + k.tris + k.proxyTris, 0);
-      const out = await emitGlb(I.ctx, BITS.i, `i/${id}`, storedTris, I.batches);
+      // One quantisation lattice for the whole file, with every typical FFL a
+      // whole number of steps (pure/grid.mjs): T drawn at any typical floor
+      // then quantises onto R's points, so the edges they share stay closed.
+      const typicalFfls = a.split.typical.map((s) => a.storeys[s].ffl);
+      const off = offPitch(typicalFfls);
+      if (off.length) throw new Error(`${id}: typical FFL ${off[0]} is not on the ${GRID_PITCH} m pitch, so T cannot share R's quantisation lattice`);
+      const grid = interiorGrid(...docBounds(I.ctx), { bits: BITS.i });
+      const out = await emitGlb(I.ctx, BITS.i, `i/${id}`, storedTris, I.batches, { grid });
       // T + R_s = chunk_s again, on the decoded bytes: within one quantisation step.
       const nodes = new Map((await decodeGlb(out.glb)).map((n) => [n.name, n]));
       const tDec = nodes.get('typical'); const rDec = nodes.get('residual');
-      const step = quantStep(Math.max(...[...nodes.values()].filter((n) => n.copies === 1).map((n) => n.scale)), BITS.i);
+      const plain = [...nodes.values()].filter((n) => n.copies === 1);
+      const scales = new Set(plain.map((n) => n.scale));
+      if (scales.size !== 1) throw new Error(`${id} I: its meshes decode on ${scales.size} lattices (node scales ${[...scales].join(', ')}); expected one`);
+      const step = quantStep(plain[0].scale, BITS.i);
+      if (Math.abs(step - grid.step) > grid.step * 1e-6) throw new Error(`${id} I: decodes at a ${step * 1000} mm step, the lattice is ${grid.step * 1000} mm`);
       const tol = step + 1e-4;
+      // Every decoded vertex on the lattice (T at each typical floor), and every vertex T and R share in one place.
+      let worst = 0;
+      for (const n of plain) {
+        const dys = n.name === 'typical' ? typicalFfls : [0];
+        const p = n.soup.pos;
+        for (const dy of dys) for (let o = 0; o < n.soup.count * 9; o += 3) worst = Math.max(worst, offLattice(grid, p[o], p[o + 1], p[o + 2], dy));
+      }
+      if (worst > 0.01) throw new Error(`${id} I: a decoded vertex lies ${worst.toFixed(3)} steps off the lattice`);
+      const seams = tDec && rDec
+        ? seamGaps({ builtT: I.built.t, builtR: I.built.r, decT: tDec.soup, decR: rDec.soup, typical: a.split.typical.map((s) => [s, a.storeys[s].ffl]), tol })
+        : { shared: 0, apart: 0, missing: 0, maxApart: 0, first: null };
+      if (seams.apart || seams.missing) throw new Error(`${id} I: ${seams.apart + seams.missing} of the ${seams.shared} vertices T and R share decode apart (${seams.first}); the seam would open into a dotted line`);
       a.storeys.forEach(({ tag, ffl }, s) => {
         let got;
         if (typical.has(s)) {
@@ -445,7 +469,7 @@ export const build = async (opts, outDir, log, internal = {}) => {
         ...(I.stats.furniture.length ? { furniture: I.stats.furniture } : {}),
         sourceTris: I.stats.sourceTris, drawnTris: I.stats.drawnTris,
       };
-      rep.interior = { bytes: out.geo.bytes, tris: out.geo.tris, draws: out.geo.draws, stepMm: mm(step * 1000), typical: I.stats.typical, shares: I.stats.shares, typicalTris: I.stats.typicalTris, residualTris: I.stats.residualTris, specials: I.stats.specials, furniture: I.stats.furniture };
+      rep.interior = { bytes: out.geo.bytes, tris: out.geo.tris, draws: out.geo.draws, stepMm: mm(step * 1000), lattice: { n: grid.n, origin: grid.origin.map(mm) }, seams: { shared: seams.shared, apart: seams.apart }, typical: I.stats.typical, shares: I.stats.shares, typicalTris: I.stats.typicalTris, residualTris: I.stats.residualTris, specials: I.stats.specials, furniture: I.stats.furniture };
     }
     if (classes.has('w')) {
       const raw = source.read(`model/${id}/${id}_walk.bin`);

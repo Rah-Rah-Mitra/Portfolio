@@ -3,11 +3,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { ESTATE_SITE_IDS, normaliseStoreyTag } from '../lib/estate/ids';
+import { ESTATE_SITE_IDS, ESTATE_SITE_STOREYS, ESTATE_STOREY_FFL, normaliseStoreyTag } from '../lib/estate/ids';
 import { ESTATE_PALETTE, paletteSlot } from '../lib/estate/palette';
 import {
   ESTATE_PACK_CLASSES, ESTATE_PACK_EDITION, ESTATE_PACK_FRAME, ESTATE_PACK_SCHEMA, ESTATE_REPO, packPathProblem as schemaPathProblem, parsePack,
 } from '../lib/estate/schema';
+import { PEEK_K, TIER_BAND_K, inRange, siteStoreyTable, storeyBand } from '../lib/estate/storeys';
+import { ESTATE_TIERS } from '../lib/estate/tiers';
 import { decodeWalk } from '../lib/estate/walk';
 import { checkBudgets, checkPackDir, checkTokens, leakScanDir, loadBudgets } from '../scripts/estate/check.mjs';
 import { gzipDeterministic, sha256, writeHashed } from '../scripts/estate/lib/files.mjs';
@@ -18,12 +20,15 @@ import { featureEdges } from '../scripts/estate/lib/pure/edges.mjs';
 import { openPoseYup, orientClosedSolids, surfaceErrorP90, transformPoint } from '../scripts/estate/lib/pure/geom.mjs';
 import { doorsProblem, expandDoors, expandRooms, navDoor, packDoors, packRooms, roomsProblem, templateName } from '../scripts/estate/lib/pure/navjson.mjs';
 import { mergePanels, midPlanePanel, openingPanel, panelsNearSoup, pushPanel, triangleNearPanel } from '../scripts/estate/lib/pure/panels.mjs';
-import { coplanarPairs, matchMap, matchWithin, pairCoplanar, quantisationZFights } from '../scripts/estate/lib/pure/quantcheck.mjs';
+import { GRID_MULTIPLE, GRID_PITCH, interiorGrid, offLattice, offPitch } from '../scripts/estate/lib/pure/grid.mjs';
+import { kitProfile, standInSoup } from '../scripts/estate/lib/pure/proxy.mjs';
+import { coplanarPairs, matchMap, matchWithin, pairCoplanar, quantisationZFights, seamGaps } from '../scripts/estate/lib/pure/quantcheck.mjs';
 import { leakInPayload, packPathProblem } from '../scripts/estate/lib/pure/paths.mjs';
 import { Soup } from '../scripts/estate/lib/pure/soup.mjs';
 import { GROUND_NODATA, rasterGround, readGround, readWalkHeader, writeGround } from '../scripts/estate/lib/pure/sn5w.mjs';
 import { bandIndex, canonicalTag, storeyList } from '../scripts/estate/lib/pure/storeys.mjs';
-import { searchOrder, tagByChunks } from '../scripts/estate/lib/pure/tag.mjs';
+import { majorityOwner, maskCoverage, searchOrder, tagByChunks } from '../scripts/estate/lib/pure/tag.mjs';
+import { FAR_TREE_TRIS, farTreeSoup } from '../scripts/estate/lib/pure/trees.mjs';
 import { countKeys, exactSplitProblem, soupKeys, splitTypical } from '../scripts/estate/lib/pure/trikeys.mjs';
 
 // The pack tool's pure algorithms (plan §6.2; P2 in §10.2), on synthetic data.
@@ -197,7 +202,8 @@ describe('façade storey tags (step 6b)', () => {
     pushBox(f, [20, 6.3, 0], [21, 7, 1], 0); // matches nothing → band of z-min 6.3 → RF (index 2)
     const counts = [countKeys(soupKeys(chunk0, 0)), countKeys(soupKeys(chunk1, 3.6)), new Map()];
     const out = tagByChunks(f, ffls, counts);
-    expect(out).toEqual({ exactMatched: 24, banded: 12 });
+    expect(out).toMatchObject({ exactMatched: 24, banded: 12, offBand: 0 });
+    expect([...out.owner]).toEqual([...Array(12).fill(0), ...Array(12).fill(1), ...Array(12).fill(-1)]);
     expect([...f.storey.subarray(0, 12)].every((s) => s === 0)).toBe(true);
     expect([...f.storey.subarray(12, 24)].every((s) => s === 1)).toBe(true);
     expect([...f.storey.subarray(24, 36)].every((s) => s === 2)).toBe(true);
@@ -206,16 +212,159 @@ describe('façade storey tags (step 6b)', () => {
   it('searches every storey nearest the band first, so a double-height hall roof keeps the storey whose chunk holds it', () => {
     expect(searchOrder(2, 5)).toEqual([2, 1, 3, 0, 4]);
     expect(searchOrder(0, 3)).toEqual([0, 1, 2]);
-    // NC_514: L1 0, L2 4.2, RF 8.2. A canopy at 8.0–8.25 lies in RF's band but only
-    // L1's chunk holds it (the hall is double height); it was tagged RF before.
+    // NC_514: L1 0, L2 4.2, RF 8.2. The hall's roof deck at 8.0–8.25 lies in RF's band but
+    // only L1's chunk holds it (the hall is double height); it was tagged RF before.
     const ffls = [0, 4.2, 8.2];
     const chunk0 = new Soup(12);
-    pushBox(chunk0, [0, 8.0, 0], [6, 8.25, 4], 7, 0);
+    pushBox(chunk0, [0, 8.0, 0], [6, 8.25, 4], 27, 0);
     const f = new Soup(12);
-    pushBox(f, [0, 8.0, 0], [6, 8.25, 4], 7);
+    pushBox(f, [0, 8.0, 0], [6, 8.25, 4], 27);
     const out = tagByChunks(f, ffls, [countKeys(soupKeys(chunk0, 0)), new Map(), new Map()]);
-    expect(out).toEqual({ exactMatched: 12, banded: 0 });
+    expect(out).toMatchObject({ exactMatched: 12, banded: 0, offBand: 12 });
     expect([...f.storey.subarray(0, 12)].every((s) => s === 0)).toBe(true);
+    // Standing on the roof (band L2–RF) F draws it; under it (band L1–L2) the interior does.
+    const both = (tags: number[]) => maskCoverage(out.owner, Int16Array.from(tags), 3, [1, 2]);
+    expect(both([...f.storey.subarray(0, 12)])).toMatchObject({ bands: 6, holes: 0, doubles: 0 });
+    // Tagged RF by its height, it vanishes from the roof (S = RF, k = 1) and is drawn twice from L1 (k = 1).
+    expect(both(Array(12).fill(2))).toMatchObject({ holes: 12, doubles: 12 });
+  });
+
+  // BLK 509's stair cores as upstream exports them (measured on the v1.2 candidate
+  // rc2): an IfcStair and its railing sit in the storey they rise from, so the top
+  // riser (11.8–12.0 m for the L4→L5 flight; L5's FFL is 12.0) and the landing
+  // guard at L5 (11.775–13.0) are L4's, though they stand in L5's band. The LOD1
+  // shell (F) carries the same triangles, so the chunk match tags them L4.
+  const core509 = () => {
+    const ffls = ESTATE_STOREY_FFL.BLK_509;
+    const chunks = ffls.map(() => new Soup(64));
+    const f = new Soup(1024);
+    ffls.forEach((ffl, s) => {
+      const parts: Array<[number[], number[], number]> = [[[0, ffl - 0.2, 0], [2.6, ffl, 5.4], 4]]; // the floor landing
+      if (s + 1 < ffls.length) {
+        const next = ffls[s + 1];
+        parts.push([[0.2, next - 0.2, 0.2], [1.4, next, 0.48], 6]); // the top riser, in the next storey's band
+        parts.push([[1.4, next - 0.225, 0], [1.45, next + 1.0, 5.4], 7]); // the landing guard rail
+      }
+      for (const [lo, hi, slot] of parts) { pushBox(chunks[s], lo, hi, slot, s); pushBox(f, lo, hi, slot); }
+    });
+    const out = tagByChunks(f, ffls, chunks.map((c, s) => countKeys(soupKeys(c, ffls[s]))));
+    return { ffls, f, out };
+  };
+
+  it("keeps a stair's riser and handrail with the storey whose chunk holds them, though they stand in the next storey's band", () => {
+    const { ffls, f, out } = core509();
+    expect(out).toMatchObject({ exactMatched: f.count, banded: 0, offBand: (ffls.length - 1) * 24 });
+    const L4 = ESTATE_SITE_STOREYS.BLK_509.indexOf('L4');
+    // L4's guard rail (11.775–13.0 m) lies wholly in L5's band; its tag is L4.
+    const rail = Array.from({ length: f.count }, (_, i) => i).filter((i) => f.slot[i] === 7 && f.minY(i) > 11.77 && f.minY(i) < 13.01);
+    expect(rail).toHaveLength(12);
+    for (const i of rail) { expect(bandIndex(ffls, f.minY(i))).toBe(L4 + 1); expect(f.storey[i]).toBe(L4); }
+  });
+
+  it("is the only rule under which the façade mask draws every surface once, at every storey and every tier's k (the per-triangle storey-band check)", () => {
+    const { ffls, f, out } = core509();
+    const n = ffls.length;
+    const ks = [...new Set([PEEK_K, ...ESTATE_TIERS.map((t) => TIER_BAND_K[t])])].sort((x, y) => x - y);
+    expect(maskCoverage(out.owner, Int16Array.from(f.storey.subarray(0, f.count)), n, ks)).toEqual({ bands: n * ks.length, holes: 0, doubles: 0, opened: 0, first: null });
+    // The height rule: the riser and the rail are drawn twice under a band's
+    // ceiling (the interior draws the top storey's chunk, F their storey above)
+    // and vanish at its bottom (F hides them with the bottom storey, whose chunk
+    // does not hold them): 24 of each at every band clear of the building's ends.
+    const byHeight = Int16Array.from({ length: f.count }, (_, i) => bandIndex(ffls, f.minY(i)));
+    const bad = maskCoverage(out.owner, byHeight, n, ks);
+    const { surface, hi } = bad.first!;
+    expect([f.slot[surface], byHeight[surface], out.owner[surface]]).toEqual([6, hi + 1, hi]);
+    const L5 = ESTATE_SITE_STOREYS.BLK_509.indexOf('L5');
+    // The band k = 1 around L5 (L4–L6): L3's riser and rail hidden, L6's doubled.
+    const band = storeyBand(siteStoreyTable('BLK_509'), L5, 1);
+    let holes = 0; let doubles = 0;
+    for (let j = 0; j < f.count; j += 1) {
+      const drawn = (inRange(band, out.owner[j]) ? 1 : 0) + (inRange(band, byHeight[j]) ? 0 : 1);
+      if (drawn === 0) holes += 1; else if (drawn === 2) doubles += 1;
+    }
+    expect([holes, doubles]).toEqual([24, 24]);
+    expect([bad.holes, bad.doubles].every((x) => x > 0)).toBe(true);
+  });
+
+  it('bands the mask as lib/estate/storeys.ts does, on every building and k', () => {
+    for (const id of ESTATE_SITE_IDS) {
+      const table = siteStoreyTable(id);
+      const n = table.ffl.length;
+      for (const k of [1, 2, 3]) {
+        // One surface per (owner, tag) pair, and the faults storeyBand gives for them.
+        const owner: number[] = []; const tag: number[] = [];
+        let holes = 0; let doubles = 0;
+        for (let o = 0; o < n; o += 1) for (let t = 0; t < n; t += 1) {
+          owner.push(o); tag.push(t);
+          for (let S = 0; S < n; S += 1) {
+            const band = storeyBand(table, S, k);
+            const drawn = (inRange(band, o) ? 1 : 0) + (inRange(band, t) ? 0 : 1);
+            if (drawn === 0) holes += 1; else if (drawn === 2) doubles += 1;
+          }
+        }
+        const got = maskCoverage(Int16Array.from(owner), Int16Array.from(tag), n, [k]);
+        expect([got.bands, got.holes, got.doubles], `${id} k${k}`).toEqual([n, holes, doubles]);
+      }
+    }
+  });
+
+  it('counts what no chunk holds as the opening the mask makes, never as a fault', () => {
+    // An exterior fin tagged L2 by its height: hidden whenever L2 is in the band, and nothing else draws it.
+    expect(maskCoverage(Int16Array.from([-1]), Int16Array.from([1]), 3, [1])).toEqual({ bands: 3, holes: 0, doubles: 0, opened: 3, first: null });
+  });
+
+  it('gives an opening the storey of the chunk holding most of its kit, the lower on a tie, or none', () => {
+    const ffls = [0, 3.6, 6.4];
+    const kit = new Soup(24);
+    pushBox(kit, [0, 4.5, 0], [0.05, 5.8, 0.08], 12); // one jamb
+    pushBox(kit, [1.15, 4.5, 0], [1.2, 5.8, 0.08], 12); // the other
+    const held = (from: number, to: number, ffl: number) => { const s = new Soup(12); for (let i = from; i < to; i += 1) s.pushFrom(kit, i); return countKeys(soupKeys(s, ffl)); };
+    expect(majorityOwner(kit, ffls, [new Map(), held(0, 24, 3.6), held(12, 24, 6.4)])).toBe(1); // 24 to 12
+    expect(majorityOwner(kit, ffls, [new Map(), held(0, 12, 3.6), held(12, 24, 6.4)])).toBe(1); // 12 each: the lower
+    expect(majorityOwner(kit, ffls, [new Map(), new Map(), new Map()])).toBe(-1);
+  });
+});
+
+describe('the far tree (step 6e)', () => {
+  // Tembusu's boxes in SITE_lod0 (glTF Y-up, y = 0 at the foot): the crown starts
+  // 4.28 m up, the trunk is 0.5 m square and 5 m tall.
+  const foliage: [number[], number[]] = [[-2.4, 4.28, -2.4], [2.4, 9.08, 2.4]];
+  const bark: [number[], number[]] = [[-0.25, 0, -0.25], [0.25, 5, 0.25]];
+  const tree = farTreeSoup(foliage, bark, 20, 19);
+  const normal = (i: number) => {
+    const p = tree.pos; const o = i * 9;
+    const u = [p[o + 3] - p[o], p[o + 4] - p[o + 1], p[o + 5] - p[o + 2]];
+    const v = [p[o + 6] - p[o], p[o + 7] - p[o + 1], p[o + 8] - p[o + 2]];
+    return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+  };
+  const centroid = (i: number) => [0, 1, 2].map((k) => (tree.pos[i * 9 + k] + tree.pos[i * 9 + 3 + k] + tree.pos[i * 9 + 6 + k]) / 3);
+
+  it('is a crown on a trunk stub in 12 triangles, inside the 8–12 budget', () => {
+    expect(FAR_TREE_TRIS).toBe(12);
+    expect(tree.count).toBe(12);
+    expect([...tree.slot.subarray(0, 12)]).toEqual([...Array(8).fill(20), ...Array(4).fill(19)]);
+    expect(tree.bounds()).toEqual([[-2.4, 0, -2.4], [2.4, 9.08, 2.4]]);
+  });
+
+  it('faces out everywhere: the crown from its centre, the stub from its axis', () => {
+    const mid = (4.28 + 9.08) / 2;
+    for (let i = 0; i < 12; i += 1) {
+      const n = normal(i); const c = centroid(i);
+      const out = i < 8 ? [c[0], c[1] - mid, c[2]] : [c[0], 0, c[2]];
+      expect(n[0] * out[0] + n[1] * out[1] + n[2] * out[2], `triangle ${i}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('stands on the ground and runs up into the crown through its lower tip, so it no longer floats', () => {
+    const p = tree.pos;
+    const stub = Array.from({ length: 12 }, (_, k) => p[8 * 9 + k * 3 + 1]);
+    expect(Math.min(...stub)).toBe(0);
+    expect(Math.max(...stub)).toBe(5);
+    // At the stub's top the crown is 2.4 × (5 − 4.28) / 2.4 = 0.72 m wide either side of the axis: the tip is inside.
+    const halfWidthAt = (y: number) => 2.4 * (y - foliage[0][1]) / ((foliage[1][1] - foliage[0][1]) / 2);
+    expect(halfWidthAt(5)).toBeCloseTo(0.72, 12);
+    // And the crown's lower tip sits on the stub's axis.
+    expect([p[2 * 9 + 3], p[2 * 9 + 4], p[2 * 9 + 5]]).toEqual([0, 4.28, 0]);
   });
 });
 
@@ -270,6 +419,16 @@ describe('panels (step 6b)', () => {
     expect(Math.sign(nz(2))).toBe(-Math.sign(nz(0)));
     expect(Math.sign(nz(3))).toBe(-Math.sign(nz(0)));
     expect(pushPanel(new Soup(2), panel, 8)).toBe(2);
+  });
+
+  it('a double-sided panel can face back in another slot: a window is façade glass outside and interior glass inside', () => {
+    const panel = midPlanePanel([0, 0, 0], [1.2, 1.3, 0.006], IDENTITY);
+    const soup = new Soup(4);
+    expect(pushPanel(soup, panel, slotOf('Glass'), 3, { doubleSided: true, backSlot: slotOf('Glass', 'interior') })).toBe(4);
+    expect([...soup.slot.subarray(0, 4)]).toEqual([11, 11, 29, 29]);
+    expect([...soup.storey.subarray(0, 4)]).toEqual([3, 3, 3, 3]);
+    // The same four corners both ways.
+    expect(soup.pos.subarray(18, 27)).toEqual(Float64Array.from([...soup.pos.subarray(0, 3), ...soup.pos.subarray(6, 9), ...soup.pos.subarray(3, 6)]));
   });
 
   it('merges a double leaf into one panel', () => {
@@ -451,6 +610,194 @@ describe('leak scan (step 15)', () => {
   it('every palette token is defined in index.css', () => {
     const css = readFileSync(path.join(__dirname, '..', 'index.css'), 'utf8');
     expect(checkTokens(JSON.parse(readFileSync(path.join(__dirname, '..', 'lib', 'estate', 'palette.json'), 'utf8')), css)).toEqual([]);
+  });
+});
+
+describe('the furniture stand-in (step 6d)', () => {
+  // NC_514's and MSCP_513's kits as upstream draws them (kit frame, glTF Y-up,
+  // y = 0 on the floor), boxes standing in for upstream's cylinders.
+  const TILE = slotOf('Homogeneous tile - wet area');
+  const STEEL = slotOf('Mild steel - painted');
+  const STAINLESS = slotOf('Stainless steel');
+  const TIMBER = slotOf('Timber door');
+  const GLASS = slotOf('Glass');
+  type Part = [number[], number[], number];
+  const kit = (parts: Part[]) => { const s = new Soup(64); for (const [lo, hi, slot] of parts) pushBox(s, lo, hi, slot); return s; };
+  // The pedestal in nine stacked pieces, so that — as upstream's 100-triangle
+  // cylinder against the top's 12 — the steel carries far more triangles than the tile.
+  const pedestal = (r: number, h: number): Part[] => Array.from({ length: 9 }, (_, i) => [[-r, (h * i) / 9, -r], [r, (h * (i + 1)) / 9, r], STEEL] as Part);
+  const table = kit([[[-0.4, 0.71, -0.4], [0.4, 0.75, 0.4], TILE], ...pedestal(0.06, 0.71)]);
+  const stool = kit([[[-0.17, 0.42, -0.17], [0.17, 0.46, 0.17], TILE], ...pedestal(0.04, 0.42)]);
+  const counter = kit([[[-0.75, 0, -0.3], [0.75, 0.85, 0.3], TILE], [[-0.75, 0.85, -0.3], [0.75, 0.9, 0.3], STAINLESS]]);
+  const bench = kit([
+    [[-0.84, 0, -0.2], [-0.76, 0.4, 0.2], STEEL], [[0.76, 0, -0.2], [0.84, 0.4, 0.2], STEEL],
+    [[-0.9, 0.4, -0.225], [0.9, 0.46, 0.225], TIMBER], [[-0.9, 0.46, -0.225], [0.9, 0.86, -0.175], TIMBER],
+  ]);
+  const letterbox = kit([[[-0.225, 0, -1.35], [0.225, 1.8, 1.35], STEEL]]);
+
+  const slots = (soup: InstanceType<typeof Soup>) => {
+    const m = new Map<number, number>();
+    for (let i = 0; i < soup.count; i += 1) m.set(soup.slot[i], (m.get(soup.slot[i]) ?? 0) + 1);
+    return Object.fromEntries([...m].sort((a, b) => a[0] - b[0]));
+  };
+  const tri = (soup: InstanceType<typeof Soup>, i: number) => {
+    const p = soup.pos; const o = i * 9;
+    const u = [p[o + 3] - p[o], p[o + 4] - p[o + 1], p[o + 5] - p[o + 2]];
+    const v = [p[o + 6] - p[o], p[o + 7] - p[o + 1], p[o + 8] - p[o + 2]];
+    const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    const c = [0, 1, 2].map((k) => (p[o + k] + p[o + 3 + k] + p[o + 6 + k]) / 3);
+    return { n, c, ys: [p[o + 1], p[o + 4], p[o + 7]] };
+  };
+
+  it('stands a hawker table as a tile top over a steel pedestal, not a steel crate: the top surface by area, not the slot with most triangles', () => {
+    // The steel holds 108 of the kit's 120 triangles (the old rule's colour) and a sliver of its upward area.
+    expect(slots(table)).toEqual({ [STEEL]: 108, [TILE]: 12 });
+    const profile = kitProfile(table)!;
+    expect(profile.top).toBeCloseTo(0.75, 9);
+    expect(profile.base).toBeCloseTo(0.71, 9);
+    expect(profile.layers.map((l: { name: string; slot: number; box: number[][] }) => [l.name, l.slot, l.box])).toEqual([
+      ['slab', TILE, [[-0.4, 0.71, -0.4], [0.4, 0.75, 0.4]]],
+      ['below', STEEL, [[-0.06, 0, -0.06], [0.06, 0.71, 0.06]]],
+    ]);
+    const s = standInSoup(table);
+    // The top whole (its underside shows from a seated eye), the pedestal's four sides: 12 + 8.
+    expect(s.count).toBe(20);
+    expect(slots(s)).toEqual({ [STEEL]: 8, [TILE]: 12 });
+    expect(s.bounds()).toEqual([[-0.4, 0, -0.4], [0.4, 0.75, 0.4]]);
+  });
+
+  it('gives the stool, the counter, the bench and the letterbox bank the profile they have', () => {
+    const named = (k: InstanceType<typeof Soup>) => kitProfile(k)!.layers.map((l: { name: string; slot: number; box: number[][] }) => [l.name, l.slot, l.box]);
+    expect(named(stool).map(([n, s]) => [n, s])).toEqual([['slab', TILE], ['below', STEEL]]);
+    expect(standInSoup(stool).count).toBe(20);
+    // The counter: a stainless top over a tile body of the same footprint — the slab's underside is buried, so is the body's top.
+    expect(named(counter)).toEqual([
+      ['slab', STAINLESS, [[-0.75, 0.85, -0.3], [0.75, 0.9, 0.3]]],
+      ['below', TILE, [[-0.75, 0, -0.3], [0.75, 0.85, 0.3]]],
+    ]);
+    expect(standInSoup(counter).count).toBe(10 + 8);
+    // The bench: a timber backrest above the seat, the seat, and the steel end frames' bounds below.
+    expect(named(bench)).toEqual([
+      ['above', TIMBER, [[-0.9, 0.46, -0.225], [0.9, 0.86, -0.175]]],
+      ['slab', TIMBER, [[-0.9, 0.4, -0.225], [0.9, 0.46, 0.225]]],
+      ['below', STEEL, [[-0.84, 0, -0.2], [0.84, 0.4, 0.2]]],
+    ]);
+    expect(standInSoup(bench).count).toBe(10 + 12 + 8);
+    // One material standing on the floor: one box, without the face on the floor.
+    expect(named(letterbox).map(([n, s]) => [n, s])).toEqual([['slab', STEEL]]);
+    expect(standInSoup(letterbox).count).toBe(10);
+  });
+
+  it('faces out of its own boxes, draws no face on the floor, and no two opposite faces on one plane', () => {
+    for (const k of [table, stool, counter, bench, letterbox]) {
+      const profile = kitProfile(k)!;
+      const s = standInSoup(k);
+      for (let i = 0; i < s.count; i += 1) {
+        const { n, c, ys } = tri(s, i);
+        const layer = profile.layers.find((l: { slot: number; box: number[][] }) => l.slot === s.slot[i] && [0, 1, 2].every((a) => c[a] >= l.box[0][a] - 1e-9 && c[a] <= l.box[1][a] + 1e-9))!;
+        const mid = [0, 1, 2].map((a) => (layer.box[0][a] + layer.box[1][a]) / 2);
+        expect(n[0] * (c[0] - mid[0]) + n[1] * (c[1] - mid[1]) + n[2] * (c[2] - mid[2]), `triangle ${i}`).toBeGreaterThan(0);
+        expect(Math.max(...ys) > 1e-9 || n[1] > 0, `triangle ${i} lies on the floor`).toBe(true);
+      }
+      // Opposite faces on one plane would fight in Plan, where interiors draw two-sided.
+      for (let i = 0; i < s.count; i += 1) for (let j = i + 1; j < s.count; j += 1) {
+        const a = tri(s, i); const b = tri(s, j);
+        const axis = [0, 1, 2].find((x) => Math.abs(a.n[x]) > 1e-12)!;
+        const facing = a.n[axis] * b.n[axis] < 0 && [0, 1, 2].every((x) => x === axis || (Math.abs(a.n[x]) < 1e-12 && Math.abs(b.n[x]) < 1e-12));
+        if (facing) expect(Math.abs(a.c[axis] - b.c[axis]), `${i}/${j}`).toBeGreaterThan(1e-9);
+      }
+    }
+  });
+
+  it('leaves glass out of the profile when asked, and an empty kit stands in for nothing', () => {
+    const lamp = kit([[[-0.2, 0.3, -0.2], [0.2, 0.32, 0.2], GLASS], ...pedestal(0.02, 0.3)]);
+    expect(Object.keys(slots(standInSoup(lamp, { skip: (slot: number) => slot === GLASS })))).toEqual([String(STEEL)]);
+    expect(kitProfile(new Soup(1))).toBeNull();
+    expect(standInSoup(new Soup(1)).count).toBe(0);
+  });
+});
+
+describe('one quantisation lattice per interior file (step 8)', () => {
+  // gltf-transform's quantize(): v = (x − offset) / scale stored as float32, then
+  // round(|v| × 32767) × sign(v) at 16 bits; a reader gets offset + scale × q / 32767.
+  const quantise = (x: number, offset: number, scale: number) => {
+    const v = Math.fround((x - offset) / scale);
+    return offset + (scale * Math.round(Math.abs(v) * 32767) * Math.sign(v)) / 32767;
+  };
+  // A volume as quantize() derives it from float32 points (a centre per axis, one scale: the largest half-extent).
+  const volumeOf = (pts: number[][]) => {
+    const lo = [0, 1, 2].map((k) => Math.min(...pts.map((p) => Math.fround(p[k]))));
+    const hi = [0, 1, 2].map((k) => Math.max(...pts.map((p) => Math.fround(p[k]))));
+    return { offset: [0, 1, 2].map((k) => (lo[k] + hi[k]) / 2), scale: Math.max(...[0, 1, 2].map((k) => (hi[k] - lo[k]) / 2)) };
+  };
+  const BLK_509_TYPICAL = [3.6, 6.4, 9.2, 12, 14.8, 17.6, 20.4, 23.2, 26, 28.8, 31.6, 34.4, 37.2, 40, 42.8];
+  // Seeded points on whole millimetres: T relative to its floor (one storey of walls).
+  let seed = 0x5eed;
+  const rand = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; };
+  const mm = (lo: number, hi: number) => Math.round((lo + rand() * (hi - lo)) * 1000) / 1000;
+  const shared = Array.from({ length: 400 }, () => [mm(-63, 62), mm(-0.2, 2.8), mm(-11, 9)]);
+
+  it('sits on the pitch with every FFL a whole number of steps, n a multiple of 4, as fine as 16 bits allow', () => {
+    const lo = [-63.05, -0.25, -11.2]; const hi = [63.15, 48.6, 9.4];
+    const g = interiorGrid(lo, hi);
+    expect(g.n % GRID_MULTIPLE).toBe(0);
+    expect(g.step).toBeCloseTo(GRID_PITCH / g.n, 15);
+    expect(g.scale).toBeCloseTo(g.step * 32767, 9);
+    for (const o of g.origin) expect(Math.abs(o / GRID_PITCH - Math.round(o / GRID_PITCH))).toBeLessThan(1e-9);
+    for (let k = 0; k < 3; k += 1) { expect(g.origin[k] - g.scale).toBeLessThan(lo[k]); expect(g.origin[k] + g.scale).toBeGreaterThan(hi[k]); }
+    // The next multiple of 4 would no longer cover the box: as fine as it can be.
+    const finer = (GRID_PITCH / (g.n + GRID_MULTIPLE)) * 32767;
+    expect([0, 1, 2].some((k) => g.origin[k] - finer > lo[k] || g.origin[k] + finer < hi[k])).toBe(true);
+    for (const ffl of BLK_509_TYPICAL) expect(Math.abs(ffl / g.step - Math.round(ffl / g.step))).toBeLessThan(1e-6);
+    expect(() => interiorGrid([0, 0, 0], [1e4, 1, 1])).toThrow(/does not fit/);
+    expect(offPitch([3.6, 12, 4.25])).toEqual([4.25]);
+  });
+
+  it('decodes T, placed at every typical floor, onto R’s own points; fitted per mesh, the shared vertices landed apart', () => {
+    const rPts: number[][] = [];
+    for (const ffl of BLK_509_TYPICAL) for (const p of shared.slice(0, 40)) rPts.push([p[0], p[1] + ffl, p[2]]);
+    rPts.push([-63.05, 48.6, -11.2], [63.15, 0, 9.4]); // R's own extent (a roof plant room, a far corner)
+    // The old way: one volume per mesh.
+    const vt = volumeOf(shared); const vr = volumeOf(rPts);
+    let apartBefore = 0;
+    for (const ffl of BLK_509_TYPICAL) for (const p of shared.slice(0, 40)) {
+      const t = [0, 1, 2].map((k) => quantise(p[k], vt.offset[k], vt.scale) + (k === 1 ? ffl : 0));
+      const r = [0, 1, 2].map((k) => quantise(p[k] + (k === 1 ? ffl : 0), vr.offset[k], vr.scale));
+      if (Math.hypot(t[0] - r[0], t[1] - r[1], t[2] - r[2]) > 1e-5) apartBefore += 1;
+    }
+    expect(apartBefore).toBeGreaterThan(0.9 * 40 * BLK_509_TYPICAL.length);
+    // The lattice: one volume, pinned by its anchor's float32 corners as encodeDoc writes them.
+    const all = [...shared, ...rPts];
+    const lo = [0, 1, 2].map((k) => Math.min(...all.map((p) => p[k])));
+    const hi = [0, 1, 2].map((k) => Math.max(...all.map((p) => p[k])));
+    const g = interiorGrid(lo, hi);
+    const v = volumeOf([g.origin.map((o: number) => o - g.scale), g.origin.map((o: number) => o + g.scale)]);
+    let apart = 0; let worst = 0;
+    for (const ffl of BLK_509_TYPICAL) for (const p of shared) {
+      const t = [0, 1, 2].map((k) => quantise(p[k], v.offset[k], v.scale) + (k === 1 ? ffl : 0));
+      const r = [0, 1, 2].map((k) => quantise(p[k] + (k === 1 ? ffl : 0), v.offset[k], v.scale));
+      const d = Math.hypot(t[0] - r[0], t[1] - r[1], t[2] - r[2]);
+      worst = Math.max(worst, d);
+      if (d > 1e-5) apart += 1;
+      expect(offLattice(g, t[0], t[1], t[2])).toBeLessThan(0.01);
+    }
+    expect(apart).toBe(0);
+    expect(worst).toBeLessThan(1e-5);
+  });
+
+  it('seamGaps counts every vertex T and R share, and each that decodes apart', () => {
+    const builtT = new Soup(1); builtT.push(0, 0, 0, 1, 0, 0, 0, 2.6, 0, 0, 255);
+    const builtR = new Soup(2);
+    builtR.push(1, 3.6, 0, 3, 3.6, 0, 0, 6.2, 0, 0, 1); // shares (1, 0, 0) and (0, 2.6, 0) with T at 3.6
+    builtR.push(9, 9, 9, 9, 9.5, 9, 9.5, 9, 9, 0, 2); // another storey: not compared at 3.6
+    const run = (decR: InstanceType<typeof Soup>) => seamGaps({ builtT, builtR, decT: builtT, decR, typical: [[1, 3.6]], tol: 0.003 });
+    expect(run(builtR)).toEqual({ shared: 2, apart: 0, missing: 0, maxApart: 0, first: null });
+    const off = new Soup(2); off.append(builtR); off.pos[0] += 0.001;
+    const r = run(off);
+    expect([r.shared, r.apart, r.missing]).toEqual([2, 1, 0]);
+    expect(r.first).toMatch(/1\.000 mm apart/);
+    const gone = new Soup(2); gone.append(builtR); gone.pos[0] += 0.01;
+    expect(run(gone).missing).toBe(1);
   });
 });
 

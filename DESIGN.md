@@ -104,9 +104,12 @@ stays mounted.
 The labs are working models, not decoration: the Camera Lab (pinhole K with
 lens distortion, pose and homography, thin-lens depth of field, rectified stereo
 and a Zhang calibration), and inside the Systems Lab a mechanism bench, a
-flow-shop sequencing model and a contained drop test. The FX panel can switch
-on two desk backdrops, an N-body gravity field and a fluid; both are off at
-boot.
+flow-shop sequencing model and a contained drop test. The Estate window shows
+Sample Town N5, a generated sample HDB neighbourhood, as a duotone still render
+with a text registry of its fourteen buildings, and a 3D viewer to orbit it,
+fly to a building, open one storey of it as a cut plan, and walk in through its
+void decks, stairs and lifts or straight into a room picked on the plan. The FX panel can switch on two desk backdrops, an N-body
+gravity field and a fluid; both are off at boot.
 
 **Key characteristics:**
 
@@ -161,7 +164,12 @@ Never set a paragraph in the condensed face.
 
 The desktop frame is a 46px header, a 96px tool rail and the desk. Windows open
 at fixed cascade positions, move by their titlebar, and each owns one internal
-scroller. A window's body may carry a hoist rig across its top; hoisted cards
+scroller. **The one exception is the Estate:** its sheet does not scroll (the
+viewer fills it), and its side panel is its own scroller with
+`overscroll-behavior: contain`; inside it, in Plan, the room list is a 260px
+scroller of its own that chains to the panel at either end (no
+`overscroll-behavior`), so a wheel over it still reaches BUILDINGS. Below 620px
+of window width the panel stacks under the stage. A window's body may carry a hoist rig across its top; hoisted cards
 (`[data-hoist]`) hang from it. The desk carries a 24px minor and 120px major
 grid, the desk shortcuts and the title-block plate.
 
@@ -226,6 +234,95 @@ the FX "Pause all motion").
   through four models, plus a seeded Zhang calibration.
 - **Systems Lab**: FIG. 05c mechanism bench, FIG. 05d flow-shop sequencing
   bench (seeded synthetic data, not Abbott's), FIG. 05e drop test.
+- **Estate** (FIG. 07): the poster and registry are prerendered text; the 3D
+  viewer is a lazy chunk. Rules a 3D viewport adds to the ones above:
+  - a keyboard viewport is `role="application"` with an `aria-label` and an
+    `aria-describedby` pointing at a short per-mode key summary
+    (`#estate-keys-desc`, the full list prerendered as `#estate-keys`), and only
+    while there is a viewer to drive; the same facts (buildings, storeys,
+    heights) are text beside it, and every pointer action is a button — Walk's
+    0.5 m steps and 15° turns included; the touch stick is the one pointer-only
+    control, and the step buttons beside it do everything it does;
+  - halted motion turns every flight into a cut and nothing moves by itself, but
+    a visitor-driven viewer still redraws on input (drag, keys);
+  - text over a scene sits on opaque chips (`--paper-55`, a hairline border,
+    square corners): the caption, the state plate and the HUD;
+  - the focus ring is drawn inset, above the canvas: 2px `--color-accent-700`
+    at −3px with a 4px `--paper-75` inner band, so it shows on any frame and
+    stays inside the sheet's clip;
+  - **HUD language is survey annotation** — location chips, storey strips,
+    north arrow, plain prompts. No crosshair, minimap, score or game chrome;
+  - **Walk offers what is where the walker stands**, as chips: a stair chip
+    with ▲ / ▼ buttons, a lift chip that opens a level panel (the storey
+    underfoot listed and disabled), the storey strip down the right edge
+    ('RF +45.60 … L1 ±0.00', from the data, 24px rows) whose unreachable storeys
+    stay focusable with a dashed border, dimmed words and their reason, and
+    "Preparing walkway…" and "Streaming interior…" while files arrive. A lift
+    ride is a 250 ms fade to the paper ground with its caption over it. Enter
+    and Exit appear twice — on the HUD and under the building's registry row —
+    and Enter's label says what it downloads. The touch stick is a 96px square
+    pad, square-cornered like every control, shown only once the stage has seen
+    a finger (or the pointer is coarse);
+  - **inside a building, its own exterior is held at the façade level**, so
+    its window frames and outline lines drop out while you are in it (or
+    peeking through a notch at its other wing), and the opened storeys read as
+    an unlined strip; looking straight up a stair well above the walk band
+    shows an empty shaft. Both are accepted (the band, not the lines, is what
+    the interior is about). A dotted line once seen along some flat window
+    heads was a seam between the typical-storey and per-storey meshes, closed
+    in the v1.2 release pack by quantising each interior file on one lattice;
+  - **Plan is a drawing's plan cut** (P6): one storey seen from 55° above the
+    horizon, cut at its floor + 1.2 m (the architectural convention; `[` and `]`
+    move it 0.3 m between 0.3 and 2.4 m). Everything above the cut is gone —
+    the storeys over it and the top of every wall — and where the cut opens a
+    wall, slab edge or cabinet its section is filled flat
+    `--color-accent-900`, unlit, as poché, so the walls read as solid black-blue
+    lines and the rooms as the light floor between them. The storeys below show
+    their façade. A picked room is marked where the section is, just under
+    the cut (its floor is hidden by the cut walls from 55°): a lid of
+    `--color-accent-700` at 22 % over the room and a solid band of it inside
+    its outline, about 3 px wide where it is seen from; picked from the list or
+    with ↑/↓ the view also slides to it and closes in (never out) until it
+    fills a fifth of the short side, because a room of a 60 m slab is a few
+    pixels at the opening view; a click on the floor leaves the view alone. It
+    is named on a "ROOM" chip with Walk in, which lands mid-room facing its
+    outside wall (its windows) where it has one, else down its longest run of
+    floor; the cut has its own chip ("CUT +1.20 M", ▼ ▲). The
+    storey strip down the right edge, the same one Walk uses, opens Plan from
+    Overview on the storey pressed and marks the storey shown. The room list in
+    the side panel groups rooms by flat ("#05-104"), then by what they are when
+    there are six or more of a kind ("Hawker stalls", "Shop units", "Car lots",
+    "Motorcycle lots"), then "Common areas", as square toggle buttons, the
+    picked one with the selected row's accent-100 fill and inset accent-700
+    border. It is one Tab stop (arrows move through it and pick, as on the
+    stage), "Walk into …" sits under it in a slot that is always there (so a
+    first pick never moves a row under the pointer), it scrolls inside its own
+    260px box, and the side panel brings it into view when a plan opens;
+  - **quality changes are silent and do not freeze the page** (P7): when the
+    governor lowers detail or resolution nothing announces it, and a
+    resolution step holds the last frame while the GPU catches up rather than
+    blocking input (measured: no task over 50 ms after live on the bench's
+    route at normal speed; under a 4× CPU slowdown a decode or worker message
+    still takes 54–72 ms now and then); a GPU reset shows the "lost" plate and
+    comes back on its own, and a context lost while the window was closed is
+    rebuilt when it reopens, the camera where it was (Fly and Walk resume; a
+    Plan comes back as Overview from its camera). The lowest tier, min (what
+    software GL starts on), draws the far blocks as their grey storey-lined
+    massing and only the nearer ones as façades, because its 0.3 M-triangle
+    cap cannot hold all fourteen; so its first live frame is plainer than the
+    poster it fades from. That is accepted rather than holding the poster,
+    which at min would never give way; trees within 15 m of the camera are
+    drawn whole there too, crowns on stubs beyond. While the Estate is in use (live, focused, no panel open) the desk
+    backdrops hold still and their caption says so ("HELD · ESTATE").
+    `?estate-bench=1` (`=max` maximised) is a debug mode that drives the
+    camera by itself and shows the stats row; nothing in the UI links to it;
+  - **one palette:** every 3D material role maps onto the design tokens
+    (walls `--color-neutral-100`, slabs and paving `--color-neutral-300`, doors
+    `--color-neutral-500`, asphalt `--color-neutral-700`, grass and foliage
+    `--color-accent-300/400`, exterior glass and edges `--color-accent-700`,
+    Plan's cut sections `--color-accent-900`;
+    `lib/estate/palette.json`), read from CSS at mount. There is no second
+    "model" palette and no colour in engine code.
 
 ### FX panel and assistant
 

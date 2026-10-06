@@ -1,6 +1,6 @@
 {
   "schema": "portfolio/estate-budgets/1",
-  "units": "Bytes are decimal (1 KB = 1,000 B, 1 MB = 1,000,000 B), as scripts/media/check-budgets.mjs counts them; engineGzip is the plan's fixed 307,200 B (scripts/check-bundle.mjs reads engineGzip and engineMinified, the names plan 4 and 6.5 give them, and must fail when either is missing). w.perFile is 131,072 B, 128 KiB, so it is the same number as upstream's config/estate.toml [web] max_walk_gz: a walk file that passes U2's gate passes P2's. Class bytes are what travels: the gzip file for .glb.gz, .walk.gz and .bin.gz, the file itself otherwise. pixelCap counts drawing-buffer pixels; gpuBytes is geometry plus the drawing buffer (plan 7.7).",
+  "units": "Bytes are decimal (1 KB = 1,000 B, 1 MB = 1,000,000 B), as scripts/media/check-budgets.mjs counts them; engineGzip and engineMinified are top-level, the names plan 4 and 6.5 give them, and scripts/check-bundle.mjs fails when either is missing. P4b re-pinned both at the measured size + 5%, rounded up to the next 1,000 and never above the plan caps (307,200 B gzip, 950,000 B minified): engineGzip from the Load click (engine, HUD and their shared chunk) at 223,640 B gzip -9, engineMinified from the engine chunk at 818,105 B. P5 re-pinned both the same way once interiors, Walk and the Walk HUD were in: the Load click at 251,602 B gzip -9 (engineGzip 265,000) and the engine chunk at 896,349 B (engineMinified 942,000, within 1% of the plan cap). P7 re-pinned engineGzip alone, once Plan (P6) and P7's drained notch resize and bench tap were in: the Load click at 263,917 B gzip -9, so 278,000; the engine chunk measured 905,212 B, inside 942,000, which stays (its +5% would pass the 950,000 cap). engineGzip is also what the consent label counts for the engine, so check-bundle holds the whole click to it. w.perFile is 131,072 B, 128 KiB, so it is the same number as upstream's config/estate.toml [web] max_walk_gz: a walk file that passes U2's gate passes P2's. Class bytes are what travels: the gzip file for .glb.gz, .walk.gz and .bin.gz, the file itself otherwise. pixelCap counts drawing-buffer pixels; gpuBytes is geometry plus the drawing buffer (plan 7.7).",
   "bytesPerTriangle": { "expected": 3.2, "upper": 5.3 },
   "expected": {
     "note": "Not caps; nothing reads these. Bytes each class is expected to weigh as stored, re-set (plan 12.2) from the v1.2 candidate pack (Bonsai-Estate d3152af, 2026-10-06; rc2, a6e1acf, measured the same to within 10 B per class) for every class that landed more than 25% from plan 6.5's estimate, which assumed bytesPerTriangle.expected: F measured 1.76 B and I 1.41 B per stored triangle, and most of D's bytes are instance data. Posters landed within 25% and keep the plan's figure. The caps are unchanged; every class is under them.",
@@ -42,13 +42,13 @@
   "maxPrimVerts": 65535,
   "minTypicalShare": 0.93,
   "drawsPerFile": { "massing": 14, "f": 3, "d": 60, "i": 12, "site": 16 },
-  "engineGzip": 307200,
-  "engineMinified": 950000,
+  "engineGzip": 278000,
+  "engineMinified": 942000,
   "pixelRatioSteps": [2, 1.75, 1.5, 1.25, 1, 0.75],
   "tiers": [
     { "id": "high", "tauPx": 2.0, "maxTris": 1200000, "maxDraws": 150, "bandK": 2, "treeRadiusM": 80, "furnitureRadiusM": 25, "edges": true, "pixelCap": 2000000, "gpuBytes": 128000000 },
     { "id": "mid", "tauPx": 3.0, "maxTris": 800000, "maxDraws": 120, "bandK": 1, "treeRadiusM": 60, "furnitureRadiusM": 15, "edges": true, "pixelCap": 1400000, "gpuBytes": 80000000 },
     { "id": "low", "tauPx": 4.5, "maxTris": 450000, "maxDraws": 90, "bandK": 1, "treeRadiusM": 30, "furnitureRadiusM": 8, "edges": false, "pixelCap": 1000000, "gpuBytes": 48000000 },
-    { "id": "min", "tauPx": 6.0, "maxTris": 300000, "maxDraws": 60, "bandK": 1, "treeRadiusM": 0, "furnitureRadiusM": 5, "edges": false, "pixelCap": 700000, "gpuBytes": 32000000 }
+    { "id": "min", "tauPx": 6.0, "maxTris": 300000, "maxDraws": 60, "bandK": 1, "treeRadiusM": 15, "furnitureRadiusM": 5, "edges": false, "pixelCap": 700000, "gpuBytes": 32000000 }
   ]
 }

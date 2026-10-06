@@ -164,7 +164,7 @@ export interface PackBuilding {
   /** Bottom-up, the canonical list in ids.ts; `walkLayer` is the storey's own index. */
   storeys: PackStorey[];
   massing?: { mesh: string; tris: number; error: number };
-  /** Shell plus one panel per window (one-sided) and per exterior door (both sides); `tris` is what the file stores. */
+  /** Shell plus one panel per window and per exterior door, each drawn from both sides (a window's back in the glass-interior slot); `tris` is what the file stores. */
   facade?: Geo & { error: 0.06; edges: number; exactMatched: number };
   /** `tris` counts every instance drawn (what the LOD budget adds to F's); every other `tris` counts what a file stores. */
   detail?: Geo & { instances: number };

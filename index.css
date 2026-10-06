@@ -256,7 +256,7 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-win-project-archive { left: 280px; top: 60px; }
 .wb-win-systems-lab { left: 300px; top: 88px; }
 .wb-win-camera-lab { left: 330px; top: 100px; }
-.wb-win-world-3d { left: 360px; top: 110px; }
+.wb-win-world-3d { left: 140px; top: 40px; }
 .wb-win-capabilities { left: 250px; top: 70px; }
 .wb-win-proof-vault { left: 290px; top: 90px; }
 .wb-win-resumes-contact { left: 320px; top: 80px; }
@@ -459,23 +459,6 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-metrics strong { font-family: var(--font-heading); font-weight: 600; font-size: 22px; font-feature-settings: 'tnum' 1; }
 .wb-note { margin-top: 12px; font-size: 11px; color: var(--color-neutral-700); max-width: 70ch; }
 
-.wb-world { display: flex; gap: 28px; align-items: flex-start; }
-.wb-world-main { flex: 1; min-width: 0; }
-.wb-world-main .wb-bio { margin-bottom: 14px; font-size: 13px; max-width: 48ch; }
-.wb-world-side { width: 250px; flex: none; }
-.wb-world-title { font-size: 26px; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.02; margin-bottom: 8px; }
-.wb-cubefig { padding: 0; }
-.wb-cube-stage { height: 210px; display: grid; place-items: center; perspective: 620px; border-bottom: 1px solid var(--color-divider); overflow: hidden; }
-.wb-cube { width: 104px; height: 104px; position: relative; transform-style: preserve-3d; animation: bench-spin 16s linear infinite; }
-.wb-cube > div { position: absolute; inset: 0; border: 1px solid var(--color-accent); }
-.wb-cube > div:nth-child(1) { background: color-mix(in srgb, var(--color-accent) 7%, transparent); transform: translateZ(52px); }
-.wb-cube > div:nth-child(2) { background: color-mix(in srgb, var(--color-accent) 7%, transparent); transform: rotateY(180deg) translateZ(52px); }
-.wb-cube > div:nth-child(3) { background: color-mix(in srgb, var(--color-accent) 7%, transparent); transform: rotateY(90deg) translateZ(52px); }
-.wb-cube > div:nth-child(4) { background: color-mix(in srgb, var(--color-accent) 7%, transparent); transform: rotateY(-90deg) translateZ(52px); }
-.wb-cube > div:nth-child(5) { transform: rotateX(90deg) translateZ(52px); }
-.wb-cube > div:nth-child(6) { transform: rotateX(-90deg) translateZ(52px); }
-.wb-cubefig figcaption { padding: 5px 9px; }
-
 .wb-proofrow { display: grid; grid-template-columns: 92px 1fr auto; gap: 14px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--ink-8); }
 .wb-proofrow-date { font-size: 10px; letter-spacing: 0.08em; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; text-transform: uppercase; }
 .wb-proofrow h3 { font-size: 15.5px; letter-spacing: 0.03em; text-transform: uppercase; margin-bottom: 2px; }
@@ -496,11 +479,6 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-handoff-main h3 { font-size: 20px; letter-spacing: 0.02em; text-transform: uppercase; margin-bottom: 3px; }
 .wb-handoff-main p { font-size: 12px; color: var(--color-neutral-700); }
 .wb-disclaimer { margin-top: 18px; font-size: 10px; letter-spacing: 0.08em; color: var(--color-neutral-700); }
-
-@keyframes bench-spin {
-  from { transform: rotateX(-22deg) rotateY(0deg); }
-  to { transform: rotateX(-22deg) rotateY(360deg); }
-}
 
 /* ══════════════════════════════════════════════════════════════════════════
    Field Index — mobile registry
@@ -745,9 +723,6 @@ button { font-family: var(--font-body); color: inherit; }
 .lab-handoff { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
 .lab-handoff p { flex: 1 1 14rem; font-size: 11.5px; line-height: 1.5; color: var(--color-neutral-700); }
 .lab-handoff .btn { font-size: 12px; padding: 6px 12px; }
-
-/* — FX "Pause all motion" (lib/motion.ts reads the same attribute) — */
-html[data-motion-paused="true"] .wb-cube { animation-play-state: paused; }
 
 /* === FX: desk backdrops — N-body + fluid (DeskBackdrop.tsx) === */
 /* First child of .wb-desk. Positioned at z-index 0 and first in tree order, so
@@ -1003,9 +978,267 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 }
 /* === end Camera Lab === */
 
+/* === Estate (WIN-07): EstateWindow.tsx, EstateRegistry.tsx === */
+/* The sheet does not scroll: the stage fills it and the side panel is its own
+   scroller (DESIGN.md's one-scroller exception). The 8px padding keeps the
+   stage's -6px blueprint corners and its inset focus ring inside the clip. The
+   engine (lazy chunk) appends its canvas to the stage, after React's children,
+   and sizes it to the stage; everything React draws over it (caption, state
+   plate, HUD) is an opaque chip above it. */
+.wb-win-world-3d .wb-scroll { padding: 8px; overflow: hidden; display: flex; container-type: inline-size; }
+.wb-estate { flex: 1; min-width: 0; min-height: 0; display: flex; gap: 14px; }
+/* FIG. 07 is the figure (corners, caption); the stage is the layer inside it
+   that holds the poster, plate, HUD and canvas, and takes role=application
+   while live (a <figure> may not: axe aria-allowed-role). */
+.wb-estate-figure { flex: 1; min-width: 0; min-height: 0; position: relative; padding: 0; background: var(--paper-75); }
+.wb-estate-stage { position: absolute; inset: 0; }
+.wb-estate-stage[role='application'] { touch-action: none; cursor: grab; }
+.wb-estate-poster { position: absolute; inset: 0; display: block; }
+.wb-estate-poster img { width: 100%; height: 100%; object-fit: cover; }
+.wb-estate-stage > canvas { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; }
+/* A GPU reset leaves the canvas blank: show the poster under the reason. */
+.wb-estate[data-estate-phase='lost'] .wb-estate-stage > canvas { visibility: hidden; }
+.wb-estate-figure figcaption {
+  position: absolute; left: 10px; bottom: 10px; z-index: 3; margin: 0; padding: 4px 8px; max-width: calc(100% - 20px);
+  background: var(--paper-55); border: 1px solid var(--color-divider);
+  font-size: 10px; letter-spacing: 0.08em; color: var(--color-neutral-700);
+}
+/* The ring is drawn by a layer above the canvas, so it shows over a live scene. */
+.wb-estate-stage::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.wb-estate-stage:focus-visible { outline: none; }
+.wb-estate-stage:focus-visible::after { outline: 2px solid var(--color-accent-700); outline-offset: -3px; box-shadow: inset 0 0 0 4px var(--paper-75); }
+.wb-estate-plate {
+  position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%);
+  min-width: 200px; max-width: calc(100% - 40px); margin: 0; padding: 7px 12px 8px;
+  background: var(--paper-55); border: 1px solid var(--color-divider);
+  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; color: var(--color-neutral-800);
+}
+.wb-estate-progress { display: block; height: 1px; margin-top: 6px; background: var(--color-divider); }
+.wb-estate-progress > span { display: block; height: 1px; background: var(--color-accent-700); }
+
+.wb-estate-side { width: 260px; flex: none; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 6px 14px 4px; scrollbar-width: thin; }
+.wb-estate-title { font-size: 22px; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.05; margin-bottom: 10px; }
+.wb-estate-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 10px; border: 1px solid var(--color-divider); }
+.wb-estate-facts > div { min-width: 0; padding: 6px 8px; border-right: 1px solid var(--color-divider); }
+.wb-estate-facts > div:last-child { border-right: 0; }
+.wb-estate-facts dt { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-neutral-700); }
+.wb-estate-facts dd { margin: 0; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 18px; font-feature-settings: 'tnum' 1; }
+.wb-estate-desc { font-size: 12px; line-height: 1.55; color: var(--color-neutral-800); margin-bottom: 10px; }
+.wb-estate-action { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 12px; }
+.wb-estate-action:empty { display: none; }
+.wb-estate-state { font-size: 11px; line-height: 1.45; color: var(--color-neutral-700); }
+.wb-estate-state:empty { display: none; }
+.wb-estate-action .btn { font-size: 12px; padding: 6px 10px; text-align: left; }
+.wb-estate-notice { display: block; font-size: 11px; line-height: 1.45; color: var(--color-accent-800); }
+.wb-estate-head { margin: 0 0 4px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.13em; color: var(--color-accent-700); }
+.wb-estate-sites { margin: 0 0 12px; padding: 0; list-style: none; border-top: 1px solid var(--ink-8); }
+.wb-estate-site {
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; padding: 5px 6px; text-align: left;
+  border: 1px solid transparent; border-bottom-color: var(--ink-8); background: transparent; cursor: pointer;
+}
+.wb-estate-site:hover { background: color-mix(in srgb, var(--color-accent) 7%, transparent); }
+.wb-estate-site[aria-pressed='true'] { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-estate-site-name { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 13.5px; letter-spacing: 0.03em; text-transform: uppercase; }
+.wb-estate-site-meta { font-size: 10px; letter-spacing: 0.06em; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
+/* The HUD's Enter or Exit, mirrored under the row it acts on. */
+.wb-estate-site-act { margin: 4px 0 6px 6px; font-size: 11px; padding: 4px 8px; }
+/* Plan's room list (P6), above BUILDINGS while in Plan: grouped by flat, in a
+   scroller of its own (padding keeps the focus ring and its offset unclipped).
+   Its scroll chains to the side panel at either end (no overscroll-behavior), so
+   a wheel over it still reaches BUILDINGS. "Walk into …" sits under it in a slot
+   that is always drawn, so the first pick moves no row under the pointer. */
+.wb-estate-rooms { margin: 0 0 12px; }
+.wb-estate-rooms .wb-estate-site-act { margin: 6px 0 0; text-align: left; }
+.wb-estate-rooms-list {
+  max-height: 260px; overflow-y: auto; scrollbar-width: thin;
+  padding: 0 5px 4px 4px; border-top: 1px solid var(--ink-8);
+}
+.wb-estate-rooms-group { display: flex; flex-wrap: wrap; gap: 3px; padding: 5px 0 7px; border-bottom: 1px solid var(--ink-8); }
+.wb-estate-rooms-flat { flex: 0 0 100%; margin: 0; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
+.wb-estate-room {
+  min-height: 24px; padding: 2px 7px; border: 1px solid var(--color-divider); border-radius: 0; background: transparent;
+  cursor: pointer; font-size: 11px; line-height: 1.25; color: var(--color-text); text-align: left;
+}
+.wb-estate-room:hover:not(:disabled) { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-estate-room[aria-pressed='true'] { background: var(--color-accent-100); border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
+.wb-estate-room:disabled { opacity: 0.45; cursor: not-allowed; }
+.wb-estate-keys { margin: 0 0 12px; }
+.wb-estate-keys > summary { list-style: none; cursor: pointer; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.13em; color: var(--color-accent-700); }
+.wb-estate-keys > summary::-webkit-details-marker { display: none; }
+.wb-estate-keys > summary::after { content: '+'; margin-left: 8px; }
+.wb-estate-keys[open] > summary::after { content: '−'; }
+.wb-estate-keylist { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 10px; margin: 6px 0 0; font-size: 11px; line-height: 1.4; }
+.wb-estate-keylist dt { font-family: var(--font-heading); font-weight: var(--font-heading-weight); letter-spacing: 0.04em; white-space: nowrap; }
+.wb-estate-keylist dd { margin: 0; color: var(--color-neutral-800); }
+.wb-estate-record { margin: 0 0 10px; font-size: 11px; line-height: 1.55; color: var(--color-neutral-700); }
+.wb-estate-credit { font-size: 10px; letter-spacing: 0.06em; color: var(--color-neutral-700); }
+/* Links inside running text are underlined: accent-700 beside neutral-700 is
+   under 3:1, so colour alone would not mark them (axe link-in-text-block). */
+.wb-estate-record a, .wb-estate-credit a { text-decoration: underline; }
+
+@container (max-width: 620px) {
+  .wb-estate { flex-direction: column; }
+  .wb-estate-figure { flex: 1 1 55%; min-height: 200px; }
+  .wb-estate-side { width: auto; flex: 1 1 45%; }
+}
+
+/* The HUD (live/EstateHud.tsx, in the engine's lazy chunk): opaque paper chips
+   over the canvas (z 1) and under the caption and plate (z 3) and the focus
+   ring (z 4). The layer itself takes no pointer, so a drag on the open scene
+   reaches the canvas; only chips and buttons do. Survey-annotation capitals;
+   the smallest text is neutral-700; the only solid fill is the active mode
+   (.wb-domainseg's accent-700). */
+.wb-estate-hud { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.wb-estate-hud-top {
+  position: absolute; left: 10px; right: 10px; top: 10px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+}
+/* The location column keeps its width (up to 45%); the controls take the rest
+   and wrap among themselves, so a chip changing its words never drops the
+   whole cluster under the location chip. */
+.wb-estate-hud-col { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; flex: 0 1 auto; min-width: 0; max-width: 45%; }
+.wb-estate-hud-col-end { flex: 1 1 0; max-width: none; align-items: flex-end; }
+.wb-estate-hud-row { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 6px; }
+.wb-estate-hud-bottom {
+  position: absolute; left: 10px; bottom: 40px; max-width: calc(100% - 190px);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+}
+.wb-estate-chip {
+  pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 4px 8px; max-width: 100%;
+  background: var(--paper-55); border: 1px solid var(--color-divider); border-radius: 0;
+  font-size: 10.5px; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-800);
+}
+.wb-estate-chip-loc { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 13px; letter-spacing: 0.05em; color: var(--color-text); }
+.wb-estate-chip-quiet { font-size: 10px; color: var(--color-neutral-700); }
+.wb-estate-chip-key { font-size: 10px; letter-spacing: 0.12em; color: var(--color-neutral-700); }
+.wb-estate-chip-sel { flex-wrap: wrap; padding: 3px 3px 3px 8px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 12px; color: var(--color-text); }
+.wb-estate-chip-keys[data-on] { border-color: var(--color-accent-700); color: var(--color-accent-800); }
+/* The chip holds the width of its longer label (the other one, drawn hidden in
+   the same cell), so focus moving off the stage never reflows the button row
+   under a press: that reflow swallowed every second HUD click. */
+.wb-estate-chip-keys { display: inline-grid; align-items: center; }
+.wb-estate-chip-keys > span, .wb-estate-chip-keys::after { grid-area: 1 / 1; }
+.wb-estate-chip-keys::after { content: attr(data-sizer); visibility: hidden; }
+.wb-estate-chip-lock { border-color: var(--color-accent-700); color: var(--color-accent-800); }
+.wb-estate-prompt, .wb-estate-chip-keys { pointer-events: none; }
+.wb-estate-hud-btn {
+  pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 3px 8px;
+  border: 1px solid var(--color-divider); border-radius: 0; background: var(--paper-55); color: var(--color-text); cursor: pointer;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; line-height: 1.2; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.wb-estate-hud-btn:hover { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-estate-hud-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+/* The page's ring sits 2 px out, on scene pixels, where accent over glass or
+   asphalt falls to ~1.6:1: here it sits on a paper halo instead. */
+.wb-estate-hud :focus-visible { outline: 2px solid var(--color-accent-700); outline-offset: 1px; box-shadow: 0 0 0 4px var(--paper-75); }
+.wb-estate-hud-btn[aria-expanded='true'], .wb-estate-hud-btn[aria-pressed='true'] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
+.wb-estate-hud .wb-domainseg { pointer-events: auto; background: var(--paper-55); }
+.wb-estate-hud .wb-domainseg button { padding: 4px 9px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); text-transform: uppercase; }
+.wb-estate-hud .wb-domainseg button:disabled { opacity: 0.45; cursor: not-allowed; }
+.wb-estate-hud-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.wb-estate-north { padding: 1px; width: 30px; justify-content: center; pointer-events: none; }
+/* The engine turns the dial itself (an inline transform on an HTML layer, so
+   the compositor alone moves it) while the camera moves, and writes
+   --estate-north at rest for a dial mounted later. */
+.wb-estate-north-dial { display: block; width: 24px; height: 24px; transform: rotate(var(--estate-north, 0rad)); will-change: transform; }
+.wb-estate-north svg { display: block; width: 24px; height: 24px; overflow: visible; }
+.wb-estate-north-arrow { fill: var(--color-accent-700); stroke: none; }
+.wb-estate-north text { fill: var(--color-neutral-800); font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 8px; }
+/* KEYS' popover follows KEYS in tab order but is drawn on its own line under the row. */
+.wb-estate-popover-slot { order: 99; flex: 0 0 100%; display: flex; justify-content: flex-end; pointer-events: none; }
+.wb-estate-popover {
+  pointer-events: auto; width: 250px; max-width: 100%; max-height: min(320px, calc(100vh - 200px)); overflow-y: auto; overscroll-behavior: contain;
+  padding: 8px 10px 10px; background: var(--paper-55); border: 1px solid var(--color-divider);
+}
+.wb-estate-popover-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--color-accent-700);
+}
+.wb-estate-streaming { flex-direction: column; align-items: stretch; gap: 4px; min-width: 180px; }
+.wb-estate-hud-progress { display: block; height: 1px; background: var(--color-divider); }
+.wb-estate-hud-progress > span { display: block; height: 1px; background: var(--color-accent-700); }
+/* Step buttons: an arrow pad, a gap, then the pairs (zoom, orbit, tilt in
+   Overview; climb, strafe, look in Fly; strafe and look in Walk, whose pad
+   steps half a metre and turns 15°). */
+.wb-estate-steps {
+  position: absolute; right: 10px; bottom: 40px; display: grid; gap: 3px;
+  grid-template-columns: repeat(3, 28px) 4px repeat(2, 28px); grid-template-rows: repeat(3, 28px);
+  grid-template-areas: '. pu . . a1 b1' 'pl pd pr . a2 b2' '. . . . a3 b3';
+}
+.wb-estate-steps[data-mode='walk'] { grid-template-rows: repeat(2, 28px); grid-template-areas: '. pu . . a1 b1' 'pl pd pr . a2 b2'; }
+/* Walk's storey strip, right, top down from RF to L1, bottom-aligned (the
+   first row's auto margin, which still lets an overflowing strip scroll to
+   RF); the steps move in beside it. Its top is under the top-right controls
+   however they wrap (--estate-strip-top, measured by the HUD); the storey
+   underfoot is scrolled into view. 24 px rows (WCAG 2.2 target size), and 5 px
+   of padding so the focus ring and its paper halo are not clipped by the
+   scroller (overflow-y: auto clips x as well). */
+.wb-estate-strip {
+  position: absolute; right: 5px; top: var(--estate-strip-top, 84px); bottom: 35px; display: flex; flex-direction: column; gap: 2px;
+  padding: 5px; scroll-padding: 5px 0;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; pointer-events: auto;
+}
+.wb-estate-strip > :first-child { margin-top: auto; }
+.wb-estate-strip-btn {
+  flex: none; display: grid; grid-template-columns: 26px auto; align-items: center; gap: 4px; min-width: 76px; height: 24px; padding: 0 6px;
+  border: 1px solid var(--color-divider); border-radius: 0; background: var(--paper-55); color: var(--color-text); cursor: pointer;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; line-height: 1; letter-spacing: 0.06em; text-align: left;
+}
+.wb-estate-strip-btn:hover:not(:disabled):not([aria-disabled='true']) { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+.wb-estate-strip-ffl { font-family: var(--font-body); font-weight: 400; font-size: 10px; color: var(--color-neutral-700); font-feature-settings: 'tnum' 1; }
+.wb-estate-strip-btn[aria-current] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); cursor: default; }
+.wb-estate-strip-btn:disabled:not([aria-current]) { opacity: 0.45; cursor: not-allowed; }
+/* A storey nothing reaches is aria-disabled, not disabled: still in the tab
+   order, so its reason can be heard. Only its words dim, so a focus ring on it
+   stays at full strength. */
+.wb-estate-strip-btn[aria-disabled='true'] { cursor: not-allowed; border-style: dashed; }
+.wb-estate-strip-btn[aria-disabled='true'] > span { opacity: 0.45; }
+.wb-estate-hud[data-strip] .wb-estate-steps { right: 106px; }
+.wb-estate-hud[data-strip] .wb-estate-hud-bottom { max-width: calc(100% - 286px); }
+/* The lift's level panel, under its chip in the bottom column. */
+.wb-estate-lift { width: 214px; max-height: 210px; }
+.wb-estate-lift-levels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+.wb-estate-lift-levels .wb-estate-hud-btn { padding: 3px 0; }
+.wb-estate-lift-levels .wb-estate-hud-btn[aria-current] { border-color: var(--color-accent-700); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
+.wb-estate-chip-offer { border-color: var(--color-accent-700); }
+/* A lift ride's caption, over the engine's paper fade (which sits under the HUD). */
+.wb-estate-ride {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 6px 12px;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 14px; letter-spacing: 0.08em; color: var(--color-text);
+}
+/* The touch stick (§8.7): 96 px, bottom left, square like every control here. */
+.wb-estate-stick {
+  position: absolute; left: 10px; bottom: 40px; width: 96px; height: 96px; display: grid; place-items: center;
+  border: 1px solid var(--color-divider); background: var(--paper-55); pointer-events: auto; touch-action: none;
+}
+.wb-estate-stick-knob { position: relative; z-index: 1; width: 28px; height: 28px; border: 1px solid var(--color-accent-700); background: var(--color-accent-100); }
+/* With the stick in the thumb's corner the bottom column stands above it, clear
+   of the step buttons, so it can take the stage's width (less the strip's). */
+.wb-estate-hud[data-stick] .wb-estate-hud-bottom { bottom: 144px; max-width: calc(100% - 20px); }
+.wb-estate-hud[data-stick][data-strip] .wb-estate-hud-bottom { max-width: calc(100% - 106px); }
+.wb-estate-steps .wb-estate-hud-btn { min-height: 0; padding: 0; }
+.wb-estate-step-pu { grid-area: pu; }
+.wb-estate-step-pl { grid-area: pl; }
+.wb-estate-step-pd { grid-area: pd; }
+.wb-estate-step-pr { grid-area: pr; }
+.wb-estate-step-a1 { grid-area: a1; }
+.wb-estate-step-b1 { grid-area: b1; }
+.wb-estate-step-a2 { grid-area: a2; }
+.wb-estate-step-b2 { grid-area: b2; }
+.wb-estate-step-a3 { grid-area: a3; }
+.wb-estate-step-b3 { grid-area: b3; }
+
+/* Fullscreen takes the whole window body: stage and side panel, on the page's ground. */
+.wb-estate:fullscreen { padding: 12px; background: var(--color-bg); }
+
+html[data-motion-paused="true"] .wb-estate * { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wb-estate * { transition: none; }
+}
+/* === end Estate === */
+
 /* — reduced motion — */
 @media (prefers-reduced-motion: reduce) {
-  .wb-cube { animation: none; transform: rotateX(-22deg) rotateY(35deg); }
   .toggle-track span { transition-duration: 0.01ms !important; }
 }
 

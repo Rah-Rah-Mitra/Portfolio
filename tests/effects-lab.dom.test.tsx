@@ -5,6 +5,7 @@ import EffectsLabPanel from '../components/EffectsLabPanel';
 import { EffectsProvider, useEffects } from '../contexts/PhysicsContext';
 import { ExperienceModeProvider } from '../contexts/ExperienceModeContext';
 import { WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from '../lib/workbench';
+import { claimGpu, releaseGpu } from '../lib/gpuClaim';
 
 // jsdom has no matchMedia. `narrow` is the ≤880px Field Index surface.
 const stubMedia = ({ narrow = false } = {}) => vi.stubGlobal('matchMedia', (query: string) => ({
@@ -106,6 +107,22 @@ describe('effects lab drawer', () => {
   it('says nothing is held on a capable device', () => {
     const dialog = openDrawer();
     expect(dialog.textContent).not.toMatch(/held:/i);
+  });
+
+  it('says an enabled backdrop is held while the Estate window uses the GPU', () => {
+    const dialog = openDrawer();
+    const fluid = within(dialog).getByRole('button', { name: /Fluid smoke/ });
+    fireEvent.click(fluid);
+    expect(fluid.textContent).not.toMatch(/held:/);
+    try {
+      act(() => { claimGpu('estate'); });
+      expect(fluid.textContent).toContain('On · held: the Estate window is using the GPU');
+      // An off backdrop is not being held by anything.
+      expect(within(dialog).getByRole('button', { name: /N-body field/ }).textContent).not.toMatch(/held:/);
+    } finally {
+      act(() => { releaseGpu('estate'); });
+    }
+    expect(fluid.textContent).not.toMatch(/held:/);
   });
 
   it('says the backgrounds are desktop-only on the narrow surface, disables them and omits the drop-test handoff', () => {

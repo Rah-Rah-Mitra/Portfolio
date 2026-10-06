@@ -19,10 +19,12 @@ import rawPalette from './palette.json';
 //
 // Roles follow the plan's table; four materials it does not name join the
 // nearest row: shelter walls with party walls (neutral-200), road markings with
-// walls (neutral-100, light on asphalt), the playground surface with roofing
-// (neutral-400) and water tanks with the accents (accent-300). Of the paired
-// tokens, the lighter source takes the lighter step: core accent 200, block
-// accent 300; grass 300, foliage 400.
+// walls (neutral-100, light on asphalt) and water tanks with the accents
+// (accent-300), while the playground surface takes accent-500, a step no other
+// role uses (beside roofing at neutral-400 the red play deck read as roof).
+// Both façade accents are accent-200 (the table's accent-200/300): block
+// accents at 300 shared grass's step and read as lawn on the façades. Grass
+// 300, foliage 400.
 //
 // Three slots are not materials. glass-interior stands in for Glass inside a
 // building (accent-300 at 35%; façade glass stays opaque accent-700), edge is

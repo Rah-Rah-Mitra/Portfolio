@@ -416,7 +416,8 @@ export class EstateScheduler {
         entry.rank = rank;
       }
     }
-    for (const entry of this.list) {
+    for (let li = 0; li < this.list.length; li += 1) {
+      const entry = this.list[li];
       if (entry.net === 'flight' && !this.wanted(entry)) {
         entry.net = 'pending';
         this.flying -= 1;
@@ -433,7 +434,8 @@ export class EstateScheduler {
     if (this.stale) return start;
     while (this.flying < MAX_IN_FLIGHT) {
       let best: Entry | null = null;
-      for (const entry of this.list) {
+      for (let li = 0; li < this.list.length; li += 1) {
+        const entry = this.list[li];
         if (entry.net === 'pending' && entry.retryAt <= now && this.wanted(entry) && (best === null || better(entry, best))) best = entry;
       }
       if (best === null) break;
@@ -525,7 +527,8 @@ export class EstateScheduler {
 
   /** The Retry button: permanent failures become wantable again, ceilings and blocks lift. Stale stays stale. */
   resetFailures(): void {
-    for (const entry of this.list) {
+    for (let li = 0; li < this.list.length; li += 1) {
+      const entry = this.list[li];
       if (entry.net === 'failed') entry.net = 'pending';
       if (entry.net === 'pending') { entry.attempts = 0; entry.retryAt = 0; }
     }
@@ -536,7 +539,8 @@ export class EstateScheduler {
   /** The earliest time a backed-off, wanted file may start; Infinity when none waits. For a timer, not polling. */
   nextRetryAt(now: number): number {
     let at = Infinity;
-    for (const entry of this.list) {
+    for (let li = 0; li < this.list.length; li += 1) {
+      const entry = this.list[li];
       if (entry.net === 'pending' && entry.retryAt > now && entry.retryAt < at && this.wanted(entry)) at = entry.retryAt;
     }
     return at;
@@ -676,7 +680,8 @@ export class EstateScheduler {
 
   /** The context was lost: nothing is on the GPU. Wanted files re-upload from their CPU copies; nothing re-downloads. */
   resetGpu(): void {
-    for (const entry of this.list) {
+    for (let li = 0; li < this.list.length; li += 1) {
+      const entry = this.list[li];
       entry.partUp.fill(false);
       entry.gpuBytes = 0;
     }
@@ -714,7 +719,8 @@ export class EstateScheduler {
   private goStale(): FailOutcome {
     this.stale = true;
     const abort: string[] = [];
-    for (const entry of this.list) {
+    for (let li = 0; li < this.list.length; li += 1) {
+      const entry = this.list[li];
       if (entry.net === 'flight') { entry.net = 'pending'; abort.push(entry.id); }
     }
     this.flying = 0;
@@ -730,7 +736,8 @@ export class EstateScheduler {
 
   private collectVictims(now: number): number {
     let count = 0;
-    for (const entry of this.list) {
+    for (let li = 0; li < this.list.length; li += 1) {
+      const entry = this.list[li];
       if (entry.gpuBytes === 0) continue;
       const role = EVICTABLE[entry.klass];
       if (role === null) continue;
@@ -783,7 +790,8 @@ export class EstateScheduler {
     let victimCount = -1;
     for (;;) {
       let entry: Entry | null = null;
-      for (const e of this.list) {
+      for (let li = 0; li < this.list.length; li += 1) {
+        const e = this.list[li];
         if (e.tried !== stamp && e.net === 'done' && e.partUp.includes(false) && this.wanted(e) && (entry === null || better(e, entry))) entry = e;
       }
       if (entry === null) return null;

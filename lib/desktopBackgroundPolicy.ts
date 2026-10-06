@@ -16,6 +16,10 @@
 //
 // Reduced motion and Save-Data already arrive as allowHeavyAssets === false
 // (lib/experienceMode), so on those devices a backdrop never mounts at all.
+//
+// A third hold: the Estate window claims the GPU while it is live and focused
+// (lib/gpuClaim.ts), and a mounted backdrop yields — still mounted, not
+// running. It is checked last, so every existing reason keeps its precedence.
 
 import type { ExperiencePolicy } from './experienceMode';
 
@@ -24,9 +28,11 @@ export interface BackdropActivityInput {
   allowHeavyAssets: boolean;
   motionHalted: boolean;
   documentHidden: boolean;
+  /** The Estate window holds the GPU (lib/gpuClaim.ts). Optional: absent reads as false. */
+  yielded?: boolean;
 }
 
-export type BackdropActivityReason = 'off' | 'capability' | 'hidden' | 'motion-halted' | 'running';
+export type BackdropActivityReason = 'off' | 'capability' | 'hidden' | 'motion-halted' | 'yielded' | 'running';
 
 export interface BackdropActivity {
   mount: boolean;
@@ -41,6 +47,7 @@ export const resolveBackdropActivity = (input: BackdropActivityInput, leased: bo
   if (!input.allowHeavyAssets) return { mount, running: false, reason: 'capability' };
   if (input.documentHidden) return { mount, running: false, reason: 'hidden' };
   if (input.motionHalted) return { mount, running: false, reason: 'motion-halted' };
+  if (input.yielded === true) return { mount, running: false, reason: 'yielded' };
   return { mount, running: true, reason: 'running' };
 };
 
@@ -60,6 +67,9 @@ export const describeBackdropHold = (policy: Pick<ExperiencePolicy, 'allowHeavyA
     default: return null;
   }
 };
+
+/** The FX toggle's line while an enabled backdrop yields to the Estate window. */
+export const BACKDROP_YIELD_HOLD = 'held: the Estate window is using the GPU';
 
 // Fluid grid sizes live here rather than in FluidField so the caption in the
 // (eagerly loaded) DeskBackdrop can name them without pulling the lazy engine

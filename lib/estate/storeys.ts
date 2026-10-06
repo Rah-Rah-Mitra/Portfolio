@@ -297,26 +297,50 @@ export const applyBand = (state: BandState, table: StoreyTable, storey: number, 
 // A footprint is one ring of [x, y] points, closed (last = first, as upstream
 // writes it) or open; the two read the same. Concave rings are fine (BLK_509's
 // has 57 points and a dozen notches). Allocation-free.
+//
+// Every test runs over one shape, a flat ring [x0, y0, x1, y1, …] in a
+// Float64Array, built once per ring and kept by identity (the rings handed in
+// are immutable: pack footprints, nav room outlines, picking prisms). Read as
+// nested arrays of three kinds, the loops' keyed loads went megamorphic and
+// boxed every double they read: ~2.9 KB of garbage a frame in Walk, through the
+// interior's inside test, where the plan allows none.
 
-/** Even-odd test. A point exactly on an edge may read either way; inside callers widen by a margin anyway. */
-export const pointInPolygon = (x: number, y: number, ring: ArrayLike<ArrayLike<number>>): boolean => {
-  const n = ring.length;
+const FLAT_RINGS = new WeakMap<object, Float64Array>();
+
+/** `ring` as a flat [x0, y0, x1, y1, …] Float64Array, built on first use and cached by identity (do not mutate a ring once tested). */
+export const flatRing = (ring: ArrayLike<ArrayLike<number>>): Float64Array => {
+  let flat = FLAT_RINGS.get(ring as object);
+  if (flat === undefined) {
+    const n = ring.length;
+    flat = new Float64Array(2 * n);
+    for (let i = 0; i < n; i += 1) {
+      flat[2 * i] = ring[i][0];
+      flat[2 * i + 1] = ring[i][1];
+    }
+    FLAT_RINGS.set(ring as object, flat);
+  }
+  return flat;
+};
+
+/** pointInPolygon over a flat ring. */
+export const pointInRing = (x: number, y: number, ring: Float64Array): boolean => {
+  const n = ring.length >> 1;
   let inside = false;
   for (let i = 0, j = n - 1; i < n; j = i, i += 1) {
-    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    const xi = ring[2 * i], yi = ring[2 * i + 1], xj = ring[2 * j], yj = ring[2 * j + 1];
     // A closing duplicate is a zero-length edge, which never straddles y.
     if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;
 };
 
-/** Distance from (x, y) to the ring's nearest edge, inside or out; Infinity for an empty ring. */
-export const polygonEdgeDistance = (x: number, y: number, ring: ArrayLike<ArrayLike<number>>): number => {
-  const n = ring.length;
+/** polygonEdgeDistance over a flat ring. */
+export const ringEdgeDistance = (x: number, y: number, ring: Float64Array): number => {
+  const n = ring.length >> 1;
   let best = Infinity;
   for (let i = 0, j = n - 1; i < n; j = i, i += 1) {
-    const ax = ring[j][0], ay = ring[j][1];
-    const ex = ring[i][0] - ax, ey = ring[i][1] - ay;
+    const ax = ring[2 * j], ay = ring[2 * j + 1];
+    const ex = ring[2 * i] - ax, ey = ring[2 * i + 1] - ay;
     const px = x - ax, py = y - ay;
     const len2 = ex * ex + ey * ey;
     const t = len2 > 0 ? Math.min(1, Math.max(0, (px * ex + py * ey) / len2)) : 0;
@@ -327,9 +351,19 @@ export const polygonEdgeDistance = (x: number, y: number, ring: ArrayLike<ArrayL
   return Math.sqrt(best);
 };
 
+/** Even-odd test. A point exactly on an edge may read either way; inside callers widen by a margin anyway. */
+export const pointInPolygon = (x: number, y: number, ring: ArrayLike<ArrayLike<number>>): boolean =>
+  pointInRing(x, y, flatRing(ring));
+
+/** Distance from (x, y) to the ring's nearest edge, inside or out; Infinity for an empty ring. */
+export const polygonEdgeDistance = (x: number, y: number, ring: ArrayLike<ArrayLike<number>>): number =>
+  ringEdgeDistance(x, y, flatRing(ring));
+
 /** Distance from (x, y) to the ring's area: 0 inside, else to the nearest edge. */
-export const polygonDistance = (x: number, y: number, ring: ArrayLike<ArrayLike<number>>): number =>
-  pointInPolygon(x, y, ring) ? 0 : polygonEdgeDistance(x, y, ring);
+export const polygonDistance = (x: number, y: number, ring: ArrayLike<ArrayLike<number>>): number => {
+  const flat = flatRing(ring);
+  return pointInRing(x, y, flat) ? 0 : ringEdgeDistance(x, y, flat);
+};
 
 /** What the inside and peeking tests read off a building. A pack site ({ footprint, roofTop, … }) fits. */
 export interface FootprintShape {

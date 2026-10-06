@@ -7,6 +7,7 @@ import { normalizeNBodyWorkerMessage, toFieldPoint } from '../lib/nbody/workerPr
 import { DeskBackdrop } from '../components/workbench/DeskBackdrop';
 import NBodyField from '../components/workbench/NBodyField';
 import FluidField from '../components/workbench/FluidField';
+import { claimGpu, releaseGpu } from '../lib/gpuClaim';
 
 // One DOM file for the whole desk-backdrop feature: the host's mount rules, the
 // N-body worker handshake and the fluid GL request. The rules themselves are
@@ -122,6 +123,25 @@ describe('DeskBackdrop host', () => {
     expect(layer.querySelector('canvas[data-backdrop="fluid"]')).toBeNull();
     expect(layer.textContent).toContain('2D LOG-FMM');
     expect(layer.textContent).toContain('LIVE');
+  });
+
+  it('yields to the Estate window: a claim holds a live field (HELD · ESTATE), a release resumes it', async () => {
+    const { container } = render(withSettings({ ...defaultBackdropSettings, nbody: { ...defaultBackdropSettings.nbody, enabled: true } }));
+    await waitFor(() => expect(WorkerStub.instances).toHaveLength(1));
+    const state = () => container.querySelector('[data-backdrop-state]');
+    expect(state()?.getAttribute('data-backdrop-state')).toBe('running');
+    try {
+      act(() => { claimGpu('estate'); });
+      expect(state()?.getAttribute('data-backdrop-state')).toBe('yielded');
+      expect(state()?.textContent).toContain('HELD · ESTATE');
+      // Still mounted: the field keeps its worker and its last frame.
+      expect(container.querySelector('canvas[data-backdrop="nbody"]')).not.toBeNull();
+      expect(WorkerStub.instances).toHaveLength(1);
+    } finally {
+      act(() => { releaseGpu('estate'); });
+    }
+    expect(state()?.getAttribute('data-backdrop-state')).toBe('running');
+    expect(state()?.textContent).toContain('LIVE');
   });
 
   it('gives each engine its own Suspense boundary, so loading the second never hides the first', async () => {

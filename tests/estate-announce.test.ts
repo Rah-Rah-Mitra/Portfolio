@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ANNOUNCE_GAP_MS, LocationAnnouncer, ROOM_SETTLE_MS, chipText, siteChipLabel, siteSpokenName,
+  ANNOUNCE_GAP_MS, LocationAnnouncer, ROOM_SETTLE_MS, chipText, siteChipLabel, siteShortName, siteSpokenName,
   spokenLocation, storeySpoken, type EstateLocation,
 } from '../lib/estate/announce';
 import { ESTATE_NAME, ESTATE_SITE_IDS } from '../lib/estate/ids';
@@ -61,6 +61,13 @@ describe('estate spoken location', () => {
     ];
     expect(ESTATE_SITE_IDS.map(siteSpokenName)).toEqual(manifest);
     expect(ESTATE_NAME).toBe('Sample Town N5');
+  });
+
+  it('gives buttons a short name: blocks as spoken, the car park and the hawker centre shorter (Enter / Exit labels)', () => {
+    expect(siteShortName('BLK_509')).toBe('Blk 509');
+    expect(siteShortName('MSCP_513')).toBe('Car park 513');
+    expect(siteShortName('NC_514')).toBe('Hawker centre');
+    for (const site of ESTATE_SITE_IDS) expect(siteShortName(site).length).toBeLessThanOrEqual(13);
   });
 
   it('says storeys as levels, and RF as the roof', () => {

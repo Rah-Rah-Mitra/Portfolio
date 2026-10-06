@@ -68,7 +68,6 @@ describe('estate load policy: the §9.3 table, row by row', () => {
     ['"Load full detail" ends lean', { ...SAVE_DATA_HELD, userRequested: true, fullDetail: true }, want('live', { claimGpu: true })],
     ['?mode=guided overrides Data Saver: full', { saveData: true, policyReason: 'query' }, want('live', { claimGpu: true })],
     ['heavy assets withdrawn after loading: keeps running', { allowHeavyAssets: false, policyReason: 'reduced-motion' }, want('live', { claimGpu: true })],
-    ['lost while frozen, reopened: live; the engine re-creates unseen', { contextLost: true, lostWhileFrozen: true, lostMs: 600_000 }, want('live', { claimGpu: true })],
     ['one live reset, restored', { liveResets: 1 }, want('live', { claimGpu: true })],
     // frozen
     ['closed 10 s', { open: false, closedMs: 10_000 }, want('frozen')],
@@ -84,6 +83,9 @@ describe('estate load policy: the §9.3 table, row by row', () => {
     ['closed for ever', { open: false, closedMs: Number.POSITIVE_INFINITY }, want('released')],
     ['DESK: at once', { open: false, closedByDesk: true }, want('released')],
     ['lost while frozen, then closed 30 s', { open: false, closedMs: RELEASE_AFTER_MS, contextLost: true, lostWhileFrozen: true }, want('released')],
+    // Seen again and never restored: it cannot draw, so it is released and loaded afresh, never live on a dead canvas.
+    ['lost while frozen, reopened unrestored', { contextLost: true, lostWhileFrozen: true, lostMs: 600_000 }, want('released')],
+    ['lost while frozen, back on screen unrestored', { contextLost: true, lostWhileFrozen: true, closedMs: 5_000 }, want('released')],
     ['unmounted while loaded (phone layout included)', { mounted: false }, want('released')],
     ['unmounted during loading: the module is discarded, never started', { engine: 'loading', mounted: false }, want('released')],
     ['unmounted with nothing loaded', { ...FRESH, mounted: false }, want('poster')],
@@ -220,8 +222,8 @@ describe(`estate load policy: all ${SPACE.toLocaleString('en')} input combinatio
     });
   });
 
-  it('is live exactly when loaded, mounted, open, on screen and visible, with no live loss', () => {
-    holdsEverywhere((i, out) => iff(out.phase === 'live', i.mounted && i.engine === 'ready' && visible(i) && !liveLoss(i)));
+  it('is live exactly when loaded, mounted, open, on screen and visible, with no loss outstanding', () => {
+    holdsEverywhere((i, out) => iff(out.phase === 'live', i.mounted && i.engine === 'ready' && visible(i) && !i.contextLost));
   });
 
   it('shows lost exactly for a live loss on a visible window', () => {
@@ -237,9 +239,11 @@ describe(`estate load policy: all ${SPACE.toLocaleString('en')} input combinatio
       || out.phase === (!i.open && i.closedMs >= RELEASE_AFTER_MS ? 'released' : 'frozen'));
   });
 
-  it('releases exactly when unmounted with something started, or loaded and closed 30 s', () => {
+  it('releases exactly when unmounted with something started, loaded and closed 30 s, or seen again with a frozen loss unrestored', () => {
     holdsEverywhere((i, out) => iff(out.phase === 'released',
-      i.mounted ? i.engine === 'ready' && !i.open && i.closedMs >= RELEASE_AFTER_MS : i.engine !== 'none'));
+      i.mounted
+        ? i.engine === 'ready' && ((!i.open && i.closedMs >= RELEASE_AFTER_MS) || (visible(i) && i.contextLost && i.lostWhileFrozen))
+        : i.engine !== 'none'));
   });
 
   it('starts, claims and offers nothing once unmounted', () => {
@@ -353,12 +357,14 @@ describe('estate load policy: sequences', () => {
     expect(second.reason).toBe(ESTATE_REASONS.resets);
   });
 
-  it('a loss while frozen is not counted: the same two losses leave the window live', () => {
+  it('a loss while frozen is not counted: the same two losses never make the window unavailable', () => {
     let losses = noteContextLoss([], 0, false); // live
     losses = noteContextLoss(losses, 20_000, true); // tab in the background
     const frozen = at({ hidden: true, contextLost: true, lostWhileFrozen: true, lostMs: 9_000, liveResets: liveResetCount(losses, 29_000) });
-    const back = at({ contextLost: true, lostWhileFrozen: true, lostMs: 10_000, liveResets: liveResetCount(losses, 30_000) });
-    expect([frozen.phase, back.phase]).toEqual(['frozen', 'live']);
+    // Back in view: restored meanwhile, live; still lost, released (and loaded afresh), never unavailable.
+    const restored = at({ liveResets: liveResetCount(losses, 30_000) });
+    const unrestored = at({ contextLost: true, lostWhileFrozen: true, lostMs: 10_000, liveResets: liveResetCount(losses, 30_000) });
+    expect([frozen.phase, restored.phase, unrestored.phase]).toEqual(['frozen', 'live', 'released']);
     // Counted, the frozen loss would have been the second reset.
     const counted = noteContextLoss(noteContextLoss([], 0, false), 20_000, false);
     expect(at({ liveResets: liveResetCount(counted, 30_000) }).phase).toBe('unavailable');
@@ -449,14 +455,16 @@ const tenthsOf = (label: string): number => {
 describe('estate consent label', () => {
   it('counts the engine at its gzip cap from packBudgets.json, not a measurement', () => {
     expect(ENGINE_GZIP_CAP).toBe(budgets.engineGzip);
-    expect(ENGINE_GZIP_CAP).toBe(307_200);
+    // P4b, P5, then P7 re-pinned it at the measured Load click + 5% (packBudgets.json units); never above the plan cap.
+    expect(ENGINE_GZIP_CAP).toBe(278_000);
+    expect(ENGINE_GZIP_CAP).toBeLessThanOrEqual(307_200);
   });
 
   it('labels a full load as engine cap + stage 0 + ΣF, and a lean one without ΣF', () => {
-    expect(consentBytes(EXPECTED, 'full')).toBe(307_200 + 140_000 + 1_650_000);
-    expect(consentBytes(EXPECTED, 'lean')).toBe(307_200 + 140_000);
+    expect(consentBytes(EXPECTED, 'full')).toBe(278_000 + 140_000 + 1_650_000);
+    expect(consentBytes(EXPECTED, 'lean')).toBe(278_000 + 140_000);
     expect(consentLabel(EXPECTED, 'full')).toBe('Load the 3D estate · 2.1 MB'); // plan: overview ≈ 2.1 MB
-    expect(consentLabel(EXPECTED, 'lean')).toBe('Load the 3D estate · 0.5 MB'); // plan: lean ≈ 0.45 MB
+    expect(consentLabel(EXPECTED, 'lean')).toBe('Load the 3D estate · 0.5 MB'); // plan: lean ≈ 0.45 MB with the 300 KB cap
     expect(consentLabel(AT_CAPS, 'full')).toBe('Load the 3D estate · 3.5 MB');
     expect(consentLabel(AT_CAPS, 'lean')).toBe('Load the 3D estate · 0.7 MB');
     expect(fullDetailLabel(EXPECTED)).toBe('Load full detail · +1.7 MB');

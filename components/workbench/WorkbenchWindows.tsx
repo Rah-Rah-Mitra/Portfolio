@@ -4,6 +4,7 @@ import { MechanismBench } from './MechanismBench';
 import { FlowShopBench } from './FlowShopBench';
 import { DropTest } from './DropTest';
 import { CameraLab } from './CameraLab';
+import { EstateWindow } from './estate/EstateWindow';
 import {
   archiveRows,
   BIO,
@@ -278,62 +279,11 @@ export const CameraWindow: React.FC = () => (
   </div>
 );
 
-// The #world anchor outlived the WebGL world it once marked; the assistant, the
-// field index and the deep links still resolve it. What is behind it now is said
-// plainly: a CSS drawing, and the spatial record it points to. The topics are the
-// CS4277 syllabus as the Proof window records it; the builds are the archive's
-// 3D / Vision domain, so a new spatial project lists itself here.
-const SPATIAL_TOPICS = ['Projective geometry', 'Absolute pose', 'Structure from motion', 'Multi-view stereo'];
-const spatialBuilds = archiveRows.filter((row) => row.domain === '3D / Vision');
-
-// Real in-page hrefs keep the targets addressable in the prerendered DOM (the
-// windows they point into are display:none until JS runs, so without JS they go
-// nowhere on desktop). With JS this opens the target window, even when the hash
-// is already current.
-const openFromLink = (event: React.MouseEvent, appId: DesktopAppId, targetId: string) => {
-  event.preventDefault();
-  dispatchWorkbenchOpen({ appId, targetId });
-};
-
-export const WorldWindow: React.FC = () => (
-  <div id="world" className="wb-world">
-    <div className="wb-world-main">
-      <Kicker>SHARED #WORLD ANCHOR — SPATIAL RECORD</Kicker>
-      <h3 className="wb-world-title">Spatial Systems</h3>
-      <p className="wb-bio">
-        A drawing, not a scene: the bench volume beside this is a CSS figure with no 3D engine behind it. The
-        spatial work it stands for is in the record: top student of 24 in NUS CS4277 3D Computer Vision, and the
-        builds below.
-      </p>
-      <div className="wb-tags">
-        {SPATIAL_TOPICS.map((topic) => <span className="tag tag-accent" key={topic}>{topic}</span>)}
-      </div>
-      <p className="wb-note">
-        BUILDS —{' '}
-        {spatialBuilds.map((row, index) => (
-          <React.Fragment key={row.id}>
-            {index > 0 && ' · '}
-            {/* A fork stays labelled as one: "kalidokit" alone under BUILDS reads as Rahul's library. */}
-            <a href={`#project-${row.id}`} onClick={(event) => openFromLink(event, 'project-archive', `project-${row.id}`)}>{row.title}{/\bfork\b/i.test(row.category) ? ' (fork)' : ''}</a>
-          </React.Fragment>
-        ))}
-        . The working camera models are in the{' '}
-        <a href="#technical-lab" onClick={(event) => openFromLink(event, 'camera-lab', 'technical-lab')}>Camera Lab</a>.
-      </p>
-    </div>
-    <Hoist className="wb-world-side">
-      <figure className="blueprint wb-figure wb-cubefig">
-        <Corners />
-        <div className="wb-cube-stage" aria-hidden="true">
-          <div className="wb-cube">
-            <div /><div /><div /><div /><div /><div />
-          </div>
-        </div>
-        <figcaption>FIG. 07 — BENCH VOLUME, A CSS DRAWING</figcaption>
-      </figure>
-    </Hoist>
-  </div>
-);
+// WIN-07 (#world): the Estate window, Sample Town N5. Its body, the spatial
+// RECORD the old #world window carried included, is estate/EstateWindow.tsx;
+// the 3D engine behind it is a lazy chunk reached only through
+// estate/loadEngine.ts, so nothing of it is in this bundle.
+export const WorldWindow: React.FC = () => <EstateWindow />;
 
 export const CapabilitiesWindow: React.FC = () => (
   <div id="domains">

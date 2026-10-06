@@ -371,8 +371,12 @@ describe('pack budgets (plan §6.5, §7.4)', () => {
     // Top-level keys, named as plan §4 and §6.5 name them: a dependency-free
     // check-bundle.mjs written to the plan reads exactly these, and an undefined
     // cap would compare false and never fail the build.
-    expect(budgets.engineGzip).toBe(307_200);
-    expect(budgets.engineMinified).toBe(950_000);
+    // Re-pinned in P4b and P5 at the measured size + 5%, and engineGzip again in P7 (the
+    // units note says from what); a re-pin may move them, but never above the plan caps.
+    expect(budgets.engineGzip).toBe(278_000);
+    expect(budgets.engineMinified).toBe(942_000);
+    expect(budgets.engineGzip).toBeLessThanOrEqual(307_200);
+    expect(budgets.engineMinified).toBeLessThanOrEqual(950_000);
     expect('engine' in budgets).toBe(false);
     expect(budgets.pack).toMatchObject({ hardBytes: 12_000_000, warnBytes: 8_000_000, maxFiles: 100, firstFrame: { bytes: 350_000 } });
     expect(budgets.classes).toMatchObject({
@@ -406,7 +410,7 @@ describe('pack budgets (plan §6.5, §7.4)', () => {
       ['high', 2.0, 1_200_000, 150, 2, 80, 25, true, 2_000_000, 128_000_000],
       ['mid', 3.0, 800_000, 120, 1, 60, 15, true, 1_400_000, 80_000_000],
       ['low', 4.5, 450_000, 90, 1, 30, 8, false, 1_000_000, 48_000_000],
-      ['min', 6.0, 300_000, 60, 1, 0, 5, false, 700_000, 32_000_000],
+      ['min', 6.0, 300_000, 60, 1, 15, 5, false, 700_000, 32_000_000],
     ]);
   });
 
@@ -423,7 +427,7 @@ describe('pack budgets (plan §6.5, §7.4)', () => {
       expect(tier.treeRadiusM).toBeLessThanOrEqual(prev.treeRadiusM);
       expect(tier.furnitureRadiusM).toBeLessThanOrEqual(prev.furnitureRadiusM);
     });
-    // The top tier is the plan's C11 cap, proved over the pose grid elsewhere.
+    // The top tier is the plan's C11 cap, proved over the pose grid in tests/estate-budget.test.ts.
     expect(budgets.tiers[0]).toMatchObject({ maxDraws: 150, maxTris: 1_200_000 });
   });
 

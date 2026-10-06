@@ -11,14 +11,23 @@ import { decodeWalk, floorAt, nearestWalkable, type FloorHit, type WalkFile, typ
 // P5, on the committed pack; otherwise the suite is skipped.
 //
 //   ESTATE_PACK_DIR=artifacts/estate/v1.2 npx vitest run tests/estate-walk-realdata.test.ts
+//
+// A dev pack (source.dev, built with --dev-src) is checked only when named by
+// ESTATE_PACK_DIR. One can sit in public/estate/v1.2 uncommitted while the
+// window is developed against it (it is never committed: check.mjs refuses one
+// there), and the committed-pack run is for the published release, whose
+// upstream walk export these checks gate.
 
 const root = path.join(__dirname, '..');
 const committed = path.join(root, 'public', 'estate', 'v1.2');
-const candidates = [process.env.ESTATE_PACK_DIR ? path.resolve(process.env.ESTATE_PACK_DIR) : null, committed].filter((d): d is string => d !== null);
+const named = process.env.ESTATE_PACK_DIR ? path.resolve(process.env.ESTATE_PACK_DIR) : null;
+const candidates = [named, committed].filter((d): d is string => d !== null);
 const packFile = (dir: string) => (existsSync(dir) ? readdirSync(dir).find((f) => /^pack\.[0-9a-f]{8}\.json$/.test(f)) : undefined);
 const dir = candidates.find((d) => {
   const f = packFile(d);
-  return f !== undefined && (JSON.parse(readFileSync(path.join(d, f), 'utf8')).classes as string[]).includes('w');
+  if (f === undefined) return false;
+  const json = JSON.parse(readFileSync(path.join(d, f), 'utf8')) as { classes: string[]; source?: { dev?: boolean } };
+  return json.classes.includes('w') && (d === named || json.source?.dev !== true);
 }) ?? null;
 
 type Door = [number, number, number, number, number];

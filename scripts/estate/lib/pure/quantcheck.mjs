@@ -190,3 +190,81 @@ export const matchMap = (want, got, tol) => {
 
 /** matchMap's verdict alone: null, or the first decoded triangle with no built one within `tol`. */
 export const matchWithin = (want, got, tol) => matchMap(want, got, tol).problem;
+
+/**
+ * The interior's seams on what a reader decodes (see grid.mjs): every vertex
+ * the built T (relative to its floor, placed at each typical storey's FFL)
+ * shares with that storey's R must decode to one point in both, or the edges
+ * the two meshes share open into a dotted line. Shared means equal to 10 µm in
+ * the built soups; each decoded copy is the nearest decoded vertex within
+ * `tol` of the built point (one quantisation step plus a little). `typical`
+ * lists [storey index, FFL] pairs; R triangles carry their storey index.
+ * Returns { shared, apart, missing, maxApart, first } (first: a description of
+ * the first fault, or null).
+ */
+export const seamGaps = ({ builtT, builtR, decT, decR, typical, tol, same = 1e-5 }) => {
+  const K = 1e5;
+  const key = (x, y, z) => `${Math.round(x * K)},${Math.round(y * K)},${Math.round(z * K)}`;
+  // Decoded vertices on a hash grid of cell `tol`: T relative to its floor, R absolute with its storey.
+  const index = (soup, keep) => {
+    const grid = new Map();
+    const p = soup.pos;
+    for (let t = 0; t < soup.count; t += 1) {
+      if (keep && !keep(t)) continue;
+      for (let v = 0; v < 3; v += 1) {
+        const o = t * 9 + v * 3;
+        const k = `${Math.floor(p[o] / tol)},${Math.floor(p[o + 1] / tol)},${Math.floor(p[o + 2] / tol)}`;
+        if (!grid.has(k)) grid.set(k, []);
+        grid.get(k).push(p[o], p[o + 1], p[o + 2]);
+      }
+    }
+    return grid;
+  };
+  const nearest = (grid, x, y, z) => {
+    let best = null; let bd = tol;
+    const cx = Math.floor(x / tol), cy = Math.floor(y / tol), cz = Math.floor(z / tol);
+    for (let dx = -1; dx <= 1; dx += 1) for (let dy = -1; dy <= 1; dy += 1) for (let dz = -1; dz <= 1; dz += 1) {
+      const list = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
+      if (!list) continue;
+      for (let i = 0; i < list.length; i += 3) {
+        const d = Math.hypot(list[i] - x, list[i + 1] - y, list[i + 2] - z);
+        if (d <= bd) { bd = d; best = [list[i], list[i + 1], list[i + 2]]; }
+      }
+    }
+    return best;
+  };
+  const tIndex = index(decT);
+  const out = { shared: 0, apart: 0, missing: 0, maxApart: 0, first: null };
+  for (const [s, ffl] of typical) {
+    const tKeys = new Set();
+    const bt = builtT.pos;
+    for (let o = 0; o < builtT.count * 9; o += 3) tKeys.add(key(bt[o], bt[o + 1] + ffl, bt[o + 2]));
+    const rIndex = index(decR, (t) => decR.storey[t] === s);
+    const seen = new Set();
+    const br = builtR.pos;
+    for (let t = 0; t < builtR.count; t += 1) {
+      if (builtR.storey[t] !== s) continue;
+      for (let v = 0; v < 3; v += 1) {
+        const o = t * 9 + v * 3;
+        const k = key(br[o], br[o + 1], br[o + 2]);
+        if (!tKeys.has(k) || seen.has(k)) continue;
+        seen.add(k);
+        out.shared += 1;
+        const r = nearest(rIndex, br[o], br[o + 1], br[o + 2]);
+        const tt = nearest(tIndex, br[o], br[o + 1] - ffl, br[o + 2]);
+        if (!r || !tt) {
+          out.missing += 1;
+          out.first ??= `storey ${s}: no decoded ${r ? 'T' : 'R'} vertex within ${(tol * 1000).toFixed(2)} mm of (${[br[o], br[o + 1], br[o + 2]].map((c) => c.toFixed(4)).join(', ')})`;
+          continue;
+        }
+        const d = Math.hypot(r[0] - tt[0], r[1] - (tt[1] + ffl), r[2] - tt[2]);
+        if (d > same) {
+          out.apart += 1;
+          out.first ??= `storey ${s}: T and R decode (${[br[o], br[o + 1], br[o + 2]].map((c) => c.toFixed(4)).join(', ')}) ${(d * 1000).toFixed(3)} mm apart`;
+        }
+        out.maxApart = Math.max(out.maxApart, d);
+      }
+    }
+  }
+  return out;
+};

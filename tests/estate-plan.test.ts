@@ -1,0 +1,317 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
+import { describe, expect, it } from 'vitest';
+import { ESTATE_SITE_IDS, ESTATE_SITE_STOREYS } from '../lib/estate/ids';
+import { parseNav, roomAt } from '../lib/estate/nav';
+import {
+  COMMON_AREAS, cutSpoken, cutText, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_CUT_MAX, PLAN_CUT_MIN, PLAN_ELEVATION_DEG, PLAN_POLAR,
+  meetsFacade, rayFloor, ringCentroid, ROOM_KIND_GROUP_MIN, roomAnchor, roomGroups, roomKind, roomSightline, roomSpoken, roomText, stepCut,
+  walkInPoint, walkInYaw, WALK_IN_HEADINGS,
+} from '../lib/estate/plan';
+import { bandQuads, MARKER_BAND_MAX, MARKER_BAND_MIN, markerBandWidth } from '../components/workbench/estate/engine/controls/plan';
+import { parsePack } from '../lib/estate/schema';
+import { flatRing, pointInPolygon, siteStoreyTable } from '../lib/estate/storeys';
+import { decodeWalk, type WalkPose } from '../lib/estate/walk';
+import { blankPose, ORBIT_LIMITS, PLAN_FILL, planFrame, positionFromOrbit } from '../components/workbench/estate/engine/controls/tween';
+import type { Vec2 } from '../lib/estate/frames';
+
+// Plan (plan §8.1, §7.3; P6): the pure rules in lib/estate/plan.ts, the pose
+// tween.ts frames a storey with, and, on the committed pack (skipped without
+// one), that walking into a room finds a floor to stand on and faces its
+// windows.
+
+const ring = (points: Array<[number, number]>) => points.map((p) => Object.freeze(p) as Vec2);
+const boxOf = (poly: readonly Vec2[]): [number, number, number, number] => [
+  Math.min(...poly.map((p) => p[0])), Math.min(...poly.map((p) => p[1])), Math.max(...poly.map((p) => p[0])), Math.max(...poly.map((p) => p[1])),
+];
+const room = (points: Array<[number, number]>) => {
+  const poly = ring(points);
+  return { poly, box: boxOf(poly) };
+};
+
+describe('Plan rules (lib/estate/plan.ts)', () => {
+  it('cuts at 1.2 m, stepping 0.3 m between 0.3 and 2.4 m on a 0.1 m grid', () => {
+    expect(PLAN_CUT_DEFAULT).toBe(1.2);
+    expect(stepCut(1.2, 1)).toBe(1.5);
+    expect(stepCut(1.2, -1)).toBe(0.9);
+    let cut = PLAN_CUT_DEFAULT;
+    const seen = [cut];
+    for (let i = 0; i < 10; i += 1) seen.push((cut = stepCut(cut, 1)));
+    expect(seen.slice(0, 6)).toEqual([1.2, 1.5, 1.8, 2.1, 2.4, 2.4]);
+    for (let i = 0; i < 10; i += 1) cut = stepCut(cut, -1);
+    expect(cut).toBe(PLAN_CUT_MIN);
+    expect(stepCut(PLAN_CUT_MAX, 1)).toBe(PLAN_CUT_MAX);
+    // No drift: every reachable cut is a whole number of decimetres.
+    for (const value of seen) expect(Math.round(value * 10)).toBeCloseTo(value * 10, 9);
+  });
+
+  it('looks from 55° above the horizon', () => {
+    expect(PLAN_ELEVATION_DEG).toBe(55);
+    expect(PLAN_POLAR).toBeCloseTo((35 * Math.PI) / 180, 12);
+  });
+
+  it('opens on the first typical storey: a block’s L2, the car park’s L2, the hawker centre’s L1', () => {
+    const open = (site: (typeof ESTATE_SITE_IDS)[number]) => {
+      const table = siteStoreyTable(site);
+      return table.tags[defaultPlanStorey(table.typical)];
+    };
+    expect(open('BLK_509')).toBe('L2');
+    expect(open('BLK_501')).toBe('L2');
+    expect(open('MSCP_513')).toBe('L2');
+    expect(open('NC_514')).toBe('L1');
+    expect(defaultPlanStorey([])).toBe(0);
+  });
+
+  it('cycles rooms both ways and wraps; from no pick, down starts at the first and up at the last', () => {
+    expect(cycleRoom(-1, 1, 5)).toBe(0);
+    expect(cycleRoom(-1, -1, 5)).toBe(4);
+    expect(cycleRoom(0, -1, 5)).toBe(4);
+    expect(cycleRoom(4, 1, 5)).toBe(0);
+    expect(cycleRoom(2, 1, 5)).toBe(3);
+    expect(cycleRoom(9, 1, 5)).toBe(0); // a stale pick restarts
+    expect(cycleRoom(-1, 1, 0)).toBe(-1);
+  });
+
+  it('aims a walk-in inside the room: its centroid, else its box centre, else the inside point nearest the centroid', () => {
+    const square = room([[0, 0], [4, 0], [4, 2], [0, 2]]);
+    expect(roomAnchor(square)).toEqual([2, 1]);
+    expect(ringCentroid(square.poly)).toEqual([2, 1]);
+    // A thin L: centroid and box centre both fall in the notch.
+    const ell = room([[0, 0], [10, 0], [10, 1], [1, 1], [1, 10], [0, 10]]);
+    const [cx, cy] = ringCentroid(ell.poly);
+    expect(pointInPolygon(cx, cy, ell.poly)).toBe(false);
+    const anchor = roomAnchor(ell);
+    expect(pointInPolygon(anchor[0], anchor[1], ell.poly)).toBe(true);
+    // A U whose middle is open: still inside, in one of the arms.
+    const u = room([[0, 0], [9, 0], [9, 9], [6, 9], [6, 3], [3, 3], [3, 9], [0, 9]]);
+    const ua = roomAnchor(u);
+    expect(pointInPolygon(ua[0], ua[1], u.poly)).toBe(true);
+    // Either orientation reads the same.
+    expect(roomAnchor(room([[0, 0], [0, 2], [4, 2], [4, 0]]))).toEqual([2, 1]);
+  });
+
+  it('meets the floor from above, never from below, level or behind the eye', () => {
+    expect(rayFloor([0, 0, 10], [1, 0, -1], 2)).toEqual([8, 0]);
+    expect(rayFloor([5, 5, 10], [0, 0, -2], 12)).toBeNull(); // the floor is above: behind the ray
+    expect(rayFloor([0, 0, 1], [1, 0, 0], 0)).toBeNull();
+    expect(rayFloor([0, 0, 1], [0, 1, 1], 0)).toBeNull();
+  });
+
+  it('words a pick and the cut as the HUD prints them and the live region says them', () => {
+    const flat = { label: 'Living / Dining', flat: '#05-104' };
+    const corridor = { label: 'Common corridor', flat: null };
+    expect(roomText(flat)).toBe('#05-104 · Living / Dining');
+    expect(roomText(corridor)).toBe('Common corridor');
+    expect(roomSpoken(flat, 2, 105)).toBe('Unit 05-104, Living / Dining, 3 of 105');
+    expect(roomSpoken(corridor, 104, 105)).toBe('Common corridor, 105 of 105');
+    expect(cutText(1.2)).toBe('+1.20 M');
+    expect(cutSpoken(1.5)).toBe('Cut 1.5 metres above the floor');
+  });
+
+  it('groups the room list by flat, then by a kind with six or more rooms, and calls the rest common areas', () => {
+    expect(roomKind('Car lot L2-001 (S)')).toBe('Car lot');
+    expect(roomKind('Shop unit #02-01')).toBe('Shop unit');
+    expect(roomKind('Stair 3')).toBe('Stair');
+    expect(roomKind('Seating area north-east')).toBe('Seating area north-east');
+    expect(roomKind('#05-101')).toBe('#05-101');
+    const lots = Array.from({ length: ROOM_KIND_GROUP_MIN }, (_, i) => ({ label: `Car lot L2-00${i} (S)`, flat: null }));
+    const rooms = [
+      { label: 'Living / Dining', flat: '#05-101' },
+      ...lots.slice(0, 3),
+      { label: 'Drive aisle', flat: null },
+      ...lots.slice(3),
+      { label: 'Bedroom', flat: '#05-101' },
+      { label: 'Stair 1', flat: null },
+      { label: 'Stair 2', flat: null },
+    ];
+    expect(roomGroups(rooms)).toEqual([
+      { name: '#05-101', rooms: [0, 8] },
+      { name: 'Car lots', rooms: [1, 2, 3, 5, 6, 7] },
+      { name: COMMON_AREAS, rooms: [4, 9, 10] },
+    ]);
+    // Five lots are not enough for a heading of their own.
+    expect(roomGroups(lots.slice(1)).map((g) => g.name)).toEqual([COMMON_AREAS]);
+    expect(roomGroups([])).toEqual([]);
+  });
+});
+
+describe('Plan’s room marker (controls/plan.ts)', () => {
+  it('makes its band about three pixels wide at the distance of the pick, within its limits', () => {
+    // 100 m away at 45°: 2·100·tan(22.5°) = 82.8 m over 600 px, × 3 px.
+    expect(markerBandWidth(100, 45, 600)).toBeCloseTo((3 * 2 * 100 * Math.tan(Math.PI / 8)) / 600, 9);
+    expect(markerBandWidth(1, 45, 600)).toBe(MARKER_BAND_MIN);
+    expect(markerBandWidth(10_000, 45, 600)).toBe(MARKER_BAND_MAX);
+    expect(markerBandWidth(Number.NaN, 45, 600)).toBe(MARKER_BAND_MIN);
+  });
+
+  it('runs its band inside the outline, whichever way the ring winds', () => {
+    const ccw: Vec2[] = [[0, 0], [4, 0], [4, 3], [0, 3]];
+    const cw = [...ccw].reverse();
+    for (const ring of [ccw, cw]) {
+      const quads = bandQuads(ring, 0.5);
+      expect(quads).toHaveLength(16);
+      for (const [x, y] of quads) {
+        expect(x).toBeGreaterThanOrEqual(-1e-9);
+        expect(x).toBeLessThanOrEqual(4 + 1e-9);
+        expect(y).toBeGreaterThanOrEqual(-1e-9);
+        expect(y).toBeLessThanOrEqual(3 + 1e-9);
+      }
+    }
+    // The first edge of the counter-clockwise ring, (0,0)→(4,0): its band reaches 0.5 m in, to y = 0.5.
+    expect(bandQuads(ccw, 0.5).slice(0, 4)).toEqual([[0, 0], [4, 0], [4, 0.5], [0, 0.5]]);
+    // A zero-length edge (a repeated vertex) adds nothing.
+    expect(bandQuads([[0, 0], [0, 0], [4, 0], [4, 3]], 0.5)).toHaveLength(12);
+  });
+});
+
+describe('Plan pose (controls/tween.ts planFrame)', () => {
+  const project = (point: number[], pose: ReturnType<typeof blankPose>, vfovDeg: number, aspect: number) => {
+    // A pinhole camera at the pose looking at its target (Y up), in NDC.
+    const eye = positionFromOrbit(pose);
+    const f = [pose.target[0] - eye[0], pose.target[1] - eye[1], pose.target[2] - eye[2]];
+    const fl = Math.hypot(f[0], f[1], f[2]);
+    const fw = f.map((v) => v / fl);
+    const r = [fw[1] * 0 - fw[2] * 1, fw[2] * 0 - fw[0] * 0, fw[0] * 1 - fw[1] * 0];
+    const rl = Math.hypot(r[0], r[1], r[2]);
+    const rt = r.map((v) => v / rl);
+    const up = [rt[1] * fw[2] - rt[2] * fw[1], rt[2] * fw[0] - rt[0] * fw[2], rt[0] * fw[1] - rt[1] * fw[0]];
+    const d = [point[0] - eye[0], point[1] - eye[1], point[2] - eye[2]];
+    const z = d[0] * fw[0] + d[1] * fw[1] + d[2] * fw[2];
+    const t = Math.tan(((vfovDeg / 2) * Math.PI) / 180);
+    return [(d[0] * rt[0] + d[1] * rt[1] + d[2] * rt[2]) / (z * t * aspect), (d[0] * up[0] + d[1] * up[1] + d[2] * up[2]) / (z * t)];
+  };
+
+  it('aims at the outline’s middle on the storey’s floor and keeps the whole storey in frame from any azimuth', () => {
+    // Blk 509's estate-frame box, roughly: 120 × 20 m.
+    const bounds: [number[], number[]] = [[100, 200, 0], [220, 220, 49]];
+    for (const aspect of [4 / 3, 16 / 9, 0.9]) {
+      for (let k = 0; k < 8; k += 1) {
+        const current = { ...blankPose(), azimuth: (k * Math.PI) / 4 };
+        const pose = planFrame(bounds, 12, PLAN_POLAR, current, 45, aspect);
+        expect(pose.target).toEqual([160, 12, -210]);
+        expect(pose.polar).toBeCloseTo(PLAN_POLAR, 12);
+        expect(pose.azimuth).toBe(current.azimuth);
+        expect(pose.distance).toBeGreaterThanOrEqual(ORBIT_LIMITS.minDistance);
+        for (const [x, y] of [[100, 200], [220, 200], [220, 220], [100, 220]]) {
+          const [u, v] = project([x, 12, -y], pose, 45, aspect);
+          expect(Math.abs(u), `corner ${x},${y} at ${aspect}`).toBeLessThanOrEqual(PLAN_FILL + 1e-6);
+          expect(Math.abs(v), `corner ${x},${y} at ${aspect}`).toBeLessThanOrEqual(PLAN_FILL + 1e-6);
+        }
+      }
+    }
+  });
+});
+
+const root = fileURLToPath(new URL('..', import.meta.url));
+const packDir = join(root, 'public', 'estate', 'v1.2');
+const packFile = existsSync(packDir) ? readdirSync(packDir).find((f) => /^pack\.[0-9a-f]{8}\.json$/.test(f)) : undefined;
+const pack = packFile ? parsePack(JSON.parse(readFileSync(join(packDir, packFile), 'utf8'))) : null;
+const hasData = pack !== null && pack.sites.every((s) => s.nav && s.walk);
+
+describe.skipIf(!hasData)('walking in from Plan on the pack in public/estate/v1.2', () => {
+  const read = (rel: string) => gunzipSync(readFileSync(join(packDir, ...rel.split('/'))));
+
+  it('finds a floor to stand on, on the storey shown and inside the room, for every room but a closed substation', () => {
+    const misses: string[] = [];
+    const outside: string[] = [];
+    const layers: string[] = [];
+    let rooms = 0;
+    for (const site of pack!.sites) {
+      const nav = parseNav(JSON.parse(read(site.nav!.path).toString('utf8')), site.id);
+      const walk = decodeWalk(read(site.walk!.path), site.id);
+      expect(nav.storeys.map((s) => s.tag)).toEqual(ESTATE_SITE_STOREYS[site.id]);
+      nav.rooms.forEach((list, s) => {
+        for (const r of list) {
+          rooms += 1;
+          const pose: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
+          if (!walkInPoint(walk, r, nav.storeys[s].ffl, s, pose)) {
+            misses.push(`${site.id} ${r.name}`);
+            continue;
+          }
+          // On the storey the plan showed: a stair room's middle is a tread of the flight
+          // coming up from below, so walkInPoint looks for the room's own landing.
+          if (pose.layer !== s) layers.push(`${site.id} ${r.name} → ${nav.storeys[pose.layer]?.tag}`);
+          if (roomAt(nav, s, pose.x, pose.y) !== r) outside.push(`${site.id} ${r.name}`);
+        }
+      });
+    }
+    expect(rooms).toBeGreaterThan(15_000);
+    // Measured on the v1.2 pack (rc2 through the release; nav unchanged): 15,234 rooms; the one with no floor is a closed room.
+    expect(misses).toEqual(['BLK_505 L1-AM2']);
+    expect(layers).toEqual([]);
+    expect(outside).toEqual([]);
+  });
+
+  it('names the room list’s groups by what they hold: stalls, shops and lots apart from the common areas', () => {
+    const groupsOf = (id: (typeof ESTATE_SITE_IDS)[number], tag: string) => {
+      const site = pack!.sites[ESTATE_SITE_IDS.indexOf(id)];
+      const nav = parseNav(JSON.parse(read(site.nav!.path).toString('utf8')), site.id);
+      return roomGroups(nav.rooms[nav.storeys.findIndex((st) => st.tag === tag)]).map((g) => `${g.name} ×${g.rooms.length}`);
+    };
+    expect(groupsOf('NC_514', 'L1')).toEqual(['Hawker stalls ×48', 'Shop units ×10', 'Common areas ×18']);
+    expect(groupsOf('NC_514', 'L2')).toEqual(['Shop units ×10', 'Common areas ×4']);
+    expect(groupsOf('MSCP_513', 'L3')).toEqual(['Car lots ×126', 'Common areas ×14', 'Motorcycle lots ×51']);
+    const blk509 = groupsOf('BLK_509', 'L5');
+    expect(blk509.slice(-1)).toEqual(['Common areas ×9']);
+    expect(blk509.slice(0, -1).every((g) => /^#05-1\d\d ×\d+$/.test(g))).toBe(true);
+  });
+
+  it('lands in each of Blk 509 L5’s 105 rooms, on L5', () => {
+    const site = pack!.sites[ESTATE_SITE_IDS.indexOf('BLK_509')];
+    const nav = parseNav(JSON.parse(read(site.nav!.path).toString('utf8')), site.id);
+    const walk = decodeWalk(read(site.walk!.path), site.id);
+    const s = nav.storeys.findIndex((st) => st.tag === 'L5');
+    expect(nav.rooms[s].length).toBe(105);
+    for (const r of nav.rooms[s]) {
+      const pose: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
+      expect(walkInPoint(walk, r, nav.storeys[s].ffl, s, pose), r.name).toBe(true);
+      expect(pose.layer, r.name).toBe(s);
+      expect(roomAt(nav, s, pose.x, pose.y)?.name, r.name).toBe(r.name);
+    }
+  });
+  it('walks in facing the outside wall where a heading meets it: #05-105’s living room faces its windows from any plan heading', () => {
+    const site = pack!.sites[ESTATE_SITE_IDS.indexOf('BLK_509')];
+    const nav = parseNav(JSON.parse(read(site.nav!.path).toString('utf8')), site.id);
+    const walk = decodeWalk(read(site.walk!.path), site.id);
+    const s = nav.storeys.findIndex((st) => st.tag === 'L5');
+    const outline = flatRing(site.footprint);
+    const living = nav.rooms[s].find((r) => r.flat === '#05-105' && r.label === 'Living / Dining')!;
+    expect(living).toBeDefined();
+    const pose: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
+    expect(walkInPoint(walk, living, nav.storeys[s].ffl, s, pose)).toBe(true);
+    const ring = flatRing(living.poly);
+    const facing = (yaw: number) => meetsFacade(outline, pose, yaw, roomSightline(walk, ring, pose, yaw));
+    for (let k = 0; k < 8; k += 1) {
+      const planYaw = -Math.PI + (k + 0.5) * (Math.PI / 4);
+      const yaw = walkInYaw(walk, living, pose, planYaw, site.footprint);
+      expect(yaw, `plan heading ${k}`).toBeGreaterThan(-Math.PI);
+      expect(yaw, `plan heading ${k}`).toBeLessThanOrEqual(Math.PI);
+      expect(facing(yaw), `plan heading ${k}`).toBe(true);
+      // Its windows are in the block's north face (+y): the heading is within 45° of north.
+      expect(Math.abs(yaw), `plan heading ${k}`).toBeLessThanOrEqual(Math.PI / 4 + 1e-9);
+    }
+    // What the reviewer met: from the plan's southward heading, the longest run alone faces a blank wall.
+    expect(facing(walkInYaw(walk, living, pose, Math.PI))).toBe(false);
+    // A landing outside its room keeps the plan's heading.
+    expect(walkInYaw(walk, living, { ...pose, x: pose.x + 50 }, 0.3, site.footprint)).toBeCloseTo(0.3, 12);
+    // Every Blk 509 L5 room with an outside wall in reach of one of the headings tried faces one.
+    let rooms = 0;
+    let outside = 0;
+    for (const r of nav.rooms[s]) {
+      const at: WalkPose = { x: 0, y: 0, z: 0, layer: -1 };
+      walkInPoint(walk, r, nav.storeys[s].ffl, s, at);
+      const rRing = flatRing(r.poly);
+      const turn = (2 * Math.PI) / WALK_IN_HEADINGS;
+      const any = Array.from({ length: WALK_IN_HEADINGS }, (_, i) => i * turn)
+        .some((yaw) => meetsFacade(outline, at, yaw, roomSightline(walk, rRing, at, yaw)));
+      const yaw = walkInYaw(walk, r, at, 0, site.footprint);
+      rooms += 1;
+      if (any) outside += 1;
+      expect(meetsFacade(outline, at, yaw, roomSightline(walk, rRing, at, yaw)), r.name + ' ' + r.label).toBe(any);
+    }
+    expect(rooms).toBe(105);
+    expect(outside).toBeGreaterThan(50);
+  });
+});

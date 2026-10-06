@@ -6,9 +6,10 @@ import { EDGE_SLOT, GLASS_INTERIOR_SLOT, GLASS_SLOT, slotOf } from './palette.mj
 import { featureEdges } from './pure/edges.mjs';
 import { det3, multiply, openPoseYup, orientClosedSolids, surfaceErrorP90 } from './pure/geom.mjs';
 import { facePanelFromRooms, facePanelOut, mergePanels, midPlanePanel, openingPanel, panelCorners, panelsNearSoup, pushPanel } from './pure/panels.mjs';
+import { standInSoup } from './pure/proxy.mjs';
 import { Soup, concatSoups } from './pure/soup.mjs';
 import { bandIndex, canonicalTag, storeyList } from './pure/storeys.mjs';
-import { instanceStorey, tagByChunks } from './pure/tag.mjs';
+import { instanceStorey, majorityOwner, maskCoverage, tagByChunks } from './pure/tag.mjs';
 import { countKeys, exactSplitProblem, soupKeys, splitTypical } from './pure/trikeys.mjs';
 
 /** T's storey byte: T is drawn once per typical storey, so it belongs to none. */
@@ -30,18 +31,6 @@ const dominantSlot = (mesh) => {
     if (n > most) { most = n; best = prim.getMaterial()?.getName() ?? ''; }
   }
   return slotOf(best);
-};
-
-// A 12-triangle box over a local [min, max], outward-wound.
-const boxSoup = ([lo, hi], slot) => {
-  const s = new Soup(12);
-  const v = (i) => [i & 1 ? hi[0] : lo[0], i & 2 ? hi[1] : lo[1], i & 4 ? hi[2] : lo[2]];
-  const quads = [[0, 2, 3, 1], [4, 5, 7, 6], [0, 1, 5, 4], [2, 6, 7, 3], [0, 4, 6, 2], [1, 3, 7, 5]];
-  for (const [a, b, c, d] of quads) {
-    s.push(...v(a), ...v(b), ...v(c), slot, 0);
-    s.push(...v(a), ...v(c), ...v(d), slot, 0);
-  }
-  return s;
 };
 
 const splitGlass = (soup) => {
@@ -167,11 +156,13 @@ export const buildInterior = async (a, budgets) => {
     if (!kits.has(f.kit)) {
       const soup = meshSoup(f.mesh, {});
       const { opaque, glass } = splitGlass(soup);
-      const box = meshBox(f.mesh);
+      // The stand-in beyond the furniture radius follows the kit's height
+      // profile (pure/proxy.mjs): a tile top over a steel pedestal, not a crate.
+      const standIn = standInSoup(soup, { skip: (slot) => slot === GLASS_SLOT });
       kits.set(f.kit, {
         mesh: buildMesh(ctx, `furniture_${f.kit}`, opaque, glass),
-        proxy: buildMesh(ctx, `proxy_${f.kit}`, boxSoup(box, dominantSlot(f.mesh))),
-        tris: soup.count, instances: 0, source: f.mesh,
+        proxy: buildMesh(ctx, `proxy_${f.kit}`, standIn),
+        tris: soup.count, proxyTris: standIn.count, instances: 0, source: f.mesh,
       });
     } else if (kits.get(f.kit).source !== f.mesh) {
       throw new Error(`${id}: two different furniture meshes share the kit name ${f.kit}`);
@@ -219,11 +210,13 @@ export const buildInterior = async (a, budgets) => {
   return {
     ctx,
     batches,
+    // The built T (relative to its floor) and R, for the seam audit on the decoded file (quantcheck.mjs seamGaps).
+    built: { t: tSoup, r: rSoup },
     stats: {
       typicalTris: tSoup.count,
       residualTris: rSoup.count,
       specials,
-      furniture: [...kits].map(([kit, k]) => ({ kit, instances: k.instances, tris: k.tris, proxyTris: 12 })),
+      furniture: [...kits].map(([kit, k]) => ({ kit, instances: k.instances, tris: k.tris, proxyTris: k.proxyTris })),
       sourceTris, drawnTris,
       typical: split.typical.map((s) => storeys[s].tag),
       shares: Object.fromEntries(split.typical.map((s) => [storeys[s].tag, Number(split.shares.get(s).toFixed(4))])),
@@ -249,8 +242,8 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
   const tagged = tagByChunks(shell, ffls, chunkCounts);
 
   // Panels and the D soup they are checked against.
-  const panels = []; const panelSlots = []; const panelDoors = []; const dSoup = new Soup(65536);
-  let undecided = 0; let byRooms = 0; let byFootprint = 0; let doubleSided = 0; let doorFallback = 0; let mismatch = 0;
+  const panels = []; const panelSlots = []; const panelBacks = []; const dSoup = new Soup(65536);
+  let undecided = 0; let byRooms = 0; let byFootprint = 0; let doors = 0; let doorFallback = 0; let mismatch = 0;
   const fallbackNames = [];
   const roomsByStorey = new Map();
   for (const room of engineRooms) {
@@ -264,13 +257,16 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
     const matrix = node.getWorldMatrix();
     if (det3(matrix) < 0) throw new Error(`${id}: ${node.getName()} has ${MIRROR}; D cannot instance it without inverting its faces`);
     const mesh = node.getMesh();
-    let panel; let slot;
+    let panel; let slot; let backSlot;
+    // The opening's D kit where it stands: checked against the panels, and
+    // voted on by the chunks, whose storey its panel and instance must carry.
+    const kitSoup = new Soup(64);
     if (cls === 'l1win') {
       const glass = meshBox(mesh, (m) => m === 'Glass');
       if (!glass) throw new Error(`${id}: window ${node.getName()} has no Glass primitive`);
       panel = openingPanel(glass, meshBox(mesh), matrix);
-      slot = GLASS_SLOT;
-      bakeMesh(mesh, matrix, dSoup, { skip: (m) => m === 'Glass' });
+      slot = GLASS_SLOT; backSlot = GLASS_INTERIOR_SLOT;
+      bakeMesh(mesh, matrix, kitSoup, { skip: (m) => m === 'Glass' });
     } else {
       const leaves = leafBoxes.get(node.getExtras()?.guid);
       if (leaves && leaves.length) {
@@ -280,15 +276,22 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
         panel = midPlanePanel(box[0], box[1], matrix);
         doorFallback += 1;
       }
-      slot = dominantSlot(mesh);
-      bakeMesh(mesh, matrix, dSoup);
+      slot = dominantSlot(mesh); backSlot = slot;
+      bakeMesh(mesh, matrix, kitSoup);
     }
-    // A door panel is drawn from both sides: the room probe cannot tell a lift
+    dSoup.append(kitSoup);
+    // Every panel is drawn from both sides (pushPanel's back pair): the runtime
+    // draws F with one front-faces-only material, so a one-sided pane was a hole
+    // from indoors whenever F stood whole around the camera (an interior still
+    // streaming, lean mode, Fly through a block) or showed past the band's edge.
+    // Which side is the front still matters for the colour: a window's front
+    // faces out of its flat and is façade glass, its back is the interior glass
+    // slot, the colour the interior's own pane takes when the mask hands over.
+    // A door is its own slot both ways: the room probe cannot tell a lift
     // landing door from the shaft behind it (the shaft is no room), nor a stair
-    // discharge door from the car park it opens on, and every L1 lift door
-    // faced into its shaft until it was. A window faces out of its flat.
+    // discharge door from the car park it opens on, so a door is not faced.
     let out = { panel };
-    if (cls === 'l1door') doubleSided += 1;
+    if (cls === 'l1door') doors += 1;
     else {
       const roomsHere = roomsByStorey.get(bandIndex(ffls, Math.min(...panelCorners(panel).map((c) => c[1])))) ?? [];
       out = facePanelFromRooms(panel, roomsHere);
@@ -299,31 +302,56 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
         fallbackNames.push(node.getName().replace(/_[0-9A-Za-z_$]{22}$/, ''));
       }
     }
-    panels.push(out.panel); panelSlots.push(slot); panelDoors.push(cls === 'l1door');
+    panels.push(out.panel); panelSlots.push(slot); panelBacks.push(backSlot);
     const storey = instanceStorey(ffls, matrix[13]);
-    placements.push({ node, cls, matrix, storey });
+    placements.push({ node, cls, matrix, storey, owner: majorityOwner(kitSoup, ffls, chunkCounts) });
   }
   const near = panelsNearSoup(panels, dSoup);
   if (near.length) throw new Error(`${id}: ${near.length}+ façade panels lie within 2 mm of a D face (first: panel ${near[0].panel})`);
   if (byFootprint || undecided) {
     const named = `${fallbackNames.slice(0, 6).join(', ')}${fallbackNames.length > 6 ? ', …' : ''}`;
-    warn(`${id}: ${byFootprint + undecided} of ${panels.length - doubleSided} window panels were faced by a fallback, not by the rooms either side (${byFootprint} by the footprint probe, ${undecided} away from the footprint centroid): ${named}`);
+    warn(`${id}: ${byFootprint + undecided} of ${panels.length - doors} window panels were faced by a fallback, not by the rooms either side (${byFootprint} by the footprint probe, ${undecided} away from the footprint centroid): ${named}`);
   }
   if (doorFallback) warn(`${id}: ${doorFallback} exterior doors had no leaf in any chunk; their panel sits on the door's own mid-plane`);
 
   const fSoup = new Soup(shell.count + panels.length * 4);
   fSoup.append(shell);
-  panels.forEach((p, i) => {
+  const panelStoreys = panels.map((p, i) => {
     const first = fSoup.count;
-    const added = pushPanel(fSoup, p, panelSlots[i], 0, { doubleSided: panelDoors[i] });
-    // F's rule for a panel: the band of its lowest point. It must agree with its D instance's.
+    const added = pushPanel(fSoup, p, panelSlots[i], 0, { doubleSided: true, backSlot: panelBacks[i] });
+    // F's rule for a panel: the band of its lowest point. The mask check below
+    // holds it to the storey of the chunk that holds its opening.
     let low = Infinity;
     for (let t = first; t < first + added; t += 1) low = Math.min(low, fSoup.minY(t));
     const s = bandIndex(ffls, low);
     for (let t = first; t < first + added; t += 1) fSoup.storey[t] = s;
-    if (s !== placements[i].storey) mismatch += 1;
+    if (placements[i].owner < 0 && s !== placements[i].storey) mismatch += 1;
+    return s;
   });
-  if (mismatch) warn(`${id}: ${mismatch} panels' z-min band differs from their D instance's translation band`);
+  if (mismatch) warn(`${id}: ${mismatch} panels of openings no chunk holds have a z-min band other than their D instance's translation band`);
+
+  // The façade mask (§7.5) over every band the runtime can show: a surface the
+  // interior also draws — a shell triangle, a panel's opening, a D instance —
+  // must be drawn by exactly one of the interior and F/D at every storey and
+  // every band half-width (the tiers' bandK, and peeking's 1). The shell takes
+  // its chunk's storey by construction (tagByChunks); a panel's z-min band and
+  // an instance's translation band are rules that merely agree with the chunk
+  // today, so this is where a disagreement would stop the run.
+  const n = ffls.length;
+  const owners = new Int16Array(shell.count + 2 * placements.length);
+  const tags = new Int16Array(owners.length);
+  owners.set(tagged.owner); tags.set(shell.storey.subarray(0, shell.count));
+  placements.forEach((p, i) => {
+    owners[shell.count + 2 * i] = p.owner; tags[shell.count + 2 * i] = panelStoreys[i];
+    owners[shell.count + 2 * i + 1] = p.owner; tags[shell.count + 2 * i + 1] = p.storey;
+  });
+  const ks = [...new Set([1, ...(budgets.tiers ?? [{ bandK: 2 }]).map((t) => t.bandK)])].sort((x, y) => x - y);
+  const mask = maskCoverage(owners, tags, n, ks);
+  if (mask.holes || mask.doubles) {
+    const { surface, storey, k, lo, hi } = mask.first;
+    const what = surface < shell.count ? `shell triangle ${surface}` : `${(surface - shell.count) % 2 ? 'D instance' : 'panel'} of ${placements[Math.floor((surface - shell.count) / 2)].node.getName()}`;
+    throw new Error(`${id}: the façade mask would misapply: ${mask.holes} surfaces hidden by F and not drawn by the interior, ${mask.doubles} drawn by both, over ${mask.bands} bands (first: ${what}, tagged ${a.storeys[tags[surface]].tag}, held by ${a.storeys[owners[surface]].tag}'s chunk, at ${a.storeys[storey].tag} k = ${k}, band ${a.storeys[lo].tag}–${a.storeys[hi].tag})`);
+  }
 
   const edges = featureEdges(shell, { max: 6000 });
   const lines = { count: edges.length, pos: new Float64Array(edges.length * 6), slot: new Uint8Array(edges.length), storey: new Uint8Array(edges.length) };
@@ -354,7 +382,7 @@ export const buildExterior = async (a, lod1, footprintRings, engineRooms, budget
   const dDrawn = [...kits.values()].reduce((n, k) => n + k.tris * k.instances, 0);
 
   return {
-    facade: { ctx: f, soup: fSoup, tris: fSoup.count, shellTris: shell.count, panels: panels.length, panelList: panels, facing: { byRooms, byFootprint, undecided, doubleSided }, edges: edges.length, exactMatched: tagged.exactMatched, banded: tagged.banded, shell },
+    facade: { ctx: f, soup: fSoup, tris: fSoup.count, shellTris: shell.count, panels: panels.length, panelList: panels, facing: { byRooms, byFootprint, undecided, doors }, edges: edges.length, exactMatched: tagged.exactMatched, banded: tagged.banded, offBand: tagged.offBand, mask: { bands: mask.bands, ks, holes: mask.holes, doubles: mask.doubles, opened: mask.opened }, shell },
     detail: { ctx: d, batches: dBatches, kits: kits.size, instances: placements.length, drawnTris: dDrawn, storedTris: [...kits.values()].reduce((n, k) => n + k.tris, 0), soup: dSoup },
   };
 };

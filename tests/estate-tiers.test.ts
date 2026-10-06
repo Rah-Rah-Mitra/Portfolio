@@ -33,7 +33,7 @@ describe('tier table', () => {
     expect(column('maxTris')).toEqual([1_200_000, 800_000, 450_000, 300_000]);
     expect(column('maxDraws')).toEqual([150, 120, 90, 60]);
     expect(column('bandK')).toEqual([2, 1, 1, 1]);
-    expect(column('treeRadiusM')).toEqual([80, 60, 30, 0]);
+    expect(column('treeRadiusM')).toEqual([80, 60, 30, 15]);
     expect(column('furnitureRadiusM')).toEqual([25, 15, 8, 5]);
     expect(column('edges')).toEqual([true, true, false, false]);
     expect(column('pixelCap')).toEqual([2_000_000, 1_400_000, 1_000_000, 700_000]);

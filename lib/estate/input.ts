@@ -66,14 +66,18 @@ export type EscapeKeyInput = Pick<EstateKeyInput, 'code' | 'targetKind' | 'repea
 
 /**
  * Continuous actions: on from keydown to keyup (or a release-all), tracked by
- * HeldKeys. tilt and rotate are Overview's (rotate also Plan's); turn is Walk's
- * 90°/s and Fly's; up and down are Fly's; storey-up/-down is Walk's PgUp/PgDn,
- * which takes the offered stair or lift and, for stairs, keeps climbing storey
- * by storey while held; boost is Shift (Walk 1.6 → 4.0 m/s, Fly ×3).
+ * HeldKeys. tilt, rotate and pan are Overview's (rotate also Plan's); turn is
+ * Walk's 90°/s and Fly's; up, down and look-up/-down are Fly's; storey-up/-down
+ * is Walk's PgUp/PgDn, which takes the offered stair or lift and, for stairs,
+ * keeps climbing storey by storey while held; boost is Shift (Walk 1.6 → 4.0
+ * m/s, Fly ×3). Pan and look are additions to §8.2's table: without them a
+ * keyboard could not pan the overview or look down at a building in Fly
+ * (§8.7, every pointer action has a keyboard or button equivalent).
  */
 export const HOLD_ACTIONS = [
   'forward', 'back', 'strafe-left', 'strafe-right', 'turn-left', 'turn-right', 'up', 'down',
   'tilt-up', 'tilt-down', 'rotate-left', 'rotate-right', 'storey-up', 'storey-down', 'boost',
+  'pan-left', 'pan-right', 'pan-ahead', 'pan-back', 'look-up', 'look-down',
 ] as const;
 export type HoldAction = (typeof HOLD_ACTIONS)[number];
 
@@ -92,7 +96,7 @@ export type StageAction =
   | { readonly kind: 'cut'; readonly step: Step }
   /** Enter. Overview: fly to, then enter, the selected building; Plan: walk into the picked room; Walk: use the offered lift or stair. */
   | { readonly kind: 'activate' }
-  /** Home in Overview and Plan: the aerial view. */
+  /** Home in Overview, Plan and Fly: the aerial view (Fly returns to Overview for it, as the HUD's Home does). */
   | { readonly kind: 'aerial' }
   /** Home in Walk: back to the spawn. */
   | { readonly kind: 'respawn' }
@@ -154,9 +158,17 @@ const table = (...groups: Array<Array<[string, Entry]>>): ReadonlyMap<string, En
 // Plan §8.2, column by column. A code missing from a mode is that mode's '—'.
 // The table's "Overview / Plan" column lists `[` / `]`, but the cut they move is
 // a Plan-only uniform (§7.3), so in Overview they are not ours and pass.
+// An entry keyed 'Shift+<code>' wins over '<code>' while Shift is down: in
+// Overview Shift turns the arrows (and W/S) into pans, as it turns a drag into
+// one. Walk and Fly have none, so there Shift stays the boost.
+const SHIFTED = 'Shift+';
 const TABLES: Readonly<Record<EstateViewMode, ReadonlyMap<string, Entry>>> = {
   overview: table(EVERY_MODE, ENTER, ROTATE, [
     ['KeyW', hold('tilt-up')], ['ArrowUp', hold('tilt-up')], ['KeyS', hold('tilt-down')], ['ArrowDown', hold('tilt-down')],
+    ['KeyA', hold('pan-left')], ['KeyD', hold('pan-right')],
+    [`${SHIFTED}ArrowUp`, hold('pan-ahead')], [`${SHIFTED}KeyW`, hold('pan-ahead')],
+    [`${SHIFTED}ArrowDown`, hold('pan-back')], [`${SHIFTED}KeyS`, hold('pan-back')],
+    [`${SHIFTED}ArrowLeft`, hold('pan-left')], [`${SHIFTED}ArrowRight`, hold('pan-right')],
     ['Home', AERIAL],
   ]),
   plan: table(EVERY_MODE, CUT, ENTER, ROTATE, [
@@ -173,8 +185,12 @@ const TABLES: Readonly<Record<EstateViewMode, ReadonlyMap<string, Entry>>> = {
   // the common fly convention (Space rises, C crouches). Read pairwise, the
   // table would make Space down and C up; Rahul confirms which, and #estate-keys
   // states it.
+  // R and F look up and down (an addition to §8.2: the only way to pitch Fly
+  // from the keyboard), and Home leaves for the aerial view as the HUD's Home does.
   fly: table(EVERY_MODE, GROUND, [
     ['KeyQ', hold('down')], ['KeyC', hold('down')], ['KeyE', hold('up')], ['Space', hold('up')],
+    ['KeyR', hold('look-up')], ['KeyF', hold('look-down')],
+    ['Home', AERIAL],
   ]),
 };
 
@@ -185,9 +201,9 @@ const SCROLL_KEYS: ReadonlySet<string> = new Set([
   'Space', 'PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
 ]);
 
-/** Every code some mode handles, for tests and the #estate-keys list. */
+/** Every code some mode handles, for tests and the #estate-keys list (Shift chords as their plain code). */
 export const STAGE_KEY_CODES: readonly string[] = Object.freeze(
-  [...new Set(Object.values(TABLES).flatMap((t) => [...t.keys()]))].sort(),
+  [...new Set(Object.values(TABLES).flatMap((t) => [...t.keys()]).map((k) => (k.startsWith(SHIFTED) ? k.slice(SHIFTED.length) : k)))].sort(),
 );
 
 /**
@@ -203,8 +219,10 @@ export const stageKey = (input: StageKeyInput): KeyDecision => {
   if (code === 'Tab' || code === 'Escape') return PASS;
   const mods = input.modifiers;
   if (mods !== undefined && (mods.ctrl === true || mods.alt === true || mods.meta === true)) return PASS;
-  const entry = TABLES[input.mode].get(code);
+  const modeTable = TABLES[input.mode];
+  const entry = (mods?.shift === true ? modeTable.get(SHIFTED + code) : undefined) ?? modeTable.get(code);
   if (entry === undefined) return SCROLL_KEYS.has(code) ? SWALLOW : PASS;
+
   const { action } = entry.decision;
   if (action !== null && action.kind === 'mode' && action.mode === input.mode) return SWALLOW;
   if (input.repeat === true && entry.once) return SWALLOW;

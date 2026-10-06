@@ -10,7 +10,7 @@ describe('workbench app registry', () => {
       ['project-archive', 'Project Archive'],
       ['systems-lab', 'Systems Lab'],
       ['camera-lab', 'Camera Lab'],
-      ['world-3d', '3D World'],
+      ['world-3d', 'Estate'],
       ['capabilities', 'Capabilities'],
       ['proof-vault', 'Proof Vault'],
       ['resumes-contact', 'Resumes & Contact'],

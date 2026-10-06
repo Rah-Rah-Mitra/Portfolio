@@ -204,6 +204,59 @@ test.describe('field workbench — desktop', () => {
     }
     expect(errors).toEqual([]);
   });
+
+  // The Estate window's shell (WIN-07). Reduced motion holds the 3D view behind
+  // its consent button (allowHeavyAssets is false), so what runs here is only the
+  // prerendered poster, the side panel and the load policy: no engine chunk and
+  // no WebGL, which tests/e2e/estate.spec.ts covers in its own project.
+  for (const size of [{ width: 1280, height: 720 }, { width: 881, height: 700 }]) {
+    test(`estate window opens on its still render, accessible, with the licence in reach (${size.width}×${size.height})`, async ({ page }) => {
+      test.setTimeout(60_000);
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+      const estate: string[] = [];
+      page.on('request', (request) => {
+        const path = new URL(request.url()).pathname;
+        if (path.startsWith('/estate/')) estate.push(path);
+      });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.setViewportSize(size);
+
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+      expect(estate, 'nothing from /estate/ before the window opens').toEqual([]);
+
+      await page.getByRole('navigation', { name: 'Tool rail' }).getByRole('button', { name: 'Open Estate' }).click();
+      const win = page.getByRole('dialog', { name: 'Estate' });
+      await expect(win).toBeVisible();
+      const poster = win.locator('[data-estate-stage] img');
+      await expect.poll(() => poster.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+      await expect(win.locator('#world')).toHaveAttribute('data-estate-phase', 'consent');
+      await expect(win.getByRole('button', { name: /^Load the 3D estate · \d+\.\d MB$/ })).toBeVisible();
+      await expect(win.locator('[data-estate-site]')).toHaveCount(14);
+      expect(await win.locator('canvas').count()).toBe(0);
+      expect(estate.length).toBeGreaterThan(0);
+      expect(estate.filter((path) => !/^\/estate\/v\d+\.\d+\/poster\//.test(path)), 'only the poster until Load').toEqual([]);
+
+      // The sheet does not scroll; the side panel does, and its end is reachable.
+      const side = win.locator('.wb-estate-side');
+      await side.evaluate((node) => { node.scrollTop = node.scrollHeight; });
+      for (const target of [win.locator('[data-estate-credit]'), win.getByRole('link', { name: 'CC BY 4.0' })]) {
+        const inside = await target.evaluate((node) => {
+          const box = node.getBoundingClientRect();
+          const clip = node.closest('.wb-estate-side')!.getBoundingClientRect();
+          return box.height > 0 && box.top >= clip.top - 1 && box.bottom <= clip.bottom + 1 && box.left >= clip.left - 1 && box.right <= clip.right + 1;
+        });
+        expect(inside).toBe(true);
+      }
+      await expect(win.getByRole('link', { name: 'CC BY 4.0' })).toHaveAttribute('href', '/estate/LICENSE.txt');
+
+      const results = await new AxeBuilder({ page }).include('[data-win="world-3d"]').analyze();
+      expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
+      expect(errors).toEqual([]);
+    });
+  }
 });
 
 test.describe('field index — mobile', () => {

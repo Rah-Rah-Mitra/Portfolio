@@ -50,8 +50,9 @@ describe('portfolio experience mode', () => {
   });
 
   it('no longer probes WebGL or writes ?mode= into the URL', async () => {
-    // The probe guarded a WebGL world the site no longer ships; the fluid backdrop
-    // checks WebGL2 itself. Writing ?mode=scan rewrote Save-Data visitors' URLs
+    // The probe guarded a WebGL world the site no longer ships; the desk backdrops
+    // and the Estate window check WebGL2 themselves, and the Estate's engine picks
+    // its tier from the renderer in its own lazy chunk, never here. Writing ?mode=scan rewrote Save-Data visitors' URLs
     // for a Quick Scan switch that no longer exists.
     const [library, context] = await Promise.all([
       readFile(new URL('../lib/experienceMode.ts', import.meta.url), 'utf8'),

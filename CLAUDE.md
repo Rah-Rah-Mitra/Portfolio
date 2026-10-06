@@ -198,7 +198,14 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        `?estate-quality=high|mid|low|min`. On a lost context the engine reports
        `lost`/`restored` and the shell counts live resets; `dispose()` is the
        ordered teardown and emits nothing. F triangles and D instances carry
-       their storey (`_meta`, `_STOREY`.x) so P5's façade mask can hide a band.
+       their storey (`_meta`, `_STOREY`.x) so P5's façade mask can hide a band:
+       the storey of the interior chunk that holds the same surface, not the
+       band of its height — a stair's top riser and handrail belong to the
+       storey below, NC 514's hall roof to L1 — and the pack tool refuses any
+       tag under which the mask would hide a surface nothing draws or draw one
+       twice (`maskCoverage`; docs/portfolio/estate-pack.md "Façade storeys").
+       Never re-tag F by height. Every F panel is two-sided in the pack, so F's
+       one front-faces-only material still draws glass from indoors.
      - `engine/controls/`: Overview (camera-controls with its own wheel handler
        off; the stage's non-passive wheel dollies at the cursor, so the sheet
        never scrolls; A/D and Shift+arrows pan), Fly (WASD, E/Space up, Q/C
@@ -240,10 +247,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   (`desktopBackgroundPolicy` reason `yielded`, checked last, just before
   `running`).
   The pack (`public/estate/v1.2/`, raw-content-hashed immutable names; P4b loads
-  `poster`, `s0`, `f` and `d`) comes only from the pack tool (see the
+  `poster`, `s0`, `f` and `d`, P5 adds `i`, `w`, `nav` and `ground`) comes only from the pack tool (see the
   Bonsai-Estate section). Until the v1.2 release is published, the window runs on
-  the v1.2 candidate rc2 pack (`pack.fd986442.json`, `dev: false`, built from the
-  candidate zips) copied into `public/estate/v1.2/` and excluded in
+  the v1.2 candidate rc2 zips' pack as re-packed with P5's pack fixes (rc2b,
+  `pack.82695419.json`, `dev: false`) copied into `public/estate/v1.2/` and excluded in
   `.git/info/exclude` — never commit it — and the committed
   `catalogue.generated.ts` is generated from it; the pack is committed only from
   the published release (`estate:check --provenance` passes once upstream tags

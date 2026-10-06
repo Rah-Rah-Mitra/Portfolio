@@ -3,11 +3,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { ESTATE_SITE_IDS, normaliseStoreyTag } from '../lib/estate/ids';
+import { ESTATE_SITE_IDS, ESTATE_SITE_STOREYS, ESTATE_STOREY_FFL, normaliseStoreyTag } from '../lib/estate/ids';
 import { ESTATE_PALETTE, paletteSlot } from '../lib/estate/palette';
 import {
   ESTATE_PACK_CLASSES, ESTATE_PACK_EDITION, ESTATE_PACK_FRAME, ESTATE_PACK_SCHEMA, ESTATE_REPO, packPathProblem as schemaPathProblem, parsePack,
 } from '../lib/estate/schema';
+import { PEEK_K, TIER_BAND_K, inRange, siteStoreyTable, storeyBand } from '../lib/estate/storeys';
+import { ESTATE_TIERS } from '../lib/estate/tiers';
 import { decodeWalk } from '../lib/estate/walk';
 import { checkBudgets, checkPackDir, checkTokens, leakScanDir, loadBudgets } from '../scripts/estate/check.mjs';
 import { gzipDeterministic, sha256, writeHashed } from '../scripts/estate/lib/files.mjs';
@@ -23,7 +25,8 @@ import { leakInPayload, packPathProblem } from '../scripts/estate/lib/pure/paths
 import { Soup } from '../scripts/estate/lib/pure/soup.mjs';
 import { GROUND_NODATA, rasterGround, readGround, readWalkHeader, writeGround } from '../scripts/estate/lib/pure/sn5w.mjs';
 import { bandIndex, canonicalTag, storeyList } from '../scripts/estate/lib/pure/storeys.mjs';
-import { searchOrder, tagByChunks } from '../scripts/estate/lib/pure/tag.mjs';
+import { majorityOwner, maskCoverage, searchOrder, tagByChunks } from '../scripts/estate/lib/pure/tag.mjs';
+import { FAR_TREE_TRIS, farTreeSoup } from '../scripts/estate/lib/pure/trees.mjs';
 import { countKeys, exactSplitProblem, soupKeys, splitTypical } from '../scripts/estate/lib/pure/trikeys.mjs';
 
 // The pack tool's pure algorithms (plan §6.2; P2 in §10.2), on synthetic data.
@@ -197,7 +200,8 @@ describe('façade storey tags (step 6b)', () => {
     pushBox(f, [20, 6.3, 0], [21, 7, 1], 0); // matches nothing → band of z-min 6.3 → RF (index 2)
     const counts = [countKeys(soupKeys(chunk0, 0)), countKeys(soupKeys(chunk1, 3.6)), new Map()];
     const out = tagByChunks(f, ffls, counts);
-    expect(out).toEqual({ exactMatched: 24, banded: 12 });
+    expect(out).toMatchObject({ exactMatched: 24, banded: 12, offBand: 0 });
+    expect([...out.owner]).toEqual([...Array(12).fill(0), ...Array(12).fill(1), ...Array(12).fill(-1)]);
     expect([...f.storey.subarray(0, 12)].every((s) => s === 0)).toBe(true);
     expect([...f.storey.subarray(12, 24)].every((s) => s === 1)).toBe(true);
     expect([...f.storey.subarray(24, 36)].every((s) => s === 2)).toBe(true);
@@ -206,16 +210,159 @@ describe('façade storey tags (step 6b)', () => {
   it('searches every storey nearest the band first, so a double-height hall roof keeps the storey whose chunk holds it', () => {
     expect(searchOrder(2, 5)).toEqual([2, 1, 3, 0, 4]);
     expect(searchOrder(0, 3)).toEqual([0, 1, 2]);
-    // NC_514: L1 0, L2 4.2, RF 8.2. A canopy at 8.0–8.25 lies in RF's band but only
-    // L1's chunk holds it (the hall is double height); it was tagged RF before.
+    // NC_514: L1 0, L2 4.2, RF 8.2. The hall's roof deck at 8.0–8.25 lies in RF's band but
+    // only L1's chunk holds it (the hall is double height); it was tagged RF before.
     const ffls = [0, 4.2, 8.2];
     const chunk0 = new Soup(12);
-    pushBox(chunk0, [0, 8.0, 0], [6, 8.25, 4], 7, 0);
+    pushBox(chunk0, [0, 8.0, 0], [6, 8.25, 4], 27, 0);
     const f = new Soup(12);
-    pushBox(f, [0, 8.0, 0], [6, 8.25, 4], 7);
+    pushBox(f, [0, 8.0, 0], [6, 8.25, 4], 27);
     const out = tagByChunks(f, ffls, [countKeys(soupKeys(chunk0, 0)), new Map(), new Map()]);
-    expect(out).toEqual({ exactMatched: 12, banded: 0 });
+    expect(out).toMatchObject({ exactMatched: 12, banded: 0, offBand: 12 });
     expect([...f.storey.subarray(0, 12)].every((s) => s === 0)).toBe(true);
+    // Standing on the roof (band L2–RF) F draws it; under it (band L1–L2) the interior does.
+    const both = (tags: number[]) => maskCoverage(out.owner, Int16Array.from(tags), 3, [1, 2]);
+    expect(both([...f.storey.subarray(0, 12)])).toMatchObject({ bands: 6, holes: 0, doubles: 0 });
+    // Tagged RF by its height, it vanishes from the roof (S = RF, k = 1) and is drawn twice from L1 (k = 1).
+    expect(both(Array(12).fill(2))).toMatchObject({ holes: 12, doubles: 12 });
+  });
+
+  // BLK 509's stair cores as upstream exports them (measured on the v1.2 candidate
+  // rc2): an IfcStair and its railing sit in the storey they rise from, so the top
+  // riser (11.8–12.0 m for the L4→L5 flight; L5's FFL is 12.0) and the landing
+  // guard at L5 (11.775–13.0) are L4's, though they stand in L5's band. The LOD1
+  // shell (F) carries the same triangles, so the chunk match tags them L4.
+  const core509 = () => {
+    const ffls = ESTATE_STOREY_FFL.BLK_509;
+    const chunks = ffls.map(() => new Soup(64));
+    const f = new Soup(1024);
+    ffls.forEach((ffl, s) => {
+      const parts: Array<[number[], number[], number]> = [[[0, ffl - 0.2, 0], [2.6, ffl, 5.4], 4]]; // the floor landing
+      if (s + 1 < ffls.length) {
+        const next = ffls[s + 1];
+        parts.push([[0.2, next - 0.2, 0.2], [1.4, next, 0.48], 6]); // the top riser, in the next storey's band
+        parts.push([[1.4, next - 0.225, 0], [1.45, next + 1.0, 5.4], 7]); // the landing guard rail
+      }
+      for (const [lo, hi, slot] of parts) { pushBox(chunks[s], lo, hi, slot, s); pushBox(f, lo, hi, slot); }
+    });
+    const out = tagByChunks(f, ffls, chunks.map((c, s) => countKeys(soupKeys(c, ffls[s]))));
+    return { ffls, f, out };
+  };
+
+  it("keeps a stair's riser and handrail with the storey whose chunk holds them, though they stand in the next storey's band", () => {
+    const { ffls, f, out } = core509();
+    expect(out).toMatchObject({ exactMatched: f.count, banded: 0, offBand: (ffls.length - 1) * 24 });
+    const L4 = ESTATE_SITE_STOREYS.BLK_509.indexOf('L4');
+    // L4's guard rail (11.775–13.0 m) lies wholly in L5's band; its tag is L4.
+    const rail = Array.from({ length: f.count }, (_, i) => i).filter((i) => f.slot[i] === 7 && f.minY(i) > 11.77 && f.minY(i) < 13.01);
+    expect(rail).toHaveLength(12);
+    for (const i of rail) { expect(bandIndex(ffls, f.minY(i))).toBe(L4 + 1); expect(f.storey[i]).toBe(L4); }
+  });
+
+  it("is the only rule under which the façade mask draws every surface once, at every storey and every tier's k (the per-triangle storey-band check)", () => {
+    const { ffls, f, out } = core509();
+    const n = ffls.length;
+    const ks = [...new Set([PEEK_K, ...ESTATE_TIERS.map((t) => TIER_BAND_K[t])])].sort((x, y) => x - y);
+    expect(maskCoverage(out.owner, Int16Array.from(f.storey.subarray(0, f.count)), n, ks)).toEqual({ bands: n * ks.length, holes: 0, doubles: 0, opened: 0, first: null });
+    // The height rule: the riser and the rail are drawn twice under a band's
+    // ceiling (the interior draws the top storey's chunk, F their storey above)
+    // and vanish at its bottom (F hides them with the bottom storey, whose chunk
+    // does not hold them): 24 of each at every band clear of the building's ends.
+    const byHeight = Int16Array.from({ length: f.count }, (_, i) => bandIndex(ffls, f.minY(i)));
+    const bad = maskCoverage(out.owner, byHeight, n, ks);
+    const { surface, hi } = bad.first!;
+    expect([f.slot[surface], byHeight[surface], out.owner[surface]]).toEqual([6, hi + 1, hi]);
+    const L5 = ESTATE_SITE_STOREYS.BLK_509.indexOf('L5');
+    // The band k = 1 around L5 (L4–L6): L3's riser and rail hidden, L6's doubled.
+    const band = storeyBand(siteStoreyTable('BLK_509'), L5, 1);
+    let holes = 0; let doubles = 0;
+    for (let j = 0; j < f.count; j += 1) {
+      const drawn = (inRange(band, out.owner[j]) ? 1 : 0) + (inRange(band, byHeight[j]) ? 0 : 1);
+      if (drawn === 0) holes += 1; else if (drawn === 2) doubles += 1;
+    }
+    expect([holes, doubles]).toEqual([24, 24]);
+    expect([bad.holes, bad.doubles].every((x) => x > 0)).toBe(true);
+  });
+
+  it('bands the mask as lib/estate/storeys.ts does, on every building and k', () => {
+    for (const id of ESTATE_SITE_IDS) {
+      const table = siteStoreyTable(id);
+      const n = table.ffl.length;
+      for (const k of [1, 2, 3]) {
+        // One surface per (owner, tag) pair, and the faults storeyBand gives for them.
+        const owner: number[] = []; const tag: number[] = [];
+        let holes = 0; let doubles = 0;
+        for (let o = 0; o < n; o += 1) for (let t = 0; t < n; t += 1) {
+          owner.push(o); tag.push(t);
+          for (let S = 0; S < n; S += 1) {
+            const band = storeyBand(table, S, k);
+            const drawn = (inRange(band, o) ? 1 : 0) + (inRange(band, t) ? 0 : 1);
+            if (drawn === 0) holes += 1; else if (drawn === 2) doubles += 1;
+          }
+        }
+        const got = maskCoverage(Int16Array.from(owner), Int16Array.from(tag), n, [k]);
+        expect([got.bands, got.holes, got.doubles], `${id} k${k}`).toEqual([n, holes, doubles]);
+      }
+    }
+  });
+
+  it('counts what no chunk holds as the opening the mask makes, never as a fault', () => {
+    // An exterior fin tagged L2 by its height: hidden whenever L2 is in the band, and nothing else draws it.
+    expect(maskCoverage(Int16Array.from([-1]), Int16Array.from([1]), 3, [1])).toEqual({ bands: 3, holes: 0, doubles: 0, opened: 3, first: null });
+  });
+
+  it('gives an opening the storey of the chunk holding most of its kit, the lower on a tie, or none', () => {
+    const ffls = [0, 3.6, 6.4];
+    const kit = new Soup(24);
+    pushBox(kit, [0, 4.5, 0], [0.05, 5.8, 0.08], 12); // one jamb
+    pushBox(kit, [1.15, 4.5, 0], [1.2, 5.8, 0.08], 12); // the other
+    const held = (from: number, to: number, ffl: number) => { const s = new Soup(12); for (let i = from; i < to; i += 1) s.pushFrom(kit, i); return countKeys(soupKeys(s, ffl)); };
+    expect(majorityOwner(kit, ffls, [new Map(), held(0, 24, 3.6), held(12, 24, 6.4)])).toBe(1); // 24 to 12
+    expect(majorityOwner(kit, ffls, [new Map(), held(0, 12, 3.6), held(12, 24, 6.4)])).toBe(1); // 12 each: the lower
+    expect(majorityOwner(kit, ffls, [new Map(), new Map(), new Map()])).toBe(-1);
+  });
+});
+
+describe('the far tree (step 6e)', () => {
+  // Tembusu's boxes in SITE_lod0 (glTF Y-up, y = 0 at the foot): the crown starts
+  // 4.28 m up, the trunk is 0.5 m square and 5 m tall.
+  const foliage: [number[], number[]] = [[-2.4, 4.28, -2.4], [2.4, 9.08, 2.4]];
+  const bark: [number[], number[]] = [[-0.25, 0, -0.25], [0.25, 5, 0.25]];
+  const tree = farTreeSoup(foliage, bark, 20, 19);
+  const normal = (i: number) => {
+    const p = tree.pos; const o = i * 9;
+    const u = [p[o + 3] - p[o], p[o + 4] - p[o + 1], p[o + 5] - p[o + 2]];
+    const v = [p[o + 6] - p[o], p[o + 7] - p[o + 1], p[o + 8] - p[o + 2]];
+    return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+  };
+  const centroid = (i: number) => [0, 1, 2].map((k) => (tree.pos[i * 9 + k] + tree.pos[i * 9 + 3 + k] + tree.pos[i * 9 + 6 + k]) / 3);
+
+  it('is a crown on a trunk stub in 12 triangles, inside the 8–12 budget', () => {
+    expect(FAR_TREE_TRIS).toBe(12);
+    expect(tree.count).toBe(12);
+    expect([...tree.slot.subarray(0, 12)]).toEqual([...Array(8).fill(20), ...Array(4).fill(19)]);
+    expect(tree.bounds()).toEqual([[-2.4, 0, -2.4], [2.4, 9.08, 2.4]]);
+  });
+
+  it('faces out everywhere: the crown from its centre, the stub from its axis', () => {
+    const mid = (4.28 + 9.08) / 2;
+    for (let i = 0; i < 12; i += 1) {
+      const n = normal(i); const c = centroid(i);
+      const out = i < 8 ? [c[0], c[1] - mid, c[2]] : [c[0], 0, c[2]];
+      expect(n[0] * out[0] + n[1] * out[1] + n[2] * out[2], `triangle ${i}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('stands on the ground and runs up into the crown through its lower tip, so it no longer floats', () => {
+    const p = tree.pos;
+    const stub = Array.from({ length: 12 }, (_, k) => p[8 * 9 + k * 3 + 1]);
+    expect(Math.min(...stub)).toBe(0);
+    expect(Math.max(...stub)).toBe(5);
+    // At the stub's top the crown is 2.4 × (5 − 4.28) / 2.4 = 0.72 m wide either side of the axis: the tip is inside.
+    const halfWidthAt = (y: number) => 2.4 * (y - foliage[0][1]) / ((foliage[1][1] - foliage[0][1]) / 2);
+    expect(halfWidthAt(5)).toBeCloseTo(0.72, 12);
+    // And the crown's lower tip sits on the stub's axis.
+    expect([p[2 * 9 + 3], p[2 * 9 + 4], p[2 * 9 + 5]]).toEqual([0, 4.28, 0]);
   });
 });
 
@@ -270,6 +417,16 @@ describe('panels (step 6b)', () => {
     expect(Math.sign(nz(2))).toBe(-Math.sign(nz(0)));
     expect(Math.sign(nz(3))).toBe(-Math.sign(nz(0)));
     expect(pushPanel(new Soup(2), panel, 8)).toBe(2);
+  });
+
+  it('a double-sided panel can face back in another slot: a window is façade glass outside and interior glass inside', () => {
+    const panel = midPlanePanel([0, 0, 0], [1.2, 1.3, 0.006], IDENTITY);
+    const soup = new Soup(4);
+    expect(pushPanel(soup, panel, slotOf('Glass'), 3, { doubleSided: true, backSlot: slotOf('Glass', 'interior') })).toBe(4);
+    expect([...soup.slot.subarray(0, 4)]).toEqual([11, 11, 29, 29]);
+    expect([...soup.storey.subarray(0, 4)]).toEqual([3, 3, 3, 3]);
+    // The same four corners both ways.
+    expect(soup.pos.subarray(18, 27)).toEqual(Float64Array.from([...soup.pos.subarray(0, 3), ...soup.pos.subarray(6, 9), ...soup.pos.subarray(3, 6)]));
   });
 
   it('merges a double leaf into one panel', () => {

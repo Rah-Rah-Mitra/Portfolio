@@ -174,8 +174,8 @@ FFL this way and compares the boxes.
 | File | Nodes (by name) | Notes |
 |---|---|---|
 | `s0/massing` | one per site id, mesh `<ID>_massing` | LOD2 `ext` + `roof`, one primitive each; `sites[].massing.error` is the p90 distance of the LOD1 shell's vertices from it |
-| `s0/site` | `quadrant_<qx>_<qy>` ×4 (200 m); `tree_<species>` and `crown_<species>` batches | shelter glass is drawn opaque; crowns are 8-triangle octahedra over each species' foliage box |
-| `f/<ID>` | `facade`: triangles (≤ 65,535 vertices per primitive) + one LINES primitive | shell + one panel per window on the glass's mid-plane spanning the whole window (the opening, not just the pane), facing out of its flat, and one per exterior door on the closed leaf's mid-plane, **drawn from both sides** (4 triangles); every triangle and line carries its storey |
+| `s0/site` | `quadrant_<qx>_<qy>` ×4 (200 m); `tree_<species>` and `crown_<species>` batches | shelter glass is drawn opaque; `crown_<species>` is the far tree, 12 triangles (`crownTris`): an octahedron over the species' foliage box on a four-sided trunk stub from the bark box's foot to its top, inside the crown (`lib/pure/trees.mjs`) |
+| `f/<ID>` | `facade`: triangles (≤ 65,535 vertices per primitive) + one LINES primitive | shell + one panel per window on the glass's mid-plane spanning the whole window (the opening, not just the pane) and one per exterior door on the closed leaf's mid-plane, **every panel drawn from both sides** (4 triangles on the same 4 vertices): a window's front faces out of its flat in the façade-glass slot (11) and its back faces in, in the `glass-interior` slot (29); a door is its own slot both ways; every triangle and line carries its storey |
 | `d/<ID>` | one batch per kit, named after upstream's mesh (`L1_W-1800x800`, even when the batch spans L1–L16) | window frames (glass dropped: F's panel stands in) and whole exterior doors; instance attribute **`_STOREY`, u8 × 4, x = storey**; a kit's own `_META.z` is 0 (kits, furniture and trees take their storey per instance) |
 | `i/<ID>` | `typical`, `residual`, `special_<tag>`, `furniture_<kit>` / `proxy_<kit>` batches | `typical` is T **relative to its floor** (y = 0 at FFL), storey byte 255 and **no `_STOREY`** — the engine masks it per instance (its own storey list), not by `_meta.z`, and an InstancedMesh program reading `_STOREY` would get WebGL's default (L1); `residual` and specials are absolute with storey tags; glass is a separate `glass` primitive using the `glass-interior` slot; furniture carries `_STOREY` like D |
 
@@ -239,15 +239,51 @@ refuse.
   same way and their downward faces below grade (slab bottoms no camera sees,
   2,235 in v1.1) are dropped; only open ground surfaces are turned to face up
   (1,435). Counts go to warnings.
-- **Façade storeys**: exact match of the triangle's 1 mm key, relative to the
-  FFL, in a storey's chunk — every storey tried, nearest the z-min band first, so
-  NC_514's hall canopy (in RF's band, held by L1's chunk) keeps L1 — else the band
-  rule FFL_s − 0.25 ≤ z_min < FFL_{s+1} − 0.25. Window panels face out of the room
-  they close (enclosed vs open air, else the larger room), else away from the
-  footprint, with a warning naming every window a fallback decided. Door panels
-  are double-sided: the room probe cannot tell a lift landing door from its shaft
-  (no room) or a stair discharge door from the car park, and all 36 L1 lift doors
-  it once faced by the footprint faced into their shafts.
+- **Façade storeys** follow the façade mask (§7.5): inside a building the runtime
+  draws the interior chunks of storeys S − k … S + k and hides exactly those
+  storeys of F, D and the edge lines, so a surface the interior also draws must
+  carry the storey of the **chunk that holds it**. The tool matches each shell
+  triangle's 1 mm key, relative to the FFL, against every storey's chunk, nearest
+  its z-min band first; only a triangle no chunk holds takes the band rule
+  FFL_s − 0.25 ≤ z_min < FFL_{s+1} − 0.25 (none does in v1.2: every shell
+  triangle is matched). This is deliberate wherever the two rules disagree:
+  upstream puts an IfcStair and its railing in the storey they rise from, so the
+  top riser, handrail and landing guard of each flight (BLK_509's L4→L5:
+  11.775–13.0 m, L5's FFL 12.0) are the lower storey's, and NC_514's double-height
+  hall keeps its roof deck and trusses (6.8–8.25 m) in L1. On rc2, 25,240 of the
+  491,932 shell triangles sit outside their z-min band this way (BLK_509 3,550:
+  wall and core tops under the next slab 2,022, stair risers 976, railings 444,
+  column tops 108; NC_514 380; MSCP_513 1,320). Tagged by height instead, the
+  mask would hide them at the bottom of a band with nothing drawing them and
+  draw them twice under its ceiling: simulated over all 490 bands (every storey of
+  every building at k = 1 and 2), **45,366 triangle-bands hidden and 43,726
+  doubled, against 0 and 0** for the chunk rule. Panels take their z-min band
+  and D instances their translation's band; both agree with the chunk that holds
+  the opening in all 11,169 openings. The tool proves all of it per building
+  (`maskCoverage` in `lib/pure/tag.mjs` over every storey at k = 1 and every
+  tier's `bandK`; `report.json` `facade.mask`, `facade.offBand`) and stops with
+  "the façade mask would misapply" on any surface drawn twice or not at all.
+- **Panels** are drawn from both sides. The runtime draws F with one
+  front-faces-only opaque material in one draw, from the six programs of §7.3; a
+  `DoubleSide` material would add a program and a draw, and rasterise every
+  closed solid's back faces, so the pack adds a back pair on the same corners
+  instead. A one-sided pane was a hole from indoors wherever F stood whole around
+  the camera (an interior still streaming or failed, lean mode, Fly through a
+  block) or showed past a band's edge. The back of a window is the
+  `glass-interior` slot: the colour the interior's own pane takes when the mask
+  hands over (F is opaque, so three's `OPAQUE` define drops the slot's 0.35
+  alpha, and the canvas has none). The front still faces out of the room it
+  closes (enclosed vs open air, else the larger room), else away from the
+  footprint, with a warning naming every window a fallback decided; a door is
+  not faced (the room probe cannot tell a lift landing door from its shaft, or a
+  stair discharge door from the car park). It costs two triangles and no vertex
+  per window: 19,344 triangles over the 9,672 windows of the 14 façades.
+- **Far trees** (`crown_<species>`, beyond the tier's tree radius) are a crown on
+  a trunk stub, 12 triangles: the 8-triangle octahedron over the foliage box,
+  which alone hung 2.0–4.3 m above the ground, plus a square spike from the
+  bark box's foot to the centre of its top, which lies inside the crown on every
+  species. The 778 trees cost 3,112 triangles more when all are far (the poster
+  pose, and every pose on the min tier, whose tree radius is 0).
 - **Edge lines**: at most 6,000 per building, cut only between whole length
   classes (lengths equal to the millimetre), so identical typical storeys keep
   identical line work.
@@ -291,7 +327,7 @@ the SN5W header — are small import-free ports under `scripts/estate/lib/pure/`
 and `tests/estate-pipeline-pure.test.ts` imports **both** sides and proves they
 agree. Change both or neither.
 
-## Measured (v1.2 candidate rc2, 2026-10-06)
+## Measured (v1.2 candidate rc2, re-packed as rc2b, 2026-10-06)
 
 The R2a candidate: `SampleTownN5_v1.2_{model,reports}.zip` from upstream's
 `release` (M = `a106728`, R = `a6e1acf`, tag not yet created; model zip
@@ -301,7 +337,17 @@ identical). It replaces the first candidate (M = `2a533c1`, R = `d3152af`,
 `artifacts/estate/v1.2-rc`, `pack.3b0c3a81.json`), from which it differs only in
 NC_514's nav file (the two stair end points below, 3,216 → 3,215 B) and the
 pack's own `source` (pack.json gz 15,126 → 15,136 B); every other file is byte
-for byte the same. Bytes as stored (gzip for `.gz`), decimal KB/MB as the caps count.
+for byte the same.
+
+**rc2b** is the same rc2 zips re-packed with P5's pack fixes (both panel sides,
+the far tree's trunk stub, and the façade-mask proof, which changes no byte) into
+`artifacts/estate/v1.2-rc2b` (`pack.82695419.json`; `--verify` identical), and is
+the pack copied into `public/estate/v1.2`. Against rc2 only 13 F files (MSCP_513
+has no window), `s0/site` and `pack.json` changed; D, I, walk, nav, ground,
+massing and posters are byte for byte the same. Its `pack.json` also carries this
+branch's palette tokens (block-accent `--color-accent-200`, play-surface
+`--color-accent-500`), which `pack.fd986442.json`, built before the P4b review,
+did not. The table is rc2b. Bytes as stored (gzip for `.gz`), decimal KB/MB as the caps count.
 Plan §6.5's "expected" assumed 3.2 B per stored triangle; F stores 1.76 B and I
 1.41 B. Every class that landed more than 25% from it has its expected figure
 re-set to the measurement (§12.2; also `expected` in `lib/estate/packBudgets.json`,
@@ -309,18 +355,22 @@ which nothing reads). **No cap moved**: every class is under its cap.
 
 | Class | Measured | Plan §6.5 expected | Off by | Expected now | Cap |
 |---|---|---|---|---|---|
-| First frame (pack.json gz 15,136 + massing 8,755 + site 60,493) | 84,384 B | ~140 KB | −40% | 84 KB | 350 KB |
-| F ×14 (16-bit) | 908,608 B (max 99,792, BLK_511) — 517,264 tris | 1.65 MB | −45% | 0.91 MB | 2.8 MB / 300 KB |
+| First frame (pack.json gz 15,131 + massing 8,755 + site 60,820) | 84,706 B | ~140 KB | −40% | 84 KB | 350 KB |
+| F ×14 (16-bit) | 953,855 B (max 104,417, BLK_511) — 536,608 tris (rc2: 908,608 B, 517,264) | 1.65 MB | −45% | 0.91 MB | 2.8 MB / 300 KB |
 | D ×14 | 260,576 B (max 28,213, BLK_510) — 30,088 stored, 1,186,672 drawn | 0.2 MB | +30% | 0.26 MB | 0.5 MB / 64 KB |
 | I ×14 | 495,049 B (max 53,742, BLK_510) — 351,320 tris | 1.1 MB | −55% | 0.50 MB | 2.0 MB / 240 KB |
 | w ×14 + ground | 188,493 B (max 26,817, MSCP_513) + 8,011 B | 0.6 MB | −67% | 0.20 MB | 1.3 MB / 128 KiB (ground 160 KB) |
 | nav ×14 (gzip) | 133,084 B (max 14,580, BLK_509) | 0.4 MB | −67% | 0.13 MB | 0.6 MB / 48 KB |
 | posters | 165,442 + 55,986 + 70,451 B | 0.3 MB | −3% | 0.3 MB (kept) | 180 / 70 / 90 KB |
-| whole pack | 2,421,102 B in 77 files | ~4.4 MB | −45% | 2.4 MB | 12 MB (warning 8 MB), ≤ 100 files |
+| whole pack | 2,466,681 B in 77 files (rc2: 2,421,102) | ~4.4 MB | −45% | 2.4 MB | 12 MB (warning 8 MB), ≤ 100 files |
 
 Draws per file: massing 14, site 14, F 2, D ≤ 26, I ≤ 11 (NC_514). Triangles:
-F ≤ 57,384 (BLK_511; 2,994 of the 517,264 are the doors' back faces), massing
-≤ 482, T ≤ 29,620, R ≤ 2,700, special ≤ 12,568 (NC_514 L1), site 27,047 stored.
+F ≤ 59,244 (BLK_511, under the 60,000 cap; of the 536,608, 2,994 are the doors'
+back faces and 19,344 the windows'), massing ≤ 482, T ≤ 29,620, R ≤ 2,700,
+special ≤ 12,568 (NC_514 L1), site 27,067 stored (far trees 12 triangles each, 8
+before). The façade mask holds on every building: 0 surfaces hidden and 0 doubled
+over all 490 bands (k = 1 and 2); 25,240 shell triangles keep a chunk storey
+other than their z-min band's.
 Quantisation steps: F 0.9–1.9 mm, I 0.8–1.9 mm, site 3.05 mm. D is the one class
 over its old expectation: about 168 KB of D's 401 KB meshopt payload is instance
 data (float32 TRANSLATION, ROTATION and SCALE, where SCALE is only each kit's

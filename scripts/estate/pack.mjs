@@ -398,7 +398,7 @@ export const build = async (opts, outDir, log, internal = {}) => {
         stepF = quantStep(dec.scale, BITS.f);
         const decodedF = checkDecoded(`${id} F`, ext.facade.soup, dec.soup, stepF);
         site.facade = { ...out.geo, error: 0.06, edges: ext.facade.edges, exactMatched: ext.facade.exactMatched };
-        rep.facade = { bytes: out.geo.bytes, tris: out.geo.tris, draws: out.geo.draws, panels: ext.facade.panels, facing: ext.facade.facing, exactMatched: ext.facade.exactMatched, banded: ext.facade.banded, decoded: decodedF };
+        rep.facade = { bytes: out.geo.bytes, tris: out.geo.tris, draws: out.geo.draws, panels: ext.facade.panels, facing: ext.facade.facing, exactMatched: ext.facade.exactMatched, banded: ext.facade.banded, offBand: ext.facade.offBand, mask: ext.facade.mask, decoded: decodedF };
       }
       if (classes.has('d')) {
         const out = await emitGlb(ext.detail.ctx, BITS.d, `d/${id}`, ext.detail.storedTris, ext.detail.batches);

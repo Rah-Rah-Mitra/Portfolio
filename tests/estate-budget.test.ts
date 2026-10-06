@@ -66,9 +66,17 @@ const STEP_M = 20;
  *    549 k / 38 (the browser readout at the poster pose, high tier, read the
  *    same 549,957 on the dev pack); S3 541,489 / 60 against ~677 k / ~87 (the
  *    estate's detail is lighter than the plan's estimate).
+ *  - pack.82695419.json: the same rc2 zips re-packed with P5's pack fixes
+ *    (rc2b), measured 2026-10-06. Every window panel gained its back pair
+ *    (+19,344 F triangles over the 14 façades, 2 per window) and every far
+ *    tree a 4-triangle trunk stub (+4 × 778 when all are far): S1 +3,112 is
+ *    exactly the stubs, S2 +22,456 both with every building at F, S3 +17,440;
+ *    draws unchanged. S1 37,929 / 24, S2 572,413 / 38 and S3 558,929 / 60,
+ *    all far inside the high tier's 1.2 M / 150.
  */
 const PINNED: Readonly<Record<string, Readonly<Record<'S1' | 'S2' | 'S3', readonly [number, number]>>>> = {
   'pack.fd986442.json': { S1: [34_817, 24], S2: [549_957, 38], S3: [541_489, 60] },
+  'pack.82695419.json': { S1: [37_929, 24], S2: [572_413, 38], S3: [558_929, 60] },
 };
 
 interface SpeciesCost { centres: Float32Array; count: number; fullTris: number; crownTris: number }

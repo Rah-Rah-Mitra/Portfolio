@@ -1,5 +1,6 @@
 // Near and far trees (plan §7.2: per species a full-detail InstancedMesh near
-// the camera and an 8-triangle crown InstancedMesh beyond; §7.4's tree radius
+// the camera and a 12-triangle far tree, a crown on a trunk stub, beyond (the
+// pack's crown_<species>; §6.2 step 6e); §7.4's tree radius
 // per tier). Pure: the scene hands in each species' instance centres and the
 // camera, and copies the partition into its two instance buffers. Nothing here
 // allocates per call.

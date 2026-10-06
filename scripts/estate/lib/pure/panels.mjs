@@ -142,18 +142,19 @@ export const facePanelOut = (panel, rings) => {
 };
 
 /**
- * Adds a panel's two triangles to a soup, and with `doubleSided` two more
- * facing the other way (a door panel: which side is outdoors is a guess at a
- * lift landing or a stair discharge, and F is drawn one-sided). Returns how
- * many triangles it added.
+ * Adds a panel's two triangles to a soup, and with `doubleSided` two more on
+ * the same corners facing the other way, in `backSlot` (default: `slot`). The
+ * runtime draws F with front faces only, so a one-sided panel vanishes from
+ * behind; the pack draws every panel from both sides (building.mjs). Returns
+ * how many triangles it added.
  */
-export const pushPanel = (soup, panel, slot, storey = 0, { doubleSided = false } = {}) => {
+export const pushPanel = (soup, panel, slot, storey = 0, { doubleSided = false, backSlot = slot } = {}) => {
   const [a, b, c, d] = panelCorners(panel);
   soup.push(...a, ...b, ...c, slot, storey);
   soup.push(...a, ...c, ...d, slot, storey);
   if (!doubleSided) return 2;
-  soup.push(...a, ...c, ...b, slot, storey);
-  soup.push(...a, ...d, ...c, slot, storey);
+  soup.push(...a, ...c, ...b, backSlot, storey);
+  soup.push(...a, ...d, ...c, backSlot, storey);
   return 4;
 };
 

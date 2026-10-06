@@ -1,29 +1,20 @@
 // SITE (plan §6.2 step 6e): four 200 m quadrants of ground, structures and
-// furniture; five tree species, each with an 8-triangle crown stand-in,
-// instanced; and the outdoor ground heights (class `ground`). SITE's frame is
-// the estate's (identity transform), so its glTF is estate Y-up.
+// furniture; five tree species, each with a 12-triangle far tree (a crown on a
+// trunk stub, lib/pure/trees.mjs), instanced; and the outdoor ground heights
+// (class `ground`). SITE's frame is the estate's (identity transform), so its
+// glTF is estate Y-up.
 
 import { bakeMesh, buildMesh, instanceAll, meshBox, meshNodesUnder, meshSoup, newDoc } from './gltf.mjs';
 import { slotOf } from './palette.mjs';
 import { components, faceUp, isClosed, orientClosedSolids, triNormal } from './pure/geom.mjs';
 import { Soup } from './pure/soup.mjs';
 import { rasterGround } from './pure/sn5w.mjs';
+import { farTreeSoup } from './pure/trees.mjs';
 
 export const QUADRANT = 200;
 export const GROUND_CELL = 0.5;
 
 const speciesName = (node) => (node.getExtras()?.type ?? node.getMesh().getName()).replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
-
-// An octahedron (8 triangles) filling a local box: the far-tree crown.
-const crownSoup = ([lo, hi], slot) => {
-  const c = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
-  const px = [hi[0], c[1], c[2]], nx = [lo[0], c[1], c[2]];
-  const py = [c[0], hi[1], c[2]], ny = [c[0], lo[1], c[2]];
-  const pz = [c[0], c[1], hi[2]], nz = [c[0], c[1], lo[2]];
-  const s = new Soup(8);
-  for (const [a, b, d] of [[px, py, pz], [py, nx, pz], [nx, ny, pz], [ny, px, pz], [py, px, nz], [nx, py, nz], [ny, nx, nz], [px, ny, nz]]) s.push(...a, ...b, ...d, slot, 0);
-  return s;
-};
 
 /**
  * Plan step 5 for the ground surfaces: a closed ground solid (a kerb, a
@@ -105,8 +96,10 @@ export const buildSite = async (lod0, warn) => {
   for (const species of [...trees.keys()].sort()) {
     const { mesh, placements } = trees.get(species);
     const full = meshSoup(mesh, {});
-    const foliage = meshBox(mesh, (m) => m === 'Foliage') ?? meshBox(mesh);
-    const crown = crownSoup(foliage, slotOf('Foliage'));
+    const foliage = meshBox(mesh, (m) => m === 'Foliage');
+    const bark = meshBox(mesh, (m) => m === 'Bark');
+    if (!foliage || !bark) throw new Error(`SITE: tree species ${species} needs a Foliage and a Bark primitive for its far tree`);
+    const crown = farTreeSoup(foliage, bark, slotOf('Foliage'), slotOf('Bark'));
     const fullMesh = buildMesh(ctx, `tree_${species}`, full);
     const crownMesh = buildMesh(ctx, `crown_${species}`, crown);
     for (const m of placements) {

@@ -10,6 +10,7 @@ import { analyseBuilding, buildExterior, buildInterior, buildMassing } from '../
 import { bakeMesh, buildPrimitives, classify, countGlb, encodeDoc, instanceAll, newDoc, readGlb, storeyRoundTrip, validateGlb, buildMesh } from '../lib/gltf.mjs';
 import { gzipDeterministic } from '../lib/files.mjs';
 import { Soup } from '../lib/pure/soup.mjs';
+import { countKeys, soupKeys } from '../lib/pure/trikeys.mjs';
 import { leakScanDir } from '../check.mjs';
 import { FFLS, reader, syntheticBlock } from './fixtures.mjs';
 
@@ -68,35 +69,59 @@ describe('step 4: palette slots', () => {
 });
 
 describe('steps 6b and 6c: F and D', () => {
-  it('puts the window panel on the glass mid-plane across the whole opening, facing out of the flat; the door panel faces both ways', async () => {
+  it('puts the window panel on the glass mid-plane across the whole opening, façade glass facing out of the flat and interior glass facing in; the door panel is its own slot both ways', async () => {
     const { b, a } = await analyse();
     const lod1 = await readGlb(b.files.get('model/TST/TST_lod1.glb'));
     const ext = await buildExterior(a, lod1, b.engine.massing.footprint, b.engine.rooms, budgets, quiet);
     const f = ext.facade;
     assert.equal(f.panels, 2);
-    // The window is faced by the rooms either side; the door is drawn from both sides.
-    assert.deepEqual(f.facing, { byRooms: 1, byFootprint: 0, undecided: 0, doubleSided: 1 });
-    // The panels follow the shell in the F soup: the window's two triangles first.
+    // The window is faced by the rooms either side; the door is not faced.
+    assert.deepEqual(f.facing, { byRooms: 1, byFootprint: 0, undecided: 0, doors: 1 });
+    // The panels follow the shell in the F soup: the window's four triangles first.
     const p = f.soup.pos; const o = f.shellTris * 9;
-    for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(p[o + k * 3 + 2] - -0.04) < 1e-9, 'window panel off the glass mid-plane');
+    for (let t = 0; t < 4; t += 1) for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(p[o + t * 9 + k * 3 + 2] - -0.04) < 1e-9, 'window panel off the glass mid-plane');
     // Facing +z (glTF), which is block-local -y: out of the flat, whose room lies at y > 0.
-    const ux = p[o + 3] - p[o], uy = p[o + 4] - p[o + 1], vx = p[o + 6] - p[o], vy = p[o + 7] - p[o + 1];
-    assert.ok(ux * vy - uy * vx > 0, 'the window panel faces into the flat, not out of it');
+    const nz = (t) => { const q = t * 9; return (p[q + 3] - p[q]) * (p[q + 7] - p[q + 1]) - (p[q + 4] - p[q + 1]) * (p[q + 6] - p[q]); };
+    assert.ok(nz(f.shellTris) > 0, 'the window panel faces into the flat, not out of it');
+    // Both sides, on the same corners: façade glass (11) out, interior glass (29) in,
+    // so F's front-faces-only material still draws the pane from indoors.
+    const win = [0, 1, 2, 3].map((k) => [Math.sign(nz(f.shellTris + k)), f.soup.slot[f.shellTris + k]]);
+    assert.deepEqual(win, [[1, 11], [1, 11], [-1, 29], [-1, 29]]);
     // It spans the opening (the 1.2 m kit, frames included), not just the 1.1 m pane.
     const xs = [0, 1, 2, 3, 4, 5].map((v) => p[o + v * 3]);
     assert.deepEqual([Math.min(...xs), Math.max(...xs)].map((x) => Number(x.toFixed(6))), [6, 7.2]);
     // The front door's panel sits inside its 40 mm leaf, 20 mm from each face.
-    for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(p[o + 18 + k * 3 + 2] - -0.02) < 1e-9, 'door panel off the leaf mid-plane');
-    // Four door triangles: two facing each way, all on L2 like the window's.
-    const nz = (t) => { const q = t * 9; return (p[q + 3] - p[q]) * (p[q + 7] - p[q + 1]) - (p[q + 4] - p[q + 1]) * (p[q + 6] - p[q]); };
-    const door = [2, 3, 4, 5].map((k) => Math.sign(nz(f.shellTris + k)));
+    for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(p[o + 36 + k * 3 + 2] - -0.02) < 1e-9, 'door panel off the leaf mid-plane');
+    // Four door triangles: two facing each way, in one slot, all on L2 like the window's.
+    const door = [4, 5, 6, 7].map((k) => Math.sign(nz(f.shellTris + k)));
     assert.deepEqual(door, [door[0], door[0], -door[0], -door[0]]);
-    for (let k = 0; k < 6; k += 1) assert.equal(f.soup.storey[f.shellTris + k], 1);
+    assert.equal(new Set([4, 5, 6, 7].map((k) => f.soup.slot[f.shellTris + k])).size, 1);
+    for (let k = 0; k < 8; k += 1) assert.equal(f.soup.storey[f.shellTris + k], 1);
     const counts = await countGlb(await encodeDoc(f.ctx, 16));
-    assert.equal(counts.tris, f.shellTris + 6);
+    assert.equal(counts.tris, f.shellTris + 8);
     // L2's slab is in L2's chunk (12); the façade wall's bottom and top faces coincide
     // with L1's and RF's chunk walls (2 + 2). Its sides match nothing and take the band rule.
     assert.equal(f.exactMatched, 16);
+    // The façade mask at every storey and k = 1, 2: what a chunk holds is drawn once.
+    assert.deepEqual({ ...f.mask, opened: undefined }, { bands: 8, ks: [1, 2], holes: 0, doubles: 0, opened: undefined });
+  });
+
+  it('stops the run when a chunk holds an opening under another storey than its band, which the façade mask would misapply', async () => {
+    // Plant the window's kit, where LOD1 places it (y 4.5, L2's band), in a chunk.
+    const plant = async (storey) => {
+      const { b, a } = await analyse();
+      const lod1 = await readGlb(b.files.get('model/TST/TST_lod1.glb'));
+      const node = lod1.getRoot().listNodes().find((n) => n.getName().startsWith('L1WIN_'));
+      const kit = new Soup(64);
+      bakeMesh(node.getMesh(), node.getWorldMatrix(), kit, { skip: (m) => m === 'Glass' });
+      const chunk = a.chunks[storey];
+      for (const [k, c] of countKeys(soupKeys(kit, chunk.ffl))) chunk.counts.set(k, (chunk.counts.get(k) ?? 0) + c);
+      return buildExterior(a, lod1, b.engine.massing.footprint, b.engine.rooms, budgets, quiet);
+    };
+    // Held by L2's chunk: the panel's and the instance's band agree with it.
+    assert.deepEqual([(await plant(1)).facade.mask.holes, (await plant(1)).facade.mask.doubles], [0, 0]);
+    // Held by L3's: F would hide the pane with L2 while the interior draws it with L3.
+    await assert.rejects(plant(2), /façade mask would misapply: \d+ surfaces hidden by F and not drawn by the interior, \d+ drawn by both, over 8 bands \(first: panel of L1WIN__02-101_Bedroom_window_GUIDWIN, tagged L2, held by L3's chunk, at L1 k = 1, band L1–L2\)/);
   });
 
   it('builds D as instances with a _STOREY per instance from its height', async () => {

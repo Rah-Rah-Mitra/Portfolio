@@ -30,9 +30,11 @@ import type { EnginePalette } from './palette';
 // Because the switches are uniforms and every material shares one
 // onBeforeCompile (three keys programs by its source), the whole estate draws
 // with six programs: Lambert {Mesh, InstancedMesh} × {opaque, glass}, the edge
-// lines and the ground grid. Opaque draws front faces only; glass (interior,
-// P5) is two-sided in one pass, alpha from the palette, no depth write, and so
-// sorted after every opaque draw. Façade glass is an opaque slot.
+// lines and the ground grid. Opaque draws front faces only, nearest first
+// (renderer.ts nearestFirst; DRAW_ORDER puts the edge lines and then the grid
+// after the surfaces); glass (interior, P5) is two-sided in one pass, alpha
+// from the palette, no depth write, and so sorted after every opaque draw.
+// Façade glass is an opaque slot.
 //
 // Plan's cut (P6, §7.3): above the cut every pixel of the planned building's
 // interior is discarded, and where the cut opens a closed solid (a wall, a
@@ -45,6 +47,17 @@ import type { EnginePalette } from './palette';
 // two-sided, single pass, transparent-sorted, alpha 1 from the palette — and
 // draw with glass's programs. Glass itself is never filled (its slot's alpha
 // is below 1) and is drawn after them (renderOrder 1, scene.ts).
+
+/**
+ * renderOrder within the opaque list, which draws nearest first (renderer.ts
+ * nearestFirst): every surface, then the façade edge lines (the faces they
+ * outline are pushed back by polygonOffset while they draw, so the order only
+ * keeps today's "faces, then lines"), then the ground grid, last, so early
+ * depth testing rejects the 4 km quad wherever the site or a building already
+ * covers it. Glass and Plan's two-sided interior are in the transparent list,
+ * which draws after all of these whatever their renderOrder.
+ */
+export const DRAW_ORDER = Object.freeze({ surface: 0, edge: 1, grid: 2 });
 
 /** A huge cut height: nothing is above it, so Plan's cut is off. */
 export const PLAN_CUT_OFF = 1e9;
@@ -310,7 +323,7 @@ export const createMaterialKit = (palette: EnginePalette): MaterialKit => {
   const gridMesh = new Mesh(gridGeometry, grid);
   gridMesh.name = 'groundGrid';
   gridMesh.frustumCulled = false;
-  gridMesh.renderOrder = -1;
+  gridMesh.renderOrder = DRAW_ORDER.grid;
   gridMesh.position.set(200, GRID_Y, -200);
   gridMesh.updateMatrix();
   gridMesh.matrixAutoUpdate = false;

@@ -168,6 +168,45 @@ export const probeGpu = (createCanvas: () => HTMLCanvasElement): GpuIdentity | n
   return null;
 };
 
+/** The fields of a three render item the opaque sort reads. */
+export interface SortItem {
+  groupOrder: number;
+  renderOrder: number;
+  z: number;
+  id: number;
+  materialVariant: number;
+  material: { id: number };
+}
+
+/**
+ * The opaque draw order: nearest first. three's default sorts by material
+ * before depth (WebGLRenderLists painterSortStable), and every building owns
+ * its own materials, so the opaque list came out in building order: the room
+ * underfoot drew last, after every façade it hides, and early depth testing
+ * rejected nothing. Depth before material keeps three's own order among draws
+ * that share a material (z, then id) and puts the nearest surfaces first
+ * whatever their building. z is the sort depth three already negates under a
+ * reversed depth buffer, so ascending is nearest first either way. Depth
+ * testing is order-independent but for exactly equal depths, which the pack
+ * keeps apart (no façade panel within 2 mm of a detail face); the edge lines
+ * and the ground grid keep their places by renderOrder (materials.ts DRAW_ORDER).
+ */
+export const nearestFirst = (a: SortItem, b: SortItem): number =>
+  a.groupOrder - b.groupOrder
+  || a.renderOrder - b.renderOrder
+  || a.z - b.z
+  || a.material.id - b.material.id
+  || a.materialVariant - b.materialVariant
+  || a.id - b.id;
+
+/** The renderer settings every estate renderer shares. */
+export const configureRenderer = (renderer: Pick<WebGLRenderer, 'autoClear' | 'sortObjects' | 'info' | 'setOpaqueSort'>): void => {
+  renderer.autoClear = true;
+  renderer.sortObjects = true;
+  renderer.info.autoReset = false;
+  renderer.setOpaqueSort(nearestFirst);
+};
+
 export interface CreatedRenderer {
   renderer: WebGLRenderer;
   gl: WebGL2RenderingContext;
@@ -203,9 +242,7 @@ export const createRenderer = (canvas: HTMLCanvasElement, msaa: boolean, preferC
       reversedDepthBuffer: reversedDepth,
     } as WebGLRendererParameters;
     const renderer = new WebGLRenderer(parameters);
-    renderer.autoClear = true;
-    renderer.sortObjects = true;
-    renderer.info.autoReset = false;
+    configureRenderer(renderer);
     return { renderer, gl, caveat, msaa, reversedDepth };
   }
   return null;

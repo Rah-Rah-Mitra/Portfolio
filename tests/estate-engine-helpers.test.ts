@@ -12,7 +12,7 @@ import { LevelWiring, levelCosts } from '../components/workbench/estate/engine/l
 import { gunzip, PackFetchError, readPayload, sniff } from '../components/workbench/estate/engine/loaders';
 import { gpuBytes } from '../components/workbench/estate/engine/parts';
 import {
-  chooseStart, missingCapability, readRendererString, shouldDropMsaa,
+  chooseStart, configureRenderer, missingCapability, nearestFirst, readRendererString, shouldDropMsaa, type SortItem,
 } from '../components/workbench/estate/engine/renderer';
 import {
   READOUT_ATTRIBUTES, ReadoutThrottle, readoutValues, writeReadouts, type FrameStats,
@@ -281,6 +281,43 @@ describe('renderer decisions', () => {
     expect(shouldDropMsaa(true, 'low')).toBe(true);
     expect(shouldDropMsaa(true, 'mid')).toBe(false);
     expect(shouldDropMsaa(false, 'min')).toBe(false);
+  });
+});
+
+describe('the opaque draw order', () => {
+  const item = (id: number, z: number, material: number, extra: Partial<SortItem> = {}): SortItem => ({
+    id, z, groupOrder: 0, renderOrder: 0, materialVariant: 0, material: { id: material }, ...extra,
+  });
+  const order = (items: SortItem[]) => [...items].sort(nearestFirst).map((i) => i.id);
+
+  it('draws nearest first whatever the material: the room underfoot before the façades it hides', () => {
+    // three's default sorts material first; every building owns its materials,
+    // so the interior (created last) drew last.
+    const facadeFar = item(1, 0.9, 10);
+    const facadeNear = item(2, 0.4, 11);
+    const interior = item(3, 0.1, 40);
+    expect(order([facadeFar, facadeNear, interior])).toEqual([3, 2, 1]);
+  });
+
+  it('keeps groupOrder and renderOrder first, and three’s own order among draws that share a material', () => {
+    const grid = item(1, 0.0, 5, { renderOrder: 2 });
+    const edges = item(2, 0.0, 6, { renderOrder: 1 });
+    const wall = item(3, 0.5, 7);
+    expect(order([grid, edges, wall])).toEqual([3, 2, 1]);
+    expect(order([item(1, 0.5, 9), item(2, 0.5, 8), item(3, 0.5, 8, { materialVariant: 2 }), item(4, 0.2, 9)])).toEqual([4, 2, 3, 1]);
+    expect(order([item(2, 0.3, 9), item(1, 0.3, 9)])).toEqual([1, 2]);
+    expect(order([item(1, 0.3, 9, { groupOrder: 1 }), item(2, 0.9, 9)])).toEqual([2, 1]);
+  });
+
+  it('falls through a NaN depth to the next key rather than scrambling the list', () => {
+    expect(order([item(1, Number.NaN, 9), item(2, Number.NaN, 3)])).toEqual([2, 1]);
+  });
+
+  it('installs the order on the renderer with the engine’s other renderer settings', () => {
+    const renderer = { autoClear: false, sortObjects: false, info: { autoReset: true }, setOpaqueSort: vi.fn() };
+    configureRenderer(renderer as never);
+    expect(renderer).toMatchObject({ autoClear: true, sortObjects: true, info: { autoReset: false } });
+    expect(renderer.setOpaqueSort).toHaveBeenCalledWith(nearestFirst);
   });
 });
 

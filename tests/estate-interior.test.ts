@@ -139,8 +139,11 @@ describe.skipIf(!hasInteriors)('interiors on the pack in public/estate/v1.2', ()
     const band = createBandState();
     applyBand(band, table, 4, 2); // L5, k = 2: L3–L7
     const mesh = p.typical!.meshes[0].object as InstancedMesh;
+    mesh.computeBoundingSphere();
     writeTypical(mesh, p.typical!.base[0], band);
     expect(mesh.count).toBe(5);
+    // Its sort sphere (three's, measured once) is dropped with the old instances.
+    expect(mesh.boundingSphere).toBeNull();
     const m = mesh.instanceMatrix.array as Float32Array;
     const base = p.typical!.base[0].elements;
     const storeys = (mesh.geometry.getAttribute(STOREY_ATTRIBUTE) as InstancedBufferAttribute).array as Uint8Array;

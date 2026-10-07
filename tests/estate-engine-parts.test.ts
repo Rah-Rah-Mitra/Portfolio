@@ -7,7 +7,7 @@ import { ESTATE_SITE_IDS } from '../lib/estate/ids';
 import { LOD_DETAIL, LOD_FACADE, LOD_MASSING } from '../lib/estate/lod';
 import { parsePack, type EstatePack } from '../lib/estate/schema';
 import { createGlbLoader, parseGlb, readPayload } from '../components/workbench/estate/engine/loaders';
-import { FLAT_NORMAL_GUARDED, createMaterialKit, createStoreyUniforms } from '../components/workbench/estate/engine/materials';
+import { DRAW_ORDER, FLAT_NORMAL_GUARDED, createMaterialKit, createStoreyUniforms } from '../components/workbench/estate/engine/materials';
 import { createPalette } from '../components/workbench/estate/engine/palette';
 import {
   detailParts, facadeParts, massingParts, siteParts, type DecodedParts,
@@ -45,6 +45,14 @@ describe('the estate shader patch', () => {
       expect(shader.fragmentShader).toContain(FLAT_NORMAL_GUARDED);
       expect(shader.fragmentShader).not.toContain('normalize( cross( fdx, fdy ) )');
     }
+    kit.dispose();
+  });
+
+  it('draws the ground grid after every opaque surface and edge line, so early depth testing rejects the ground it lies under', () => {
+    const kit = createMaterialKit(createPalette(COLOURS));
+    expect(DRAW_ORDER.surface).toBeLessThan(DRAW_ORDER.edge);
+    expect(DRAW_ORDER.edge).toBeLessThan(DRAW_ORDER.grid);
+    expect(kit.gridMesh.renderOrder).toBe(DRAW_ORDER.grid);
     kit.dispose();
   });
 });
@@ -152,6 +160,9 @@ describe.skipIf(!hasGeometry)('the engine on the pack in public/estate/v1.2', ()
     expect(blk.massing!.parts.every((p) => !visible(p.object))).toBe(true);
     expect(blk.facade!.meshes.every((p) => visible(p.object))).toBe(true);
     expect(blk.facade!.edges.every((p) => visible(p.object))).toBe(true);
+    // The lines keep their place after the surfaces in the nearest-first list.
+    expect(blk.facade!.edges.every((p) => p.object.renderOrder === DRAW_ORDER.edge)).toBe(true);
+    expect(blk.facade!.meshes.every((p) => p.object.renderOrder === DRAW_ORDER.surface)).toBe(true);
     expect(blk.detail!.parts.every((p) => visible(p.object))).toBe(true);
     expect(blk.materials.facade.polygonOffset).toBe(true);
     const first = scene.buildings[0];
@@ -187,6 +198,15 @@ describe.skipIf(!hasGeometry)('the engine on the pack in public/estate/v1.2', ()
       expect((s.full!.object as InstancedMesh).count).toBe(s.partition.nearCount);
       expect((s.crown!.object as InstancedMesh).count).toBe(s.partition.farCount);
     }
+    // A rewritten instanced set drops its sphere (three's sort depth), measured afresh at the next projection.
+    for (const s of scene.species) (s.full!.object as InstancedMesh).computeBoundingSphere();
+    scene.invalidateTrees();
+    expect(scene.updateTrees(60, -60, 80)).toBe(true);
+    const moved = scene.species.filter((s) => s.partition.nearCount > 0 || s.partition.farCount > 0);
+    expect(moved.length).toBeGreaterThan(0);
+    expect(moved.every((s) => (s.full!.object as InstancedMesh).boundingSphere === null)).toBe(true);
+    scene.invalidateTrees();
+    expect(scene.updateTrees(200, -200, 80)).toBe(true);
     const reserve = scene.reserve({ tris: 0, draws: 0 });
     const quadTris = scene.quadrants.reduce((n, q) => n + q.tris, 0);
     const treeTris = scene.species.reduce((n, s) => n + s.partition.nearCount * s.fullTris + s.partition.farCount * s.crownTris, 0);

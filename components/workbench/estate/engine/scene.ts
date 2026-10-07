@@ -6,7 +6,7 @@ import { ESTATE_STOREY_FFL } from '../../../../lib/estate/ids';
 import { LOD_DETAIL, LOD_FACADE, LOD_MASSING } from '../../../../lib/estate/lod';
 import type { EstateScheduler, Eviction } from '../../../../lib/estate/scheduler';
 import type { EstatePack, PackBuilding } from '../../../../lib/estate/schema';
-import { createStoreyUniforms, setMassingLines, setPlanSides, setStoreyMask, type MaterialKit, type StoreyUniforms } from './materials';
+import { DRAW_ORDER, createStoreyUniforms, setMassingLines, setPlanSides, setStoreyMask, type MaterialKit, type StoreyUniforms } from './materials';
 import {
   isGlass, type DecodedParts, type DetailParts, type FacadeParts, type InteriorParts, type MassingNode, type Part, type SiteParts,
   type SiteSpecies,
@@ -27,8 +27,11 @@ import { createTreePartition, gatherMatrices, partitionTrees, TREE_REPARTITION_M
 //                 interior.ts): T InstancedMesh ×2 · R · specials · furniture
 //
 // Culling is the engine's own, by bounding spheres from pack.json (§7.2), so
-// three's per-object frustum test is off everywhere (and no geometry ever pays
-// for a computed bounding sphere). One material instance per building per class
+// three's per-object frustum test is off everywhere. three still computes each
+// object's bounding sphere once, lazily, as its sort depth (the opaque list
+// draws nearest first, renderer.ts nearestFirst); an instanced set whose
+// instances are rewritten (trees here, T and furniture in interior.ts) drops
+// its sphere so the next projection measures it afresh. One material instance per building per class
 // carries that building's uniforms; they share programs (materials.ts). A
 // material never serves both a Mesh and an InstancedMesh: three keys its
 // program on `instancing`, so one shared by both re-resolves its program and
@@ -219,7 +222,10 @@ export class EstateScene {
         const building = siteIndex === null ? null : this.buildings[siteIndex];
         if (!building) return;
         for (const p of decoded.meshes) replaceMaterial(p.object, building.materials.facade);
-        for (const p of decoded.edges) replaceMaterial(p.object, building.materials.edge);
+        for (const p of decoded.edges) {
+          replaceMaterial(p.object, building.materials.edge);
+          p.object.renderOrder = DRAW_ORDER.edge;
+        }
         for (const p of decoded.parts) p.object.visible = false;
         decoded.node.removeFromParent();
         building.group.add(decoded.node);
@@ -383,12 +389,14 @@ export class EstateScene {
         gatherMatrices(s.fullSource, s.partition.near, s.partition.nearCount, mesh.instanceMatrix.array as Float32Array);
         mesh.count = s.partition.nearCount;
         mesh.instanceMatrix.needsUpdate = true;
+        mesh.boundingSphere = null;
       }
       if (s.crown && s.crownSource) {
         const mesh = s.crown.object as InstancedMesh;
         gatherMatrices(s.crownSource, s.partition.far, s.partition.farCount, mesh.instanceMatrix.array as Float32Array);
         mesh.count = s.partition.farCount;
         mesh.instanceMatrix.needsUpdate = true;
+        mesh.boundingSphere = null;
       }
     }
     return changed;

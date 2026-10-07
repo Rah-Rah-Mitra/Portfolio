@@ -661,6 +661,7 @@ export class InteriorSystem {
       if (full) {
         full.count = near;
         full.instanceMatrix.needsUpdate = true;
+        full.boundingSphere = null;
         const attribute = full.geometry.getAttribute(STOREY_ATTRIBUTE) as InstancedBufferAttribute | undefined;
         if (attribute) attribute.needsUpdate = true;
         full.visible = near > 0 && f.full!.uploaded;
@@ -668,6 +669,7 @@ export class InteriorSystem {
       if (proxy) {
         proxy.count = far;
         proxy.instanceMatrix.needsUpdate = true;
+        proxy.boundingSphere = null;
         const attribute = proxy.geometry.getAttribute(STOREY_ATTRIBUTE) as InstancedBufferAttribute | undefined;
         if (attribute) attribute.needsUpdate = true;
         proxy.visible = far > 0 && f.proxy!.uploaded;
@@ -773,6 +775,8 @@ export const writeTypical = (mesh: InstancedMesh, base: Matrix4, band: Pick<Band
   }
   mesh.count = count;
   mesh.instanceMatrix.needsUpdate = true;
+  // three measures it again at the next projection (its sort depth, scene.ts).
+  mesh.boundingSphere = null;
   if (attribute) attribute.needsUpdate = true;
 };
 

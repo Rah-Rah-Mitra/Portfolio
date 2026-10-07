@@ -113,7 +113,11 @@ gravity field and a fluid; both are off at boot.
 
 **Key characteristics:**
 
-- One light look. No dark scheme, no accent switcher, no appearance preferences.
+- One light look. No dark scheme, no accent switcher, no appearance preferences
+  for the site. The Estate viewer's toon shading is a render mode of the
+  drawing, not a theme: the same tokens in three flat tones with its line work
+  in ink (`--color-accent-900`), off by default, inside the 3D canvas only — no
+  new colour and no change to any chrome.
 - One accent, steel blue, used for state, links, kickers and the single solid
   object on a board: the primary button.
 - Barlow Condensed headings in uppercase over Barlow body text.
@@ -236,6 +240,17 @@ the FX "Pause all motion").
   bench (seeded synthetic data, not Abbott's), FIG. 05e drop test.
 - **Estate** (FIG. 07): the poster and registry are prerendered text; the 3D
   viewer is a lazy chunk. Rules a 3D viewport adds to the ones above:
+  - SETTINGS (a disclosure in the HUD, after KEYS) holds the viewer's
+    preferences: walking and flying speed, look sensitivity and inversion, the
+    first-person field of view (shown in degrees vertical and horizontal), the
+    detail level, edge lines, toon shading, Reduce camera motion and a frame
+    readout. Each applies at once, with no Apply button; each says where it
+    applies; one Restore defaults; saved in this browser. Native controls only:
+    range inputs with their value and units spoken, on/off switches as pressed
+    buttons whose label never changes, the detail level as a row of pressed
+    buttons (never a select, whose popup would take Esc). A fixed detail level
+    is the visitor's and holds; only Auto lets the viewer lower detail when
+    frames drop;
   - a keyboard viewport is `role="application"` with an `aria-label` and an
     `aria-describedby` pointing at a short per-mode key summary
     (`#estate-keys-desc`, the full list prerendered as `#estate-keys`), and only

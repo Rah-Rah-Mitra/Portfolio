@@ -227,7 +227,15 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        `scene`, `streaming`, `loop`, `governor`, `levels`, `stats` and
        `lifecycle` beside it: one token palette (`lib/estate/palette.json`, read
        at start through `shellDom.readTokenColours`; six programs, every switch a
-       uniform, no colour in engine code; three's flat-shading normal is guarded
+       uniform — toon shading too: one `uToon` IUniform shared by every material
+       of the kit snaps a Lambert surface's lit ratio to three bands
+       (`uToonCuts`/`uToonLevels` from `lib/estate/toon.ts toonBands` over the
+       scene's own sky and ground colours, the top band the token itself; glass
+       untouched, no discard) and turns the line work to ink (the edge lines and
+       the massing's storey lines read the cut slot, accent-900; Plan's room
+       marker, a lit surface in the edge slot, keeps accent-700), with the
+       program key unchanged — no colour in
+       engine code; three's flat-shading normal is guarded
        against a zero screen derivative, `materials.ts FLAT_NORMAL_GUARDED`:
        SwiftShader gave one at eye-level poses on a heading that is a multiple
        of 90°, `normalize(0)` is NaN and the face drew black, 17 % of the frame
@@ -482,8 +490,79 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
        written only at rest, for a dial mounted later — written per frame it
        restyled the stage subtree, 3.4 ms a frame). `?estate-debug=1` adds the
        stats row. Its CSS is the `.wb-estate-hud*` block in `index.css`.
+     - **Viewer settings** (`live/EstateSettings.tsx`, the HUD's SETTINGS
+       disclosure after KEYS and before Capture, `view.popover === 'settings'`:
+       Esc layer 1 with no change to `decideEscape`; `openerOf` hands focus back
+       to the toggle; the panel is stateless and props-only, `data-estate-scroll`).
+       `lib/estate/settings.ts` (pure, in the controller chunk) holds the model:
+       walk speed 0.8–3.2 m/s (Shift 2.5×), fly speed ×0.5–2 (under the wheel's
+       multiplier), look sensitivity ×0.25–3 on log-spaced stops, invert vertical
+       look (first person only), the first-person lens 50–90° vertical (Walk and
+       Fly; Overview keeps the poster lens), the detail level (Auto or a fixed
+       tier), edge lines, toon shading, Reduce camera motion and the Performance
+       readout; the defaults are today's constants, pinned to their sources, so
+       a visitor who never opens it sees what the engine drew before.
+       `engine.setSettings(patch)` (honoured before ready and frozen, like
+       `setLean`) sanitises through `patchSettings`, which keeps the object's
+       identity on a no-op (`sameView` compares it), mirrors it in
+       `view.settings`, and hands it to the core (`applySettings`: lens for
+       detail selection via `lod.ts modeVfov` — the nominal lens, never
+       `camera.fov`, so today's 45°→60° tweens keep their K — toon, edges, the
+       stats flag, the detail level) and the controls (speed scales on the
+       walker and Fly, LookState scale/invertY, camera-controls' rotate speeds,
+       `retargetFov` onto an Enter arc's end, a first-person lens tween or the
+       camera at rest), then one `invalidate()`. Reduce camera motion is no
+       separate path: `engine/index.ts` wraps the core's `motionHalted` to OR it
+       in, so every flight, arc, fade, climb and orbit smoothing that honours a
+       halt honours it. A fixed detail level holds its tier at that tier's full
+       pixel ratio through `applyQuality` (the notch's own wait-for-stillness
+       and GPU drain), never through `options.tier` or `applyNotch`, never
+       touching MSAA or `estate:msaa`; the governor is not sampled meanwhile (a
+       second "meter" governor keeps the readout live) and Auto resumes its
+       ladder where it stood. Toon draws the edge lines on every tier (detail
+       selection counts their draw, `LevelFrame.edges`, so the caps hold) out to
+       a 6 px storey (`TOON_EDGE_MIN_STOREY_PX`; at 4 px the windows' line work
+       merged into a dark mass), and Edge lines off also drops the massing's
+       storey lines. Walk's near plane follows the lens (`frames.ts
+       nearCornerFactor`: 0.20 m / k, never under 3 cm; unchanged at 60° up to
+       3.8 : 1), and elsewhere near is min(0.5, 0.9 / k) of the gap, so a stage
+       wider than about 2.4 : 1 at 60° closes it in a little. Stored in this browser by the controller (`shellDom.ts`
+       `estate:settings`, `{"v":1,…}` with only what differs from the defaults,
+       nothing written for a visitor who changes nothing, try/catch, a reopened
+       instance keeps the visit's settings when storage refuses); the bench
+       neither reads nor writes them and the engine ignores `options.settings`
+       under `bench`; `?estate-quality=` starts the detail on Auto and leaves the
+       stored detail as it was. A closed window's HUD keeps no focus to hand on
+       (`useFocusRescue` skips a section FieldWorkbench has hidden).
+     - **Hidden-surface removal.** Present: the depth buffer (reversed where
+       `EXT_clip_control` exists); back-face culling on every opaque material
+       (the pack orients solids, panels are doubled in data); the engine's own
+       per-building and per-quadrant bounding-sphere frustum culling
+       (`scene.ts cull()`; three's `frustumCulled` is off everywhere); detail
+       selection by screen-space error under the tier caps; the storey band's
+       vertex collapse; near/far trees and furniture; and no `discard` outside the
+       two-sided programs. The opaque list draws **nearest first**
+       (`renderer.ts nearestFirst`, installed by `configureRenderer`: three's
+       default sorts by material before depth, and per-building materials made it
+       building order, the room underfoot last), the edge lines after the
+       surfaces and the 4 km ground grid last (`materials.ts DRAW_ORDER`), and an
+       instanced set whose instances are rewritten drops the bounding sphere three
+       keeps as its sort depth. Same image (an exact 11-pose pixel diff against
+       the previous order), same draws and triangles; the saving is fill, which
+       SwiftShader's timings do not show. Not adopted, with reasons: hardware
+       occlusion queries (results at least a frame late: frames at rest or
+       popping, CI flake, and a block is seen through its void deck so a building
+       proxy is rarely hidden); occlusion horizons and 2.5D occluders (void decks
+       and the open-sided car park and hawker centre do not reach the ground);
+       software occluder rasterisation (the eye-level void-deck strip stays open,
+       so it culls little for its bytes); portals and potentially visible sets
+       (need window openings in the pack); Hi-Z and a depth pre-pass (programs,
+       readback or twice the draws for a cheap fragment shader); fog-end and
+       per-instance tree culling (negligible, or an upload per rotation).
      Test seams: `?estate-quality=` and `?estate-release-ms=` (100 ms–30 s; only
-     ever shortens the 30 s release hold).
+     ever shortens the 30 s release hold). `?estate-quality=` and the bench do
+     not take the viewer's stored detail level (above); `?estate-release-ms=`
+     leaves the settings alone.
      **`?estate-bench=1`** (P7, plan §12.4; `=max` runs it in the maximised
      window, the bench pressing Maximize itself) turns on the debug readouts and,
      once live, runs the benchmark route by itself: `engine/bench.ts`, a chunk
@@ -549,15 +628,16 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   interior, walk and nav file), checked by estate:check and
   `tests/estate-pack.test.ts`: the P5 real-data suites skip without them, so
   the gate is what fails. The engine pins are a tripwire at measured + 5 %
-  (942,000 B for the engine chunk since P5, which measures 907,791 B after the
-  release round's fixes; 278,000 B gzip for the Load click since P7, which
-  measures 266,035 B); the plan's 950,000 / 307,200 B are the hard ceiling. The chunk the engine shares with its HUD is named
+  (942,000 B for the engine chunk since P5, which measures 913,125 B with the
+  viewer settings and toon shading; 278,000 B gzip for the Load click since P7,
+  which measures 269,562 B with the SETTINGS panel); the plan's 950,000 / 307,200 B are the hard ceiling. The chunk the engine shares with its HUD is named
   `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
   whichever pure module it lists first), and the engine chunk is found by the
   module it holds, not by its facade, which Rollup drops once the bench chunk
   imports from it. Main bundle: 508,334 / 508,834 B since the Estate became a
   boot window (+160 B; the P6/P7 review left it at 508,174 and the release
-  round unchanged).
+  round unchanged; the viewer settings added nothing: `lib/estate/settings.ts`
+  lands in the controller chunk, 30.9 kB, which no pin counts).
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
   `<FieldWorkbench/>` for the Esc layers, Walk's lift panel and strip, Enter on
   a focused HUD button, and the touch stick), the Estate cases in
@@ -598,7 +678,16 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   under the FX panel and reads `yielded` / "HELD · ESTATE" once the panel
   closes) and release-and-reopen (14: `?estate-release-ms=1000`, closed 2 s,
   the canvas gone, live again within 10 s, never `unavailable`), and 9b (a
-  context lost while closed, never restored: reopened, live on a new canvas).
+  context lost while closed, never restored: reopened, live on a new canvas),
+  and the viewer settings (22: SETTINGS by a mouse click with the stage holding
+  the keys and nothing in the row moving, axe finding nothing with it open,
+  toon shading still six programs and changing the drawing, zero animation
+  frames at rest after a change and at a fixed level, the lens to 90° in Fly by
+  the slider's End key without moving the camera, the readout's tier following
+  Low and back to Auto, Esc from a switch closing it with focus on the toggle,
+  Restore defaults; 22b: settings kept across a reload). `tests/estate-budget.test.ts`
+  also proves the widest lens (90°, every height, edge lines on every tier) and
+  S4, S4-min and S5 at it inside the caps.
   No case waits for the network to go idle once the window is open — the rest
   of the page decides that (the closed résumé builder POSTs `/api/resume` and
   previews a PDF, which headless Chromium takes as a download; the spec stubs
@@ -1040,6 +1129,9 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   each new flake has already cost someone a red run. Nothing is weakened — a
   genuinely broken assertion still fails. Adding DOM test files raises load for
   every other file, so re-run the full suite a few times after you do.
+- jsdom keeps `localStorage` across a file's tests: a DOM test that mounts the
+  Estate controller starts with `localStorage.clear()` (the viewer's settings
+  are stored there).
 - `tests/e2e/quality.spec.ts` pins the workbench boot state (Home / Dossier
   focused in front of the Estate, Selected Work closed), the 10/29 no-JS
   evidence counts, and zero serious axe violations on both surfaces.

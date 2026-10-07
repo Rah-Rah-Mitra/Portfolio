@@ -412,10 +412,12 @@ export class EstateScene {
    * lod.ts' shown level. Edge lines draw where the tier allows them and the
    * building is within `edgeReach` metres (`distances[i]`, eye to its box), and
    * the massing storey lines within the same reach: beyond it storeys are a few
-   * pixels apart and 1 px lines only alias into a dark mass. Returns the number of buildings whose level changed (a
-   * geometry swap: two settle frames, §7.8).
+   * pixels apart and 1 px lines only alias into a dark mass. `lines` false (the
+   * viewer's Edge lines switch off) drops the storey lines too. Returns the
+   * number of buildings whose level changed (a geometry swap: two settle
+   * frames, §7.8).
    */
-  applyLevels(levels: ArrayLike<number>, edges: boolean, distances: ArrayLike<number>, edgeReach: number): number {
+  applyLevels(levels: ArrayLike<number>, edges: boolean, distances: ArrayLike<number>, edgeReach: number, lines = true): number {
     let swaps = 0;
     const buildings = this.buildings;
     for (let k = 0; k < buildings.length; k += 1) {
@@ -437,7 +439,7 @@ export class EstateScene {
         this.setOffset(b.materials.facade, lined);
       }
       this.setOffset(b.materials.massing, lined);
-      setMassingLines(b.materials.massing, near);
+      setMassingLines(b.materials.massing, near && lines);
       if (b.detail) showParts(b.detail.parts, detail);
     }
     const quadrants = this.quadrants;

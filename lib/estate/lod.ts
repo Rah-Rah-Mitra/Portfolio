@@ -71,6 +71,15 @@ export const ESTATE_VFOV_DEG: Readonly<Record<EstateViewMode, number>> = Object.
   overview: 45, plan: 45, walk: 60, fly: 60,
 });
 
+/**
+ * The vertical FOV detail selection reads for a mode: the viewer's first-person
+ * lens (lib/estate/settings.ts fovDeg) in Walk and Fly, ESTATE_VFOV_DEG
+ * elsewhere. The nominal lens, not camera.fov, so a mode switch's 0.25 s lens
+ * tween and Overview's poster lens leave the levels where they were.
+ */
+export const modeVfov = (mode: EstateViewMode, firstPersonDeg: number = ESTATE_VFOV_DEG.walk): number =>
+  mode === 'walk' || mode === 'fly' ? firstPersonDeg : ESTATE_VFOV_DEG[mode];
+
 /** K = buffer height / (2 tan(vfov/2)), px. Height in drawing-buffer pixels; vfov in degrees, as three's camera.fov. */
 export const sseScale = (bufferHeightPx: number, vfovDeg: number): number =>
   bufferHeightPx / (2 * Math.tan((vfovDeg * Math.PI) / 360));

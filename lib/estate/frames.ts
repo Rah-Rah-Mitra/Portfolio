@@ -198,14 +198,28 @@ export const pointBoxDistance = (p: ArrayLike<number>, min: ArrayLike<number>, m
 
 export type EstateViewMode = 'overview' | 'plan' | 'walk' | 'fly';
 
-// Walk's near plane is fixed. The walker's radius is 0.20 m, so no wall comes
-// nearer the eye than that; the near rectangle's corners sit k · near from the
-// eye, k = √(1 + tan²(hfov/2) + tan²(vfov/2)), so it stays clear of every wall
-// while near < 0.20 / k. The plan's bound is 0.20 / 1.38 = 0.145 m; 0.08 m holds
-// up to k = 2.5, which a 60° vertical FOV reaches only past a 3.8 : 1 window.
-// Far is where the walk fog ends.
+// Walk's near plane. The walker's radius is 0.20 m, so no wall comes nearer the
+// eye than that; the near rectangle's corners sit k · near from the eye,
+// k = √(1 + tan²(hfov/2) + tan²(vfov/2)) = √(1 + tan²(vfov/2)·(1 + aspect²))
+// (nearCornerFactor), so it stays clear of every wall while near ≤ 0.20 / k.
+// 0.08 m holds up to k = 2.5, which the default 60° vertical FOV reaches only
+// past a 3.8 : 1 window; a wider lens from the viewer's settings (up to 90°)
+// passes it sooner (at 16:9 past 96.6°, at 21:9 past 84°), so near follows k
+// below 0.08, never under 3 cm. Far is where the walk fog ends.
 export const WALK_NEAR = 0.08;
 export const WALK_FAR = 600;
+/** The walker's radius: the walk grids are shrunk by it, so no wall comes nearer the eye. */
+export const WALK_CLEARANCE = 0.2;
+/** Walk's near plane never closes in further than this, m (depth precision). */
+export const WALK_NEAR_MIN = 0.03;
+/** Elsewhere the near rectangle's corners stay within this share of the gap. */
+export const NEAR_CORNER_SHARE = 0.9;
+
+/** How far the near rectangle's corners sit from the eye, in near-plane distances: √(1 + tan²(vfov/2)·(1 + aspect²)). */
+export const nearCornerFactor = (vfovDeg: number, aspect: number): number => {
+  const t = Math.tan((vfovDeg * Math.PI) / 360);
+  return Math.sqrt(1 + t * t * (1 + aspect * aspect));
+};
 // Elsewhere near follows the scene: half the gap to the nearest thing that can
 // be in front of the lens, clamped. 5 cm floor (inside a box the gap is 0),
 // 20 m ceiling (beyond it depth precision is already ample). With a reversed-Z
@@ -229,6 +243,9 @@ export interface ClipPose {
   orbitDistance: number;
   /** The renderer has a reversed-Z depth buffer (EXT_clip_control). Walk ignores it. */
   reversedDepth: boolean;
+  /** The camera's vertical field of view, degrees, and aspect (width / height): the near rectangle's size. Without them the 60° defaults' planes. */
+  vfovDeg?: number;
+  aspect?: number;
 }
 
 export interface ClipPlanes { near: number; far: number }
@@ -241,13 +258,18 @@ const clamp = (value: number, lo: number, hi: number) => Math.min(hi, Math.max(l
  * far cuts into the building in front of the lens. Far is always ≥ 800 > NEAR_MAX.
  */
 export const clipPlanes = (mode: EstateViewMode, pose: ClipPose, out: ClipPlanes = { near: 0, far: 0 }): ClipPlanes => {
+  const lens = pose.vfovDeg !== undefined && pose.aspect !== undefined && pose.vfovDeg > 0 && pose.aspect > 0;
+  const k = lens ? nearCornerFactor(pose.vfovDeg as number, pose.aspect as number) : 0;
   if (mode === 'walk') {
-    out.near = WALK_NEAR;
+    out.near = k > 0 ? Math.max(WALK_NEAR_MIN, Math.min(WALK_NEAR, WALK_CLEARANCE / k)) : WALK_NEAR;
     out.far = WALK_FAR;
     return out;
   }
+  // Half the gap, or less where a wide lens would put the near rectangle's
+  // corners past NEAR_CORNER_SHARE of it (from k ≈ 1.8: 60° past a 2.4 : 1 window).
+  const share = k > 0 ? Math.min(0.5, NEAR_CORNER_SHARE / k) : 0.5;
   const gap = Math.min(pose.nearestBoxDistance, pose.heightAboveFloor);
-  out.near = gap > 0 ? clamp(0.5 * gap, NEAR_MIN, NEAR_MAX) : NEAR_MIN;
+  out.near = gap > 0 ? clamp(share * gap, NEAR_MIN, NEAR_MAX) : NEAR_MIN;
   const orbit = pose.orbitDistance > 0 ? pose.orbitDistance : 0;
   out.far = Math.min(FAR_MAX, orbit + (pose.reversedDepth ? FAR_PAST_TARGET : FOG_END_PAST_TARGET));
   return out;

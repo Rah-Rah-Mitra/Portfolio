@@ -133,6 +133,12 @@ export class OrbitController {
 
   private readonly handleControl = () => this.onControl();
 
+  /** The viewer's look sensitivity on orbit drags (camera-controls' own default 1); keys and steps turn by their fixed rates. */
+  setRotateSpeed(scale: number): void {
+    this.controls.azimuthRotateSpeed = scale;
+    this.controls.polarRotateSpeed = scale;
+  }
+
   /** Shift-drag pans like a right-drag: chosen at each press, kept for that drag. */
   setShiftPan(shift: boolean): void {
     this.controls.mouseButtons.left = shift ? ACTION.SCREEN_PAN : ACTION.ROTATE;

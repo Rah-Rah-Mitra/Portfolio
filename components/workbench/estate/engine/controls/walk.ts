@@ -107,6 +107,12 @@ export interface WalkSite {
 export class WalkController {
   readonly mode = 'walk' as const;
   readonly look = new LookState();
+  /**
+   * The viewer's walking pace over WALK_SPEED (settings walkSpeed): the walk,
+   * its Shift run and the acceleration scale together, so the time to reach
+   * speed stays the same. Step buttons, the wheel and drags keep their metres.
+   */
+  speedScale = 1;
   /** Estate frame, m. */
   x = 0;
   y = 0;
@@ -500,7 +506,7 @@ export class WalkController {
     let wy = f.y * fwd + r.y * side;
     const wl = Math.hypot(wx, wy);
     if (wl > 1) { wx /= wl; wy /= wl; }
-    const speed = held.has('boost') ? WALK_BOOST_SPEED : WALK_SPEED;
+    const speed = (held.has('boost') ? WALK_BOOST_SPEED : WALK_SPEED) * this.speedScale;
     wx *= speed;
     wy *= speed;
     if (halted) {
@@ -514,7 +520,7 @@ export class WalkController {
       const dvx = wx - this.vx;
       const dvy = wy - this.vy;
       const m = Math.hypot(dvx, dvy);
-      const most = WALK_ACCEL * dt;
+      const most = WALK_ACCEL * this.speedScale * dt;
       if (m <= most) { this.vx = wx; this.vy = wy; } else { this.vx += (dvx / m) * most; this.vy += (dvy / m) * most; }
     }
     if (wl === 0 && Math.hypot(this.vx, this.vy) < WALK_REST_SPEED) { this.vx = 0; this.vy = 0; }

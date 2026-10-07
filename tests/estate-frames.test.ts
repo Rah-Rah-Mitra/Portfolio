@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  FAR_MAX, FOG_END_PAST_TARGET, NEAR_MAX, NEAR_MIN, WALK_FAR, WALK_NEAR, clipPlanes, estateDirToLocal, estateToLocal,
+  FAR_MAX, FOG_END_PAST_TARGET, NEAR_MAX, NEAR_MIN, WALK_CLEARANCE, WALK_FAR, WALK_NEAR, WALK_NEAR_MIN, clipPlanes, estateDirToLocal, estateToLocal,
+  nearCornerFactor,
   estateToThree, gltfToLocal, gltfToThree, headingToThreeYaw, localDirToEstate, localToEstate, localToGltf, localToThree,
   pointBoxDistance, quarterTurns, siteRootThree, threeToEstate, threeToLocal, threeYawToHeading, wrapAngle,
   type EstateViewMode, type SitePlacement, type Vec3,
@@ -173,6 +174,32 @@ describe('clip planes (plan §7.2)', () => {
   it('fixes Walk at 0.08 – 600 m, wherever the walker is', () => {
     expect(clipPlanes('walk', pose([105, 54, 27.6], 26))).toEqual({ near: WALK_NEAR, far: WALK_FAR });
     expect(clipPlanes('walk', pose([0, 0, 1.6]))).toEqual({ near: 0.08, far: 600 });
+  });
+
+  it('keeps today’s planes at the default 60° lens up to a 16:9 stage, and a wider lens clear of every wall', () => {
+    const at = (vfovDeg: number, aspect: number) => ({ ...pose([105, 54, 27.6], 26), vfovDeg, aspect });
+    // The default lens: exactly the planes without a lens (the near rectangle fits well inside the walker's clearance).
+    for (const aspect of [722 / 531, 4 / 3, 16 / 9]) {
+      expect(clipPlanes('walk', at(60, aspect))).toEqual(clipPlanes('walk', pose([105, 54, 27.6], 26)));
+      const out = pose([200 + 300, 200, 300]);
+      expect(clipPlanes('overview', { ...out, vfovDeg: 45, aspect })).toEqual(clipPlanes('overview', out));
+      expect(clipPlanes('fly', { ...out, vfovDeg: 60, aspect })).toEqual(clipPlanes('fly', out));
+    }
+    // 0.08 m holds to k = 2.5: the default lens reaches it only past 3.8 : 1.
+    expect(nearCornerFactor(60, 3.8)).toBeCloseTo(2.5, 1);
+    expect(nearCornerFactor(90, 1)).toBeCloseTo(Math.sqrt(3), 12);
+    // The viewer's widest lens on wide stages: the near rectangle's corners stay inside the walker's 0.20 m.
+    for (const aspect of [16 / 9, 21 / 9, 32 / 9]) {
+      const { near } = clipPlanes('walk', at(90, aspect));
+      expect(near * nearCornerFactor(90, aspect), `90° at ${aspect.toFixed(2)}`).toBeLessThanOrEqual(WALK_CLEARANCE + 1e-12);
+      expect(near).toBeGreaterThanOrEqual(WALK_NEAR_MIN);
+      expect(near).toBeLessThanOrEqual(WALK_NEAR);
+    }
+    expect(clipPlanes('walk', at(90, 21 / 9)).near).toBeCloseTo(0.2 / nearCornerFactor(90, 21 / 9), 12);
+    // Elsewhere the corners stay within 0.9 of the gap.
+    const gap = pose([200, 200, 30]);
+    const wide = clipPlanes('fly', { ...gap, vfovDeg: 90, aspect: 21 / 9 });
+    expect(wide.near * nearCornerFactor(90, 21 / 9)).toBeLessThanOrEqual(0.9 * Math.min(gap.nearestBoxDistance, gap.heightAboveFloor) + 1e-9);
   });
 
   it('keeps near ≤ 0.145 m inside Blk 509 at L10, walking or flying', () => {

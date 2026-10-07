@@ -1,5 +1,6 @@
 import type { EstateLocation } from '../../../../lib/estate/announce';
 import { ESTATE_SITE_IDS } from '../../../../lib/estate/ids';
+import { ESTATE_SETTINGS_DEFAULTS, patchSettings, settingsFrom } from '../../../../lib/estate/settings';
 import type {
   CreateEngine, EstateEngine, EstateEngineFeatures, EstateEngineOptions, EstateInteriorView, EstatePopover, EstateResume,
   EstateView,
@@ -21,6 +22,12 @@ import type { EngineNavigation, ViewAccess } from './navigation';
 // navigation module (navigation.ts: Overview, Fly, fly-to and picking in P4b,
 // P5's Walk and Enter, P6's Plan) moves the camera. A command whose feature is
 // not in this build returns false, as engineApi.ts promises.
+//
+// The viewer's settings (setSettings, view.settings) are sanitised here and
+// handed to both: the core (lens for detail selection, toon, edges, readout,
+// detail level) and the navigation (speeds, look, the first-person lens). Reduce
+// camera motion needs neither: the core's motionHalted is wrapped to OR it in,
+// so every transition, smoothing and fade that already honours a halt honours it.
 
 /** The core's own features: none of the navigation ones. navigation.ts adds its own over these. */
 const CORE_FEATURES: EstateEngineFeatures = Object.freeze({
@@ -43,7 +50,8 @@ const sameView = (a: EstateView, b: EstateView): boolean =>
   sameLocation(a.location, b.location) && a.selection === b.selection && a.transition === b.transition
   && a.flight === b.flight && a.popover === b.popover && a.moving === b.moving && a.pointerLocked === b.pointerLocked
   && a.pointerUnlockedAtMs === b.pointerUnlockedAtMs && a.lean === b.lean && a.flySpeed === b.flySpeed
-  && (a.interior ?? null) === (b.interior ?? null) && (a.walk ?? null) === (b.walk ?? null) && (a.plan ?? null) === (b.plan ?? null);
+  && (a.interior ?? null) === (b.interior ?? null) && (a.walk ?? null) === (b.walk ?? null) && (a.plan ?? null) === (b.plan ?? null)
+  && a.settings === b.settings;
 
 const sameInterior = (a: EstateInteriorView | null, b: EstateInteriorView | null): boolean =>
   a === b || (a !== null && b !== null && a.site === b.site && a.state === b.state && a.storey === b.storey
@@ -59,6 +67,8 @@ export interface EngineInternals {
 }
 
 export const createEngineInternals = (options: EstateEngineOptions): EngineInternals => {
+  // The bench always runs the defaults, whatever the shell stored.
+  const initialSettings = options.bench ? ESTATE_SETTINGS_DEFAULTS : settingsFrom(options.settings);
   let view: EstateView = Object.freeze({
     location: INITIAL_LOCATION,
     selection: options.resume?.selection ?? null,
@@ -70,7 +80,11 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
     pointerLocked: false,
     pointerUnlockedAtMs: null,
     lean: options.lean,
+    settings: initialSettings,
   });
+  const currentSettings = () => view.settings ?? ESTATE_SETTINGS_DEFAULTS;
+  // Reduce camera motion is a halt the viewer asked for: every reader of motionHalted honours it.
+  const coreOptions: EstateEngineOptions = { ...options, motionHalted: () => options.motionHalted() || currentSettings().reduceMotion };
 
   const emitter = new EngineEmitter(options.token, options.onEvent);
   let core: EstateCore | null = null;
@@ -101,7 +115,7 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
   let navigation: EngineNavigation | null = null;
   /** Buildings whose failed entry has been said as it happened (once each). */
   const failuresSaid = new Set<string>();
-  const engineCore = new EstateCore(options, emitter, {
+  const engineCore = new EstateCore(coreOptions, emitter, {
     beforeReady: () => {
       const before = locations;
       navigation?.ready?.();
@@ -127,6 +141,8 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
   // P4b's controls (Overview, Fly, fly-to, picking); navigation.ts is the seam P5's Walk and P6's Plan extend.
   const nav = createControls(engineCore, access);
   navigation = nav;
+  engineCore.applySettings(initialSettings);
+  nav.applySettings?.(initialSettings);
   const features: EstateEngineFeatures = Object.freeze({ ...CORE_FEATURES, ...nav.features });
 
   /** Navigation commands act only on a live, unfrozen engine. */
@@ -217,6 +233,16 @@ export const createEngineInternals = (options: EstateEngineOptions): EngineInter
       if (engineCore.isDisposed) return;
       engineCore.setLean(lean);
       access.set({ lean });
+    },
+    setSettings: (patch) => {
+      if (engineCore.isDisposed) return false;
+      const before = currentSettings();
+      const next = patchSettings(before, patch);
+      if (next === before) return false;
+      access.set({ settings: next });
+      nav.applySettings?.(next);
+      engineCore.applySettings(next);
+      return true;
     },
   };
   const internals: EngineInternals = { engine, core: engineCore, navigation: nav };

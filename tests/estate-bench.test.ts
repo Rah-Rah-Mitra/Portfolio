@@ -236,7 +236,9 @@ describe('?estate-bench=1', () => {
     const index = await readFile(path.join(root, 'components/workbench/estate/engine/index.ts'), 'utf8');
     expect(index).toMatch(/if \(options\.bench\) \{[\s\S]{0,200}import\('\.\/bench'\)/);
     const controller = await readFile(path.join(root, 'components/workbench/estate/EstateController.tsx'), 'utf8');
-    expect(controller).toContain('bench: benchFromSearch(search)');
+    // The shell's flag, read once beside the settings it also gates (the bench runs on the defaults), handed to createEngine.
+    expect(controller).toContain('const bench = benchFromSearch(search);');
+    expect(controller).toMatch(/createEngine\(\{[\s\S]{0,400}\s+bench,\s/);
     // No static import of the bench anywhere, in any spelling: tests/estate-boundary.test.ts
     // checks every file of the app with the TypeScript parser, and the build's
     // check-bundle fails a Load click or main bundle that carries its schema string.

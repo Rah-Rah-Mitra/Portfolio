@@ -8,6 +8,7 @@ import {
   cutSpoken, cycleRoom, defaultPlanStorey, PLAN_CUT_DEFAULT, PLAN_POLAR, rayFloor, ringCentroid, roomSpoken, roomText, stepCut, walkInPoint, walkInYaw,
 } from '../../../../../lib/estate/plan';
 import type { PackSpawn } from '../../../../../lib/estate/schema';
+import { ESTATE_SETTINGS_DEFAULTS, type EstateViewerSettings } from '../../../../../lib/estate/settings';
 import { EYE_HEIGHT } from '../../../../../lib/estate/storeys';
 import type { WalkPose } from '../../../../../lib/estate/walk';
 import type {
@@ -27,6 +28,7 @@ import {
   blankPose, clampOrbit, FLY_TO_SECONDS, flightDone, flightPose, FOV_SECONDS, frameBuilding, HOME_SECONDS, ORBIT_LIMITS,
   orbitFromLookAt, PICK_FILL, PICK_FRAME_SECONDS, PICK_MIN_HALF, planFlight, planFrame, PLAN_STOREY_SECONDS, positionFromOrbit, type Flight, type OrbitPose,
 } from './tween';
+import { WALK_SPEED } from './walk';
 import { WalkMode, type WalkSpawn } from './walkMode';
 
 // The Estate viewer's controls (plan §8.1–§8.5, §8.7): what moves the camera
@@ -70,6 +72,12 @@ import { WalkMode, type WalkSpawn } from './walkMode';
 // lands on the frame it was asked for, a mode switch's FOV change is immediate,
 // and camera-controls has no smoothing. Movement the visitor drives still draws.
 // At rest the rig reports nothing moving and the frame loop sleeps.
+//
+// The viewer's settings (applySettings): Walk's pace, Fly's speed, the look
+// sensitivity and vertical inversion, and Walk's and Fly's lens (fpFov, where
+// the first-person 60° used to be written in). A new lens retargets whatever
+// is under way: an Enter arc's end, a first-person lens tween, or the camera
+// at rest in Walk or Fly; Overview and Plan keep theirs.
 
 /** What this build adds to the core's (all-false) features. */
 export const CONTROLS_FEATURES: Readonly<Partial<EstateEngineFeatures>> = Object.freeze({
@@ -176,6 +184,7 @@ class EstateControls implements EngineNavigation {
   private flight: ActiveFlight | null = null;
   private fovTween: FovTween | null = null;
   private overviewFov: number = ESTATE_VFOV_DEG.overview;
+  private settings: EstateViewerSettings = ESTATE_SETTINGS_DEFAULTS;
   private boundary = new Box3();
   private drag: Drag | null = null;
   /** Walk's wheel: notches not yet stepped. */
@@ -253,11 +262,14 @@ class EstateControls implements EngineNavigation {
     this.orbit = orbit;
     this.fly = new FlyController(camera, { bounds: roam, groundAt: (x, z) => this.groundY(x, z) });
     if (core.interiors) this.walk = new WalkMode(core, this.view, host);
+    this.syncControllers();
     const kit = core.materialKit;
     if (kit && core.scene) this.marker = new PlanMarker(kit, core.scene.root);
     const resume = core.options.resume;
     if (resume?.mode === 'fly') {
       orbit.enabled = false;
+      // The first-person lens, as Walk's resume takes it (a setting may have moved since boot posed the camera).
+      this.applyFov(this.fpFov);
       this.fly.activate();
       this.mode = 'fly';
     } else if (resume?.mode === 'walk' && this.walk) {
@@ -268,7 +280,7 @@ class EstateControls implements EngineNavigation {
       const p = resume.position;
       const yaw = Math.atan2(-(resume.target[0] - p[0]), resume.target[1] - p[1]);
       const inside = resume.inside ? this.core.interiors?.indexOf(resume.inside.site) ?? -1 : -1;
-      this.applyFov(ESTATE_VFOV_DEG.walk);
+      this.applyFov(this.fpFov);
       this.walk.startAt(p[0], p[1], p[2] - EYE_HEIGHT, yaw, 0, inside);
     } else {
       // Overview keeps the lens it went live with (the poster's, or a resumed 45°).
@@ -487,6 +499,58 @@ class EstateControls implements EngineNavigation {
     camera.updateProjectionMatrix();
   }
 
+  /** Walk's and Fly's lens (the viewer's setting; 60° by default). */
+  private get fpFov(): number { return this.settings.fovDeg; }
+
+  /**
+   * The lens a framing should use: where a lens tween is heading, else the
+   * camera's. Plan opened from Walk or Fly starts the tween back to the
+   * overview lens and frames at once: framed with the first-person lens still
+   * on the camera, the storey would overfill once the tween lands.
+   */
+  private lens(): number { return this.fovTween ? this.fovTween.to : this.core.camera.fov; }
+
+  /** The viewer's settings: speeds and look on every controller, and the first-person lens. */
+  applySettings(settings: EstateViewerSettings): void {
+    const before = this.settings;
+    this.settings = settings;
+    this.syncControllers();
+    if (settings.fovDeg !== before.fovDeg) this.retargetFov(settings.fovDeg);
+  }
+
+  private syncControllers() {
+    const s = this.settings;
+    const walker = this.walk?.walker;
+    if (walker) {
+      walker.speedScale = s.walkSpeed / WALK_SPEED;
+      walker.look.scale = s.lookScale;
+      walker.look.invertY = s.invertLook;
+    }
+    if (this.fly) {
+      this.fly.speedScale = s.flyScale;
+      this.fly.look.scale = s.lookScale;
+      this.fly.look.invertY = s.invertLook;
+    }
+    this.orbit?.setRotateSpeed(s.lookScale);
+  }
+
+  /** A new first-person lens: an Enter arc lands on it, a lens tween heads for it, Walk or Fly at rest takes it now. */
+  private retargetFov(fov: number) {
+    if (!this.isReady) return;
+    if (this.arc) {
+      // An exit arc lands on the overview lens.
+      if (this.arc.kind === 'enter') this.arc.arc.to.fov = fov;
+      return;
+    }
+    if (this.mode !== 'walk' && this.mode !== 'fly') return;
+    if (this.fovTween) {
+      this.fovTween.to = fov;
+      return;
+    }
+    this.applyFov(fov);
+    this.core.invalidate();
+  }
+
   /** Remember where a flight to building `site` ended (its orbit target), so the chip keeps naming it there. */
   private noteLanding(site: number, target: ArrayLike<number>) {
     this.landed = site >= 0 ? { site, x: target[0], y: target[1], z: target[2] } : null;
@@ -688,14 +752,14 @@ class EstateControls implements EngineNavigation {
     if (options?.instant === true || halted) {
       this.leaveFor('walk');
       this.mode = 'walk';
-      this.applyFov(ESTATE_VFOV_DEG.walk);
+      this.applyFov(this.fpFov);
       this.view.set({ selection: site, flight: false });
       this.walk.start(spawn, storey ? { site: index, tag: storey } : undefined);
       this.core.invalidate();
       return true;
     }
     const from = endFromCamera(camera);
-    const to = endFromLook([spawn.x, spawn.z + EYE_HEIGHT, -spawn.y], spawn.yaw, 0, ESTATE_VFOV_DEG.walk);
+    const to = endFromLook([spawn.x, spawn.z + EYE_HEIGHT, -spawn.y], spawn.yaw, 0, this.fpFov);
     this.leaveFor('walk');
     // From another building's walk: that walk ends where the arc begins (its storey hint, its offers).
     this.walk.stop();
@@ -733,7 +797,7 @@ class EstateControls implements EngineNavigation {
     if (site >= 0) this.core.setFocus(ESTATE_SITE_IDS[site]);
     this.leaveFor('walk');
     this.mode = 'walk';
-    this.fovTo(ESTATE_VFOV_DEG.walk, this.core.options.motionHalted());
+    this.fovTo(this.fpFov, this.core.options.motionHalted());
     this.walk.start(spawn);
     this.core.invalidate();
     return true;
@@ -783,7 +847,7 @@ class EstateControls implements EngineNavigation {
       to.azimuth = from.azimuth;
       to.polar = from.polar;
     } else {
-      to = planFrame(building.bounds, table.ffl[s], PLAN_POLAR, from, this.core.camera.fov, this.core.camera.aspect, ORBIT_LIMITS, this.toPose);
+      to = planFrame(building.bounds, table.ffl[s], PLAN_POLAR, from, this.lens(), this.core.camera.aspect, ORBIT_LIMITS, this.toPose);
     }
     const cut = same ? this.plan!.cut : PLAN_CUT_DEFAULT;
     this.releaseKeys();
@@ -912,7 +976,7 @@ class EstateControls implements EngineNavigation {
     const hy = Math.max((y1 - y0) / 2, PICK_MIN_HALF);
     const from = orbit.currentOrbit(this.fromPose);
     const camera = this.core.camera;
-    const to = planFrame([[cx - hx, cy - hy], [cx + hx, cy + hy]], table.ffl[plan.storey], from.polar, from, camera.fov, camera.aspect, ORBIT_LIMITS, this.toPose, PICK_FILL);
+    const to = planFrame([[cx - hx, cy - hy], [cx + hx, cy + hy]], table.ffl[plan.storey], from.polar, from, this.lens(), camera.aspect, ORBIT_LIMITS, this.toPose, PICK_FILL);
     to.distance = Math.min(to.distance, Math.max(from.distance, ORBIT_LIMITS.minDistance));
     this.startFlight(to, PICK_FRAME_SECONDS, plan.site, this.core.options.motionHalted());
     return to.distance;
@@ -935,7 +999,7 @@ class EstateControls implements EngineNavigation {
       const centre = ringCentroid(room.poly, [0, 0]);
       seen = camera.position.distanceTo(this.v1.set(building.at[0] + centre[0], cutZ, -(building.at[1] + centre[1])));
     }
-    const width = markerBandWidth(seen, camera.fov, this.canvas?.clientHeight || 600);
+    const width = markerBandWidth(seen, this.lens(), this.canvas?.clientHeight || 600);
     this.marker?.show(room.poly, building.at, cutZ, width);
   }
 
@@ -1008,14 +1072,14 @@ class EstateControls implements EngineNavigation {
     this.mode = 'walk';
     if (halted) {
       this.core.setPlan(null);
-      this.applyFov(ESTATE_VFOV_DEG.walk);
+      this.applyFov(this.fpFov);
       this.view.set({ selection: site, flight: false });
       this.walk.start(spawn);
       this.core.invalidate();
       return true;
     }
     const from = endFromCamera(camera);
-    const to = endFromLook([spawn.x, spawn.z + EYE_HEIGHT, -spawn.y], spawn.yaw, 0, ESTATE_VFOV_DEG.walk);
+    const to = endFromLook([spawn.x, spawn.z + EYE_HEIGHT, -spawn.y], spawn.yaw, 0, this.fpFov);
     this.arc = {
       arc: planArc(from, to, 0, ENTER_SECONDS), startMs: now(), kind: 'enter', site: plan.site, spawn, storey: null, orbit: null, plan: true,
     };
@@ -1245,7 +1309,7 @@ class EstateControls implements EngineNavigation {
       this.leaveFor('fly');
       fly.activate(); // keeps the pose drawn now
       this.mode = 'fly';
-      this.fovTo(ESTATE_VFOV_DEG.fly, halted);
+      this.fovTo(this.fpFov, halted);
     } else if (mode === 'walk') {
       const walk = this.walk;
       if (!walk) return;
@@ -1257,7 +1321,7 @@ class EstateControls implements EngineNavigation {
           const yaw = fly.look.yaw;
           this.leaveFor('walk');
           this.mode = 'walk';
-          this.fovTo(ESTATE_VFOV_DEG.walk, halted);
+          this.fovTo(this.fpFov, halted);
           walk.startAt(p[0], p[1], floor, yaw, 0);
           this.core.invalidate();
           return;
@@ -1270,7 +1334,7 @@ class EstateControls implements EngineNavigation {
       this.leaveFor('walk');
       this.mode = 'walk';
       this.core.setFocus(ESTATE_SITE_IDS[near.site]);
-      this.fovTo(ESTATE_VFOV_DEG.walk, halted);
+      this.fovTo(this.fpFov, halted);
       walk.start(near.spawn);
       this.core.invalidate();
       return;

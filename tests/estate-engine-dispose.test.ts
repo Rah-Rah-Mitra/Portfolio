@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EstateEngineEvent, EstateEngineOptions } from '../components/workbench/estate/engineApi';
-import { createEngine } from '../components/workbench/estate/engine/index';
+import { createEngine, createEngineInternals } from '../components/workbench/estate/engine/index';
+import { ESTATE_SETTINGS_DEFAULTS } from '../lib/estate/settings';
 import {
   ContextWatch, EngineEmitter, runTeardown, TEARDOWN_ORDER, TimerSet, type TeardownSteps,
 } from '../components/workbench/estate/engine/lifecycle';
@@ -297,5 +298,41 @@ describe('the engine handle', () => {
     expect(engine.setMode('fly')).toBe(false);
     expect(engine.escape('clear-selection')).toBe(false);
     engine.dispose();
+  });
+
+  it('starts with the shell’s settings, sanitised, and takes changes before ready; the bench always runs the defaults', () => {
+    const { options: opts } = options({ settings: { toon: true, walkSpeed: 2.3, fovDeg: 300, detail: 'ultra' as never } });
+    const engine = createEngine(opts);
+    expect(engine.getView().settings).toEqual({ ...ESTATE_SETTINGS_DEFAULTS, toon: true, walkSpeed: 2.25, fovDeg: 90 });
+    const first = engine.getView().settings;
+    // A no-op keeps the very object (the shell compares identities to decide when to save).
+    expect(engine.setSettings({ toon: true, nonsense: 1 } as never)).toBe(false);
+    expect(engine.getView().settings).toBe(first);
+    expect(engine.setSettings({ detail: 'low', reduceMotion: true })).toBe(true);
+    const next = engine.getView().settings;
+    expect(next).not.toBe(first);
+    expect(next).toMatchObject({ detail: 'low', reduceMotion: true, toon: true });
+    expect(Object.isFrozen(next)).toBe(true);
+    engine.dispose();
+    expect(engine.setSettings({ toon: false })).toBe(false);
+
+    const bench = createEngine(options({ bench: true, settings: { toon: true } }).options);
+    expect(bench.getView().settings).toBe(ESTATE_SETTINGS_DEFAULTS);
+    bench.dispose();
+    expect(createEngine(options().options).getView().settings).toBe(ESTATE_SETTINGS_DEFAULTS);
+  });
+
+  it('ORs the viewer’s Reduce camera motion into the halt every transition reads', () => {
+    let pageHalted = false;
+    const internals = createEngineInternals(options({ motionHalted: () => pageHalted }).options);
+    const halted = () => internals.core.options.motionHalted();
+    expect(halted()).toBe(false);
+    internals.engine.setSettings({ reduceMotion: true });
+    expect(halted()).toBe(true);
+    internals.engine.setSettings({ reduceMotion: false });
+    expect(halted()).toBe(false);
+    pageHalted = true;
+    expect(halted()).toBe(true);
+    internals.engine.dispose();
   });
 });

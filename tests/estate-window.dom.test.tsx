@@ -18,6 +18,7 @@ import { parseQualityOverride } from '../lib/estate/governorCore';
 import { ESTATE_REASONS, RELEASE_AFTER_MS } from '../lib/estate/policy';
 import { WORKBENCH_OPEN_EVENT } from '../lib/workbench';
 import { isGpuClaimed } from '../lib/gpuClaim';
+import { ESTATE_SETTINGS_DEFAULTS, patchSettings, settingsFrom } from '../lib/estate/settings';
 
 // The Estate window's shell against a FAKE engine (plan §10.2): the real one is
 // a lazy chunk with three in it, and none of what is pinned here depends on how
@@ -57,7 +58,7 @@ const INITIAL_VIEW: EstateView = {
 let instances: FakeEngine[];
 
 const createFake = (options: EstateEngineOptions): FakeEngine => {
-  let view: EstateView = { ...INITIAL_VIEW, lean: options.lean };
+  let view: EstateView = { ...INITIAL_VIEW, lean: options.lean, settings: options.bench ? ESTATE_SETTINGS_DEFAULTS : settingsFrom(options.settings) };
   // The HUD subscribes; the shell hears everything first through options.onEvent.
   const listeners = new Set<(event: EstateEngineEvent) => void>();
   const fake: FakeEngine = {
@@ -118,6 +119,14 @@ const createFake = (options: EstateEngineOptions): FakeEngine => {
     setPopover: vi.fn(() => true),
     capture: vi.fn(() => false),
     setLean: vi.fn(),
+    // As the engine does: sanitised, merged, mirrored in the view (a new object only on a change).
+    setSettings: vi.fn((patch) => {
+      const before = view.settings ?? ESTATE_SETTINGS_DEFAULTS;
+      const next = patchSettings(before, patch);
+      if (next === before) return false;
+      fake.setView({ settings: next });
+      return true;
+    }),
     emit: (event) => act(() => { options.onEvent({ ...event, token: options.token } as EstateEngineEvent); }),
     setView: (patch) => {
       view = { ...view, ...patch };
@@ -194,6 +203,8 @@ const mountLive = async (props: React.ComponentProps<typeof Desk> = {}) => {
 let rafSpy: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  // jsdom keeps localStorage across a file's tests: the viewer's settings start from nothing stored.
+  window.localStorage.clear();
   instances = [];
   pendingLoad = null;
   idle = [];
@@ -878,6 +889,119 @@ describe('Estate window — inside the workbench, with the real HUD module', () 
     } finally {
       window.history.replaceState(null, '', '/');
     }
+  });
+});
+
+describe('Estate window — the viewer’s settings', () => {
+  afterEach(() => { window.history.replaceState(null, '', '/'); });
+
+  it('starts the engine with the settings stored in this browser and saves each change, but never the defaults unasked', async () => {
+    window.localStorage.setItem('estate:settings', '{"v":1,"toon":true,"fovDeg":75,"walkSpeed":99}');
+    const { engine } = await mountLive();
+    expect(engine.options.settings).toEqual({ ...ESTATE_SETTINGS_DEFAULTS, toon: true, fovDeg: 75, walkSpeed: 3.2 });
+    act(() => { engine.setSettings({ detail: 'low' }); });
+    expect(JSON.parse(window.localStorage.getItem('estate:settings')!)).toEqual({ v: 1, toon: true, fovDeg: 75, walkSpeed: 3.2, detail: 'low' });
+    act(() => { engine.setSettings(ESTATE_SETTINGS_DEFAULTS); });
+    expect(window.localStorage.getItem('estate:settings')).toBe('{"v":1}');
+    cleanup();
+    // Nothing stored and nothing changed: nothing is written.
+    window.localStorage.clear();
+    const second = await mountLive();
+    act(() => second.engine.setView({ selection: 'BLK_509' }));
+    expect(window.localStorage.getItem('estate:settings')).toBeNull();
+  });
+
+  it('keeps the settings for a reopened instance even when storage refuses, and never throws', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('denied'); });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
+    const { engine, rerender } = await mountLive();
+    expect(engine.options.settings).toEqual(ESTATE_SETTINGS_DEFAULTS);
+    act(() => { engine.setSettings({ toon: true, reduceMotion: true }); });
+    // Closed past the release hold: disposed; reopened: a new instance with this visit's settings.
+    rerender(<Desk open={false} />);
+    await flush();
+    act(() => { vi.advanceTimersByTime(RELEASE_AFTER_MS + 100); });
+    await flush();
+    expect(engine.disposed).toBe(true);
+    rerender(<Desk open />);
+    await flush();
+    runIdle();
+    await flush();
+    const reopened = instances[instances.length - 1];
+    expect(reopened).not.toBe(engine);
+    expect(reopened.options.settings).toMatchObject({ toon: true, reduceMotion: true });
+  });
+
+  it('runs the bench on the defaults, reading and writing nothing; ?estate-quality= starts on Auto and keeps the stored detail', async () => {
+    window.localStorage.setItem('estate:settings', '{"v":1,"toon":true,"detail":"low"}');
+    window.history.replaceState(null, '', '/?estate-bench=1');
+    const getItem = vi.spyOn(Storage.prototype, 'getItem');
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    const bench = await mountLive();
+    expect(bench.engine.options.settings).toBeUndefined();
+    act(() => { bench.engine.setSettings({ edges: false }); });
+    expect(getItem).not.toHaveBeenCalledWith('estate:settings');
+    expect(setItem).not.toHaveBeenCalled();
+    cleanup();
+    getItem.mockRestore();
+    setItem.mockRestore();
+
+    window.history.replaceState(null, '', '/?estate-quality=min');
+    const quality = await mountLive();
+    expect(quality.engine.options.tier).toBe('min');
+    expect(quality.engine.options.settings).toMatchObject({ toon: true, detail: 'auto' });
+    act(() => { quality.engine.setSettings({ detail: 'high', edges: false }); });
+    expect(JSON.parse(window.localStorage.getItem('estate:settings')!)).toEqual({ v: 1, toon: true, detail: 'low', edges: false });
+  });
+
+  it('with the real HUD: Esc inside SETTINGS closes it and keeps the window, focus on its toggle; the next Esc clears the selection', async () => {
+    window.history.replaceState(null, '', '/?app=world-3d');
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => frames.push(callback)));
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal('IntersectionObserver', class { observe = vi.fn(); unobserve = vi.fn(); disconnect = vi.fn(); });
+    const ctx = new Proxy({} as Record<string | symbol, unknown>, { get: (target, key) => (target[key] ??= vi.fn()) });
+    vi.mocked(HTMLCanvasElement.prototype.getContext).mockImplementation(() => ctx as never);
+    const runFrames = () => act(() => { for (let i = 0; i < frames.length && i < 200; i += 1) frames[i]!(16 * i); frames.length = 0; });
+    const { EstateHud } = await import('../components/workbench/estate/live/EstateHud');
+    const { default: FieldWorkbench } = await import('../components/workbench/FieldWorkbench');
+    loadMock.mockResolvedValue({ createEngine: runtime.createEngine, EstateHud });
+    const { container } = render(<ExperienceModeProvider capabilities={ALLOWED}><FieldWorkbench /></ExperienceModeProvider>);
+    runFrames();
+    await flush();
+    runIdle();
+    await flush();
+    const engine = instances[0];
+    engine.setPopover = vi.fn((popover) => {
+      if (popover === engine.getView().popover) return false;
+      engine.setView({ popover, popoverOpen: popover !== null });
+      return true;
+    });
+    engine.emit({ type: 'ready', tier: 'mid', msaa: false, programs: 6 });
+    await flush();
+    runFrames();
+    const win = container.querySelector<HTMLElement>('[data-win="world-3d"]')!;
+    act(() => engine.setView({ selection: 'BLK_509' }));
+    const toggle = [...win.querySelectorAll('button')].find((b) => b.textContent === 'Settings')!;
+    act(() => { fireEvent.click(toggle); });
+    const toon = [...win.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Toon shading')!;
+    act(() => { toon.focus(); fireEvent.click(toon); });
+    expect(engine.setSettings).toHaveBeenLastCalledWith({ toon: true });
+    expect(toon.getAttribute('aria-pressed')).toBe('true');
+    const slider = win.querySelector<HTMLInputElement>('.wb-estate-settings input[type="range"]')!;
+    act(() => { slider.focus(); });
+    fireEvent.keyDown(slider, { key: 'Escape', code: 'Escape' });
+    expect(engine.escape).toHaveBeenLastCalledWith('close-popover');
+    expect(win.querySelector('.wb-estate-settings')).toBeNull();
+    expect(win.style.display).toBe('flex');
+    expect(document.activeElement).toBe(toggle);
+    fireEvent.keyDown(toggle, { key: 'Escape', code: 'Escape' });
+    expect(engine.escape).toHaveBeenLastCalledWith('clear-selection');
+    expect(win.style.display).toBe('flex');
+    fireEvent.keyDown(toggle, { key: 'Escape', code: 'Escape' });
+    await flush();
+    expect(win.style.display).toBe('none');
   });
 });
 

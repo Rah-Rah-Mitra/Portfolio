@@ -6,10 +6,12 @@ import type { EstateViewMode } from '../../../../lib/estate/frames';
 import { ESTATE_SITE_STOREYS, ESTATE_STOREY_FFL, type EstateSiteId, type EstateStoreyTag } from '../../../../lib/estate/ids';
 import { cutText, roomGroups, roomText } from '../../../../lib/estate/plan';
 import { enterLabel } from '../../../../lib/estate/policy';
+import { ESTATE_SETTINGS_DEFAULTS } from '../../../../lib/estate/settings';
 import type {
   EstateEngine, EstateEngineEvent, EstateHudProps, EstateInteriorView, EstatePlanView, EstatePopover, EstateProgressEvent, EstateStatsEvent, EstateView,
   EstateWalkLevel, EstateWalkStep, EstateWalkView,
 } from '../engineApi';
+import { EstateSettingsPanel } from './EstateSettings';
 
 // The Estate viewer's HUD (plan §8.6, §8.7): drawn over the stage while an
 // engine instance exists, in the lazy chunk beside the engine (estate/live/),
@@ -20,8 +22,9 @@ import type {
 //                 mirrored Fly to / Enter / Clear · in Walk, Exit · debug
 //   top right     [OVERVIEW | WALK | FLY] (.wb-domainseg, the active one filled
 //                 accent-700) · HOME (in Walk: START) · START AT BS1 · KEYS
-//                 (help popover, next in tab order) · CAPTURE · FULLSCREEN on
-//                 div#world · north arrow · KEYS ACTIVE
+//                 (help popover, next in tab order) · SETTINGS (the viewer's
+//                 settings, EstateSettings.tsx, likewise) · CAPTURE ·
+//                 FULLSCREEN on div#world · north arrow · KEYS ACTIVE
 //   right         Walk's storey strip, 'RF +45.60 … L1 ±0.00', from the data:
 //                 each button rides, climbs or both (setStorey); a storey no
 //                 route reaches is disabled and says why. In Overview with a
@@ -292,6 +295,10 @@ const ROUTE_TEXT: Readonly<Record<Exclude<EstateWalkLevel['route'], null | 'here
  */
 const useEngineView = (engine: EstateEngine, debug: boolean) => {
   const [view, setView] = React.useState<EstateView>(() => engine.getView());
+  // Stats are kept for the debug row and the Performance readout setting; read
+  // through a ref, so turning the readout on never re-subscribes (one listener).
+  const statsWanted = React.useRef(debug);
+  statsWanted.current = debug || view.settings?.stats === true;
   const [spoken, setSpoken] = React.useState('');
   const [notice, setNotice] = React.useState<string | null>(null);
   const [progress, setProgress] = React.useState<ProgressState | null>(null);
@@ -342,7 +349,7 @@ const useEngineView = (engine: EstateEngine, debug: boolean) => {
           setProgress(progressState(event));
           break;
         case 'stats':
-          if (debug) setStats(event);
+          if (statsWanted.current) setStats(event);
           break;
         default:
           break;
@@ -357,7 +364,7 @@ const useEngineView = (engine: EstateEngine, debug: boolean) => {
       if (timer !== null) clearTimeout(timer);
       if (noticeTimer !== null) clearTimeout(noticeTimer);
     };
-  }, [engine, debug]);
+  }, [engine]);
 
   const say = React.useCallback((text: string) => sayRef.current(text), []);
 
@@ -430,10 +437,32 @@ const useFocusRescue = (rootRef: React.RefObject<HTMLDivElement | null>, openerO
     lastRef.current = null;
     const active = document.activeElement;
     if (active !== null && active !== document.body && active !== last.el) return;
+    // A window just closed (FieldWorkbench hides its section: Esc minimised it,
+    // and the HUD's controls went with the phase) keeps no focus to hand on.
+    if (rootRef.current?.closest<HTMLElement>('[data-win]')?.style.display === 'none') return;
     const opener = last.popover ? openerOf(last.popover) : null;
     if (opener?.isConnected && !(opener as HTMLButtonElement).disabled) opener.focus({ preventScroll: true });
     else stageOf(rootRef)?.focus({ preventScroll: true });
   });
+};
+
+/** The stage's width over its height while `on` (the settings panel's horizontal field of view): a ResizeObserver, no frames. */
+const useStageAspect = (rootRef: React.RefObject<HTMLDivElement | null>, on: boolean): number => {
+  const [aspect, setAspect] = React.useState(0);
+  React.useEffect(() => {
+    const stage = stageOf(rootRef);
+    if (!on || !stage) return undefined;
+    const read = () => {
+      const { width, height } = stage.getBoundingClientRect();
+      if (width > 0 && height > 0) setAspect(width / height);
+    };
+    read();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(read);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [rootRef, on]);
+  return aspect;
 };
 
 /** Fullscreen on div#world (stage and side panel together, so the registry's DOM equivalents stay). */
@@ -864,6 +893,7 @@ const Stick: React.FC<{ engine: EstateEngine; live: boolean }> = ({ engine, live
 export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps): React.ReactElement {
   const rootRef = React.useRef<HTMLDivElement>(null);
   const keysToggleRef = React.useRef<HTMLButtonElement>(null);
+  const settingsToggleRef = React.useRef<HTMLButtonElement>(null);
   const liftToggleRef = React.useRef<HTMLButtonElement>(null);
   const liftPanelRef = React.useRef<HTMLDivElement>(null);
   const topRowRef = React.useRef<HTMLDivElement>(null);
@@ -871,9 +901,11 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
   const liftOpenedFrom = React.useRef<'chip' | 'stage'>('chip');
   const openerOf = React.useCallback<PopoverOpener>((popover) => {
     if (popover === 'help') return keysToggleRef.current;
+    if (popover === 'settings') return settingsToggleRef.current;
     return liftOpenedFrom.current === 'stage' ? stageOf(rootRef) : liftToggleRef.current;
   }, []);
   const popoverId = React.useId();
+  const settingsId = React.useId();
   const liftPanelId = React.useId();
   const { view, spoken, notice, progress, stats, say } = useEngineView(engine, debug);
   const { active: keysActive, touch, coarse } = useStageInput(rootRef);
@@ -882,6 +914,9 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
   const lock = useLockNotes(mode, view.pointerLocked, view.pointerUnlockedAtMs);
   const live = phase === 'live';
   const { features } = engine;
+  const settingsOpen = view.popover === 'settings';
+  const stageAspect = useStageAspect(rootRef, settingsOpen);
+  const showStats = debug || view.settings?.stats === true;
   useFocusRescue(rootRef, openerOf);
   useStripTop(rootRef, topRowRef);
 
@@ -943,6 +978,21 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
           ))}
         </dl>
       </div>
+    </div>
+  ) : null;
+
+  // The viewer's settings, under their toggle as KEYS' list is: next in tab order, on a line of their own.
+  const settingsPopover = settingsOpen ? (
+    <div className="wb-estate-popover-slot">
+      <EstateSettingsPanel
+        id={settingsId}
+        settings={view.settings}
+        live={live}
+        aspect={stageAspect}
+        onChange={(patch) => { engine.setSettings(patch); }}
+        onRestore={() => { if (engine.setSettings(ESTATE_SETTINGS_DEFAULTS)) say('Settings back to their defaults'); }}
+        onClose={() => engine.setPopover(null)}
+      />
     </div>
   ) : null;
 
@@ -1014,6 +1064,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
       data-flight={view.flight ? '' : undefined}
       data-strip={strip || planSite ? '' : undefined}
       data-stick={showStick ? '' : undefined}
+      data-reduce-motion={view.settings?.reduceMotion ? '' : undefined}
     >
       <p className="sr-only" role="status">{spoken}</p>
       <p id={ESTATE_KEYS_DESC_ID} hidden>{KEY_SUMMARY[mode]}</p>
@@ -1063,7 +1114,7 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
               >Clear</button>
             </div>
           )}
-          {debug && stats && (
+          {showStats && stats && (
             <p className="wb-estate-chip wb-estate-chip-quiet wb-estate-debug" data-estate-debug>
               {`Dropped ${stats.droppedPct === undefined ? '—' : `${stats.droppedPct.toFixed(1)}%`} · CPU p95 ${ms(stats.cpuP95Ms)} ms · `
                 + `${integer.format(stats.draws)} draws · ${integer.format(stats.tris)} tris · ${(stats.gpuBytes / MB).toFixed(1)} MB · `
@@ -1118,6 +1169,16 @@ export function EstateHud({ engine, phase, fullDetail, debug }: EstateHudProps):
             )}
             {/* Next in tab order after KEYS, drawn on its own line under the row. */}
             {helpPopover}
+            <button
+              ref={settingsToggleRef}
+              type="button"
+              className="wb-estate-hud-btn"
+              disabled={!live}
+              aria-expanded={settingsOpen}
+              aria-controls={settingsOpen ? settingsId : undefined}
+              onClick={() => engine.setPopover(settingsOpen ? null : 'settings')}
+            >Settings</button>
+            {settingsPopover}
             {canCapture && (
               <button
                 type="button"

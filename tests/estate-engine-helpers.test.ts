@@ -243,6 +243,22 @@ describe('levels', () => {
     expect(wiring.views[0]).toMatchObject({ visible: true, wantDetail: true });
     expect(wiring.views[0].boxDistance).toBeCloseTo(Math.hypot(5, 3), 6);
   });
+
+  it('counts F’s line draw whenever the frame draws edge lines, a tier without them included (toon shading)', () => {
+    const wiring = new LevelWiring(sites);
+    const scheduler = { residentMask: () => RESIDENT_MASSING | RESIDENT_FACADE, levelCap: () => LOD_FACADE } as never;
+    const frame = {
+      now: 0, k: 606, tier: ESTATE_TIER_TABLE.low, lean: false, focus: -1,
+      eye: [15, -8, 2], visible: ESTATE_SITE_IDS.map(() => true), reserveTris: 0, reserveDraws: 0,
+    };
+    expect(ESTATE_TIER_TABLE.low.edges).toBe(false);
+    wiring.update(frame, scheduler);
+    expect(wiring.inputs[0].draws[1]).toBe(1);
+    wiring.update({ ...frame, edges: true }, scheduler);
+    expect(wiring.inputs[0].draws[1]).toBe(2);
+    wiring.update({ ...frame, edges: false }, scheduler);
+    expect(wiring.inputs[0].draws[1]).toBe(1);
+  });
 });
 
 describe('renderer decisions', () => {

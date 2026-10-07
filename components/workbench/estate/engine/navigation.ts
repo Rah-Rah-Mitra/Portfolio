@@ -2,7 +2,7 @@ import type { EstateViewMode } from '../../../../lib/estate/frames';
 import type { EstateSiteId, EstateStoreyTag } from '../../../../lib/estate/ids';
 import type { EscapeAction } from '../../../../lib/estate/input';
 import type {
-  EstateEngineFeatures, EstateEnterOptions, EstateFlyOptions, EstateResume, EstateStep, EstateView, EstateWalkStep,
+  EstateEngineFeatures, EstateEnterOptions, EstateFlyOptions, EstateResume, EstateStep, EstateView, EstateViewerSettings, EstateWalkStep,
 } from '../engineApi';
 import type { EstateCore } from './core';
 
@@ -57,6 +57,8 @@ export interface EngineNavigation {
   ready?(): void;
   /** Frozen: release held keys and stop transitions at their end. */
   freeze?(): void;
+  /** The viewer's settings (speeds, look, the first-person lens); called before ready too. */
+  applySettings?(settings: EstateViewerSettings): void;
   dispose?(): void;
 }
 

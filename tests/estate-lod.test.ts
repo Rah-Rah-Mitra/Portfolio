@@ -3,7 +3,7 @@ import budgets from '../lib/estate/packBudgets.json';
 import {
   DWELL_MS, ESTATE_VFOV_DEG, FACADE_ERROR, LOD_DETAIL, LOD_FACADE, LOD_MASSING, LOD_NONE, LOD_TIERS, LodSelector,
   RESIDENT_ALL, RESIDENT_DETAIL, RESIDENT_FACADE, RESIDENT_MASSING, STEP_DOWN_RATIO, coarsenDistance, levelAvailable,
-  levelError, lodTier, nextWant, refineDistance, screenError, sseScale, type LodBuildingInput, type LodFrame, type LodTier,
+  levelError, lodTier, modeVfov, nextWant, refineDistance, screenError, sseScale, type LodBuildingInput, type LodFrame, type LodTier,
 } from '../lib/estate/lod';
 
 // Plan §7.4. The table's worked distances are at K = 606 (a 700 px buffer at
@@ -45,6 +45,17 @@ describe('screen-space error', () => {
     // K is half the buffer height over tan(vfov/2): at 90° it is exactly half.
     expect(sseScale(1000, 90)).toBeCloseTo(500, 12);
     expect(ESTATE_VFOV_DEG).toEqual({ overview: 45, plan: 45, walk: 60, fly: 60 });
+  });
+
+  it('reads the viewer’s first-person lens in Walk and Fly only, the mode’s own elsewhere', () => {
+    expect(modeVfov('walk')).toBe(60);
+    expect(modeVfov('fly')).toBe(60);
+    expect(modeVfov('walk', 85)).toBe(85);
+    expect(modeVfov('fly', 50)).toBe(50);
+    expect(modeVfov('overview', 85)).toBe(45);
+    expect(modeVfov('plan', 85)).toBe(45);
+    // A wider lens shrinks K, so detail is wanted closer in: at 90° K is 0.577 of 60°'s.
+    expect(sseScale(700, modeVfov('walk', 90)) / sseScale(700, modeVfov('walk'))).toBeCloseTo(Math.tan(Math.PI / 6), 9);
   });
 
   it('is e·K / max(d, 1), and a bad distance never costs triangles', () => {

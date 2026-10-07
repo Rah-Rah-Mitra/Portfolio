@@ -106,6 +106,27 @@ export const whenIdle = (callback: () => void, timeout: number): (() => void) =>
   return () => clearTimeout(id);
 };
 
+/** Where the viewer's settings are kept (lib/estate/settings.ts serializeSettings): this browser only. */
+export const SETTINGS_KEY = 'estate:settings';
+
+/** The stored settings' text, or null: nothing stored, or storage refused (a private window, blocked site data). */
+export const readStoredSettings = (): string | null => {
+  try {
+    return window.localStorage.getItem(SETTINGS_KEY);
+  } catch {
+    return null;
+  }
+};
+
+/** Keeps the settings' text; a refusal is not an error: the settings still hold for this visit. */
+export const writeStoredSettings = (text: string): void => {
+  try {
+    window.localStorage.setItem(SETTINGS_KEY, text);
+  } catch {
+    /* Not persisted; the choice still holds for this visit. */
+  }
+};
+
 /** Reload the page: the answer to a redeploy (stale), a lost capability (unavailable) and a chunk that failed to load. */
 export const reloadPage = (): void => {
   window.location.reload();

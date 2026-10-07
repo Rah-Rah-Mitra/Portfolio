@@ -9,6 +9,7 @@ import type { EstateSiteId } from '../../../lib/estate/ids';
 import { siteShortName } from '../../../lib/estate/announce';
 import { ESTATE_FOCUS_EVENT, validateEstateFocus, type EstateFocusDetail } from '../../../lib/estate/events';
 import { decideEscape, type KeyTargetKind } from '../../../lib/estate/input';
+import { ESTATE_SETTINGS_DEFAULTS, parseStoredSettings, serializeSettings, settingsFrom, type EstateViewerSettings } from '../../../lib/estate/settings';
 import {
   AUTO_LOAD_IDLE_TIMEOUT_MS,
   RELEASE_AFTER_MS,
@@ -25,7 +26,10 @@ import {
 import type { EstateEngine, EstateEngineEvent, EstateResume, EstateRuntime } from './engineApi';
 import { EstateLoadError, loadEngine } from './loadEngine';
 import { ESTATE_SECTION, ESTATE_STAGE, usePanePresence } from './usePanePresence';
-import { benchFromSearch, debugFromSearch, onDocumentComplete, qualityFromSearch, readTokenColours, releaseMsFromSearch, reloadPage, whenIdle } from './shellDom';
+import {
+  benchFromSearch, debugFromSearch, onDocumentComplete, qualityFromSearch, readStoredSettings, readTokenColours, releaseMsFromSearch, reloadPage, whenIdle,
+  writeStoredSettings,
+} from './shellDom';
 import type { EstateControllerProps, EstateModel, EstateModelAction, EstateModelHandlers, EstateModelRowAction } from './estateModel';
 
 // The Estate window's controller (WIN-07, #world): a lazy chunk the window
@@ -178,6 +182,16 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
   const lossTimesRef = React.useRef<number[]>([]);
   const restoreTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const onEventRef = React.useRef<(event: EstateEngineEvent) => void>(() => {});
+  /**
+   * The viewer's settings (lib/estate/settings.ts): what this browser has
+   * stored, what the last instance ran with (a reopen keeps it even when
+   * storage refuses), the text last written, and the page's own seams — the
+   * bench neither reads nor writes them; `?estate-quality=` starts the detail
+   * on Auto and leaves the stored detail as it was.
+   */
+  const settingsRef = React.useRef<{
+    stored: EstateViewerSettings; session: EstateViewerSettings | null; written: string | null; bench: boolean; quality: boolean;
+  } | null>(null);
   /** Whether the last element focused on the page was inside this window (focus that fell to the body stays "inside"). */
   const focusInsideRef = React.useRef(false);
 
@@ -280,10 +294,21 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
       case 'progress':
         if (event.stage === 'first-frame') setProgress(event.totalBytes > 0 ? Math.min(1, event.loadedBytes / event.totalBytes) : null);
         break;
-      case 'location':
+      case 'location': {
         setSelected(event.selection);
         setWalkSite(event.location.mode === 'walk' ? event.walk?.site ?? event.location.site : undefined);
+        const memo = settingsRef.current;
+        if (memo && !memo.bench && event.settings && event.settings !== memo.session) {
+          memo.session = event.settings;
+          memo.stored = memo.quality ? { ...event.settings, detail: memo.stored.detail } : event.settings;
+          const text = serializeSettings(memo.stored);
+          if (text !== memo.written) {
+            memo.written = text;
+            writeStoredSettings(text);
+          }
+        }
         break;
+      }
       case 'lost': {
         const now = performance.now();
         lossTimesRef.current = noteContextLoss(lossTimesRef.current, now, event.frozen);
@@ -340,20 +365,32 @@ const EstateControllerImpl: React.FC<EstateControllerProps> = ({ rootRef, onMode
     const token = ++tokenCounter;
     const search = window.location.search;
     const wantDebug = debugFromSearch(search);
+    const bench = benchFromSearch(search);
+    const quality = qualityFromSearch(search);
+    if (settingsRef.current === null) {
+      const text = bench ? null : readStoredSettings();
+      // Nothing stored reads as the defaults' text, so a visitor who never opens SETTINGS stores nothing.
+      settingsRef.current = {
+        stored: settingsFrom(parseStoredSettings(text)), session: null, written: text ?? serializeSettings(ESTATE_SETTINGS_DEFAULTS), bench, quality: quality !== undefined,
+      };
+    }
+    const memo = settingsRef.current;
+    const settings = memo.bench ? undefined : memo.session ?? (memo.quality ? { ...memo.stored, detail: 'auto' as const } : memo.stored);
     let created: EstateEngine;
     try {
       created = runtime.createEngine({
         host,
         token,
         packUrl: ESTATE_CATALOGUE.packUrl,
-        tier: qualityFromSearch(search),
+        tier: quality,
         lean: result.lean,
         motionHalted,
         colours: readTokenColours(),
         onEvent: (event) => onEventRef.current(event),
         debug: wantDebug,
-        bench: benchFromSearch(search),
+        bench,
         resume: resumeRef.current,
+        settings,
       });
     } catch (error) {
       fail('failed', error);

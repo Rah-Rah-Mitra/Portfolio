@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { PALETTE_SIZE, extraSlot } from '../../../../lib/estate/palette';
 import { MASK_OFF } from '../../../../lib/estate/storeys';
+import { ESTATE_LIGHT, toonBands } from '../../../../lib/estate/toon';
 import type { EnginePalette } from './palette';
 
 // Materials and lights from the design tokens (plan §7.3, decision C8). Every
@@ -23,7 +24,21 @@ import type { EnginePalette } from './palette';
 //                       it shares glass's programs. The front-face-only
 //                       opaque programs every other draw uses carry no
 //                       discard, so early depth testing is lost only there;
-//   uMassingLines float 1 px lines at the storey floors, massing only.
+//   uMassingLines float 1 px lines at the storey floors, massing only;
+//   uToon        float  toon shading on (1) or off (0), one uniform object every
+//                       estate material shares, so one write flips the estate.
+//                       With it on, a Lambert surface's lit colour is snapped
+//                       to three flat bands of its token (uToonCuts and
+//                       uToonLevels, from lib/estate/toon.ts toonBands over the
+//                       scene's own light colours): the top band is the token
+//                       itself. Glass (palette alpha below 1) keeps its light,
+//                       the edge lines (meshbasic, no LAMBERT) are not lit at
+//                       all, and the Plan cut's poché fill still wins after it.
+//                       The line work turns to ink with it: the edge lines
+//                       (the only unlit program) and the massing's storey lines
+//                       take the palette's cut slot (--color-accent-900) instead
+//                       of the edge slot; a lit surface drawn in the edge slot
+//                       (Plan's room marker) keeps it.
 // A vertex's storey is _META.z on a Mesh and _STOREY.x on an InstancedMesh
 // (D and furniture carry it per instance; P5 gives T its own).
 //
@@ -79,7 +94,14 @@ export const createStoreyUniforms = (): StoreyUniforms => ({
   uPlanCut: { value: PLAN_CUT_OFF },
 });
 
-interface EstateUniforms extends StoreyUniforms {
+/** Toon shading's switch and bands, one object shared by every material of a kit. */
+export interface ToonUniforms {
+  uToon: IUniform<number>;
+  uToonCuts: IUniform<Vector2>;
+  uToonLevels: IUniform<Vector2>;
+}
+
+interface EstateUniforms extends StoreyUniforms, ToonUniforms {
   uPalette: IUniform;
   uMassingLines: IUniform<number>;
   uFfl: IUniform<Float32Array>;
@@ -120,13 +142,21 @@ uniform float uMassingLines;
 uniform float uFfl[ ${MASSING_LINES_MAX} ];
 uniform int uFflCount;
 uniform float uPlanCut;
+uniform float uToon;
+uniform vec2 uToonCuts;
+uniform vec2 uToonLevels;
 flat varying float vEstateSlot;
 varying float vEstateY;
 vec4 estatePalette( float slot ) {
   return texture2D( uPalette, vec2( ( slot + 0.5 ) / ${SLOTS}, 0.5 ) );
 }`;
 
-const FRAGMENT_COLOUR = /* glsl */ `vec4 estateColour = estatePalette( vEstateSlot );
+const FRAGMENT_COLOUR = /* glsl */ `float estateInk = uToon > 0.5 ? ${CUT_SLOT} : ${EDGE_SLOT};
+#ifdef LAMBERT
+vec4 estateColour = estatePalette( vEstateSlot );
+#else
+vec4 estateColour = estatePalette( abs( vEstateSlot - ${EDGE_SLOT} ) < 0.5 ? estateInk : vEstateSlot );
+#endif
 vec4 diffuseColor = vec4( estateColour.rgb, opacity * estateColour.a );
 float estateSlope = fwidth( vEstateY );
 if ( uMassingLines > 0.5 && estateSlope > 1e-4 ) {
@@ -136,16 +166,28 @@ if ( uMassingLines > 0.5 && estateSlope > 1e-4 ) {
     if ( i >= uFflCount ) break;
     estateHit = max( estateHit, step( abs( vEstateY - uFfl[ i ] ), estateHalf ) );
   }
-  diffuseColor.rgb = mix( diffuseColor.rgb, estatePalette( ${EDGE_SLOT} ).rgb, estateHit );
+  diffuseColor.rgb = mix( diffuseColor.rgb, estatePalette( estateInk ).rgb, estateHit );
 }
 #ifdef DOUBLE_SIDED
 if ( vEstateY > uPlanCut ) discard;
 #endif`;
 
+// Toon shading, just before the lit colour is written (Lambert only: the edge
+// lines are meshbasic): the light's ratio to the token (constant per face under
+// flat shading and these two lights) snapped to one of three bands. No discard,
+// so early depth testing stays; the branch is the same for every pixel of a draw.
+const FRAGMENT_TOON = /* glsl */ `#ifdef LAMBERT
+if ( uToon > 0.5 && estateColour.a > 0.99 ) {
+  float estateLit = dot( outgoingLight, vec3( 0.2126, 0.7152, 0.0722 ) ) / max( dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) ), 1e-4 );
+  outgoingLight = diffuseColor.rgb * ( estateLit >= uToonCuts.x ? 1.0 : ( estateLit >= uToonCuts.y ? uToonLevels.x : uToonLevels.y ) );
+}
+#endif
+`;
+
 // After the lit colour is written: a back face of an opaque slot seen while the
 // cut is on (uPlanCut below PLAN_CUT_OFF's 1e9) is the inside of a cut solid,
 // filled flat (no light, so it reads as a section, not a surface).
-const FRAGMENT_CUT_FILL = /* glsl */ `#include <opaque_fragment>
+const FRAGMENT_CUT_FILL = /* glsl */ `${FRAGMENT_TOON}#include <opaque_fragment>
 #ifdef DOUBLE_SIDED
 if ( uPlanCut < 1e8 && ! gl_FrontFacing && estateColour.a > 0.99 ) gl_FragColor.rgb = estatePalette( ${CUT_SLOT} ).rgb;
 #endif`;
@@ -226,10 +268,11 @@ export const GRID_Y = -0.5;
 // albedo · E / π. The two lights are scaled so an up-facing face reads at about
 // its token's own value and walls fall off by orientation, never past the
 // token's ramp neighbours.
-export const HEMI_INTENSITY = 0.62 * Math.PI;
-export const SUN_INTENSITY = 0.48 * Math.PI;
+// The rig's numbers live in lib/estate/toon.ts, which derives toon's bands from them.
+export const HEMI_INTENSITY = ESTATE_LIGHT.hemisphere * Math.PI;
+export const SUN_INTENSITY = ESTATE_LIGHT.sun * Math.PI;
 /** The directional light comes from here (three world, normalised at use). */
-export const SUN_DIRECTION = Object.freeze([-0.4, 0.8, 0.45] as const);
+export const SUN_DIRECTION = ESTATE_LIGHT.sunDirection;
 
 export interface MaterialKit {
   palette: EnginePalette;
@@ -247,15 +290,20 @@ export interface MaterialKit {
   warmup: Object3D[];
   /** Sets the fog range (§7.3) on the scene fog and the grid together. */
   setFog(near: number, far: number): void;
+  /** Toon shading on or off for every material of the kit; returns whether it changed. */
+  setToon(on: boolean): boolean;
+  /** The shared toon uniforms (tests read them). */
+  readonly toon: ToonUniforms;
   dispose(): void;
 }
 
-const estateUniforms = (palette: EnginePalette, storey: StoreyUniforms, ffl?: readonly number[]): EstateUniforms => {
+const estateUniforms = (palette: EnginePalette, toon: ToonUniforms, storey: StoreyUniforms, ffl?: readonly number[]): EstateUniforms => {
   const table = new Float32Array(MASSING_LINES_MAX);
   const count = ffl ? Math.min(ffl.length, MASSING_LINES_MAX) : 0;
   for (let i = 0; i < count; i += 1) table[i] = (ffl as readonly number[])[i];
   return {
     ...storey,
+    ...toon,
     uPalette: { value: palette.texture },
     uMassingLines: { value: count > 0 ? 1 : 0 },
     uFfl: { value: table },
@@ -282,12 +330,19 @@ export const createMaterialKit = (palette: EnginePalette): MaterialKit => {
   const created: Material[] = [];
   const geometries: BufferGeometry[] = [];
   const keep = <M extends Material>(m: M): M => { created.push(m); return m; };
+  const s = palette.scene;
+  const bands = toonBands([s.skyLight.r, s.skyLight.g, s.skyLight.b], [s.groundLight.r, s.groundLight.g, s.groundLight.b]);
+  const toon: ToonUniforms = {
+    uToon: { value: 0 },
+    uToonCuts: { value: new Vector2(bands.cuts[0], bands.cuts[1]) },
+    uToonLevels: { value: new Vector2(bands.levels[0], bands.levels[1]) },
+  };
 
   const opaque = (storey: StoreyUniforms, ffl?: readonly number[]) => keep(tag(new MeshLambertMaterial({
     flatShading: true,
     fog: true,
     side: FrontSide,
-  }), estateUniforms(palette, storey, ffl)));
+  }), estateUniforms(palette, toon, storey, ffl)));
 
   const glass = (storey: StoreyUniforms) => keep(tag(new MeshLambertMaterial({
     flatShading: true,
@@ -296,11 +351,10 @@ export const createMaterialKit = (palette: EnginePalette): MaterialKit => {
     forceSinglePass: true,
     transparent: true,
     depthWrite: false,
-  }), estateUniforms(palette, storey)));
+  }), estateUniforms(palette, toon, storey)));
 
-  const edge = (storey: StoreyUniforms) => keep(tag(new LineBasicMaterial({ fog: true }), estateUniforms(palette, storey)));
+  const edge = (storey: StoreyUniforms) => keep(tag(new LineBasicMaterial({ fog: true }), estateUniforms(palette, toon, storey)));
 
-  const s = palette.scene;
   const fog = new Fog(s.fog.clone(), 150, 800);
   const grid = keep(new ShaderMaterial({
     vertexShader: GRID_VERTEX,
@@ -382,6 +436,13 @@ export const createMaterialKit = (palette: EnginePalette): MaterialKit => {
       fog.far = far;
       grid.uniforms.uFogNear.value = near;
       grid.uniforms.uFogFar.value = far;
+    },
+    toon,
+    setToon(on: boolean) {
+      const value = on ? 1 : 0;
+      if (toon.uToon.value === value) return false;
+      toon.uToon.value = value;
+      return true;
     },
     dispose() {
       for (const material of created) material.dispose();

@@ -1239,7 +1239,42 @@ html[data-motion-paused="true"] .wb-fs-overlay { animation: none; }
 /* Fullscreen takes the whole window body: stage and side panel, on the page's ground. */
 .wb-estate:fullscreen { padding: 12px; background: var(--color-bg); }
 
+/* The top area (location, controls and their popovers) over the storey strip,
+   which comes later in the DOM and painted over any popover; its empty space
+   takes no pointer, so the strip keeps its clicks. */
+.wb-estate-hud-top { z-index: 1; }
+/* SETTINGS (live/EstateSettings.tsx): native controls in four groups, under
+   their toggle like KEYS' list, scrolling inside the popover's height. */
+/* As tall as the stage allows above the step pad (the HUD is a size container). */
+.wb-estate-hud { container-type: size; }
+.wb-estate-settings { width: 300px; max-height: max(160px, min(560px, calc(100cqh - 240px))); }
+.wb-estate-set-group { min-width: 0; margin: 8px 0 0; padding: 8px 0 0; border: 0; border-top: 1px solid var(--color-divider); }
+.wb-estate-set-group legend {
+  float: left; width: 100%; margin: 0 0 6px; padding: 0;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-neutral-700);
+}
+.wb-estate-set-group small, .wb-estate-set-foot small { display: block; font-size: 10px; line-height: 1.35; color: var(--color-neutral-700); }
+.wb-estate-set-range { clear: both; display: block; margin-bottom: 8px; }
+.wb-estate-set-range > span { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 1px; font-size: 11px; color: var(--color-neutral-800); }
+.wb-estate-set-range output { font-feature-settings: 'tnum' 1; color: var(--color-text); }
+.wb-estate-set-range input[type='range'] { display: block; width: 100%; min-height: 24px; margin: 0; accent-color: var(--color-accent-700); }
+.wb-estate-set-range input[type='range']:disabled { opacity: 0.45; cursor: not-allowed; }
+.wb-estate-set-toggle {
+  clear: both; display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; margin: 0 0 6px; padding: 5px 6px;
+  border: 1px solid var(--color-divider); border-radius: 0; background: transparent; color: var(--color-text); text-align: left; cursor: pointer;
+}
+.wb-estate-set-toggle:hover:not(:disabled) { background: var(--color-accent-100); }
+.wb-estate-set-toggle:disabled { opacity: 0.45; cursor: not-allowed; }
+.wb-estate-set-toggle strong { display: block; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.wb-estate-set-toggle[aria-pressed='true'] .toggle-track { border-color: var(--color-accent-700); }
+.wb-estate-set-toggle[aria-pressed='true'] .toggle-track span { transform: translateX(16px); background: var(--color-accent-700); }
+.wb-estate-hud .wb-estate-set-detail { clear: both; display: flex; width: 100%; margin-bottom: 4px; }
+.wb-estate-hud .wb-estate-set-detail button { flex: 1 1 0; min-height: 24px; padding: 4px 2px; }
+.wb-estate-set-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--color-divider); }
+
 html[data-motion-paused="true"] .wb-estate * { transition: none; }
+/* The viewer's own Reduce camera motion stills its chips too. */
+.wb-estate-hud[data-reduce-motion] * { transition: none; }
 @media (prefers-reduced-motion: reduce) {
   .wb-estate * { transition: none; }
 }

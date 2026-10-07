@@ -48,6 +48,55 @@ describe('the estate shader patch', () => {
     kit.dispose();
   });
 
+  it('adds toon shading as one uniform every material shares: Lambert only, before the lit colour is written, no new program', () => {
+    const kit = createMaterialKit(createPalette(COLOURS));
+    const patch = (material: ReturnType<typeof kit.opaque> | ReturnType<typeof kit.edge>, source: { vertexShader: string; fragmentShader: string }) => {
+      const shader = { uniforms: {} as Record<string, unknown>, ...source } as unknown as WebGLProgramParametersWithUniforms;
+      material.onBeforeCompile(shader, undefined as unknown as WebGLRenderer);
+      return shader;
+    };
+    const opaque = kit.opaque(createStoreyUniforms());
+    const glass = kit.glass(createStoreyUniforms());
+    const edge = kit.edge(createStoreyUniforms());
+    const lit = patch(opaque, ShaderLib.lambert);
+    const toon = lit.fragmentShader.indexOf('uToon > 0.5 && estateColour.a > 0.99');
+    expect(toon).toBeGreaterThan(0);
+    // Inside #ifdef LAMBERT, after the lit colour exists and before it is written.
+    expect(lit.fragmentShader.lastIndexOf('#ifdef LAMBERT', toon)).toBeGreaterThan(lit.fragmentShader.indexOf('vec3 outgoingLight'));
+    expect(toon).toBeLessThan(lit.fragmentShader.indexOf('#include <opaque_fragment>'));
+    expect(lit.fragmentShader).not.toMatch(/uToon[^;]*discard/);
+    // The line work turns to ink with it: the edge slot reads the cut slot (accent-900) while toon is on.
+    expect(patch(edge, ShaderLib.basic).fragmentShader).toContain('float estateInk = uToon > 0.5 ? 31.0 : 30.0;');
+    // …in the lines' (unlit) program only: a lit surface in the edge slot (Plan's room marker) keeps its colour.
+    expect(lit.fragmentShader).toMatch(/#ifdef LAMBERT\s*vec4 estateColour = estatePalette\( vEstateSlot \);\s*#else/);
+    // Lines are meshbasic: no LAMBERT, so the block never compiles there.
+    expect(ShaderLib.basic.fragmentShader).not.toContain('#define LAMBERT');
+    expect(ShaderLib.lambert.fragmentShader).toContain('#define LAMBERT');
+    // One uniform object for the whole kit: a single write flips every material.
+    const uniformsOf = (m: { userData: Record<string, unknown> }) => m.userData.estate as { uToon: { value: number }; uToonCuts: unknown };
+    expect(uniformsOf(opaque).uToon).toBe(kit.toon.uToon);
+    expect(uniformsOf(glass).uToon).toBe(kit.toon.uToon);
+    expect(uniformsOf(edge).uToon).toBe(kit.toon.uToon);
+    expect(patch(glass, ShaderLib.lambert).uniforms.uToon).toBe(kit.toon.uToon);
+    expect(kit.setToon(true)).toBe(true);
+    expect(kit.toon.uToon.value).toBe(1);
+    expect(kit.setToon(true)).toBe(false);
+    // The program key is the shared onBeforeCompile's source, whatever the uniform says.
+    expect(opaque.customProgramCacheKey()).toBe(edge.customProgramCacheKey());
+    const keyOn = opaque.customProgramCacheKey();
+    kit.setToon(false);
+    expect(opaque.customProgramCacheKey()).toBe(keyOn);
+    expect(patch(opaque, ShaderLib.lambert).fragmentShader).toBe(lit.fragmentShader);
+    // The bands: the top one the token itself, two lower ones between 0 and 1.
+    const cuts = kit.toon.uToonCuts.value;
+    const levels = kit.toon.uToonLevels.value;
+    expect(cuts.x).toBeGreaterThan(cuts.y);
+    expect(levels.x).toBeLessThan(1);
+    expect(levels.y).toBeGreaterThan(0);
+    expect(levels.x).toBeGreaterThan(levels.y);
+    kit.dispose();
+  });
+
   it('draws the ground grid after every opaque surface and edge line, so early depth testing rejects the ground it lies under', () => {
     const kit = createMaterialKit(createPalette(COLOURS));
     expect(DRAW_ORDER.surface).toBeLessThan(DRAW_ORDER.edge);
@@ -180,6 +229,11 @@ describe.skipIf(!hasGeometry)('the engine on the pack in public/estate/v1.2', ()
     // A tier without edges keeps the massing lines near (they are not edge lines).
     scene.applyLevels(levels, false, near, 100);
     expect(blk.facade!.edges.some((p) => visible(p.object))).toBe(false);
+    expect(massingLines(third)).toBe(1);
+    // The viewer's Edge lines off drops them too.
+    scene.applyLevels(levels, false, near, 100, false);
+    expect(massingLines(third)).toBe(0);
+    scene.applyLevels(levels, false, near, 100);
     expect(massingLines(third)).toBe(1);
     // Same levels again: no swaps.
     expect(scene.applyLevels(levels, true, near, 100)).toBe(0);

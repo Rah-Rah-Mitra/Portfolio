@@ -5,7 +5,10 @@ import type { EscapeAction, EstateInputState } from '../../../lib/estate/input';
 import type { EstateLocation } from '../../../lib/estate/announce';
 import type { TokenColours } from '../../../lib/estate/palette';
 import type { EstateEnterFiles, EstatePhase } from '../../../lib/estate/policy';
+import type { EstateSettingsPatch, EstateViewerSettings } from '../../../lib/estate/settings';
 import type { EstateTier } from '../../../lib/estate/tiers';
+
+export type { EstateDetail, EstateSettingsPatch, EstateViewerSettings } from '../../../lib/estate/settings';
 
 // The contract between the Estate window's shell (main bundle, prerendered:
 // EstateWindow and its hooks) and its engine (the lazy chunk: estate/engine/**
@@ -93,7 +96,8 @@ export interface EstateEngineOptions {
    * and a transition already running when it turns true lands at its end on the
    * next frame. Visitor-driven movement (drag, keys) still renders. Never read
    * by a loop to decide whether to sleep: at rest the engine requests no frames
-   * whatever this says.
+   * whatever this says. The engine ORs in the viewer's own Reduce camera motion
+   * setting (EstateViewerSettings.reduceMotion).
    */
   motionHalted: () => boolean;
   /**
@@ -131,6 +135,12 @@ export interface EstateEngineOptions {
    * HTTP cache, so nothing re-downloads.
    */
   resume?: EstateResume;
+  /**
+   * The viewer's settings to start with (the shell's stored ones,
+   * lib/estate/settings.ts), sanitised by the engine; absent keys are the
+   * defaults. Ignored under `bench`, which always runs the defaults.
+   */
+  settings?: EstateSettingsPatch;
   /** Test seam: makes the per-instance canvas. Default document.createElement('canvas'). */
   createCanvas?: () => HTMLCanvasElement;
   /** Test seam: the fetch every pack download goes through. Default globalThis.fetch. */
@@ -160,7 +170,7 @@ export type EstateWalkStep =
  * the flag so the shell can read it synchronously in its Esc listener; the HUD
  * renders from it.
  */
-export type EstatePopover = 'help' | 'lift';
+export type EstatePopover = 'help' | 'lift' | 'settings';
 
 /** Which commands do anything in this build. Constant per engine build; the HUD hides or disables the rest. */
 export interface EstateEngineFeatures {
@@ -400,6 +410,13 @@ export interface EstateEngine {
    * before ready too.
    */
   setLean(lean: boolean): void;
+  /**
+   * The viewer's settings (the HUD's SETTINGS panel): a patch, sanitised and
+   * merged (lib/estate/settings.ts), applied at once and mirrored in
+   * `view.settings`. True when anything changed. Not a navigation command:
+   * honoured before ready and while frozen; false after dispose.
+   */
+  setSettings(patch: EstateSettingsPatch): boolean;
 }
 
 // ---- state --------------------------------------------------------------------------------
@@ -442,6 +459,8 @@ export interface EstateView {
   readonly walk?: EstateWalkView | null;
   /** P6: what Plan shows (building, storey, cut, rooms, the pick); null outside Plan. */
   readonly plan?: EstatePlanView | null;
+  /** The viewer's settings in force; a new frozen object only when one changes. Always present from the engine. */
+  readonly settings?: EstateViewerSettings;
 }
 
 /**
@@ -727,7 +746,7 @@ export interface EstateHudProps {
    * and calls engine.setLean(false).
    */
   fullDetail: { readonly label: string; readonly onLoad: () => void } | null;
-  /** Show the debug row (dropped % · CPU p95 · draws · triangles · MB · programs). */
+  /** Show the debug row (dropped % · CPU p95 · draws · triangles · MB · programs); the Performance readout setting shows it too. */
   debug: boolean;
 }
 

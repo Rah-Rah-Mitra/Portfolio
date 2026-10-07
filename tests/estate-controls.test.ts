@@ -326,6 +326,41 @@ describe('the Fly controller', () => {
     expect(fly.look.yaw).toBeLessThan(0); // dragged right: turned right
   });
 
+  it('takes the viewer’s Fly speed under the wheel’s multiplier, but steps as before', () => {
+    const { fly } = flyAt(40);
+    fly.speedScale = 1.7;
+    const held = new HeldKeys();
+    held.press('KeyW', 'forward');
+    fly.update(1 / 60, held, true);
+    expect(fly.velocity.length()).toBeCloseTo(flySpeed(40, false) * 1.7, 9);
+    held.releaseAll();
+    fly.update(1 / 60, held, true);
+    const before = fly.position.clone();
+    fly.step('forward');
+    expect(fly.position.distanceTo(before)).toBeCloseTo(Math.min(20, flySpeed(40, false) * 0.5), 6);
+  });
+
+  it('scales drag-look by the viewer’s sensitivity and inverts only its vertical, never the keys', () => {
+    const look = new LookState();
+    look.dragLook(10, 10, 60);
+    const yaw1 = look.yaw;
+    const pitch1 = look.pitch;
+    expect(yaw1).toBeLessThan(0);
+    expect(pitch1).toBeLessThan(0); // dragged down: looks down
+    const scaled = new LookState();
+    scaled.scale = 2;
+    scaled.dragLook(10, 10, 60);
+    expect(scaled.yaw).toBeCloseTo(2 * yaw1, 12);
+    expect(scaled.pitch).toBeCloseTo(2 * pitch1, 12);
+    const inverted = new LookState();
+    inverted.invertY = true;
+    inverted.dragLook(10, 10, 60);
+    expect(inverted.yaw).toBeCloseTo(yaw1, 12);
+    expect(inverted.pitch).toBeCloseTo(-pitch1, 12); // dragged down: looks up
+    inverted.turn(0, 0.1); // keys and steps turn as asked
+    expect(inverted.pitch).toBeCloseTo(-pitch1 + 0.1, 12);
+  });
+
   it('turns at 90°/s, and the step buttons move half a second or turn 15°', () => {
     const { fly } = flyAt(40);
     const held = new HeldKeys();

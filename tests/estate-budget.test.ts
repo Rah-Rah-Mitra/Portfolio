@@ -13,6 +13,7 @@ import {
 import { parseNav } from '../lib/estate/nav';
 import { parsePack, type EstatePack } from '../lib/estate/schema';
 import { EYE_HEIGHT } from '../lib/estate/storeys';
+import { FOV_RANGE } from '../lib/estate/settings';
 import { ESTATE_TIERS, ESTATE_TIER_TABLE, type EstateTier } from '../lib/estate/tiers';
 import { InteriorSystem, type InteriorScheduler } from '../components/workbench/estate/engine/interior';
 import { levelCosts, type LevelCosts } from '../components/workbench/estate/engine/levels';
@@ -127,6 +128,7 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
   const spheres: Sphere[] = [];
   const quadrants: Array<{ sphere: Sphere; tris: number }> = [];
   const costs: Record<EstateTier, LevelCosts[]> = { high: [], mid: [], low: [], min: [] };
+  let edgedCosts: LevelCosts[] = [];
 
   beforeAll(async () => {
     pack = parsePack(JSON.parse(readFileSync(join(packDir, packFile as string), 'utf8')));
@@ -156,6 +158,8 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
       quadrants.push({ sphere: new Sphere(centre, Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) / 2), tris: q.tris });
     }
     for (const tier of ESTATE_TIERS) costs[tier] = pack.sites.map((b) => levelCosts(b, ESTATE_TIER_TABLE[tier].edges));
+    // Toon shading draws the edge lines on every tier: F's cost with its line draw.
+    edgedCosts = pack.sites.map((b) => levelCosts(b, true));
   }, 60_000);
 
   // ---- one pose ----------------------------------------------------------------------
@@ -195,6 +199,8 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
     x: number, y: number, h: number, heading: number, pitchDeg: number, tier: EstateTier,
     options: {
       resident?: number; fullTrees?: boolean; force?: number; vfov?: number; position?: readonly number[]; target?: readonly number[]; fov?: number;
+      /** Edge lines on whatever the tier says (toon shading). */
+      edges?: boolean;
       /** The active interior's reserve (InteriorSystem.reserveTris/-Draws) and the building the camera is inside (held at F). */
       interior?: { tris: number; draws: number; inside: number };
     } = {},
@@ -235,7 +241,7 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
     }
     const eye = [camera.position.x, -camera.position.z, camera.position.y];
     const k = sseScale(Math.floor(Math.sqrt(row.pixelCap / STAGE_ASPECT)), vfov);
-    const tierCosts = costs[tier];
+    const tierCosts = options.edges ? edgedCosts : costs[tier];
     if (options.force !== undefined) {
       let tris = reserveTris;
       let draws = reserveDraws;
@@ -301,6 +307,34 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
     expect([ESTATE_TIER_TABLE.high.maxDraws, ESTATE_TIER_TABLE.high.maxTris]).toEqual([150, 1_200_000]);
   }, 120_000);
 
+  // The viewer's settings widen the first-person lens to FOV_RANGE.max (90°, on
+  // foot and in Fly at any height) and toon shading draws the edge lines on
+  // every tier. A wider frustum takes in more buildings, so the floor (all of
+  // them at massing plus the reserve) is what could pass a cap: every height
+  // and tier at the widest lens with the lines' draws counted, on a 40 m grid.
+  it('keeps the widest first-person lens, outlined on every tier (toon), inside each tier’s caps', () => {
+    let poses = 0;
+    const failures: string[] = [];
+    for (const tier of ESTATE_TIERS) {
+      const row = ESTATE_TIER_TABLE[tier];
+      for (let gx = 0; gx <= 400; gx += 2 * STEP_M) {
+        for (let gy = 0; gy <= 400; gy += 2 * STEP_M) {
+          for (const h of HEIGHTS) {
+            for (let a = 0; a < HEADINGS; a += 1) {
+              const r = pose(gx, gy, h, (a * 2 * Math.PI) / HEADINGS, PITCH_DEG[h], tier, { fov: FOV_RANGE.max, edges: true });
+              poses += 1;
+              if ((r.overBudget || r.tris > row.maxTris || r.draws > row.maxDraws) && failures.length < 10) {
+                failures.push(`${tier} (${gx}, ${gy}, ${h}) heading ${a * 45}°: ${r.tris} tris, ${r.draws} draws (caps ${row.maxTris}, ${row.maxDraws})`);
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(poses).toBe(121 * 5 * 8 * 4);
+    expect(failures).toEqual([]);
+  }, 120_000);
+
   // ---- §7.11's scenarios ---------------------------------------------------------------
 
   const scenarios = () => {
@@ -346,7 +380,7 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
       for (const p of decoded.parts) p.uploaded = true;
       scene.attach(site.interior!.path, decoded, index);
     }
-    const inside = (index: number, eye: [number, number, number], tier: EstateTier) => {
+    const inside = (index: number, eye: [number, number, number], tier: EstateTier, fov: number = ESTATE_VFOV_DEG.walk, edges = false) => {
       interiors.update({ now: 0, eye, tier, furnitureRadius: ESTATE_TIER_TABLE[tier].furnitureRadiusM });
       const status = interiors.getStatus();
       expect(status.active, `${ESTATE_SITE_IDS[index]} ${tier}`).toBe(true);
@@ -354,7 +388,7 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
       expect(interior.inside).toBe(index);
       let worst = { tris: 0, draws: 0, overBudget: false };
       for (let a = 0; a < HEADINGS; a += 1) {
-        const r = pose(eye[0], eye[1], eye[2], (a * 2 * Math.PI) / HEADINGS, 0, tier, { fov: ESTATE_VFOV_DEG.walk, interior });
+        const r = pose(eye[0], eye[1], eye[2], (a * 2 * Math.PI) / HEADINGS, 0, tier, { fov, interior, edges });
         expect(r.levels[index], 'the building the camera is in is held at F or below').toBeLessThanOrEqual(LOD_FACADE);
         if (r.tris > worst.tris) worst = { tris: r.tris, draws: Math.max(worst.draws, r.draws), overBudget: r.overBudget };
         else worst.draws = Math.max(worst.draws, r.draws);
@@ -383,6 +417,13 @@ describe.skipIf(!hasGeometry)('the caps over the pose grid, on the pack in publi
     const pinned = PINNED_INSIDE[packFile as string];
     expect(pinned, `no S4/S5 pin for ${packFile}: pin ${JSON.stringify(got)} in PINNED_INSIDE with a reason`).toBeDefined();
     expect(got).toEqual(pinned);
+    // The viewer's widest lens, outlined on every tier: inside the caps (not pinned: a preference, not a scenario).
+    for (const [id, index, eye, tier] of [['S4', B509, p4, 'high'], ['S4-min', B509, p4, 'min'], ['S5', NC, [nc.at[0], nc.at[1], nc.storeys[0].ffl + EYE_HEIGHT], 'high']] as const) {
+      const r = inside(index, [...eye] as [number, number, number], tier, FOV_RANGE.max, true);
+      expect(r.overBudget, `${id} at ${FOV_RANGE.max}°`).toBe(false);
+      expect(r.tris, id).toBeLessThanOrEqual(ESTATE_TIER_TABLE[tier].maxTris);
+      expect(r.draws, id).toBeLessThanOrEqual(ESTATE_TIER_TABLE[tier].maxDraws);
+    }
   }, 60_000);
 
   it('agrees with the fallback poster pose the dev pack starts from', () => {

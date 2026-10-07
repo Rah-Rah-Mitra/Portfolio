@@ -2,8 +2,9 @@ import { Matrix4, PerspectiveCamera, Scene, Vector3 } from 'three';
 import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { threeToEstate, type Vec3 } from '../../../../lib/estate/frames';
 import { ESTATE_SITE_IDS, type EstateSiteId } from '../../../../lib/estate/ids';
-import { ESTATE_VFOV_DEG, LOD_MASSING, sseScale } from '../../../../lib/estate/lod';
+import { LOD_MASSING, modeVfov, sseScale } from '../../../../lib/estate/lod';
 import { EstateScheduler, type PlanContext } from '../../../../lib/estate/scheduler';
+import { ESTATE_SETTINGS_DEFAULTS, type EstateDetail, type EstateViewerSettings } from '../../../../lib/estate/settings';
 import { EstatePackError, parsePack, type EstatePack } from '../../../../lib/estate/schema';
 import { ESTATE_TIER_TABLE, capPixelRatio, type EstateTier } from '../../../../lib/estate/tiers';
 import type { FrameActivity } from '../../../../lib/estate/frameLoop';
@@ -48,6 +49,16 @@ import { posterPose, resumePose, type ThreePose } from './views';
 // fog → draw → readouts → governor sample. Frames continue only while the rig
 // moves, uploads wait or settle frames are owed (loop.ts); at rest none is
 // requested.
+//
+// The viewer's settings (applySettings, lib/estate/settings.ts) reach the core
+// as: the first-person lens detail selection reads (modeVfov), toon shading
+// (one uniform, materials.ts), edge lines, the frame-stats readout, and the
+// detail level. Auto is the governor's ladder from the probed (or overridden)
+// start tier; a fixed level holds its tier at that tier's full pixel ratio, the
+// governor neither sampled nor moved (a second "meter" governor keeps the
+// readout's figures live), and returning to Auto resumes the ladder where it
+// stood. A fixed level never touches MSAA (a context attribute, chosen from
+// the start tier) or the sessionStorage hint applyNotch writes.
 
 const PROGRESS_INTERVAL_MS = 250;
 /**
@@ -56,6 +67,8 @@ const PROGRESS_INTERVAL_MS = 250;
  * out, 1 px lines a few pixels apart read as a dark mass, not as line work.
  */
 export const EDGE_MIN_STOREY_PX = 8;
+/** Toon shading's ink outlines reach a third farther: a storey 6 px tall is enough (at 4 the line work of windows merged into a dark mass). */
+export const TOON_EDGE_MIN_STOREY_PX = 6;
 const TYPICAL_STOREY_M = 2.8;
 const FADE_MS = 200;
 const PACK_RETRIES = 2;
@@ -131,6 +144,10 @@ export class EstateCore {
   private levels: LevelWiring | null = null;
   private loop: RenderLoop | null = null;
   private governor: EngineGovernor | null = null;
+  /** While a detail level is fixed: measures the frames for the readout; its decisions are ignored. */
+  private meter: EngineGovernor | null = null;
+  /** The last display-calibration burst's intervals (a new meter calibrates from them). */
+  private calibration: readonly number[] | null = null;
   private gpuTimer: GpuTimer | null = null;
   private watch: ContextWatch | null = null;
   private resizeObserver: ResizeObserver | null = null;
@@ -143,6 +160,10 @@ export class EstateCore {
 
   // state
   tier: EstateTier = 'mid';
+  /** The probed (or ?estate-quality=) start tier: where Auto's ladder begins. */
+  private startTier: EstateTier = 'mid';
+  private settings: EstateViewerSettings = ESTATE_SETTINGS_DEFAULTS;
+  private detail: EstateDetail = 'auto';
   pixelRatio = 1;
   msaa = false;
   private cssWidth = 0;
@@ -186,12 +207,12 @@ export class EstateCore {
   private readonly reserve = { tris: 0, draws: 0 };
   private readonly fog: FogRange = { near: 0, far: 0 };
   private readonly clipScratch = { near: 0, far: 0 };
-  private readonly clipPose = { nearestBoxDistance: Infinity, heightAboveFloor: 0, orbitDistance: 0, reversedDepth: false };
+  private readonly clipPose = { nearestBoxDistance: Infinity, heightAboveFloor: 0, orbitDistance: 0, reversedDepth: false, vfovDeg: 60, aspect: 1 };
   private readonly planContext: PlanContext = { focus: null, mode: 'overview', lean: false, frozen: false };
   private readonly activity: FrameActivity = { controls: false, keys: false, tweens: false, uploads: false };
   private readonly eyeScratch: Vec3 = [0, 0, 0];
   private readonly levelFrame: LevelFrame = {
-    now: 0, k: 1, tier: ESTATE_TIER_TABLE.mid, lean: false, focus: -1, inside: -1, eye: this.eye, visible: this.visible, reserveTris: 0, reserveDraws: 0,
+    now: 0, k: 1, tier: ESTATE_TIER_TABLE.mid, edges: ESTATE_TIER_TABLE.mid.edges, lean: false, focus: -1, inside: -1, eye: this.eye, visible: this.visible, reserveTris: 0, reserveDraws: 0,
   };
   private readonly interiorFrame = { now: 0, eye: this.eye, tier: 'mid' as EstateTier, furnitureRadius: 0 };
   private readonly partsOf = (id: string): readonly Part[] | null => this.streaming?.partsOf(id) ?? null;
@@ -356,7 +377,8 @@ export class EstateCore {
     const created = createRenderer(canvas, choice.msaa, identity.caveat);
     if (!created) { this.unavailable('context-failed'); return; }
     this.created = created;
-    this.tier = created.caveat && !options.tier ? 'min' : choice.tier;
+    this.startTier = created.caveat && !options.tier ? 'min' : choice.tier;
+    this.tier = this.detail === 'auto' ? this.startTier : this.detail;
     this.msaa = created.msaa;
     this.watch = new ContextWatch(canvas, { lost: () => this.onLost(), restored: () => this.onRestored() });
     this.watch.attach();
@@ -369,7 +391,14 @@ export class EstateCore {
     if (!pack || !streaming) return;
 
     const kit = createMaterialKit(createPalette(options.colours));
+    kit.setToon(this.settings.toon);
     this.kit = kit;
+    // A detail level chosen while pack.json loaded: the tier and its ratio now, before the governor is built.
+    const heldTier = this.detail === 'auto' ? this.startTier : this.detail;
+    if (heldTier !== this.tier) {
+      this.tier = heldTier;
+      this.applySize(true);
+    }
     const scene = new EstateScene(pack, kit);
     this.scene = scene;
     this.interiors?.bindScene(scene.buildings, (index, on) => { if (scene.setPlanSides(index, on) && this.ready) this.loop?.markChanged(); });
@@ -378,7 +407,9 @@ export class EstateCore {
     this.levels = new LevelWiring(pack.sites);
     streaming.scheduler.setTier(this.tier);
     this.gpuTimer = GpuTimer.create(created.gl);
-    this.governor = new EngineGovernor(this.tier, this.pixelRatio, this.gpuTimer);
+    // Auto's ladder always starts at the start tier, so a fixed level's return to Auto resumes it.
+    this.governor = new EngineGovernor(this.startTier, capPixelRatio(this.startTier, this.cssWidth, this.cssHeight, dpr), this.gpuTimer);
+    if (this.detail !== 'auto') this.meter = new EngineGovernor(this.tier, this.pixelRatio, this.gpuTimer);
     this.loop = new RenderLoop(this.loopHost, (time, continuous) => {
       try {
         return this.frame(time, continuous);
@@ -402,7 +433,9 @@ export class EstateCore {
     if (this.isDisposed) return;
     const intervals = await this.loop.calibrate();
     if (this.isDisposed) return;
+    this.calibration = intervals;
     this.governor.calibrate(intervals);
+    this.meter?.calibrate(intervals);
 
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.loop?.noteResize());
@@ -415,7 +448,7 @@ export class EstateCore {
   private startPose(pack: EstatePack): ThreePose {
     const aspect = this.cssWidth / this.cssHeight;
     const resume = this.options.resume;
-    if (resume) return resumePose(resume.position, resume.target, ESTATE_VFOV_DEG[resume.mode]);
+    if (resume) return resumePose(resume.position, resume.target, modeVfov(resume.mode, this.settings.fovDeg));
     return posterPose(pack.views.aerialNE, aspect);
   }
 
@@ -466,12 +499,14 @@ export class EstateCore {
     const kit = this.kit;
     const uploader = this.uploader;
     const governor = this.governor;
+    // A fixed detail level samples its meter instead (the readout), never the ladder.
+    const active = this.meter ?? governor;
     const activity = this.activity;
     activity.controls = false;
     activity.keys = false;
     activity.tweens = false;
     activity.uploads = false;
-    if (!created || !scene || !streaming || !levels || !kit || !uploader || !governor || this.isDisposed || this.lost) return activity;
+    if (!created || !scene || !streaming || !levels || !kit || !uploader || !governor || !active || this.isDisposed || this.lost) return activity;
     const { renderer } = created;
     const camera = this.camera;
     const scheduler = streaming.scheduler;
@@ -480,6 +515,10 @@ export class EstateCore {
     const dt = continuous && !Number.isNaN(this.lastFrameTime) ? Math.min(0.1, Math.max(0, (time - this.lastFrameTime) / 1000)) : 0;
     this.lastFrameTime = time;
     const tier = ESTATE_TIER_TABLE[this.tier];
+    // Edge lines: the tier's rule, every tier while toon shading outlines the
+    // drawing, none when the visitor turns them off. Detail selection counts
+    // the line draw in F's cost (levels.ts), so the draw caps still hold.
+    const edges = this.settings.edges && (tier.edges || this.settings.toon);
 
     // The camera.
     const rig = this.rig;
@@ -535,11 +574,12 @@ export class EstateCore {
 
     // Detail selection, then downloads planned from the same numbers.
     const bufferHeight = Math.floor(this.cssHeight * this.pixelRatio);
-    const k = sseScale(bufferHeight, ESTATE_VFOV_DEG[rig.mode]);
+    const k = sseScale(bufferHeight, modeVfov(rig.mode, this.settings.fovDeg));
     const lf = this.levelFrame;
     lf.now = now;
     lf.k = k;
     lf.tier = tier;
+    lf.edges = edges;
     lf.lean = this.lean;
     lf.focus = this.planFocus();
     lf.inside = interiors?.insideIndex ?? -1;
@@ -553,8 +593,9 @@ export class EstateCore {
     this.armHold(selector.holdUntil, now);
 
     // Levels, then the planes and fog for this pose.
-    const edgeReach = (TYPICAL_STOREY_M * k) / (EDGE_MIN_STOREY_PX * this.pixelRatio);
-    if (scene.applyLevels(selector.level, tier.edges, this.distances(levels), edgeReach) > 0 && this.ready) this.loop?.markChanged();
+    const minStoreyPx = this.settings.toon ? TOON_EDGE_MIN_STOREY_PX : EDGE_MIN_STOREY_PX;
+    const edgeReach = (TYPICAL_STOREY_M * k) / (minStoreyPx * this.pixelRatio);
+    if (scene.applyLevels(selector.level, edges, this.distances(levels), edgeReach, this.settings.edges) > 0 && this.ready) this.loop?.markChanged();
     // Plan holds its building at F; should detail selection still have it at
     // massing (F not yet in, or a starved budget), the box would cover the cut
     // storey: it goes, and the lower storeys wait for F.
@@ -574,6 +615,9 @@ export class EstateCore {
     pose.heightAboveFloor = Math.max(0, this.eye[2]);
     pose.orbitDistance = orbitDistance;
     pose.reversedDepth = created.reversedDepth;
+    // The near rectangle is the real camera's: a wide first-person lens brings its corners out.
+    pose.vfovDeg = camera.fov;
+    pose.aspect = camera.aspect;
     applyClip(camera, rig.mode, pose, this.clipScratch);
     fogRange(rig.mode, orbitDistance, this.fog);
     kit.setFog(this.fog.near, this.fog.far);
@@ -581,10 +625,10 @@ export class EstateCore {
     // Draw, once stage 0 can.
     let drew = false;
     if (scheduler.stage0Ready()) {
-      governor.beginGpu(continuous && this.ready);
+      active.beginGpu(continuous && this.ready);
       renderer.info.reset();
       renderer.render(scene.root, camera);
-      governor.endGpu();
+      active.endGpu();
       drew = true;
     }
     const programs = renderer.info.programs?.length ?? this.programs;
@@ -613,11 +657,11 @@ export class EstateCore {
       // not judged: it would step the ladder twice for one overload.
       const excluded = uploaded || compiled || this.resized || this.pendingRatio !== null;
       this.resized = false;
-      const change = this.ready ? governor.sample(time, continuous, cpuMs, excluded) : null;
-      if (change) this.applyNotch(change, now);
-      this.probe?.frame(time, continuous, cpuMs, stats, governor, excluded);
+      const change = this.ready ? active.sample(time, continuous, cpuMs, excluded) : null;
+      if (change && active === governor) this.applyNotch(change, now);
+      this.probe?.frame(time, continuous, cpuMs, stats, active, excluded);
       // The calibration burst draws nothing for 8 frames: never under the visitor's hand.
-      if (governor.wantsCalibration && !moving) this.recalibrate();
+      if (active === governor && governor.wantsCalibration && !moving) this.recalibrate();
     }
     // A governor notch's resize, deferred while the camera moved (or overdue),
     // once this frame's commands are queued: drain, then resize.
@@ -683,20 +727,73 @@ export class EstateCore {
   private applyNotch(change: GovernorChange, now: number) {
     const { notch } = change;
     this.probe?.notch(change);
-    this.tier = notch.tier;
-    this.streaming?.scheduler.setTier(notch.tier);
     if (shouldDropMsaa(this.msaa, notch.tier)) writeMsaaOff();
+    this.applyQuality(notch.tier, notch.pixelRatio, now);
+  }
+
+  /**
+   * A tier and a pixel-ratio ceiling, from a notch or a detail level: the tier
+   * at once (detail selection, streaming's budget, trees, band, furniture), the
+   * ratio through the same wait-for-stillness and GPU drain as a notch.
+   */
+  private applyQuality(tier: EstateTier, ceiling: number, now: number) {
+    this.tier = tier;
+    this.streaming?.scheduler.setTier(tier);
     const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
-    const ratio = capPixelRatio(this.tier, this.cssWidth, this.cssHeight, dpr, notch.pixelRatio);
+    const ratio = capPixelRatio(tier, this.cssWidth, this.cssHeight, dpr, ceiling);
     if (ratio !== this.appliedRatio) {
       if (this.pendingRatio === null) this.pendingRatioSince = now;
-      this.pendingRatio = notch.pixelRatio;
+      this.pendingRatio = ceiling;
     } else {
       this.pendingRatio = null;
-      this.applySize(false, notch.pixelRatio);
+      this.applySize(false, ceiling);
     }
     this.scene?.invalidateTrees();
     this.loop?.markChanged();
+  }
+
+  /**
+   * The detail level (settings): Auto resumes the governor's ladder where it
+   * stood (it was not sampled meanwhile); a tier holds that tier at its full
+   * ratio and measures with a meter. Before the governor exists (booting),
+   * boot reads it.
+   */
+  private setDetail(detail: EstateDetail) {
+    if (detail === this.detail) return;
+    this.detail = detail;
+    const governor = this.governor;
+    if (!governor || !this.created) return;
+    const now = this.loopHost.now();
+    governor.rest();
+    if (detail === 'auto') {
+      this.meter = null;
+      this.applyQuality(governor.notch.tier, governor.notch.pixelRatio, now);
+      return;
+    }
+    this.applyQuality(detail, Infinity, now);
+    const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
+    this.meter = new EngineGovernor(detail, capPixelRatio(detail, this.cssWidth, this.cssHeight, dpr), this.gpuTimer);
+    if (this.calibration) this.meter.calibrate(this.calibration);
+  }
+
+  /** The ratio a resize may use: the governor's notch under Auto, the tier's own cap at a fixed level. */
+  private ratioCeiling(): number {
+    return this.detail === 'auto' ? this.governor?.notch.pixelRatio ?? Infinity : Infinity;
+  }
+
+  /**
+   * The viewer's settings (lib/estate/settings.ts, already sanitised by the
+   * handle). Applied before start too: boot reads the lens, toon and detail.
+   * One frame redraws; a level or ratio change owes its own settle frames.
+   */
+  applySettings(settings: EstateViewerSettings): void {
+    if (this.isDisposed) return;
+    const before = this.settings;
+    this.settings = settings;
+    if (settings.toon !== before.toon) this.kit?.setToon(settings.toon);
+    this.setDetail(settings.detail);
+    if (this.frozen) return;
+    this.invalidate();
   }
 
   /**
@@ -774,7 +871,7 @@ export class EstateCore {
     }
     const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
     // While a notch's resize waits, the old ratio stands (the frame decides when).
-    const limit = ceiling ?? (this.pendingRatio !== null ? this.appliedRatio : this.governor?.notch.pixelRatio) ?? Infinity;
+    const limit = ceiling ?? (this.pendingRatio !== null ? this.appliedRatio : this.ratioCeiling());
     const ratio = initial
       ? capPixelRatio(this.tier, this.cssWidth, this.cssHeight, dpr)
       : capPixelRatio(this.tier, this.cssWidth, this.cssHeight, dpr, limit);
@@ -804,7 +901,8 @@ export class EstateCore {
   // ---- events -------------------------------------------------------------------------
 
   private emitStats(s: FrameStats) {
-    const debug = this.options.debug === true && this.governor ? this.governor.debug : null;
+    const measured = this.meter ?? this.governor;
+    const debug = (this.options.debug === true || this.settings.stats) && measured ? measured.debug : null;
     this.emitter.emit({
       type: 'stats',
       draws: s.draws,

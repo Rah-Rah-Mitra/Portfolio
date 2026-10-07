@@ -28,6 +28,9 @@ export interface Bounds2 { minX: number; maxX: number; minZ: number; maxZ: numbe
 export class LookState {
   yaw = 0;
   pitch = 0;
+  /** The viewer's look sensitivity (× LOOK_RATE) and vertical inversion: drags and a captured mouse only, never keys or steps. */
+  scale = 1;
+  invertY = false;
   private readonly euler = new Euler(0, 0, 0, 'YXZ');
   private readonly scratch = new Vector3();
 
@@ -41,8 +44,8 @@ export class LookState {
 
   /** Turn by pixels of drag (or locked mouse movement), scaled to the field of view. */
   dragLook(dx: number, dy: number, fovDeg: number): void {
-    const k = LOOK_RATE * (fovDeg / 60);
-    this.turn(-dx * k, -dy * k);
+    const k = LOOK_RATE * (fovDeg / 60) * this.scale;
+    this.turn(-dx * k, (this.invertY ? dy : -dy) * k);
   }
 
   turn(dYaw: number, dPitch: number): void {
@@ -84,6 +87,8 @@ export class FlyController {
   readonly velocity = new Vector3();
   /** The wheel's speed multiplier. */
   multiplier = 1;
+  /** The viewer's Fly speed (settings flyScale), under the wheel's multiplier; step buttons keep theirs. */
+  speedScale = 1;
   private readonly camera: PerspectiveCamera;
   private readonly groundAt: (x: number, z: number) => number;
   private readonly bounds: Bounds2;
@@ -139,7 +144,7 @@ export class FlyController {
     if (lift !== 0) wish.y += lift;
     const length = wish.length();
     if (length > 1) wish.multiplyScalar(1 / length);
-    if (length > 0) wish.multiplyScalar(flySpeed(this.heightAboveGround(), held.has('boost'), this.multiplier));
+    if (length > 0) wish.multiplyScalar(flySpeed(this.heightAboveGround(), held.has('boost'), this.multiplier) * this.speedScale);
     if (halted) this.velocity.copy(wish);
     else this.velocity.lerp(wish, approachShare(FLY_RESPONSE, dt));
     let moved = false;

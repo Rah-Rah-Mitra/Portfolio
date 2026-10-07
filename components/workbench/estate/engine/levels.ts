@@ -56,6 +56,11 @@ export interface LevelFrame {
   /** sseScale() for the drawing buffer and the camera's vfov. */
   k: number;
   tier: EstateTierRow;
+  /**
+   * Façade edge lines draw this frame (the tier's rule, toon shading, the
+   * visitor's switch; core.ts): F's cost counts their line draw. Default the tier's.
+   */
+  edges?: boolean;
   lean: boolean;
   /** Index of the selected or targeted building, or −1. */
   focus: number;
@@ -110,7 +115,7 @@ export class LevelWiring {
    * selector (its `level` array is what to draw); views are in `this.views`.
    */
   update(frame: LevelFrame, scheduler: EstateScheduler): LodSelector {
-    this.setEdges(frame.tier.edges);
+    this.setEdges(frame.edges ?? frame.tier.edges);
     const sites = this.sites;
     for (let i = 0; i < sites.length; i += 1) {
       const site = sites[i];

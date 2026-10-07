@@ -11,6 +11,7 @@ import type { EstateCore } from '../components/workbench/estate/engine/core';
 import type { ViewAccess } from '../components/workbench/estate/engine/navigation';
 import { StaticRig, type CameraRig } from '../components/workbench/estate/engine/rig';
 import { EstateHud, EstatePlanRooms } from '../components/workbench/estate/live/EstateHud';
+import { ESTATE_SETTINGS_DEFAULTS, settingsFrom } from '../lib/estate/settings';
 
 // The Estate viewer's controls and HUD in a DOM (plan §8.2, §8.3, §8.6, §8.7):
 //  - the controls against a stand-in render core (a real three camera, the
@@ -721,6 +722,7 @@ const fakeEngine = (features: EstateEngineFeatures = FEATURES) => {
     walkIn: vi.fn(() => true),
     setCut: vi.fn(() => true),
     siteFiles: vi.fn(() => null),
+    setSettings: vi.fn(() => true),
   } as unknown as EstateEngine;
   const emit = (event: HudEvent) => act(() => {
     for (const listener of listeners) listener({ ...event, token: 1 } as EstateEngineEvent);
@@ -933,6 +935,95 @@ describe('the HUD', () => {
     expect(buttons.indexOf('Capture')).toBeGreaterThan(buttons.indexOf('Close'));
   });
 
+  it('opens SETTINGS from its toggle in every mode: named controls, values with units, changes sent as sanitised patches', () => {
+    const { engine, setView, listeners } = fakeEngine();
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    const toggle = screen.getByRole('button', { name: 'Settings' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
+    expect(engine.setPopover).toHaveBeenCalledWith('settings');
+    // The engine's view has no settings yet: the panel shows the defaults.
+    setView({ popover: 'settings' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    const region = screen.getByRole('region', { name: 'Viewer settings' });
+    expect(toggle.getAttribute('aria-controls')).toBe(region.id);
+    expect(region.hasAttribute('data-estate-scroll')).toBe(true);
+    const walk = screen.getByRole('slider', { name: 'Walk speed' });
+    expect(walk.getAttribute('aria-valuetext')).toBe('1.6 metres per second, 4 with Shift');
+    expect(screen.getByRole('slider', { name: 'Field of view' }).getAttribute('aria-valuetext')).toMatch(/^60 degrees vertical, \d+ degrees horizontal$/);
+    expect(screen.getByRole('slider', { name: 'Fly speed' }).getAttribute('aria-valuetext')).toBe('1 times the usual flying speed');
+    expect(screen.getByRole('slider', { name: 'Look sensitivity' }).getAttribute('aria-valuetext')).toBe('1 times');
+    for (const name of ['Invert vertical look', 'Edge lines', 'Toon shading', 'Reduce camera motion', 'Performance readout']) {
+      expect(screen.getByRole('button', { name }).getAttribute('aria-pressed'), name).toBe(name === 'Edge lines' ? 'true' : 'false');
+    }
+    for (const control of region.querySelectorAll('button, input')) {
+      const label = control.id ? region.querySelector(`label[for="${control.id}"]`)?.textContent : null;
+      const named = control.getAttribute('aria-label') || control.textContent || label || '';
+      expect(named.trim(), control.outerHTML).not.toBe('');
+    }
+    // A slider moves by stops; a switch flips; the detail level is one of five.
+    fireEvent.change(walk, { target: { value: '10' } });
+    expect(engine.setSettings).toHaveBeenLastCalledWith({ walkSpeed: 2.5 });
+    fireEvent.change(screen.getByRole('slider', { name: 'Field of view' }), { target: { value: '75' } });
+    expect(engine.setSettings).toHaveBeenLastCalledWith({ fovDeg: 75 });
+    fireEvent.click(screen.getByRole('button', { name: 'Toon shading' }));
+    expect(engine.setSettings).toHaveBeenLastCalledWith({ toon: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Low' }));
+    expect(engine.setSettings).toHaveBeenLastCalledWith({ detail: 'low' });
+    fireEvent.click(screen.getByRole('button', { name: 'Restore defaults' }));
+    expect(engine.setSettings).toHaveBeenLastCalledWith(ESTATE_SETTINGS_DEFAULTS);
+    // The engine's answer is what the panel shows.
+    setView({ settings: settingsFrom({ walkSpeed: 2.5, toon: true, detail: 'low' }) });
+    expect(screen.getByRole('slider', { name: 'Walk speed' }).getAttribute('aria-valuetext')).toBe('2.5 metres per second, 6.25 with Shift');
+    // What is shown is what is said, at every stop (1.25 once read "1.3").
+    setView({ settings: settingsFrom({ walkSpeed: 1.25, toon: true, detail: 'low' }) });
+    expect(document.querySelector('.wb-estate-settings output')?.textContent).toBe('1.25 m/s');
+    setView({ settings: settingsFrom({ walkSpeed: 2.5, toon: true, detail: 'low' }) });
+    expect(screen.getByRole('button', { name: 'Toon shading' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Low' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Auto' }).getAttribute('aria-pressed')).toBe('false');
+    // Nothing was sent while rendering, and the HUD still listens once.
+    expect(engine.setSettings).toHaveBeenCalledTimes(5);
+    expect(listeners.size).toBe(1);
+    // In Fly too.
+    setView({ location: { ...INITIAL_VIEW.location, mode: 'fly' } });
+    expect(screen.getByRole('region', { name: 'Viewer settings' })).toBeTruthy();
+  });
+
+  it('puts SETTINGS next in tab order after its toggle, keeps KEYS’ order, and hands focus back when it closes under it', () => {
+    const { engine, setView } = fakeEngine();
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    setView({ popover: 'settings', location: { ...INITIAL_VIEW.location, mode: 'fly' } });
+    const buttons = [...document.querySelectorAll('.wb-estate-hud-row button')].map((b) => b.textContent);
+    expect(buttons.indexOf('Close')).toBe(buttons.indexOf('Settings') + 1);
+    expect(buttons.indexOf('Settings')).toBeGreaterThan(buttons.indexOf('Keys'));
+    expect(buttons.indexOf('Capture')).toBeGreaterThan(buttons.indexOf('Restore defaults'));
+    const toggle = screen.getByRole('button', { name: 'Settings' });
+    const toon = screen.getByRole('button', { name: 'Toon shading' });
+    toon.focus();
+    setView({ popover: null }); // Esc on the switch: the engine closes the layer
+    expect(screen.queryByRole('region', { name: 'Viewer settings' })).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it('shows the frame-stats row when the Performance readout is on, without the debug flag', () => {
+    const { engine, setView, emit, listeners } = fakeEngine();
+    render(<Stage hud={{ engine, phase: 'live', fullDetail: null, debug: false }} />);
+    const stats = { type: 'stats', draws: 30, tris: 250000, programs: 6, frameMs: 2, tier: 'low', pixelRatio: 1, band: null, gpuBytes: 20 * 1024 * 1024 } as const;
+    emit(stats);
+    expect(document.querySelector('[data-estate-debug]')).toBeNull();
+    setView({ settings: settingsFrom({ stats: true }) });
+    emit(stats);
+    expect(document.querySelector('[data-estate-debug]')?.textContent).toMatch(/30 draws · 250,000 tris · 20\.0 MB · 6 programs · low ×1$/);
+    setView({ settings: settingsFrom({ stats: false }) });
+    expect(document.querySelector('[data-estate-debug]')).toBeNull();
+    expect(listeners.size).toBe(1);
+    // The viewer's Reduce camera motion stills the HUD's own transitions.
+    expect(document.querySelector('.wb-estate-hud')?.hasAttribute('data-reduce-motion')).toBe(false);
+    setView({ settings: settingsFrom({ reduceMotion: true }) });
+    expect(document.querySelector('.wb-estate-hud')?.hasAttribute('data-reduce-motion')).toBe(true);
+  });
+
   it('takes the released-mouse line down after a few seconds', () => {
     vi.useFakeTimers();
     try {
@@ -948,9 +1039,15 @@ describe('the HUD', () => {
   });
 
   it('disables every control outside the live phase, and unsubscribes on unmount', () => {
-    const { engine, listeners } = fakeEngine();
+    const { engine, listeners, setView } = fakeEngine();
     const { unmount } = render(<Stage hud={{ engine, phase: 'frozen', fullDetail: null, debug: false }} />);
     for (const button of document.querySelectorAll('.wb-estate-hud button')) expect((button as HTMLButtonElement).disabled).toBe(true);
+    // The settings panel too, every switch and slider in it.
+    setView({ popover: 'settings' });
+    expect(document.querySelectorAll('.wb-estate-settings input').length).toBe(4);
+    for (const control of document.querySelectorAll('.wb-estate-hud button, .wb-estate-hud input')) {
+      expect((control as HTMLButtonElement | HTMLInputElement).disabled, control.outerHTML).toBe(true);
+    }
     expect(listeners.size).toBe(1);
     unmount();
     expect(listeners.size).toBe(0);

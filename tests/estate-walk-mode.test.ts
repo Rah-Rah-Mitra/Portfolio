@@ -165,6 +165,30 @@ describe('the walker’s speeds (no world)', () => {
     expect(walker.update(1 / 60, held, true, camera)).toBe(false);
   });
 
+  it('walks at the viewer’s pace: Shift 2.5× it, the same time to speed, steps still 0.5 m', () => {
+    const walker = new WalkController(world);
+    walker.place(200, 200, 0, 0);
+    walker.speedScale = 1.5;
+    const held = new HeldKeys();
+    held.press('KeyW', 'forward');
+    walker.update(1 / 60, held, true, camera);
+    expect(walker.vy).toBeCloseTo(2.4, 9);
+    held.press('ShiftLeft', 'boost');
+    walker.update(1 / 60, held, true, camera);
+    expect(walker.vy).toBeCloseTo(6, 9);
+    held.releaseAll();
+    walker.update(1 / 60, held, true, camera);
+    // Unhalted, the first frame closes 1.5× the default acceleration on 1.5× the speed.
+    held.press('KeyW', 'forward');
+    walker.update(1 / 60, held, false, camera);
+    expect(walker.vy).toBeCloseTo((1.5 * WALK_ACCEL) / 60, 9);
+    held.releaseAll();
+    walker.update(1 / 60, held, true, camera);
+    const y0 = walker.y;
+    expect(walker.stepBy(0.5, 0)).toBeCloseTo(0.5, 9);
+    expect(walker.y - y0).toBeCloseTo(0.5, 9);
+  });
+
   it('turns at 90°/s on ←/→ and steps 0.5 m', () => {
     const walker = new WalkController(world);
     walker.place(200, 200, 0, 0);

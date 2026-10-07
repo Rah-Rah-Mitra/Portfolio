@@ -18,6 +18,9 @@ import { gzipSync } from 'node:zlib';
 // (9b), and Plan's room list as a keyboard visitor meets it (21). The release
 // round's: 8a and 8b screenshot the canvas at an eye-level pose on a heading
 // that is a multiple of 90° and fail on pure-black pixels (blackShare below).
+// The viewer's settings: SETTINGS by mouse without reflow, axe-clean open, toon
+// shading in the six programs, the lens, a fixed detail level and back, at rest
+// after each, Esc from inside it (22), and settings kept across a reload (22b).
 //
 // No case waits for the network to go idle once it has opened the window: the
 // rest of the page decides that (the résumé builder's preview, stubbed below,
@@ -179,6 +182,16 @@ const blackShare = async (page: Page) => {
     for (let i = 0; i < data.length; i += 4) if (data[i] < 6 && data[i + 1] < 6 && data[i + 2] < 6) black += 1;
     return black / (data.length / 4);
   }, png.toString('base64'));
+};
+
+/** The canvas alone, the HUD hidden for the shot (it would differ with the panel's own state). */
+const sceneShot = async (page: Page) => {
+  const style = await page.addStyleTag({ content: '.wb-estate-hud { visibility: hidden !important; }' });
+  try {
+    return await page.locator('[data-estate-stage] canvas').screenshot();
+  } finally {
+    await style.evaluate((node) => (node as Element).remove());
+  }
 };
 
 const serious = async (page: Page) => (await new AxeBuilder({ page }).include('[data-win="world-3d"]').analyze()).violations
@@ -937,6 +950,100 @@ test.describe('estate window — live 3D view', () => {
     await expect(win).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(win).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test('22 · SETTINGS: a click without reflow, axe-clean open, toon in the six programs, the lens, a fixed level and back, at rest after each', async ({ page }) => {
+    const errors = collectErrors(page);
+    await countFrames(page);
+    const win = await openEstate(page);
+    await waitLive(page);
+    await settle(page);
+    const hudLayer = hud(page);
+    // A press on a HUD button with the stage holding the keys (5b's rule): nothing in the row moves.
+    await stage(page).focus();
+    const toggle = hudLayer.getByRole('button', { name: 'Settings', exact: true });
+    const before = (await toggle.boundingBox())!;
+    const chipWidth = (await win.locator('.wb-estate-chip-keys').boundingBox())!.width;
+    await page.mouse.click(before.x + before.width / 2, before.y + before.height / 2);
+    const panel = hudLayer.getByRole('region', { name: 'Viewer settings' });
+    await expect(panel).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect((await toggle.boundingBox())!.width).toBeCloseTo(before.width, 0);
+    expect((await win.locator('.wb-estate-chip-keys').boundingBox())!.width).toBeCloseTo(chipWidth, 0);
+    expect(await allFindings(page)).toEqual([]);
+
+    // Toon shading: one uniform, so still six programs; the scene redraws once and rests.
+    const plain = await sceneShot(page);
+    const toon = panel.getByRole('button', { name: 'Toon shading' });
+    await toon.click();
+    await expect(toon).toHaveAttribute('aria-pressed', 'true');
+    await settle(page);
+    expect(await readout(page, 'programs')).toBeLessThanOrEqual(6);
+    expect(await readout(page, 'draws')).toBeLessThanOrEqual(150);
+    expect((await sceneShot(page)).equals(plain), 'toon shading changes the drawing').toBe(false);
+    const atToon = await frames(page);
+    await page.waitForTimeout(1_000);
+    expect(await frames(page) - atToon, 'requestAnimationFrame calls in 1 s at rest after a setting').toBe(0);
+
+    // The first-person lens, in Fly: the slider's keys move the lens, never the camera.
+    await stage(page).focus();
+    await page.keyboard.press('Digit3');
+    await expect(chip(page)).toHaveText(/ · FLY$/);
+    await settle(page);
+    const narrow = await sceneShot(page);
+    const fov = panel.getByRole('slider', { name: 'Field of view' });
+    await fov.focus();
+    await page.keyboard.press('End');
+    await expect(fov).toHaveAttribute('aria-valuetext', /^90 degrees vertical, \d+ degrees horizontal$/);
+    await expect(chip(page)).toHaveText(/ · FLY$/);
+    await settle(page);
+    expect((await sceneShot(page)).equals(narrow), 'a wider lens shows more').toBe(false);
+
+    // The readout, then a fixed detail level, then Auto again (the start tier: min).
+    const debugRow = win.locator('[data-estate-debug]');
+    await panel.getByRole('button', { name: 'Performance readout' }).click();
+    await expect(debugRow).toContainText(/ min ×/);
+    await panel.getByRole('button', { name: 'Low', exact: true }).click();
+    await expect(debugRow).toContainText(/ low ×1$/, { timeout: 10_000 });
+    await settle(page);
+    const atLow = await frames(page);
+    await page.waitForTimeout(1_000);
+    expect(await frames(page) - atLow, 'requestAnimationFrame calls in 1 s at rest at a fixed level').toBe(0);
+    await panel.getByRole('button', { name: 'Auto', exact: true }).click();
+    await expect(debugRow).toContainText(/ min ×/, { timeout: 10_000 });
+
+    // Esc from a switch closes the panel, keeps the window, and hands focus back to SETTINGS.
+    await panel.getByRole('button', { name: 'Edge lines' }).focus();
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(toggle).toBeFocused();
+    await expect(win).toBeVisible();
+    await toggle.click();
+    await panel.getByRole('button', { name: 'Restore defaults' }).click();
+    await expect(panel.getByRole('button', { name: 'Toon shading' })).toHaveAttribute('aria-pressed', 'false');
+    await expect(panel.getByRole('slider', { name: 'Field of view' })).toHaveAttribute('aria-valuetext', /^60 degrees vertical/);
+    await expect(debugRow).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('22b · SETTINGS are kept in this browser: a reload starts with them', async ({ page }) => {
+    const errors = collectErrors(page);
+    await openEstate(page);
+    await waitLive(page);
+    await hud(page).getByRole('button', { name: 'Settings', exact: true }).click();
+    const panel = hud(page).getByRole('region', { name: 'Viewer settings' });
+    const walk = panel.getByRole('slider', { name: 'Walk speed' });
+    await walk.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(walk).toHaveAttribute('aria-valuetext', /^1\.8 metres per second/);
+    await panel.getByRole('button', { name: 'Toon shading' }).click();
+    await expect.poll(() => page.evaluate(() => window.localStorage.getItem('estate:settings'))).toBe('{"v":1,"walkSpeed":1.8,"toon":true}');
+    await openEstate(page);
+    await waitLive(page);
+    await hud(page).getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(panel.getByRole('slider', { name: 'Walk speed' })).toHaveAttribute('aria-valuetext', /^1\.8 metres per second/);
+    await expect(panel.getByRole('button', { name: 'Toon shading' })).toHaveAttribute('aria-pressed', 'true');
     expect(errors).toEqual([]);
   });
 

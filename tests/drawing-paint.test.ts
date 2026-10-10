@@ -500,6 +500,50 @@ describe('inks', () => {
   });
 });
 
+// ---- vertical links ------------------------------------------------------------------------
+
+describe('linksOf and paintLinks — the exploded view’s links', () => {
+  it('ends each lift at the highest plate with its landing: a block’s lifts at its typical plate (its roof has none), the car park’s at its roof', () => {
+    for (const site of SITES) {
+      const plates = site.sheets.map((key) => sheet(site.id, key));
+      const links = linksOf(plates);
+      expect(links.plates, site.id).toBe(plates.length);
+      // Each lift's top, worked out from the sheets' landings directly.
+      const tops = new Map<number, number>();
+      plates.forEach((g, i) => { for (const l of g.lifts) tops.set(l.lift, i); });
+      expect(links.liftTops, site.id).toEqual([...tops.values()]);
+      const want = site.kind === 'block' ? site.sheets.indexOf('TYP') : plates.length - 1;
+      expect(new Set(links.liftTops), site.id).toEqual(new Set([want]));
+    }
+    // Every block's roof has stair rooms: the stairs keep running to the top plate.
+    for (const site of SITES) expect(sheet(site.id, site.sheets[site.sheets.length - 1]).codes.some((c) => /STAIR/.test(c)), site.id).toBe(true);
+  });
+
+  it('draws a lift only up to its last landing’s plate, the rising front clipped there, and a stair to the front', () => {
+    const plates = SITES.find((s) => s.id === 'BLK_501')!.sheets.map((key) => sheet('BLK_501', key));
+    const links = linksOf(plates);
+    const v = viewOf(posterPose(POSTER), { x: 0, y: 0, w: POSTER.w, h: POSTER.h });
+    const [dx, dy] = [255, 345];
+    const G = 20;
+    const z1 = (plates.length - 1) * G;
+    const at = (x: number, y: number, z: number): Pt => {
+      const p = [0, 0];
+      expect(project(v.pose, v.b, v.frame, x + dx, y + dy, z, p)).toBe(true);
+      return [p[0], p[1]];
+    };
+    const close = (got: Pt, want: Pt) => { expect(got[0]).toBeCloseTo(want[0], 6); expect(got[1]).toBeCloseTo(want[1], 6); };
+    // The plates stand at 0, G and 2G: Lift 1 and Lift 2 land on L1 and TYP, not RF.
+    for (const [t, liftZ, stairZ] of [[1, G, z1], [0.75, G, 0.75 * z1], [0.3, 0.3 * z1, 0.3 * z1]]) {
+      const rec = record((ctx) => paintLinks(ctx, v, links, DESK, 0, z1, t, 1, dx, dy));
+      const [stairs, lifts] = rec.named('stroke').map((op) => Recorder.drawn(op));
+      expect(lifts, `t ${t}`).toHaveLength(links.lifts.length);
+      lifts.forEach((sub, i) => { close(sub[0], at(...links.lifts[i], 0)); close(sub[1], at(...links.lifts[i], liftZ)); });
+      expect(stairs, `t ${t}`).toHaveLength(links.stairs.length);
+      stairs.forEach((sub, i) => close(sub[1], at(...links.stairs[i], stairZ)));
+    }
+  });
+});
+
 // ---- massing ---------------------------------------------------------------------------------
 
 describe('paintMassing', () => {

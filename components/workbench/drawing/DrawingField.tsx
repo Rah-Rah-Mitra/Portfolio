@@ -5,7 +5,7 @@ import { drawingArea } from '../../../lib/drawings/compose';
 import { inksFor } from '../../../lib/drawings/ink';
 import { fallbackMeasure, type LabelKind, type Measure } from '../../../lib/drawings/labels';
 import { paintCropMarks, viewOf } from '../../../lib/drawings/paint';
-import { aerialLayout, paintAerial, sceneOf, type Scene } from '../../../lib/drawings/scene';
+import { aerialLayout, paintAerial, sceneOf, type AerialLayout, type Scene } from '../../../lib/drawings/scene';
 import { CHIP_QUALIFIER, chipNotes, chipTitle, HERO_ORDER, plateLines, sheetsFor, startHero } from '../../../lib/drawings/sequence';
 import type { DeskSnapshot } from '../../../lib/drawings/deskWatch';
 import type { DrawingScope } from '../../../lib/drawings/policy';
@@ -47,6 +47,39 @@ const makeMeasure = (): Measure => {
     const [font, tracking] = fonts[kind];
     probe.font = font;
     return probe.measureText(text).width + tracking * text.length + 8;
+  };
+};
+
+/** The sheet chip's height, px (border box), for its lines at a max width. */
+export type ChipHeight = (lines: readonly string[], width: number) => number;
+
+/**
+ * The chip's height by its own CSS (index.css .wb-drawing-chip): Barlow at 400 and
+ * 10 px with 0.1em tracking on 14 px lines, the title Barlow Condensed at 600 and
+ * 11 px with 0.05em, padding 5 × 9 px and a 1 px border inside the width
+ * (border-box), each line broken at its spaces as the browser breaks it. The film
+ * and the cover reserve the chip's band from this, so a line within a pixel of the
+ * edge counts as wrapping: the estimate errs a row tall rather than a row short.
+ */
+export const makeChipHeight = (): ChipHeight => {
+  const probe = document.createElement('canvas').getContext('2d');
+  const fonts: [string, number][] = [['600 11px "Barlow Condensed", sans-serif', 0.05 * 11], ['400 10px Barlow, sans-serif', 0.1 * 10]];
+  return (lines, maxWidth) => {
+    const room = maxWidth - 20 - 1;
+    let rows = 0;
+    lines.forEach((line, i) => {
+      const [font, tracking] = fonts[i === 0 ? 0 : 1];
+      if (probe) probe.font = font;
+      const width = (text: string) => (probe ? probe.measureText(text).width : text.length * (i === 0 ? 6.4 : 6)) + tracking * text.length;
+      const space = width(' ');
+      let used = -1;
+      rows += 1;
+      for (const word of line.split(' ')) {
+        const w = width(word);
+        if (used >= 0 && used + space + w > room) { rows += 1; used = w; } else used = used < 0 ? w : used + space + w;
+      }
+    });
+    return rows * 14 + 12;
   };
 };
 
@@ -105,19 +138,20 @@ const DrawingField: React.FC<DrawingFieldProps> = ({ scope, snapshot, fx, canvas
     } else {
       const start = () => {
         if (disposed) return;
-        const measure = makeMeasure();
+        const chipHeight = makeChipHeight();
         if (scope === 'cover') {
-          coverRef.current = coverPainter(canvas, ctx, chip, tokens, measure, setPlate);
+          coverRef.current = coverPainter(canvas, ctx, chip, tokens, chipHeight, setPlate);
           if (snapshotRef.current) coverRef.current(snapshotRef.current);
           return;
         }
+        const measure = makeMeasure();
         // Not destructured in the parameter: the prerender's SSR build (no preload
         // wrapper) tree-shook `createFilm` out of that form and shipped an empty chunk.
         import('./drawingFilm').then((filmModule) => {
           if (disposed) return;
           try {
             const film = filmModule.createFilm({
-              canvas, labels, chip, setPlate, setAttrs, tokens, measure, scene, credit: CREDIT,
+              canvas, labels, chip, setPlate, setAttrs, tokens, measure, chipHeight, scene, credit: CREDIT,
               startHero: startHero(Date.now()), onWarn: warn,
             });
             filmRef.current = film;
@@ -130,13 +164,13 @@ const DrawingField: React.FC<DrawingFieldProps> = ({ scope, snapshot, fx, canvas
           // The film's chunk would not load: the drawing stands as the cover still.
           warn(error);
           if (disposed) return;
-          coverRef.current = coverPainter(canvas, ctx, chip, tokens, makeMeasure(), setPlate);
+          coverRef.current = coverPainter(canvas, ctx, chip, tokens, chipHeight, setPlate);
           if (snapshotRef.current) coverRef.current(snapshotRef.current);
         });
       };
       const fontsReady = typeof document.fonts?.load === 'function'
         ? Promise.race([
-          Promise.all([document.fonts.load('500 9.5px Barlow'), document.fonts.load('600 11px "Barlow Condensed"')]),
+          Promise.all(['500 9.5px Barlow', '400 10px Barlow', '600 11px "Barlow Condensed"'].map((font) => document.fonts.load(font))),
           new Promise((resolve) => { window.setTimeout(resolve, 1000); }),
         ])
         : Promise.resolve();
@@ -185,7 +219,7 @@ const DrawingField: React.FC<DrawingFieldProps> = ({ scope, snapshot, fx, canvas
  */
 const coverPainter = (
   canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, chip: HTMLElement, tokens: NonNullable<ReturnType<typeof readDrawingTokens>>,
-  measure: Measure, setPlate: (lines: [string, string] | null) => void,
+  chipHeight: ChipHeight, setPlate: (lines: [string, string] | null) => void,
 ) => (snapshot: DeskSnapshot) => {
   const region = snapshot.regions[0];
   if (!snapshot.room || !region) {
@@ -208,13 +242,20 @@ const coverPainter = (
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   const inks = inksFor(tokens, snapshot.windowsOpen ? 'reading' : 'desk');
-  const chipLines = (crop: { x: number; y: number; w: number; h: number } | null) => {
-    const def = sheetsFor(site).find((s) => s.kind === 'aerial')!;
-    return [chipTitle(site, def), chipNotes(site, def, { crop }), CREDIT, CHIP_QUALIFIER];
-  };
-  const chipH = chipLines(null).reduce((rows, line, i) => rows + Math.max(1, Math.ceil((measure(line, i === 0 ? 'unit' : 'geometry') - 8) / Math.max(40, Math.min(region.w - 16, 420) - 18))), 0) * 14 + 12;
-  const area = drawingArea(region, { chip: chipH + 8, chipWidth: Math.min(region.w - 16, 420), dims: false });
-  const placed = aerialLayout(scene, area, site.id);
+  const def = sheetsFor(site).find((s) => s.kind === 'aerial')!;
+  const chipLines = (crop: { x: number; y: number; w: number; h: number } | null) => [chipTitle(site, def), chipNotes(site, def, { crop }), CREDIT, CHIP_QUALIFIER];
+  const chipW = Math.min(region.w - 16, 420);
+  // The band is the chip the still shows, and its crop line depends on the room the
+  // band leaves: a fixed point settles it, as the film's layout does.
+  let chipH = 0;
+  let placed: AerialLayout;
+  for (let round = 0; ; round += 1) {
+    placed = aerialLayout(scene, drawingArea(region, { chip: chipH + 8, chipWidth: chipW, dims: false }), site.id);
+    const need = chipHeight(chipLines(placed.crop), chipW);
+    if (need <= chipH) break;
+    chipH = need;
+    if (round === 3) break;
+  }
   const frame = { ...placed.view.frame, x: placed.view.frame.x - region.x, y: placed.view.frame.y - region.y };
   const v = viewOf(scene.posterPose, frame);
   paintAerial(ctx, v, scene, inks, { hero: site.id, storeys: true });
@@ -222,14 +263,13 @@ const coverPainter = (
   chip.hidden = false;
   chip.style.left = `${region.x + 8}px`;
   chip.style.top = `${region.y + region.h - chipH}px`;
-  chip.style.maxWidth = `${Math.min(region.w - 16, 420)}px`;
+  chip.style.maxWidth = `${chipW}px`;
   chip.replaceChildren(...chipLines(placed.crop).map((text, i) => {
     const div = document.createElement('div');
     div.className = i === 0 ? 'wb-drawing-chip-title' : 'wb-drawing-chip-line';
     div.textContent = text;
     return div;
   }));
-  const def = sheetsFor(site).find((s) => s.kind === 'aerial')!;
   setPlate(plateLines(site, def, 'STILL'));
 };
 

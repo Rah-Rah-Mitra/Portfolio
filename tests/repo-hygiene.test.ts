@@ -339,10 +339,19 @@ describe('build hygiene', () => {
       const dist = path.join(dir, 'dist');
       const catalogueFile = path.join(dir, 'catalogue.generated.ts');
       const siteFile = path.join(dir, 'site.generated.ts');
-      const generatorFile = path.join(dir, 'build.ts');
       const sha = (text: string) => createHash('sha256').update(text).digest('hex');
-      const generator = 'export const build = 1;\nexport const two = 2;\n';
-      await writeFile(generatorFile, generator);
+      // The generator and a module it imports, digested as build.ts digestGenerator does.
+      const generatorRoot = path.join(dir, 'repo');
+      const generatorFiles = ['scripts/build.ts', 'lib/plan.ts'];
+      const generatorText: Record<string, string> = { 'scripts/build.ts': 'export const build = 1;\nexport const two = 2;\n', 'lib/plan.ts': 'export const groups = 3;\n' };
+      const writeGenerator = async (texts: Record<string, string>) => {
+        for (const [rel, text] of Object.entries(texts)) {
+          await mkdir(path.dirname(path.join(generatorRoot, rel)), { recursive: true });
+          await writeFile(path.join(generatorRoot, rel), text);
+        }
+      };
+      await writeGenerator(generatorText);
+      const generator = generatorFiles.map((rel) => `${rel}\0${generatorText[rel]}\0`).join('');
       await writeFile(catalogueFile, 'export const ESTATE_CATALOGUE = {\n  edition: "v1.2",\n  packUrl: "/estate/v1.2/pack.0000aaaa.json",\n  commit: "abc123def",\n  dev: false,\n} as const;\n');
       await mkdir(path.join(dist, 'estate', 'v1.2'), { recursive: true });
       await writeFile(path.join(dist, 'estate', 'v1.2', 'pack.0000aaaa.json'), '{"pack":1}');
@@ -358,16 +367,22 @@ describe('build hygiene', () => {
       ].join('\n');
       const check = async (text: string, env: Record<string, string> = {}) => {
         await writeFile(siteFile, text);
-        return checkDrawingSet(dist, { siteFile, catalogueFile, generatorFile, env });
+        return checkDrawingSet(dist, { siteFile, catalogueFile, generatorRoot, generatorFiles, env });
       };
       expect(await check(site())).toEqual([]);
       expect(await check(site({ packName: 'pack.1111bbbb.json' }))).toEqual([expect.stringMatching(/generated from pack\.1111bbbb\.json/)]);
       expect(await check(site({ packSha256: sha('another pack') }))).toEqual([expect.stringMatching(/packSha256 does not match/)]);
       expect(await check(site({ commit: 'fff' }))).toEqual([expect.stringMatching(/commit fff is not the catalogue's/)]);
-      expect(await check(site({ generatorDigest: sha('an older generator') }))).toEqual([expect.stringMatching(/build\.ts changed/)]);
-      // The digest is of the generator with LF line endings, whatever the checkout wrote.
-      await writeFile(generatorFile, generator.replace(/\n/g, '\r\n'));
+      expect(await check(site({ generatorDigest: sha('an older generator') }))).toEqual([expect.stringMatching(/build\.ts or one of the 1 modules it imports\) changed/)]);
+      // A module the generator imports changed and build.ts did not: the set is stale all the same.
+      await writeGenerator({ 'lib/plan.ts': 'export const groups = 4;\n' });
+      expect(await check(site())).toEqual([expect.stringMatching(/drawing generator .* changed since the drawing set was generated/)]);
+      // The digest is of each file with LF line endings, whatever the checkout wrote.
+      await writeGenerator(Object.fromEntries(Object.entries(generatorText).map(([rel, text]) => [rel, text.replace(/\n/g, '\r\n')])));
       expect(await check(site())).toEqual([]);
+      // A source the list names but the checkout lacks is a failure, never a skipped check.
+      expect(await checkDrawingSet(dist, { siteFile, catalogueFile, generatorRoot, generatorFiles: [...generatorFiles, 'lib/gone.ts'], env: {} }))
+        .toEqual([expect.stringMatching(/a drawing generator source cannot be read/)]);
       // A dev set builds locally, never on Vercel or CI.
       expect(await check(site({ dev: true }))).toEqual([]);
       expect(await check(site({ dev: true }), { VERCEL: '1' })).toEqual([expect.stringMatching(/generated from a dev pack/)]);
@@ -407,6 +422,41 @@ describe('build hygiene', () => {
       await write('drawingFilm-d4.js', 'import{z}from"./DrawingField-c3.js";import{e}from"./estate-engine-f6.js";');
       await write('estate-engine-f6.js', 'export const e=1;');
       expect(await checkDrawingChunks(dist, { budgets })).toEqual([expect.stringMatching(/drawingFilm-d4\.js statically imports assets\/estate-engine-f6\.js/)]);
+      // A chunk Rollup splits out of three or camera-controls keeps Vite's default name:
+      // it is found by what it carries, whichever step pulls it in.
+      const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      for (const marker of [...ENGINE_MARKERS, BENCH_MARKER]) {
+        await good();
+        await write('DrawingField-c3.js', `import{y}from"./DeskBackdropLayer-b2.js";import{W}from"./three.core-zz.js";const s="${DRAWING_SET_MARKER}";`);
+        await write('three.core-zz.js', `export class W{};const n="${marker}";`);
+        expect(await checkDrawingChunks(dist, { budgets }))
+          .toEqual([expect.stringMatching(new RegExp(`DrawingField-c3\\.js statically imports assets/three\\.core-zz\\.js, which carries ${escape(marker)}`))]);
+        await good();
+        await write('DeskBackdropLayer-b2.js', `import{x}from"./index-a1.js";const n="${marker}";export default 1;`);
+        expect(await checkDrawingChunks(dist, { budgets })).toEqual([expect.stringMatching(new RegExp(`DeskBackdropLayer-b2\\.js carries ${escape(marker)}`))]);
+      }
+      // What a step downloads is its chunk plus every chunk it imports that the page has
+      // not loaded: a helper split out for the field (shared with the smoke, say) counts
+      // in the field's bytes, and in the film's when the film is what pulls it in.
+      await good();
+      await write('helper-qq.js', `export const h="${noise}";`);
+      await write('DrawingField-c3.js', `import{y}from"./DeskBackdropLayer-b2.js";import{h}from"./helper-qq.js";const s="${DRAWING_SET_MARKER}";`);
+      expect(await checkDrawingChunks(dist, { budgets }))
+        .toEqual([expect.stringMatching(/the desk layer and the drawing field download \d+ B gzipped \(assets\/DeskBackdropLayer-b2\.js, assets\/DrawingField-c3\.js, assets\/helper-qq\.js\), over 800 B/)]);
+      await good();
+      await write('drawingFilm-d4.js', 'import{z}from"./DrawingField-c3.js";import{h}from"./helper-qq.js";export const film=1;');
+      expect(await checkDrawingChunks(dist, { budgets }))
+        .toEqual([expect.stringMatching(/the drawing film downloads \d+ B gzipped \(assets\/drawingFilm-d4\.js, assets\/helper-qq\.js\), over 400 B/)]);
+      // A chunk the page has already loaded is not counted again: in the main bundle the
+      // helper costs the film nothing, and brought by the layer it is the layer's alone.
+      await write('index-a1.js', 'import{h}from"./helper-qq.js";export const app = 1;');
+      expect(await checkDrawingChunks(dist, { budgets })).toEqual([]);
+      await good();
+      await write('DeskBackdropLayer-b2.js', 'import{x}from"./index-a1.js";import{h}from"./helper-qq.js";export default 1;');
+      await write('DrawingField-c3.js', `import{y}from"./DeskBackdropLayer-b2.js";import{h}from"./helper-qq.js";const s="${DRAWING_SET_MARKER}";`);
+      expect(await checkDrawingChunks(dist, { budgets: { ...budgets, layer: 2_000, layerAndField: 2_000 } })).toEqual([]);
+      expect(await checkDrawingChunks(dist, { budgets: { ...budgets, layer: 2_000, layerAndField: 1_000 } }))
+        .toEqual([expect.stringMatching(/the desk layer and the drawing field download \d+ B gzipped \(assets\/DeskBackdropLayer-b2\.js, assets\/helper-qq\.js, assets\/DrawingField-c3\.js\), over 1000 B/)]);
       await good();
       await write('DrawingField-c3.js', 'import{y}from"./DeskBackdropLayer-b2.js";');
       expect(await checkDrawingChunks(dist, { budgets })).toEqual([expect.stringMatching(/does not carry the drawing set/)]);

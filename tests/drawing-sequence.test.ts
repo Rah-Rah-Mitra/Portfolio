@@ -58,7 +58,10 @@ const factsOf = (s: DrawingSite, plansOnly = false): CycleFacts => {
 
 /** Every chip fact combination a plan sheet can be given, plus the real sheet's own. */
 const factCombos = (s: DrawingSite, def: SheetDef): ChipFacts[] => {
-  const combos: ChipFacts[] = [{}, { squareM: 1 }, { squareM: 40, northRight: true }, { crop: null }, { crop: { x: 12.4, y: 7.6, w: 640, h: 480 } }];
+  const combos: ChipFacts[] = [
+    {}, { squareM: 1 }, { squareM: 40, northRight: true }, { crop: null }, { crop: { x: 12.4, y: 7.6, w: 640, h: 480 } },
+    { registered: true }, { cut: true, crop: { x: 12.4, y: 7.6, w: 640, h: 480 } },
+  ];
   for (const partial of [false, true]) for (const openAir of [false, true]) combos.push({ squareM: 2, partial, openAir, lots: [126, 51] });
   if (def.key) {
     const g = sheetOf(s.id, def.key);
@@ -286,17 +289,18 @@ describe('drawing sequence — sheet chip', () => {
     expect(chipNotes(blk, typ, { squareM: 2 })).toBe('1 SQ = 2 M · N ↑ · WALLS AND LIFT CORE INFERRED · DOORS AS OPENINGS');
   });
 
-  it('counts the car park’s lots per deck from the data, and its roof as an ordinary plan', () => {
+  it('counts the car park’s lots per deck (and L1’s on L1) from the data, its walls and core inferred, and its roof as an ordinary plan', () => {
     const cp = site('MSCP_513');
     const [, l1, typ, rf] = sheetsFor(cp);
     const deck = sheetOf(cp.id, 'TYP');
     expect(deck.lots).toEqual([126, 51]);
     expect(chipNotes(cp, typ, { squareM: 2, lots: deck.lots, partial: deck.partial, openAir: deck.ext.length > 0 }))
-      .toBe('1 SQ = 2 M · N ↑ · UNFILLED = NOT A ROOM IN THE DATA · 126 CAR · 51 MOTORCYCLE LOTS PER DECK');
+      .toBe('1 SQ = 2 M · N ↑ · WALLS AND LIFT CORE INFERRED · DOORS AS OPENINGS · UNFILLED = NOT A ROOM IN THE DATA · 126 CAR · 51 MOTORCYCLE LOTS PER DECK');
     const ground = sheetOf(cp.id, 'L1');
     expect(chipNotes(cp, l1, { squareM: 2, lots: ground.lots })).toBe(
-      `1 SQ = 2 M · N ↑ · UNFILLED = NOT A ROOM IN THE DATA · ${ground.lots[0]} CAR · ${ground.lots[1]} MOTORCYCLE LOTS PER DECK`,
+      `1 SQ = 2 M · N ↑ · WALLS AND LIFT CORE INFERRED · DOORS AS OPENINGS · UNFILLED = NOT A ROOM IN THE DATA · ${ground.lots[0]} CAR · ${ground.lots[1]} MOTORCYCLE LOTS ON L1`,
     );
+    expect(ground.lots).toEqual([123, 51]); // fewer than a deck: L1 is not one of them
     const roof = sheetOf(cp.id, 'RF');
     expect(roof.lots).toEqual([0, 0]);
     expect(chipNotes(cp, rf, { squareM: 2, lots: roof.lots, openAir: roof.ext.length > 0 }))
@@ -336,15 +340,19 @@ describe('drawing sequence — sheet chip', () => {
     }
   });
 
-  it('notes the aerial’s poster camera and its crop, read off the committed poster', () => {
+  it('notes the aerial’s poster camera, its crop or its registration, and its massing as inferred, read off the committed poster', () => {
     const blk = site('BLK_501');
     const aerial = sheetsFor(blk)[6];
     expect(POSTER.vfovDeg.toFixed(2)).toBe('42.18');
     expect([POSTER.w, POSTER.h]).toEqual([1600, 1200]);
-    expect(chipNotes(blk, aerial, {})).toBe('POSTER CAMERA · VFOV 42.18° · FULL FRAME 1600 × 1200');
-    expect(chipNotes(blk, aerial, { crop: null })).toBe('POSTER CAMERA · VFOV 42.18° · FULL FRAME 1600 × 1200');
-    expect(chipNotes(blk, aerial, { crop: { x: 100.4, y: 50.6, w: 800, h: 600 } })).toBe('POSTER CAMERA · VFOV 42.18° · CROP x100–900 y51–651');
-    expect(chipNotes(blk, aerial, { crop: { x: 0, y: 0, w: 1600, h: 1200 }, squareM: 2, northRight: true })).toBe('POSTER CAMERA · VFOV 42.18° · CROP x0–1600 y0–1200');
+    const M = 'MASSING: FOOTPRINT TO RF LEVEL';
+    expect(chipNotes(blk, aerial, {})).toBe(`POSTER CAMERA · VFOV 42.18° · FULL FRAME 1600 × 1200 · ${M}`);
+    expect(chipNotes(blk, aerial, { crop: null })).toBe(`POSTER CAMERA · VFOV 42.18° · FULL FRAME 1600 × 1200 · ${M}`);
+    expect(chipNotes(blk, aerial, { crop: { x: 100.4, y: 50.6, w: 800, h: 600 } })).toBe(`POSTER CAMERA · VFOV 42.18° · CROP x100–900 y51–651 · ${M}`);
+    expect(chipNotes(blk, aerial, { crop: { x: 0, y: 0, w: 1600, h: 1200 }, squareM: 2, northRight: true })).toBe(`POSTER CAMERA · VFOV 42.18° · CROP x0–1600 y0–1200 · ${M}`);
+    // The welcome, drawn in the poster's own rectangle, says so instead of a crop; S8's cut plan adds its wall fill.
+    expect(chipNotes(blk, aerial, { registered: true, crop: null })).toBe(`POSTER CAMERA · VFOV 42.18° · REGISTERED TO THE ESTATE STILL · ${M}`);
+    expect(chipNotes(blk, aerial, { cut: true, crop: null })).toBe(`POSTER CAMERA · VFOV 42.18° · FULL FRAME 1600 × 1200 · ${M} · WALLS INFERRED`);
   });
 
   it('never names a door swing, hinge, glazing, column or parapet, and never prints an empty part', () => {

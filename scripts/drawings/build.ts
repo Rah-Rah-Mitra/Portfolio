@@ -46,8 +46,8 @@ export interface DrawingInputs {
   packBytes: Uint8Array;
   /** Pack-relative path ('nav/BLK_501.638ad0fa.json.gz') → the stored bytes. */
   files: Readonly<Record<string, Uint8Array>>;
-  /** scripts/drawings/build.ts as text, for the digest the deploy gate checks. */
-  generatorSource: string;
+  /** Each GENERATOR_SOURCES file (repo-relative path → text), for the digest the deploy gate checks. */
+  generatorSources: Readonly<Record<string, string>>;
 }
 
 export interface DrawingSet {
@@ -92,8 +92,41 @@ const LICENCE_URL = '/estate/LICENSE.txt';
 
 const sha256 = (bytes: Uint8Array | string): string => createHash('sha256').update(bytes).digest('hex');
 
-/** The generator's own text with LF line endings: what generatorDigest hashes (core.autocrlf may hand us CRLF). */
+/** A generator source's text with LF line endings: what generatorDigest hashes (core.autocrlf may hand us CRLF). */
 export const generatorText = (source: string): string => source.replace(/\r\n/g, '\n');
+
+/**
+ * What generatorDigest covers: this file, then every module it reaches through a
+ * relative value import, sorted. The set depends on their code as much as on this
+ * file's (plan.ts groups the rooms and places their labels, nav.ts expands them,
+ * ground.ts decodes the kerbs' raster, ids.ts holds the FFLs), so a change to any
+ * of them makes the committed set stale. Type-only imports are erased and do not
+ * count. scripts/check-bundle.mjs restates the list (DRAWING_GENERATOR_FILES);
+ * tests/drawing-set.test.ts pins both to this file's imports.
+ */
+export const GENERATOR_SOURCES: readonly string[] = [
+  'scripts/drawings/build.ts',
+  'lib/estate/catalogue.generated.ts',
+  'lib/estate/frames.ts',
+  'lib/estate/ground.ts',
+  'lib/estate/ids.ts',
+  'lib/estate/nav.ts',
+  'lib/estate/packBudgets.json',
+  'lib/estate/palette.json',
+  'lib/estate/palette.ts',
+  'lib/estate/plan.ts',
+  'lib/estate/schema.ts',
+  'lib/estate/storeys.ts',
+  'lib/estate/tiers.ts',
+  'lib/estate/walk.ts',
+];
+
+/** sha256 over each GENERATOR_SOURCES file's path and LF text, NUL-separated, in that order (check-bundle's drawingGeneratorDigest). */
+export const digestGenerator = (sources: Readonly<Record<string, string>>): string => {
+  const hash = createHash('sha256');
+  for (const rel of GENERATOR_SOURCES) hash.update(`${rel}\0${generatorText(sources[rel] ?? fail(`${rel} was not read`))}\0`);
+  return hash.digest('hex');
+};
 
 export const readDrawingInputs = (root: string): DrawingInputs => {
   const packUrl = ESTATE_CATALOGUE.packUrl;
@@ -110,7 +143,7 @@ export const readDrawingInputs = (root: string): DrawingInputs => {
     packName: path.basename(packUrl),
     packBytes,
     files,
-    generatorSource: readFileSync(path.join(root, 'scripts', 'drawings', 'build.ts'), 'utf8'),
+    generatorSources: Object.fromEntries(GENERATOR_SOURCES.map((rel) => [rel, readFileSync(path.join(root, ...rel.split('/')), 'utf8')])),
   };
 };
 
@@ -782,10 +815,14 @@ const buildSheet = (ctx: SheetContext): DrawingSheet => {
       const dz = s.ffl - nav.storeys[t0].ffl;
       const a = nav.stairs.filter((st) => st.storey === s.tag).flatMap((st) => st.flights.map((f) => [f.start[0], f.start[1], f.start[2] - dz, f.end[0], f.end[1], f.end[2] - dz]));
       const b = nav.stairs.filter((st) => st.storey === tagOf(id, t0)).flatMap((st) => st.flights.map((f) => [f.start[0], f.start[1], f.start[2], f.end[0], f.end[1], f.end[2]]));
-      if (a.length === b.length && a.some((row, i) => row.some((v, j) => Math.abs(v - b[i][j]) > 0.001))) fail(`${what}: ${s.tag} stairs differ from the typical plan`);
+      // A flight more or fewer, or a lift that stops on one typical storey and not another, is a
+      // different plan too: the sheet would draw the typical storey's flights and landings for it.
+      if (a.length !== b.length) fail(`${what}: ${s.tag} has ${a.length} stair flights up, the typical plan ${b.length}`);
+      if (a.some((row, i) => row.some((v, j) => Math.abs(v - b[i][j]) > 0.001))) fail(`${what}: ${s.tag} stairs differ from the typical plan`);
       for (const lift of nav.lifts) {
         const p = lift.landings[s.tag];
         const q = lift.landings[tagOf(id, t0)];
+        if (Boolean(p) !== Boolean(q)) fail(`${what}: ${lift.name} lands on ${p ? s.tag : tagOf(id, t0)} but not on ${p ? tagOf(id, t0) : s.tag}`);
         if (p && q && (p.xy[0] !== q.xy[0] || p.xy[1] !== q.xy[1])) fail(`${what}: ${s.tag} ${lift.name} landing differs from the typical plan`);
       }
     });
@@ -1062,7 +1099,7 @@ export const buildDrawingSet = (inputs: DrawingInputs): DrawingSet => {
       edition: pack.edition,
       commit: pack.source.commit,
       dev: pack.source.dev === true,
-      generatorDigest: sha256(generatorText(inputs.generatorSource)),
+      generatorDigest: digestGenerator(inputs.generatorSources),
     },
     credit: pack.licence.attribution,
     licenceUrl: pack.licence.url,

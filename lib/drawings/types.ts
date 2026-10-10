@@ -31,7 +31,11 @@ export interface DrawingSource {
   commit: string;
   /** A dev pack (never shipped; check-bundle refuses it on CI/Vercel). */
   dev: boolean;
-  /** sha256 of scripts/drawings/build.ts with LF line endings. */
+  /**
+   * sha256 over the generator's sources (GENERATOR_SOURCES in scripts/drawings/build.ts:
+   * build.ts and every module it reaches through a relative value import), each as its
+   * path and its LF text.
+   */
   generatorDigest: string;
 }
 

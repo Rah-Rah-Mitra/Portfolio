@@ -88,7 +88,8 @@ class FakeHost implements SchedulerHost {
 
 // ---- a rig: the scheduler, a film of steps, and the invariant checked after every call ----------
 
-type Spec = readonly ['act' | 'hold', string, number];
+/** A hold's fourth element false marks it `rest: false` (a wait for data, a skipped shot). */
+type Spec = readonly ['act' | 'hold', string, number, false?];
 interface Draw { id: string; ms: number; t: number }
 
 /** Act A, hold H, act B, hold K, act C: then done. */
@@ -99,9 +100,9 @@ const rig = (specs: readonly Spec[] = FILM, { loop = false, restAfter = Number.P
   const draws: Draw[] = [];
   const phases: SchedulePhase[] = [];
   let at = 0;
-  const steps: Step[] = specs.map(([kind, id, ms]) => (kind === 'act'
+  const steps: Step[] = specs.map(([kind, id, ms, rest]) => (kind === 'act'
     ? { kind, id, ms, draw: (d: number) => { draws.push({ id, ms: d, t: host.t }); } }
-    : { kind, id, ms }));
+    : rest === false ? { kind, id, ms, rest } : { kind, id, ms }));
   const next = (): Step | null => {
     if (at >= steps.length) {
       if (!loop) return null;
@@ -423,6 +424,20 @@ describe('drawing scheduler — rest after the visitor’s last input', () => {
     expect(s.phase).toBe('act');
     expect(s.step?.id).toBe('A');
     expect(host.frames.size).toBe(1);
+  });
+
+  it('never rests on a hold that shows no finished sheet: a skipped shot or a wait goes on, and the next real hold rests', () => {
+    const { s, raw, host, playAct } = rig([['act', 'A', 1000], ['hold', 'skip', 0, false], ['hold', 'wait', 300, false], ['hold', 'H', 9000]], { restAfter: 500 });
+    s.start(true);
+    playAct(10); // t = 1000, past restAfter
+    host.fire(); // the 0 ms skip ends: it does not rest
+    expect(raw.step?.id).toBe('wait');
+    expect(raw.phase).toBe('hold');
+    host.fire(); // the wait ends: it does not rest either
+    expect(raw.step?.id).toBe('H');
+    host.fire(); // A's own hold does
+    expect(raw.phase).toBe('rest');
+    expect(host.pending).toBe(0);
   });
 
   it('counts from the last input, and rests at exactly restAfter (≥, not >)', () => {

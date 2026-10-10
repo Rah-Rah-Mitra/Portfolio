@@ -1,11 +1,13 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync, gzipSync } from 'node:zlib';
+import ts from 'typescript';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { DRAWING_GENERATOR_FILES, drawingGeneratorDigest } from '../scripts/check-bundle.mjs';
 import {
-  buildDrawingSet, decodeRings, drawingFiles, generatorText, LABEL_MIN_AREA, normaliseRing, readDrawingInputs,
+  buildDrawingSet, decodeRings, digestGenerator, drawingFiles, GENERATOR_SOURCES, LABEL_MIN_AREA, normaliseRing, readDrawingInputs,
   type DrawingInputs, type DrawingSet,
 } from '../scripts/drawings/build';
 import { ESTATE_CATALOGUE } from '../lib/estate/catalogue.generated';
@@ -47,6 +49,57 @@ const ringKey = (pts: readonly Pt[]) => {
   return JSON.stringify([...pts.slice(at), ...pts.slice(0, at)]);
 };
 
+/** The relative modules a source imports for their values: `import type`, and an import of types alone, are erased by the build. */
+const valueImports = (file: string, text: string): string[] => {
+  const out: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+      const clause = node.importClause;
+      const bindings = clause?.namedBindings;
+      if (!clause || (!clause.isTypeOnly && (clause.name !== undefined || !bindings || ts.isNamespaceImport(bindings)
+        || !bindings.elements.length || bindings.elements.some((element) => !element.isTypeOnly)))) out.push(node.moduleSpecifier.text);
+    } else if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+      const clause = node.exportClause;
+      if (!node.isTypeOnly && (!clause || !ts.isNamedExports(clause) || clause.elements.some((element) => !element.isTypeOnly))) out.push(node.moduleSpecifier.text);
+    } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments[0] && ts.isStringLiteralLike(node.arguments[0])) {
+      out.push(node.arguments[0].text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true));
+  return out.filter((specifier) => specifier.startsWith('.'));
+};
+
+/** A relative specifier as the bundler resolves it, repo-relative. */
+const resolveModule = (from: string, specifier: string): string => {
+  const base = path.posix.join(path.posix.dirname(from), specifier);
+  const isFile = (rel: string) => { try { return statSync(path.join(root, rel)).isFile(); } catch { return false; } };
+  const hit = [base, `${base}.ts`, `${base}.tsx`, `${base}/index.ts`].find(isFile);
+  if (!hit) throw new Error(`${from}: cannot resolve ${specifier}`);
+  return hit;
+};
+
+interface RawNav {
+  stairs: { storey: string; flights: unknown[] }[];
+  lifts: { name: string; served: string[]; landings: Record<string, unknown> }[];
+}
+
+/** The inputs with one site's nav file edited, stored, hashed and named as the pack tool would. */
+const withNav = (id: string, edit: (raw: RawNav) => void): DrawingInputs => {
+  const sha = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+  const packJson = JSON.parse(new TextDecoder().decode(inputs.packBytes)) as { sites: { id: string; nav: { path: string; sha256: string; gzSha256: string } }[] };
+  const site = packJson.sites.find((s) => s.id === id)!;
+  const raw = JSON.parse(gunzipSync(inputs.files[site.nav.path]).toString('utf8')) as RawNav;
+  edit(raw);
+  const bytes = Buffer.from(JSON.stringify(raw));
+  const stored = gzipSync(bytes);
+  const files: Record<string, Uint8Array> = { ...inputs.files };
+  delete files[site.nav.path];
+  site.nav = { ...site.nav, path: site.nav.path.replace(/\.[0-9a-f]{8}\./, `.${sha(bytes).slice(0, 8)}.`), sha256: sha(bytes), gzSha256: sha(stored) };
+  files[site.nav.path] = new Uint8Array(stored);
+  return { ...inputs, packBytes: new TextEncoder().encode(JSON.stringify(packJson)), files };
+};
+
 const sheetStorey = (id: string, index: number) => SITES.find((s) => s.id === id)!.plan.indexOf(String(index));
 
 const eachSheet = (fn: (id: string, sheet: DrawingSheet, storey: number) => void) => {
@@ -71,7 +124,10 @@ describe('desk drawing set — generated from the committed pack', () => {
     expect(DRAWING_SOURCE.commit).toBe(ESTATE_CATALOGUE.commit);
     expect(DRAWING_SOURCE.dev).toBe(false);
     expect(DRAWING_SOURCE.packSha256).toBe(createHash('sha256').update(inputs.packBytes).digest('hex'));
-    expect(DRAWING_SOURCE.generatorDigest).toBe(createHash('sha256').update(generatorText(read('scripts/drawings/build.ts'))).digest('hex'));
+    // The generator and the modules it imports, each as its path and LF text, NUL-separated.
+    const generator = createHash('sha256');
+    for (const rel of GENERATOR_SOURCES) generator.update(`${rel}\0${read(rel).replace(/\r\n/g, '\n')}\0`);
+    expect(DRAWING_SOURCE.generatorDigest).toBe(generator.digest('hex'));
     expect(CREDIT).toBe(pack.licence.attribution);
     expect(CREDIT).toBe('Sample Town N5 © Rahul Mitra, CC BY 4.0, generated by Bonsai-Estate');
     expect(LICENCE_URL).toBe(pack.licence.url);
@@ -83,6 +139,43 @@ describe('desk drawing set — generated from the committed pack', () => {
     expect(source).not.toMatch(/\bDate\b/);
     expect(source).not.toMatch(/Math\.random/);
     expect(source).not.toMatch(/process\.env/);
+  });
+
+  it('digests the generator with every module it reaches through a value import, the same way check-bundle does', async () => {
+    // Type-only imports are erased by the build, so they shape nothing and do not count.
+    expect(valueImports('x.ts', [
+      "import type { A } from './a';", "import { type B } from './b';", "import { c, type D } from './c';",
+      "export type { E } from './e';", "export { f } from './f';", "import './g';", "import * as h from './h';",
+      "import i from './i.json';", "import { j } from 'vitest';", "const k = () => import('./k');",
+    ].join('\n'))).toEqual(['./c', './f', './g', './h', './i.json', './k']);
+    const closure: string[] = [];
+    const visit = (rel: string) => {
+      if (closure.includes(rel)) return;
+      closure.push(rel);
+      if (/\.tsx?$/.test(rel)) for (const specifier of valueImports(rel, read(rel))) visit(resolveModule(rel, specifier));
+    };
+    visit('scripts/drawings/build.ts');
+    expect(GENERATOR_SOURCES).toEqual([closure[0], ...closure.slice(1).sort()]);
+    expect(DRAWING_GENERATOR_FILES).toEqual(GENERATOR_SOURCES);
+    expect(await drawingGeneratorDigest()).toBe(DRAWING_SOURCE.generatorDigest);
+    // Insensitive to the checkout's line endings; sensitive to every file, not only build.ts.
+    const sources = Object.fromEntries(GENERATOR_SOURCES.map((rel) => [rel, read(rel)]));
+    const crlf = Object.fromEntries(Object.entries(sources).map(([rel, text]) => [rel, text.replace(/\r?\n/g, '\r\n')]));
+    expect(digestGenerator(crlf)).toBe(digestGenerator(sources));
+    expect(digestGenerator({ ...sources, 'lib/estate/plan.ts': `${sources['lib/estate/plan.ts']}\n` })).not.toBe(digestGenerator(sources));
+    expect(() => digestGenerator({ ...sources, 'lib/estate/ground.ts': undefined as unknown as string })).toThrow(/lib\/estate\/ground\.ts was not read/);
+  });
+
+  it('fails generation when a typical storey has other flights or lift stops than the typical plan it is drawn by', () => {
+    // The edit path alone changes nothing the generator checks.
+    expect(drawingFiles(buildDrawingSet(withNav('BLK_501', () => {}))).slice(1)).toEqual(drawingFiles(set).slice(1));
+    // L7 of BLK 501 is one of the 19 storeys its TYP sheet (drawn from L2) stands for.
+    expect(() => buildDrawingSet(withNav('BLK_501', (raw) => { raw.stairs.find((s) => s.storey === 'L7')!.flights.pop(); })))
+      .toThrow('BLK_501 TYP: L7 has 3 stair flights up, the typical plan 4');
+    expect(() => buildDrawingSet(withNav('BLK_501', (raw) => { delete raw.lifts[0].landings.L7; })))
+      .toThrow('BLK_501 TYP: Lift 1 lands on L2 but not on L7');
+    expect(() => buildDrawingSet(withNav('BLK_501', (raw) => { raw.lifts.push({ name: 'Lift 9', served: ['L7'], landings: { L7: { xy: [0, 0], facing: [1, 0] } } }); })))
+      .toThrow('BLK_501 TYP: Lift 9 lands on L7 but not on L2');
   });
 
   it('draws every room of every sheet exactly as the nav file outlines it', () => {

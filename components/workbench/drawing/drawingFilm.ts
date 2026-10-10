@@ -16,8 +16,8 @@ import { massingPenPaths, planPenPaths, PenReveal, sitePenPaths } from '../../..
 import { aerialLayout, paintAerial, type Scene } from '../../../lib/drawings/scene';
 import { Scheduler, type Step } from '../../../lib/drawings/schedule';
 import {
-  CHIP_QUALIFIER, chipNotes, chipTitle, deskCycle, fflText, HERO_ORDER, plateLines, readingCycle, sheetsFor, type PlateState,
-  type SheetDef, type Shot,
+  CHIP_QUALIFIER, chipNotes, chipTitle, deskCycle, fflText, HERO_ORDER, plateLines, readingCycle, sheetsFor, type ChipFacts,
+  type PlateState, type SheetDef, type Shot,
 } from '../../../lib/drawings/sequence';
 import type { DeskSnapshot } from '../../../lib/drawings/deskWatch';
 import type { DrawingSheet } from '../../../lib/drawings/types';
@@ -42,6 +42,8 @@ export interface FilmHost {
   setAttrs(attrs: Record<string, string | undefined>): void;
   tokens: DrawingTokens;
   measure: Measure;
+  /** The sheet chip's height, px, for these lines at this max width (DrawingField measures it with the chip's own metrics). */
+  chipHeight(lines: readonly string[], width: number): number;
   scene: Scene;
   credit: string;
   startHero: number;
@@ -84,6 +86,8 @@ export const createFilm = (host: FilmHost): Film => {
   if (!ctx) throw new Error('drawing film: no 2D context');
   const cache = { lines: document.createElement('canvas'), mask: document.createElement('canvas') };
   let dpr = 1;
+  /** The device pixel ratio the backing store was last sized for. */
+  let sizedFor = 0;
   let desk: DeskSnapshot | null = null;
   let layout: Layout | null = null;
   let mode: 'desk' | 'reading' = 'reading';
@@ -118,6 +122,7 @@ export const createFilm = (host: FilmHost): Film => {
     let d = Math.min(deviceRatio, 2);
     if (box.w * box.h * d * d > MAX_BACKING) d = Math.max(Math.min(deviceRatio, 1), Math.sqrt(MAX_BACKING / (box.w * box.h)));
     dpr = d;
+    sizedFor = deviceRatio;
     canvas.style.left = `${box.x}px`;
     canvas.style.top = `${box.y}px`;
     canvas.style.width = `${box.w}px`;
@@ -257,6 +262,7 @@ export const createFilm = (host: FilmHost): Film => {
       const map = new Map<string, SheetGeometry>();
       for (const sheet of mod.SHEETS as readonly DrawingSheet[]) map.set(sheet.key, decodeSheet(site, sheet));
       sheets.set(id, map);
+      if (id === heroId()) heroSheetsArrived();
     }).catch((error) => {
       loading.delete(id);
       host.onWarn(error);
@@ -266,20 +272,77 @@ export const createFilm = (host: FilmHost): Film => {
   };
 
   const sheetOf = (key: string | null): SheetGeometry | null => (key ? sheets.get(heroId())?.get(key) ?? null : null);
+  /** The plan S8 cuts into the hero's aerial. */
+  const cutPlan = () => sheetOf('TYP') ?? sheetOf('L2');
+
+  /**
+   * A film that may not move, sitting on the wait for sheets that are here, has no
+   * timer to end it: it shows the first sheet's end state now, in one paint, with
+   * no frame and no timer. Called when the sheets arrive, and when a halt or freeze
+   * lands on a wait whose sheets came in while the film still ran.
+   */
+  const leaveWait = () => {
+    const waiting = scheduler.step?.id === 'wait' && !scheduler.isRunning && (scheduler.phase === 'still' || scheduler.phase === 'hold');
+    if (waiting && sheets.has(heroId())) scheduler.restart();
+  };
+
+  /** The hero's sheets are here: its plans can be placed, and a held film goes on from its wait. */
+  const heroSheetsArrived = () => {
+    if (!layout) return;
+    layout = layoutFor(layout.region);
+    leaveWait();
+  };
 
   // ---- layout ----------------------------------------------------------------------------
 
-  const chipHeight = (width: number, lines: string[]) => {
-    let rows = 0;
-    for (const [i, line] of lines.entries()) rows += Math.max(1, Math.ceil((host.measure(line, i === 0 ? 'unit' : 'geometry') - 8) / Math.max(40, width - 18)));
-    return rows * 14 + 12;
+  /** The chip's lines for a sheet, or for the welcome (`def` null), as `lay` places it. */
+  const chipLines = (def: SheetDef | null, lay: Layout): string[] => {
+    const site = heroSite();
+    if (!def) {
+      // Registered to the Estate window's still only where the welcome stands in exactly its rectangle;
+      // the fallback frame is the whole poster.
+      const aerial = sheetsFor(site).find((d) => d.kind === 'aerial')!;
+      const registered = welcomeFrame(lay)?.registered ?? false;
+      return ['SAMPLE TOWN N5 · 07 AERIAL NE · POSTER CAMERA', chipNotes(site, aerial, { registered }), host.credit, CHIP_QUALIFIER];
+    }
+    const g = sheetOf(def.key);
+    const plan = lay.plan;
+    let facts: ChipFacts = {};
+    if (def.kind === 'site') facts = { squareM: lay.site ? 24 / lay.site.scale : undefined };
+    else if (def.kind === 'plan') {
+      facts = { squareM: plan ? 24 / plan.scale : undefined, northRight: plan ? Math.abs(plan.psi - Math.PI) < 0.01 : false, lots: g?.lots, partial: g?.partial, openAir: (g?.ext.size ?? 0) > 0 };
+    } else if (def.kind === 'aerial') {
+      // The crop the sheet draws (aerialRun's own layout), and on the desk (S8) the hero's plan cut into it.
+      facts = { crop: aerialLayout(scene, lay.area, heroId()).crop, cut: mode === 'desk' && cutPlan() !== null };
+    }
+    return [chipTitle(site, def), chipNotes(site, def, facts), host.credit, CHIP_QUALIFIER];
+  };
+
+  /** The tallest chip the hero's cycle shows in `lay`: every sheet with its own facts, and the welcome while it is still to come. */
+  const tallestChip = (lay: Layout): number => {
+    const shown: (SheetDef | null)[] = [...sheetsFor(heroSite())];
+    if (mode === 'desk' && !welcomed) shown.push(null);
+    return Math.max(...shown.map((def) => host.chipHeight(chipLines(def, lay), lay.chip.w)));
   };
 
   const layoutFor = (region: Region): Layout => {
     const chipW = Math.min(region.w - 16, 420);
+    // The chip's band is the tallest chip the cycle will show here, and what a
+    // chip says (its scale, its crop) depends on the room the band leaves; a taller
+    // band only lowers a scale, so a fixed point settles it, in two rounds as a rule.
+    let chipH = 0;
+    for (let round = 0; ; round += 1) {
+      const lay = layoutWith(region, chipW, chipH);
+      const need = tallestChip(lay);
+      if (need <= chipH) return lay;
+      // Unsettled after four: the chip still gets the band its own facts need.
+      if (round === 3) return { ...lay, chip: chipBox(region, need) };
+      chipH = need;
+    }
+  };
+
+  const layoutWith = (region: Region, chipW: number, chipH: number): Layout => {
     const site = heroSite();
-    const sample = [chipTitle(site, sheetsFor(site)[2] ?? sheetsFor(site)[0]), chipNotes(site, sheetsFor(site)[2] ?? sheetsFor(site)[0], { squareM: 1, lots: [126, 51] }), host.credit, CHIP_QUALIFIER];
-    const chipH = chipHeight(chipW, sample);
     const bands = { chip: chipH + 8, chipWidth: chipW, dims: true };
     const g = sheets.get(site.id)?.values().next().value as SheetGeometry | undefined;
     let plan: PlanPlacement | null = null;
@@ -672,7 +735,7 @@ export const createFilm = (host: FilmHost): Film => {
               paintPlate(ctx, v, plate.g, inks, { z, detail: k === shown, alpha: plateAlpha });
             }
             if (phase.extrude > 0 && phase.extrude < 1) {
-              // E13: the typical storey's rooms rise to their clear height, its footprint to the next level.
+              // E13: the typical storey's outline rises through one storey's pitch, to the next level.
               const z = zOf(i);
               ctx.save();
               ctx.globalAlpha = plateAlpha;
@@ -732,7 +795,7 @@ export const createFilm = (host: FilmHost): Film => {
 
   const aerialRun = (arrive: number, reading: boolean, welcome: boolean): Run | null => {
     if (!layout) return null;
-    const posterFrame = welcome ? welcomeFrame() : null;
+    const posterFrame = welcome ? welcomeFrame(layout)?.frame ?? null : null;
     const placed = posterFrame ? null : aerialLayout(scene, layout.area, heroId());
     const frame = posterFrame ? local(posterFrame) : local(placed!.view.frame);
     const v = viewOf(scene.posterPose, frame);
@@ -751,7 +814,7 @@ export const createFilm = (host: FilmHost): Film => {
       const name = placeGeometryLabel(m.short, { x0, y0: y0 - 24, x1, y1: y0 - 20 }, v, host.measure, labels);
       if (name) labels.push({ ...name, kind: 'unit', leader: null });
     }
-    const typ = sheetOf('TYP') ?? sheetOf('L2');
+    const typ = cutPlan();
     const cut = typ && !welcome ? m.ffl[1] + 1.2 : null;
     const canvasFrame: Frame = { x: 0, y: 0, w: layout.canvas.w, h: layout.canvas.h };
     const finished = (alpha: number) => {
@@ -824,19 +887,24 @@ export const createFilm = (host: FilmHost): Film => {
     };
   };
 
-  const welcomeFrame = (): Box | null => {
-    if (!layout || !desk) return null;
-    const r = layout.region;
+  /**
+   * Where the welcome stands: in the Estate window's poster rectangle when the
+   * region holds 90 % of it (registered to that still), else the whole poster
+   * centred in the sheet's area.
+   */
+  const welcomeFrame = (lay: Layout | null): { frame: Box; registered: boolean } | null => {
+    if (!lay || !desk) return null;
+    const r = lay.region;
     const p = desk.poster;
     if (p) {
       const ix = Math.max(0, Math.min(p.x + p.w, r.x + r.w) - Math.max(p.x, r.x));
       const iy = Math.max(0, Math.min(p.y + p.h, r.y + r.h) - Math.max(p.y, r.y));
-      if (ix * iy >= 0.9 * p.w * p.h) return p;
+      if (ix * iy >= 0.9 * p.w * p.h) return { frame: p, registered: true };
     }
-    const a = layout.area;
+    const a = lay.area;
     const w = Math.min(a.w, (a.h * 4) / 3);
     const h = (w * 3) / 4;
-    return { x: a.x + (a.w - w) / 2, y: a.y + (a.h - h) / 2, w, h };
+    return { frame: { x: a.x + (a.w - w) / 2, y: a.y + (a.h - h) / 2, w, h }, registered: false };
   };
 
   // ---- the sequence -------------------------------------------------------------------------------
@@ -887,21 +955,6 @@ export const createFilm = (host: FilmHost): Film => {
     }
   };
 
-  const chipLines = (def: SheetDef | null, s: Shot): string[] => {
-    const site = heroSite();
-    if (s.id === 'W' || !def) {
-      return ['SAMPLE TOWN N5 · 07 AERIAL NE · POSTER CAMERA', 'POSTER CAMERA · VFOV 42.18° · REGISTERED TO THE ESTATE WINDOW’S STILL', host.credit, CHIP_QUALIFIER];
-    }
-    const g = sheetOf(def.key);
-    const plan = layout?.plan;
-    const facts = def.kind === 'site'
-      ? { squareM: layout?.site ? 24 / layout.site.scale : undefined }
-      : def.kind === 'plan'
-        ? { squareM: plan ? 24 / plan.scale : undefined, northRight: plan ? Math.abs(plan.psi - Math.PI) < 0.01 : false, lots: g?.lots, partial: g?.partial, openAir: (g?.ext.size ?? 0) > 0 }
-        : {};
-    return [chipTitle(site, def), chipNotes(site, def, facts), host.credit, CHIP_QUALIFIER];
-  };
-
   /** The next shot's steps, or a short wait while its building's sheets load. */
   const nextStep = (): Step | null => {
     if (disposed) return null;
@@ -910,7 +963,7 @@ export const createFilm = (host: FilmHost): Film => {
     const id = heroId();
     if (!sheets.has(id)) {
       void loadSheets(id);
-      if (!(mode === 'desk' && !welcomed)) return { kind: 'hold', id: 'wait', ms: 300 };
+      if (!(mode === 'desk' && !welcomed)) return { kind: 'hold', id: 'wait', ms: 300, rest: false };
     }
     // The welcome, once per visit, on the first uncovered desk.
     let s: Shot | null = null;
@@ -920,7 +973,7 @@ export const createFilm = (host: FilmHost): Film => {
     } else {
       if (!cycle.length || cursor >= cycle.length - 1) {
         if (cycle.length) hero = (hero + 1) % HERO_ORDER.length;
-        if (!sheets.has(heroId())) { void loadSheets(heroId()); cycle = []; return { kind: 'hold', id: 'wait', ms: 300 }; }
+        if (!sheets.has(heroId())) { void loadSheets(heroId()); cycle = []; return { kind: 'hold', id: 'wait', ms: 300, rest: false }; }
         layout = layoutFor(layout.region);
         newCycle();
       }
@@ -937,7 +990,7 @@ export const createFilm = (host: FilmHost): Film => {
     }
     if (!made) {
       // Nothing to draw here (no room at a readable scale): go on.
-      return { kind: 'hold', id: `skip:${s.id}`, ms: 0 };
+      return { kind: 'hold', id: `skip:${s.id}`, ms: 0, rest: false };
     }
     // The camera moves start from where the last shot's view stood.
     shot = s;
@@ -945,7 +998,7 @@ export const createFilm = (host: FilmHost): Film => {
     run = made;
     lastView = viewForShot(s, def);
     host.labels.replaceChildren();
-    if (s.id !== 'S2') setChip(chipLines(def, s));
+    if (s.id !== 'S2') setChip(chipLines(s.id === 'W' ? null : def, layout));
     syncPlate();
     host.setAttrs({ sheet: `${site.id}:${s.id}`, mode });
     const current = made;
@@ -963,13 +1016,20 @@ export const createFilm = (host: FilmHost): Film => {
     if (s.exit > 0) {
       steps.push({
         kind: 'act', id: `${s.id}:exit`, ms: s.exit, draw: (ms) => {
+          // A halt mid-fade paints the act's end: the sheet stays up, finished, under the
+          // chip and plate that name it, rather than faded out from under them.
+          if (ms >= s.exit && !scheduler.isRunning) {
+            current.finished(1);
+            showLabels(current.labels);
+            return;
+          }
           host.labels.replaceChildren();
           current.finished(1 - ease.cubic(ms / s.exit));
         },
       });
     }
     queue = steps;
-    return queue.shift() ?? { kind: 'hold', id: 'empty', ms: 0 };
+    return queue.shift() ?? { kind: 'hold', id: 'empty', ms: 0, rest: false };
   };
 
   /** The view a shot ends on (the next camera move starts there). */
@@ -977,7 +1037,7 @@ export const createFilm = (host: FilmHost): Film => {
     if (!layout) return null;
     if (s.id === 'S2') return planPoseEstate() && layout.plan ? viewOf(planPoseEstate()!, local(layout.plan.area)) : null;
     if (s.id === 'W' || def?.kind === 'aerial') {
-      const wf = s.id === 'W' ? welcomeFrame() : null;
+      const wf = s.id === 'W' ? welcomeFrame(layout)?.frame ?? null : null;
       const placed = aerialLayout(scene, wf ?? layout.area, heroId());
       return viewOf(scene.posterPose, wf ? local(wf) : local(placed.view.frame));
     }
@@ -1030,12 +1090,18 @@ export const createFilm = (host: FilmHost): Film => {
   // ---- activity --------------------------------------------------------------------------------
 
   const flags = { claimed: isGpuClaimed(), halted: motionHalted(), hidden: document.hidden };
+  const readFlags = () => {
+    flags.claimed = isGpuClaimed();
+    flags.halted = motionHalted();
+    flags.hidden = document.hidden;
+  };
 
   const sync = () => {
     if (disposed) return;
     if (flags.halted || fx) scheduler.halt();
     else if (flags.hidden || flags.claimed) scheduler.freeze();
     else scheduler.resume();
+    leaveWait();
     syncPlate();
   };
 
@@ -1061,8 +1127,12 @@ export const createFilm = (host: FilmHost): Film => {
   const relayoutNow = (snapshot: DeskSnapshot) => {
     const region = snapshot.regions[0];
     const nextMode = snapshot.windowsOpen ? 'reading' : 'desk';
-    const changed = nextMode !== mode || !layout || layout.region.x !== region.x || layout.region.y !== region.y
-      || layout.region.w !== region.w || layout.region.h !== region.h;
+    // Back from a park the canvas is blank, so even the same place is a new one; and a
+    // new pixel ratio (the window taken to another screen) needs a new backing store
+    // where nothing on the desk moved.
+    const parked = scheduler.phase === 'park';
+    const changed = parked || nextMode !== mode || !layout || snapshot.dpr !== sizedFor || layout.region.x !== region.x
+      || layout.region.y !== region.y || layout.region.w !== region.w || layout.region.h !== region.h;
     if (!changed) return;
     const restart = nextMode !== mode || !layout;
     mode = nextMode;
@@ -1070,13 +1140,19 @@ export const createFilm = (host: FilmHost): Film => {
     inks = inksFor(host.tokens, inkMode);
     layout = layoutFor(region);
     sizeCanvas(layout.canvas, snapshot.dpr);
+    // The caches follow the backing store: the run the restart makes draws them afresh.
+    releaseCaches();
     host.setAttrs({ mode });
     // A new place or a new way of watching: the building's cycle starts over there.
     queue = [];
     if (restart) { cycle = []; cursor = -1; } else cursor = Math.max(-1, cursor - 1);
     lastView = null;
-    if (scheduler.phase === 'park') scheduler.unpark();
-    else scheduler.restart();
+    if (parked) {
+      // Whether it may move now: a film parked before it ever started was never told.
+      readFlags();
+      sync();
+      scheduler.unpark();
+    } else scheduler.restart();
   };
 
   return {
@@ -1091,10 +1167,8 @@ export const createFilm = (host: FilmHost): Film => {
         layout = layoutFor(snapshot.regions[0]);
         sizeCanvas(layout.canvas, snapshot.dpr);
         host.setAttrs({ mode });
-        void loadSheets(heroId()).then(() => { if (!disposed && layout) layout = layoutFor(layout.region); });
-        flags.claimed = isGpuClaimed();
-        flags.halted = motionHalted();
-        flags.hidden = document.hidden;
+        void loadSheets(heroId());
+        readFlags();
         scheduler.start(!(flags.halted || fx || flags.hidden || flags.claimed));
         syncPlate();
         return;

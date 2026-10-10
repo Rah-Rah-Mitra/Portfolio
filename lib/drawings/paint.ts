@@ -657,13 +657,18 @@ export interface LinkSet {
   stairs: [number, number][];
   /** Lift links through each landing: [x, y]. */
   lifts: [number, number][];
+  /** Each lift's last plate: the index of the highest sheet with its landing (a block's lifts stop short of its roof). */
+  liftTops: number[];
+  /** How many plates the links run through (the sheets linksOf was given). */
+  plates: number;
 }
 
-/** Stair rooms' centres and lift landings, from the sheets that have them (block-local). */
+/** Stair rooms' centres and lift landings, from the sheets that have them (block-local), the sheets in plate order. */
 export const linksOf = (sheets: readonly SheetGeometry[]): LinkSet => {
   const stairs = new Map<string, [number, number]>();
   const lifts = new Map<string, [number, number]>();
-  for (const g of sheets) {
+  const tops = new Map<string, number>();
+  sheets.forEach((g, plate) => {
     g.codes.forEach((code, i) => {
       if (!/STAIR/.test(code) || stairs.has(code)) return;
       const r = g.rooms[i];
@@ -671,20 +676,34 @@ export const linksOf = (sheets: readonly SheetGeometry[]): LinkSet => {
       for (let k = 0; k < r.length; k += 2) { x0 = Math.min(x0, r[k]); x1 = Math.max(x1, r[k]); y0 = Math.min(y0, r[k + 1]); y1 = Math.max(y1, r[k + 1]); }
       stairs.set(code, [(x0 + x1) / 2, (y0 + y1) / 2]);
     });
-    for (const l of g.lifts) if (!lifts.has(String(l.lift))) lifts.set(String(l.lift), [l.x, l.y]);
-  }
-  return { stairs: [...stairs.values()], lifts: [...lifts.values()] };
+    for (const l of g.lifts) {
+      const id = String(l.lift);
+      if (!lifts.has(id)) lifts.set(id, [l.x, l.y]);
+      tops.set(id, plate);
+    }
+  });
+  return { stairs: [...stairs.values()], lifts: [...lifts.values()], liftTops: [...lifts.keys()].map((id) => tops.get(id)!), plates: sheets.length };
 };
 
-/** Vertical links from z0 rising to z0 + (z1 − z0)·t, block-local points drawn at (dx, dy). */
+/**
+ * Vertical links from z0 rising to z0 + (z1 − z0)·t, block-local points drawn at
+ * (dx, dy). z0 and z1 are the first and last plates' levels, the plates evenly
+ * between: a stair runs to the top (every plate has its rooms), a lift only to its
+ * last landing's plate.
+ */
 export const paintLinks = (ctx: Ctx, v: View, links: LinkSet, inks: Inks, z0: number, z1: number, t: number, alpha = 1, dx = 0, dy = 0) => {
   if (t <= 0 || alpha <= 0) return;
   const top = z0 + (z1 - z0) * Math.min(1, t);
+  const plateZ = (plate: number) => (links.plates > 1 ? z0 + ((z1 - z0) * plate) / (links.plates - 1) : z1);
   ctx.save();
   ctx.globalAlpha *= alpha;
   for (const [layer, points] of [['stairLink', links.stairs], ['liftLink', links.lifts]] as const) {
     ctx.beginPath();
-    for (const [x, y] of points) { lineTo3(ctx, v, x + dx, y + dy, z0, true); lineTo3(ctx, v, x + dx, y + dy, top, false); }
+    points.forEach(([x, y], i) => {
+      const end = layer === 'liftLink' ? Math.min(top, plateZ(links.liftTops[i])) : top;
+      lineTo3(ctx, v, x + dx, y + dy, z0, true);
+      lineTo3(ctx, v, x + dx, y + dy, end, false);
+    });
     style(ctx, inks, layer);
     ctx.stroke();
   }

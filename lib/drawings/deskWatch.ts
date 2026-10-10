@@ -5,7 +5,8 @@ import { occupancy, sheetRegions, type Box, type Region } from './occupancy';
 // downloaded: a desk with no free region never loads it. Browser-only, called
 // from effects. One ResizeObserver on the desk, one MutationObserver per window
 // section (its `style`: opening, closing and dragging all write it; the hoist's
-// motion is on an inner element and never does), a resolution query, and a 250 ms
+// motion is on an inner element and never does), one on the desk's own children
+// and one on the FX caption's size (below), a resolution query, and a 250 ms
 // debounce, so a drag costs one read when it stops.
 
 export interface DeskSnapshot {
@@ -30,8 +31,15 @@ const cover43 = (box: Box): Box => (box.w / box.h > 4 / 3
   ? { x: box.x, y: box.y + (box.h - (box.w * 3) / 4) / 2, w: box.w, h: (box.w * 3) / 4 }
   : { x: box.x + (box.w - (box.h * 4) / 3) / 2, y: box.y, w: (box.h * 4) / 3, h: box.h });
 
-/** One extra line of the title plate's value column: the sheet caption adds one. */
+/**
+ * One extra line of the title plate's value column: the sheet caption adds one.
+ * Reserved only while the plate's slot is empty: a filled plate is already that
+ * line taller, so the obstacle is the same box in both states.
+ */
 const PLATE_RESERVE = 13;
+
+/** Desk furniture: a child of the desk, or of one of the layers on it. */
+const furniture = (desk: HTMLElement, selector: string) => desk.querySelector<HTMLElement>(`:scope > ${selector}, :scope > * > ${selector}`);
 
 export const readDesk = (desk: HTMLElement, lastPoster: Box | null): DeskSnapshot => {
   const box = desk.getBoundingClientRect();
@@ -56,13 +64,15 @@ export const readDesk = (desk: HTMLElement, lastPoster: Box | null): DeskSnapsho
     }
   }
   for (const selector of ['.wb-shortcuts', '.wb-hint', '.wb-backdrop-caption']) {
-    const el = desk.querySelector<HTMLElement>(`:scope > ${selector}, :scope > * > ${selector}`);
+    const el = furniture(desk, selector);
     if (el && el.getClientRects().length) obstacles.push(local(box, el.getBoundingClientRect()));
   }
   const plate = desk.querySelector<HTMLElement>(':scope > .wb-plate');
   if (plate && plate.getClientRects().length) {
     const r = local(box, plate.getBoundingClientRect());
-    obstacles.push({ x: r.x, y: r.y - PLATE_RESERVE, w: r.w, h: r.h + PLATE_RESERVE });
+    // The same test as the CSS that swaps the SHEET row for the caption.
+    const reserve = plate.querySelector('.wb-plate-slot')?.matches(':empty') ? PLATE_RESERVE : 0;
+    obstacles.push({ x: r.x, y: r.y - reserve, w: r.w, h: r.h + reserve });
   }
   for (const dock of document.querySelectorAll<HTMLElement>('.ask-dock, .effects-dock')) {
     if (dock.getClientRects().length) obstacles.push(local(box, dock.getBoundingClientRect()));
@@ -97,16 +107,40 @@ export const watchDesk = (desk: HTMLElement, onChange: (snapshot: DeskSnapshot) 
     timer = setTimeout(read, debounceMs);
   };
   const observers: { disconnect(): void }[] = [];
+  // A hidden desk reports 0 × 0: nothing to read. So does a caption on its way
+  // out, whose removal the desk's children observer reads instead.
+  const onResize: ResizeObserverCallback = (entries) => {
+    const r = entries[entries.length - 1]?.contentRect;
+    if (r && (r.width === 0 || r.height === 0)) return;
+    schedule();
+  };
+  let captionSize: ResizeObserver | null = null;
   if (typeof ResizeObserver === 'function') {
-    const ro = new ResizeObserver((entries) => {
-      const r = entries[entries.length - 1]?.contentRect;
-      if (r && (r.width === 0 || r.height === 0)) return;
-      schedule();
-    });
+    const ro = new ResizeObserver(onResize);
     ro.observe(desk);
     observers.push(ro);
+    captionSize = new ResizeObserver(onResize);
+    observers.push(captionSize);
   }
+  // The FX caption is an obstacle no window's style tells of: it comes and goes
+  // with N-body and smoke, whose layer is a child of the desk (and moves the hint
+  // as it mounts), and it grows a line when both run.
+  let caption: HTMLElement | null = null;
+  const followCaption = () => {
+    const next = furniture(desk, '.wb-backdrop-caption');
+    if (next === caption) return;
+    if (caption) captionSize?.unobserve(caption);
+    caption = next;
+    if (caption) captionSize?.observe(caption);
+  };
+  followCaption();
   if (typeof MutationObserver === 'function') {
+    const children = new MutationObserver(() => {
+      followCaption();
+      schedule();
+    });
+    children.observe(desk, { childList: true });
+    observers.push(children);
     for (const win of desk.querySelectorAll(':scope > section[data-win]')) {
       const mo = new MutationObserver(schedule);
       mo.observe(win, { attributes: true, attributeFilter: ['style'] });

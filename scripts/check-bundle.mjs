@@ -70,7 +70,36 @@ export const checkEstateCatalogue = async (distDirectory, { catalogueFile = CATA
 };
 
 const DRAWING_SITE_FILE = path.resolve(import.meta.dirname, '..', 'lib', 'drawings', 'site.generated.ts');
-const DRAWING_GENERATOR_FILE = path.resolve(import.meta.dirname, 'drawings', 'build.ts');
+const REPO_ROOT = path.resolve(import.meta.dirname, '..');
+
+// scripts/drawings/build.ts GENERATOR_SOURCES, restated because this file cannot
+// import TypeScript: the generator, then every module it reaches through a relative
+// value import, sorted. The drawing set is their output, so a change to any of them
+// (lib/estate/plan.ts's room groups, say) leaves the committed set stale.
+// tests/drawing-set.test.ts pins the two lists to each other and to build.ts's imports.
+export const DRAWING_GENERATOR_FILES = [
+  'scripts/drawings/build.ts',
+  'lib/estate/catalogue.generated.ts',
+  'lib/estate/frames.ts',
+  'lib/estate/ground.ts',
+  'lib/estate/ids.ts',
+  'lib/estate/nav.ts',
+  'lib/estate/packBudgets.json',
+  'lib/estate/palette.json',
+  'lib/estate/palette.ts',
+  'lib/estate/plan.ts',
+  'lib/estate/schema.ts',
+  'lib/estate/storeys.ts',
+  'lib/estate/tiers.ts',
+  'lib/estate/walk.ts',
+];
+
+/** build.ts digestGenerator: sha256 over each file's path and LF text, NUL-separated, in list order. */
+export const drawingGeneratorDigest = async (root = REPO_ROOT, files = DRAWING_GENERATOR_FILES) => {
+  const hash = createHash('sha256');
+  for (const rel of files) hash.update(`${rel}\0${(await readFile(path.join(root, ...rel.split('/')), 'utf8')).replace(/\r\n/g, '\n')}\0`);
+  return hash.digest('hex');
+};
 
 const quoted = (text, key) => text.match(new RegExp(`\\b${key}: "([^"]*)"`))?.[1];
 
@@ -80,11 +109,11 @@ const quoted = (text, key) => text.match(new RegExp(`\\b${key}: "([^"]*)"`))?.[1
  * scripts/drawings/build.ts (npm run drawings), and Vercel runs only this build:
  * tests/drawing-set.test.ts never runs on a deploy. So the build itself refuses a
  * drawing set that was not generated from the pack it ships (its name, edition,
- * commit and sha256), by the generator it ships (the generator's digest, with LF
- * line endings), or from a dev pack on Vercel or CI.
+ * commit and sha256), by the generator it ships (the digest of the generator and
+ * the modules it imports, with LF line endings), or from a dev pack on Vercel or CI.
  */
 export const checkDrawingSet = async (distDirectory, {
-  siteFile = DRAWING_SITE_FILE, catalogueFile = CATALOGUE_FILE, generatorFile = DRAWING_GENERATOR_FILE, env = process.env,
+  siteFile = DRAWING_SITE_FILE, catalogueFile = CATALOGUE_FILE, generatorRoot = REPO_ROOT, generatorFiles = DRAWING_GENERATOR_FILES, env = process.env,
 } = {}) => {
   const failures = [];
   const stale = 'run `npm run drawings` and commit lib/drawings with the pack';
@@ -109,8 +138,13 @@ export const checkDrawingSet = async (distDirectory, {
   } catch {
     failures.push(`${packUrl} is not in the build, so the drawing set cannot be checked against it`);
   }
-  const generator = (await readFile(generatorFile, 'utf8')).replace(/\r\n/g, '\n');
-  if (createHash('sha256').update(generator).digest('hex') !== source.generatorDigest) failures.push(`scripts/drawings/build.ts changed since the drawing set was generated: ${stale}`);
+  try {
+    if (await drawingGeneratorDigest(generatorRoot, generatorFiles) !== source.generatorDigest) {
+      failures.push(`the drawing generator (scripts/drawings/build.ts or one of the ${generatorFiles.length - 1} modules it imports) changed since the drawing set was generated: ${stale}`);
+    }
+  } catch (error) {
+    failures.push(`a drawing generator source cannot be read (${error.message}): DRAWING_GENERATOR_FILES must name build.ts and the modules it imports`);
+  }
   if (dev && (env.VERCEL || env.CI)) failures.push(`${path.basename(siteFile)} was generated from a dev pack (dev: true): regenerate it from the published release pack before this deploys`);
   console.log(`drawing set: ${source.packName}, ${source.edition} @ ${source.commit.slice(0, 7)}${dev ? ' (DEV: never merge)' : ''}`);
   return failures;
@@ -133,14 +167,25 @@ const DRAWING_CHUNKS = {
 const ESTATE_CHUNK = /(?:^|\/)(?:estate-(?:engine|shared|bench)|EstateHud)-[\w-]+\.js$/;
 
 /**
- * The drawing's chunks: none of its markers in the main bundle; each chunk within
- * its cap; and nothing of the Estate engine in their static closure (the drawing
- * draws without three, and a value import of lib/estate would have put an
+ * The drawing's chunks: none of its markers in the main bundle; what each step
+ * downloads within its cap; and nothing of the Estate engine in it. Each step (the
+ * layer, then the field, which the layer imports lazily, then the film, which the
+ * field does) downloads its chunk's static closure less what the page has already
+ * loaded (the main bundle and the steps before it), measured as checkBundle
+ * measures the Load click: Rollup can split a module the field shares with the
+ * smoke or N-body field into a chunk of its own, and the caps must still see it.
+ * The engine is found by what a file carries as well as by its name, because a
+ * chunk split out of three or camera-controls keeps Vite's default name (the
+ * drawing draws without three, and a value import of lib/estate would have put an
  * estate-shared chunk there, which the Estate's own boot pins forbid).
  */
 export const checkDrawingChunks = async (distDirectory, { budgets = DRAWING_BUDGETS } = {}) => {
   const failures = [];
-  const read = async (file) => readFile(path.join(distDirectory, file));
+  const cache = new Map();
+  const read = async (file) => {
+    if (!cache.has(file)) cache.set(file, await readFile(path.join(distDirectory, file)));
+    return cache.get(file);
+  };
   const html = await readFile(path.join(distDirectory, 'index.html'), 'utf8');
   const entry = findEntryScript(html);
   const assets = (await readdir(path.join(distDirectory, 'assets'))).filter((name) => name.endsWith('.js')).sort();
@@ -160,7 +205,11 @@ export const checkDrawingChunks = async (distDirectory, { budgets = DRAWING_BUDG
     const code = (await read(file)).toString('utf8');
     for (const marker of [DRAWING_SET_MARKER, DRAWING_SHEET_MARKER]) if (code.includes(marker)) failures.push(`${file} is in the main bundle and carries the drawing set (${marker}): it must stay lazy`);
   }
-  const gz = async (file) => gzipSync(await read(file), { level: 9 }).length;
+  const gz = async (files) => {
+    let bytes = 0;
+    for (const file of files) bytes += gzipSync(await read(file), { level: 9 }).length;
+    return bytes;
+  };
   const one = (kind) => {
     const files = named(DRAWING_CHUNKS[kind]);
     if (files.length !== 1) failures.push(`expected one ${kind} chunk of the drawing set, found ${files.length}`);
@@ -172,23 +221,36 @@ export const checkDrawingChunks = async (distDirectory, { budgets = DRAWING_BUDG
   const sheets = named(DRAWING_CHUNKS.sheet);
   if (sheets.length !== 14) failures.push(`expected 14 building chunks of the drawing set, found ${sheets.length}`);
   if (field && !(await read(field)).toString('utf8').includes(DRAWING_SET_MARKER)) failures.push(`${field} does not carry the drawing set (${DRAWING_SET_MARKER})`);
-  const sizes = {};
-  if (layer) sizes.layer = await gz(layer);
-  if (field) sizes.field = await gz(field);
-  if (film) sizes.film = await gz(film);
+  const loaded = new Set(main);
+  const steps = { layer: { files: [], gzipped: 0 }, field: { files: [], gzipped: 0 }, film: { files: [], gzipped: 0 } };
+  for (const [kind, start] of [['layer', layer], ['field', field], ['film', film]]) {
+    if (!start) continue;
+    const files = (await closure(start)).filter((file) => !loaded.has(file));
+    for (const file of files) {
+      loaded.add(file);
+      const code = (await read(file)).toString('utf8');
+      const found = [...ENGINE_MARKERS, BENCH_MARKER].filter((marker) => code.includes(marker));
+      if (!found.length && !ESTATE_CHUNK.test(file)) continue;
+      const carries = found.length ? ` carries ${found.join(', ')}` : '';
+      const what = file === start ? `${start}${carries}` : `${start} statically imports ${file}${carries && `, which${carries}`}`;
+      failures.push(`${what}: the drawing set must not pull in the Estate engine`);
+    }
+    steps[kind] = { files, gzipped: await gz(files) };
+  }
   let largest = 0;
   for (const sheet of sheets) {
-    const size = await gz(sheet);
+    const size = await gz([sheet]);
     largest = Math.max(largest, size);
     if (size > budgets.sheet) failures.push(`${sheet} is ${size} B gzipped, over the drawing set's ${budgets.sheet} B per building`);
   }
-  if (sizes.layer > budgets.layer) failures.push(`${layer} is ${sizes.layer} B gzipped, over ${budgets.layer} B`);
-  if (sizes.layer + sizes.field > budgets.layerAndField) failures.push(`the desk layer and the drawing field are ${sizes.layer + sizes.field} B gzipped, over ${budgets.layerAndField} B`);
-  if (sizes.film > budgets.film) failures.push(`${film} is ${sizes.film} B gzipped, over ${budgets.film} B`);
-  for (const start of [layer, field, film].filter(Boolean)) {
-    for (const file of await closure(start)) if (ESTATE_CHUNK.test(file)) failures.push(`${start} statically imports ${file}: the drawing set must not pull in the Estate engine`);
+  const { layer: first, field: second, film: third } = steps;
+  if (first.gzipped > budgets.layer) failures.push(`the desk layer downloads ${first.gzipped} B gzipped (${first.files.join(', ')}), over ${budgets.layer} B`);
+  if (first.gzipped + second.gzipped > budgets.layerAndField) {
+    failures.push(`the desk layer and the drawing field download ${first.gzipped + second.gzipped} B gzipped (${[...first.files, ...second.files].join(', ')}), over ${budgets.layerAndField} B`);
   }
-  console.log(`drawing chunks: layer ${format(sizes.layer ?? 0)} B, field ${format(sizes.field ?? 0)} B, film ${format(sizes.film ?? 0)} B, largest building ${format(largest)} B (gzip)`);
+  if (third.gzipped > budgets.film) failures.push(`the drawing film downloads ${third.gzipped} B gzipped (${third.files.join(', ')}), over ${budgets.film} B`);
+  const step = ({ files, gzipped }) => `${format(gzipped)} B${files.length > 1 ? ` (${files.length} files)` : ''}`;
+  console.log(`drawing chunks: layer ${step(first)}, field ${step(second)}, film ${step(third)}, largest building ${format(largest)} B (gzip)`);
   return failures;
 };
 

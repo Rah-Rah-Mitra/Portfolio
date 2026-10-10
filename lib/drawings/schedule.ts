@@ -13,7 +13,9 @@ import { REST_AFTER_MS } from './effects';
 //    the act jumps to its end state in one synchronous paint, then nothing; on
 //    resume the next step (a hold) starts in full.
 //  - rest: a hold that ends four minutes after the visitor's last input leaves
-//    the finished sheet up and schedules nothing; any input wakes it.
+//    the finished sheet up and schedules nothing; any input wakes it. A hold that
+//    shows no finished sheet (a wait for data, a skipped shot: `rest: false`)
+//    never rests, or the film would rest on a blank desk.
 //  - park: no room on the desk; the film's owner clears the canvas.
 // Pure: the clock, frames and timers are injected (tests/drawing-schedule.test.ts
 // drives it with a fake host).
@@ -28,7 +30,7 @@ export interface SchedulerHost {
 
 export type Step =
   | { kind: 'act'; id: string; ms: number; draw: (ms: number) => void }
-  | { kind: 'hold'; id: string; ms: number };
+  | { kind: 'hold'; id: string; ms: number; rest?: boolean };
 
 export type SchedulePhase = 'idle' | 'act' | 'hold' | 'still' | 'rest' | 'park' | 'done';
 
@@ -136,7 +138,8 @@ export class Scheduler {
   private holdDone = () => {
     this.timerId = null;
     if (this.disposed) return;
-    if (this.host.now() - this.lastInput >= this.restAfter) {
+    const restable = !(this.step?.kind === 'hold' && this.step.rest === false);
+    if (restable && this.host.now() - this.lastInput >= this.restAfter) {
       this.holdLeft = 0;
       this.set('rest');
       return;

@@ -46,6 +46,27 @@ const fake2d = (canvas: HTMLCanvasElement) => {
   });
 };
 
+/**
+ * The chip's height by index.css .wb-drawing-chip, worked out here from the fake
+ * context's 6 px a character: 10 px lines with 0.1em (1 px) tracking, the 11 px
+ * title with 0.05em, broken at spaces in the width less 9 px padding and 1 px
+ * border a side; 14 px rows, 5 px padding and 1 px border top and bottom.
+ */
+const chipEstimate = (lines: readonly string[], maxWidth: number): number => {
+  const room = maxWidth - 20;
+  let rows = 0;
+  lines.forEach((line, i) => {
+    const perChar = 6 + (i === 0 ? 0.55 : 1);
+    let used = 0;
+    rows += 1;
+    for (const word of line.split(' ')) {
+      const w = word.length * perChar;
+      if (used > 0 && used + perChar + w > room) { rows += 1; used = w; } else used += (used > 0 ? perChar : 0) + w;
+    }
+  });
+  return rows * 14 + 12;
+};
+
 let frames: FrameRequestCallback[];
 let desk: { width: number; height: number };
 
@@ -179,6 +200,21 @@ describe('the desk drawing set', () => {
     expect(container.querySelector('.wb-plate-slot')!.textContent).toMatch(/· STILL/);
     expect(filmLoaded).not.toHaveBeenCalled();
     expect(requestAnimationFrame).not.toHaveBeenCalled();
+  });
+
+  it('reserves the cover still’s chip a band no shorter than the chip, by the chip’s own metrics, with the crop it draws', async () => {
+    policy.current = resolveExperiencePolicy({ saveData: true, reducedMotion: false });
+    // A 16-square desk: a 368 px chip whose lines wrap.
+    desk = { width: 16 * 24, height: 20 * 24 };
+    const { container } = render(tree(on));
+    await waitFor(() => expect(container.querySelector('.wb-drawing-chip')!.textContent).toContain(CREDIT));
+    const chip = container.querySelector<HTMLElement>('.wb-drawing-chip')!;
+    const canvas = canvasOf(container)!;
+    const lines = [...chip.children].map((c) => c.textContent ?? '');
+    expect(lines[1]).toMatch(/^POSTER CAMERA · VFOV 42\.18° · CROP x\d+–\d+ y\d+–\d+ · MASSING: FOOTPRINT TO RF LEVEL$/);
+    expect(parseFloat(chip.style.maxWidth)).toBe(368);
+    const band = parseFloat(canvas.style.top) + parseFloat(canvas.style.height) - parseFloat(chip.style.top);
+    expect(band).toBeGreaterThanOrEqual(chipEstimate(lines, 368));
   });
 
   it('keeps the plain grid under ?mode=scan', async () => {

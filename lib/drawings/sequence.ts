@@ -100,6 +100,10 @@ export interface ChipFacts {
   partial?: boolean;
   /** The sheet has open-air rooms (a void deck, a roof deck). */
   openAir?: boolean;
+  /** An aerial drawn in exactly the Estate window's poster rectangle (the welcome, when it registers). */
+  registered?: boolean;
+  /** An aerial with a storey's plan cut into the hero (S8): its wall fill is inferred too. */
+  cut?: boolean;
 }
 
 /** The chip's second line: what this sheet's scale, north and inferences are, for this sheet only. */
@@ -111,8 +115,14 @@ export const chipNotes = (site: DrawingSite, sheet: SheetDef, facts: ChipFacts):
   if (sheet.kind === 'plan') {
     parts.push(square, north);
     if (facts.partial) parts.push('OUTLINE OF L1 BELOW', 'NO WALL FILL');
-    else if (site.kind === 'mscp' && sheet.key !== 'RF') parts.push('UNFILLED = NOT A ROOM IN THE DATA', `${facts.lots?.[0] ?? 0} CAR · ${facts.lots?.[1] ?? 0} MOTORCYCLE LOTS PER DECK`);
-    else parts.push('WALLS AND LIFT CORE INFERRED', 'DOORS AS OPENINGS');
+    else {
+      parts.push('WALLS AND LIFT CORE INFERRED', 'DOORS AS OPENINGS');
+      // The car park's L1 and its decks: the ramp box and the gaps beside it are no room in the data,
+      // and the lots are counted, not drawn (L1 has fewer than each deck above it).
+      if (site.kind === 'mscp' && sheet.key !== 'RF') {
+        parts.push('UNFILLED = NOT A ROOM IN THE DATA', `${facts.lots?.[0] ?? 0} CAR · ${facts.lots?.[1] ?? 0} MOTORCYCLE LOTS ${sheet.key === 'TYP' ? 'PER DECK' : 'ON L1'}`);
+      }
+    }
     if (facts.openAir && !facts.partial) {
       // A block's open-air L1 is its void deck and its open-air roof a roof deck; elsewhere (the hawker
       // centre's forecourt and walkway, the car park's roof garden) the data names the spaces themselves.
@@ -123,7 +133,10 @@ export const chipNotes = (site: DrawingSite, sheet: SheetDef, facts: ChipFacts):
   if (sheet.kind === 'aerial') {
     parts.push('POSTER CAMERA', 'VFOV 42.18°');
     const c = facts.crop;
-    parts.push(c ? `CROP x${Math.round(c.x)}–${Math.round(c.x + c.w)} y${Math.round(c.y)}–${Math.round(c.y + c.h)}` : 'FULL FRAME 1600 × 1200');
+    if (facts.registered) parts.push('REGISTERED TO THE ESTATE STILL');
+    else parts.push(c ? `CROP x${Math.round(c.x)}–${Math.round(c.x + c.w)} y${Math.round(c.y)}–${Math.round(c.y + c.h)}` : 'FULL FRAME 1600 × 1200');
+    parts.push('MASSING: FOOTPRINT TO RF LEVEL');
+    if (facts.cut) parts.push('WALLS INFERRED');
   }
   return parts.filter(Boolean).join(' · ');
 };

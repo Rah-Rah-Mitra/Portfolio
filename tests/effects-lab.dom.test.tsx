@@ -157,7 +157,7 @@ describe('effects context surface', () => {
     render(<EffectsProvider><ContextProbe /></EffectsProvider>);
     const context = JSON.parse(screen.getByRole('status').textContent ?? '{}') as { settings: string[]; api: string[] };
 
-    expect(context.settings).toEqual(['nbody', 'fluid']);
+    expect(context.settings).toEqual(['nbody', 'fluid', 'drawing']);
     expect(context.api).toEqual(expect.arrayContaining(['toggleEffect', 'updateEffect', 'setMotionPaused', 'setSoundEnabled', 'pauseAll']));
     ['registerWords', 'restoreAll', 'isInteractionActive', 'setVisualDensity', 'setMediaEnabled', 'setQuality', 'worldOpen', 'openWorld']
       .forEach((retired) => expect(context.api).not.toContain(retired));

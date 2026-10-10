@@ -542,7 +542,9 @@ const FieldWorkbench: React.FC = () => {
             <div className="wb-plate-grid">
               <div className="wb-plate-key">TITLE</div><div className="wb-plate-val wb-plate-title">PORTFOLIO FIELD WORKBENCH</div>
               <div className="wb-plate-key">DRAWN BY</div><div className="wb-plate-val">RAHUL MITRA — RM</div>
-              <div className="wb-plate-key">SHEET</div><div className="wb-plate-val">01 OF 01 · SCALE 1:1 · REV {SITE_CONFIG.resumeEdition}</div>
+              <div className="wb-plate-key wb-plate-sheet">SHEET</div><div className="wb-plate-val wb-plate-sheet">01 OF 01 · SCALE 1:1 · REV {SITE_CONFIG.resumeEdition}</div>
+              {/* The desk drawing set's sheet caption replaces the SHEET row while a sheet is placed (drawing/DrawingField). */}
+              <div className="wb-plate-slot" />
             </div>
           </div>
           {workbenchApps.map((app) => {

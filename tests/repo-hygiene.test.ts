@@ -9,7 +9,8 @@ import ts from 'typescript';
 import { normalizePath, resolveConfig, type UserConfig } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  BENCH_MARKER, ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, catalogueUrls, checkBundle, checkDrawingSet, checkEstateCatalogue, findEntryScript,
+  BENCH_MARKER, DRAWING_SET_MARKER, DRAWING_SHEET_MARKER, ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, catalogueUrls, checkBundle,
+  checkDrawingChunks, checkDrawingSet, checkEstateCatalogue, findEntryScript,
   readEngineBudgets, staticImports,
 } from '../scripts/check-bundle.mjs';
 import viteConfig from '../vite.config';
@@ -374,6 +375,44 @@ describe('build hygiene', () => {
     } finally {
       log.mockRestore();
       await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails the build on drawing chunks that leak into the main bundle, outgrow their caps or pull in the Estate engine', async () => {
+    const dist = await mkdtemp(path.join(tmpdir(), 'check-bundle-drawing-chunks-'));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      await mkdir(path.join(dist, 'assets'));
+      await writeFile(path.join(dist, 'index.html'), '<script type="module" src="/assets/index-a1.js"></script>');
+      const write = (name: string, text: string) => writeFile(path.join(dist, 'assets', name), text);
+      const sheets = ['BLK_501', 'BLK_502', 'BLK_503', 'BLK_504', 'BLK_505', 'BLK_506', 'BLK_507', 'BLK_508', 'BLK_509', 'BLK_510', 'BLK_511', 'BLK_512', 'MSCP_513', 'NC_514'];
+      const good = async () => {
+        await write('index-a1.js', 'export const app = 1;');
+        await write('DeskBackdropLayer-b2.js', 'import{x}from"./index-a1.js";export default 1;');
+        await write('DrawingField-c3.js', `import{y}from"./DeskBackdropLayer-b2.js";const s="${DRAWING_SET_MARKER}";`);
+        await write('drawingFilm-d4.js', 'import{z}from"./DrawingField-c3.js";export const film=1;');
+        for (const id of sheets) await write(`${id}.generated-e5.js`, `export const DRAWING_SHEET_SCHEMA="${DRAWING_SHEET_MARKER}";`);
+      };
+      const budgets = { layer: 400, layerAndField: 800, film: 400, sheet: 400 };
+      await good();
+      expect(await checkDrawingChunks(dist, { budgets })).toEqual([]);
+      await write('index-a1.js', `export const app = "${DRAWING_SET_MARKER}";`);
+      expect(await checkDrawingChunks(dist, { budgets })).toEqual([expect.stringMatching(/main bundle and carries the drawing set/)]);
+      await good();
+      // Hashes chained: text that gzip cannot shrink below the cap.
+      const noise = Array.from({ length: 40 }, (_, i) => createHash('sha256').update(String(i)).digest('hex')).join('');
+      await write('BLK_509.generated-e5.js', `export const s="${DRAWING_SHEET_MARKER}";const n="${noise}";`);
+      expect(await checkDrawingChunks(dist, { budgets })).toEqual([expect.stringMatching(/BLK_509\.generated-e5\.js is \d+ B gzipped/)]);
+      await good();
+      await write('drawingFilm-d4.js', 'import{z}from"./DrawingField-c3.js";import{e}from"./estate-engine-f6.js";');
+      await write('estate-engine-f6.js', 'export const e=1;');
+      expect(await checkDrawingChunks(dist, { budgets })).toEqual([expect.stringMatching(/drawingFilm-d4\.js statically imports assets\/estate-engine-f6\.js/)]);
+      await good();
+      await write('DrawingField-c3.js', 'import{y}from"./DeskBackdropLayer-b2.js";');
+      expect(await checkDrawingChunks(dist, { budgets })).toEqual([expect.stringMatching(/does not carry the drawing set/)]);
+    } finally {
+      log.mockRestore();
+      await rm(dist, { recursive: true, force: true });
     }
   });
 

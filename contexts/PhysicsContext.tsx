@@ -56,6 +56,7 @@ const RANGES: { [K in EffectId]: Partial<Record<keyof BackdropSettings[K], Range
     splatRadius: [10, 85],
     curl: [0, 90],
   },
+  drawing: {},
 };
 
 // Discrete settings: anything off this list is dropped, not snapped. An FMM
@@ -69,11 +70,13 @@ const CHOICES: { [K in EffectId]: Partial<Record<keyof BackdropSettings[K], read
   fluid: {
     quality: ['balanced', 'high'],
   },
+  drawing: {},
 };
 
 const FLAGS: { [K in EffectId]: readonly (keyof BackdropSettings[K])[] } = {
   nbody: ['enabled', 'pointerAttraction', 'showTree'],
   fluid: ['enabled', 'pointerInteraction'],
+  drawing: ['enabled'],
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));

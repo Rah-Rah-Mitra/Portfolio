@@ -16,6 +16,7 @@ import { claimGpu, releaseGpu } from '../lib/gpuClaim';
 const policy = { allowHeavyAssets: true };
 vi.mock('../contexts/ExperienceModeContext', () => ({
   useExperienceMode: () => ({ policy, capabilities: null }),
+  useOptionalExperienceMode: () => ({ policy, capabilities: null, resolved: true }),
 }));
 
 class WorkerStub {
@@ -150,7 +151,7 @@ describe('DeskBackdrop host', () => {
     const { DeskBackdrop: FreshBackdrop } = await import('../components/workbench/DeskBackdrop');
     const { EffectsContext: FreshContext } = await import('../contexts/PhysicsContext');
     const tree = (fluid: boolean) => (
-      <FreshContext.Provider value={{ settings: { nbody: { ...defaultBackdropSettings.nbody, enabled: true }, fluid: { ...defaultBackdropSettings.fluid, enabled: fluid } } } as never}>
+      <FreshContext.Provider value={{ settings: { nbody: { ...defaultBackdropSettings.nbody, enabled: true }, fluid: { ...defaultBackdropSettings.fluid, enabled: fluid }, drawing: { enabled: false } } } as never}>
         <main data-desk><FreshBackdrop /></main>
       </FreshContext.Provider>
     );

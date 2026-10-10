@@ -156,3 +156,151 @@ The drawings are derived from the CC BY 4.0 estate data and ship in the site's
 `/assets/*.js`. `public/estate/LICENSE.txt` ("Desk drawing set (derived)") and
 THIRD_PARTY_NOTICES.md describe what they add and mark as inferred — the list
 is `CHANGES` in `site.generated.ts`.
+
+## 2. The sequence
+
+`lib/drawings/sequence.ts` (pure). Two ways of watching, decided by the desk:
+
+| Mode | When | What plays |
+|---|---|---|
+| desk | no window open (DESK, or the last window closed) | the film: one building at a time through every sheet, chained by camera moves |
+| reading | a window is open and the desk has a free region of at least 11 × 8 squares | the same building's sheets, each arriving finished by a 2D effect, with 24 s holds |
+| cover | Save-Data, or reduced motion at boot | one finished still: the aerial through the poster camera, cropped on the day's building |
+| parked | no free region (every 1280–1536 px boot: Home and the Estate cover the desk) | nothing; the layer's desk watcher decides, so the drawing is never downloaded |
+| rest | four minutes with no input | the finished sheet stays; nothing is scheduled until the next input |
+
+Each building has seven sheets (the hawker centre six; its roof has no rooms):
+`01 SITE PLAN`, `02 L1 PLAN`, `03 TYPICAL PLAN L2–L20 (×19)` (the car park's `DECK PLAN`),
+`04 ROOF PLAN`, `05 EXPLODED AXONOMETRIC`, `06 AXONOMETRIC · BLOCK`, `07 AERIAL NE · POSTER
+CAMERA`. The day picks where a visit starts in `HERO_ORDER`.
+
+**The desk film** (BLK 501: 86.36 s a cycle, 25.3 % of it animating; the others 85.5–86.5 s,
+the hawker centre 78.1 s; every hold at least 2.5× its arrival):
+
+| Shot | Sheet | Arrival | Hold |
+|---|---|---|---|
+| W (once a visit) | the estate's aerial, drawn where the Estate window's poster was, through the poster's own camera | rule-in of the extent, the massing drawn nearest first, the hero's storeys | 12 s |
+| S1 | site plan | lift to plan: the aerial's camera rises to straight down, the estate flattening into its plan | 8 s |
+| S2 | — | dolly from the site plan onto the building | — |
+| S3 | L1 | poché flood from the lifts, outlines and jambs fade in, treads tick in | 8 s |
+| S4 | typical | draw-in by several pens, then the wall fill and jambs, treads and dimension chains | 10 s |
+| S5 | roof | scan wipe | 6 s |
+| S6 | exploded | tilt from plan into the poster's axonometric while the storeys separate, then stair and lift links rise | 10 s |
+| S7 | block | links retract, plates close, the typical storey's rooms rise, the storey is stamped up the block, the massing appears, the level ruler runs up | 10.5 s |
+| S8 | aerial | dolly-zoom into the poster camera, the estate coming in around the building; then the building cut in place at L2 + 1.2 m | 12 s |
+
+From S8 the next building's S1 lifts out of the aerial. Where the axonometric would be
+smaller than 3 px/m the cycle is plans only (S1–S5, then the dolly out).
+
+**Reading** (≈183 s a cycle, 8 % animating): R0 (once) the aerial, R1 the site, R2 L1,
+R3 typical, R4 roof, R5 exploded (the plates slide apart in place), R6 block (stamped,
+then the massing), R7 the aerial; each holds 24 s and fades out. A sheet that does not
+fit the region at a readable scale is skipped.
+
+## 3. Effects
+
+`lib/drawings/effects.ts` names them; `components/workbench/drawing/drawingFilm.ts` runs
+them: RULE-IN (the extent frame by arc length), DRAW-IN (the line work revealed in pen
+order through a mask, by up to eight pens), LABEL SET (labels appear whole, never typed
+out, hidden during camera moves), FADE, SCAN WIPE (a clip along the sheet's long axis; no
+visible bar), POCHÉ FLOOD (a circle from the lift landings over the wall fill), DIMENSION
+TICK-IN (extension lines, the line from both ends, then the 45° ticks and the value),
+TREAD TICK-IN (each riser in walking order, 30 ms apart), DOLLY, TILT (plan to the
+poster's axonometric, ψ 225°, φ 30°), EXPLODE / CLOSE (in the axonometric a rise is a pure
+screen shift), LINK (stairs solid, lifts dash-dot through their landings), EXTRUDE (the
+typical storey's rooms rising to their clear height), STACK (the storey stamped at each
+real level, the roof riding on top), SILHOUETTE (the massing, its front faces filled with
+the paper colour so it hides what is behind), DOLLY-ZOOM (an orthographic pose into the
+poster's shifted pinhole: p grows from 0 while k holds the scale), CUT IN PLACE (the
+building above L2 + 1.2 m as hidden dashes, its typical plan drawn at the cut), LIFT TO
+PLAN (the reverse, heights scaled to nothing) and RE-ISSUE (a covered sheet moves).
+
+**The reveal rule.** DRAW-IN never strokes line work incrementally. The finished line
+work is painted once into a cache; the pens stroke the same paths, slightly wider, into a
+cumulative mask; the visible canvas shows the cache only where the mask is
+(`source-in`). The end state is the still, pixel for pixel; dashes never restart.
+
+## 4. Composition and look
+
+- **Hosts.** `.wb-drawing` (the canvas) is the desk's first child, before the FX layer
+  (`.wb-backdrop`), so smoke composites over the line work; `.wb-drawing-text` (labels and
+  the sheet chip) comes after it, on an opaque paper ground. Both `aria-hidden`, no
+  pointer events, and neither is `.wb-backdrop`, so the hint and shortcut labels keep
+  their look.
+- **Placement** (`lib/drawings/occupancy.ts`, `compose.ts`). The desk is cut into its own
+  24 px squares (rows from the bottom: the grid's phase); every window, the shortcuts, the
+  hint, the title plate (with one line's reserve) and the two docks are obstacles, grown
+  8 px. A sheet takes the largest free rectangle, at a step of a ladder on which one
+  square is a whole number of metres (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 30 or 40),
+  north up or turned a quarter, its building's origin snapped to a grid crossing: the
+  desk's grid is the drawing's metre grid. In a wide, short band the chip stands beside
+  the sheet instead of under it.
+- **Inks** (`lib/drawings/ink.ts`). Every ink is a design token mixed with the desk's
+  ground, drawn opaque. Strokes at most 2.2:1 against the ground on an open desk and
+  1.6:1 behind windows, fills at most 1.5:1. Poché is accent-900 (the Estate's Plan
+  convention); the hero's footprint, jambs, dimensions and plate edges accent-700;
+  massing the text colour.
+- **Labels** (`lib/drawings/labels.ts`). DOM text set whole: at most 12 room labels a
+  sheet (unit numbers first; a named room of at least 9 m² whose label fits inside it);
+  geometry labels — `LIFT CORE · 2 LIFTS (INFERRED)` from 4 px/m, `UP · 21 R × 171` from
+  6 px/m, `NOT A ROOM IN THE DATA`, `OUTLINE OF L1 BELOW`, dimension values, level tags —
+  inside their piece or beside it on a leader. A dimension whose value cannot be placed
+  is not drawn.
+- **The sheet chip** (the region's bottom-left): the sheet's title; its notes (scale,
+  north, what it infers); the exact credit; and "Redrawn; inferences marked · a generated
+  sample, not a real town or HDB’s own plans · /estate/LICENSE.txt". Shown whenever a
+  sheet is.
+- **The title plate.** While a sheet is placed its SHEET row reads two fixed lines, e.g.
+  `03 OF 07 · BLK 501 TYPICAL` and `GENERATED SAMPLE · LIVE` (STILL, HELD or AT REST),
+  pinned to at most 30 and 26 characters.
+
+## 5. Runtime
+
+| Chunk | What | Gzip |
+|---|---|---|
+| main | `DeskBackdrop.tsx` (the gate, opened in an effect on the desktop surface), `lib/backdropHold.ts`, the FX toggle | — |
+| `DeskBackdropLayer-*` | the layer, `lib/drawings/policy.ts`, `deskWatch.ts`, `occupancy.ts` (and the N-body/smoke host) | 3.9 KB |
+| `DrawingField-*` | the canvas, chip, plate caption, the cover still, `site.generated.ts`, the painters | 15.7 KB |
+| `drawingFilm-*` | the film: scheduler, sequence, reveal, labels | 10.4 KB |
+| `<ID>.generated-*` ×14 | one building's sheets; the next prefetched during a hold | 2.1–4.3 KB |
+
+`scripts/check-bundle.mjs checkDrawingChunks` holds these at measure + 10 %, keeps the
+drawing's markers out of the main bundle and the Estate engine out of its closure.
+
+- **Policy** (`lib/drawings/policy.ts`, pure): off; pending until the experience policy
+  resolves; the plain grid under `?mode=scan`; one still cover on Save-Data and reduced
+  motion (the film never downloads); otherwise the film, held while the page is hidden,
+  motion is halted, the Estate window holds the GPU, or an N-body or smoke field animates
+  (one ambient motion at a time).
+- **The film subscribes itself** to the GPU claim, the motion switches and page
+  visibility, so they stop it synchronously, before React re-renders.
+- **The scheduler** (`lib/drawings/schedule.ts`, pure): acts request frames — the only
+  thing that does; holds sleep on one timer; at most one of the two is pending, none at
+  rest. A freeze (hidden, yielded) keeps the pixels and the progress; a halt (motion, FX)
+  paints the act's end state at once and stops; a hold that ends four minutes after the
+  last input rests.
+- **The projector** (`lib/drawings/project.ts`): one camera model — plan, axonometric and
+  the poster's shifted pinhole — so every camera move is a pose interpolation. With
+  `views.aerialNE` it puts the estate's corners where the poster has them (±0.5 px).
+- **Canvas**: the region at the device pixel ratio (at most 2), lowered so the backing
+  store stays within 2.4 MP; two caches (the line work and the pen mask) only for the
+  sheets that use them, released on park, off and teardown.
+- **Welcome registration**: the layer's watcher keeps the Estate window's poster rectangle
+  (its cover-fit 4:3) while that window shows its poster; on the first uncovered desk the
+  film draws the estate in exactly that rectangle.
+
+## 6. Tests
+
+- `tests/drawing-set.test.ts`: the generated data (§1).
+- `tests/drawing-{decode,project,compose,ink,policy,schedule,sequence,paint,labels}.test.ts`:
+  the pure modules — the decoder's twin, the poster's corners, the boot layouts that park,
+  the ink ceilings against the real tokens, the policy table, the scheduler's frame
+  rules, the cycle lengths and plate line lengths, the painters' calls, the labels' rules.
+- `tests/desk-drawing.dom.test.tsx`: nothing on the server; a covered desk never
+  downloads the drawing; the film animates on an empty desk with the exact credit and the
+  plate caption; the GPU claim cancels its frame at once; Pause holds it; Save-Data paints
+  the cover without the film; `?mode=scan` keeps the grid; StrictMode leaves one canvas.
+- `tests/estate-boundary.test.ts` "the desk drawing set": types-only lib/estate imports, no
+  fetch, no pack URL, no colour literal, the generator reached only by its exporter, the
+  field and the film reached only by `import()`.
+- `tests/e2e/drawing.spec.ts`: the real thing in Chromium.

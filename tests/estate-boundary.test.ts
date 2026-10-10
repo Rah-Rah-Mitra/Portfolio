@@ -269,3 +269,69 @@ describe('the Estate lazy-chunk boundary (§7.1)', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+// The desk drawing set (docs/portfolio/desk-drawing-set.md §5). It draws the
+// estate on the desk without the Estate's engine, its pack files or a value
+// import of lib/estate: its line work is generated ahead of time
+// (scripts/drawings/build.ts, which uses lib/estate at generation only) and
+// shipped as lib/drawings/*.generated.ts. A value import of lib/estate from here
+// would put an Estate module in a shared chunk that vite.config.ts names
+// estate-shared-*, which the Estate's own boot pins forbid.
+describe('the desk drawing set', () => {
+  const DRAWING = ['lib/drawings', 'components/workbench/drawing'];
+  const runtime = async () => (await appFiles()).filter((file) => DRAWING.some((folder) => inside(file, folder))
+    || file === 'components/workbench/DeskBackdropLayer.tsx');
+
+  it('scans its runtime files', async () => {
+    expect(await runtime()).toEqual(expect.arrayContaining([
+      'lib/drawings/types.ts', 'lib/drawings/paint.ts', 'lib/drawings/site.generated.ts', 'lib/drawings/sheets/BLK_501.generated.ts',
+      'components/workbench/drawing/DrawingField.tsx', 'components/workbench/drawing/drawingFilm.ts', 'components/workbench/DeskBackdropLayer.tsx',
+    ]));
+  });
+
+  it('imports lib/estate for its types only, never the generator, and neither engine package', async () => {
+    const offenders = (await Promise.all((await runtime()).map(async (file) => moduleRefs(file, await read(file))
+      .filter((ref) => {
+        if (ENGINE_PACKAGES.test(ref.specifier)) return true;
+        const resolved = resolveRef(file, ref.specifier);
+        if (resolved === null) return false;
+        if (inside(resolved, 'scripts')) return true;
+        return inside(resolved, 'lib/estate') && ref.kind !== 'type';
+      })
+      .map((ref) => `${file}: ${ref.kind} '${ref.specifier}'`)))).flat();
+    expect(offenders).toEqual([]);
+  });
+
+  it('fetches nothing and names no pack URL or colour literal: its data is bundled, its colours are tokens', async () => {
+    // The chip names /estate/LICENSE.txt as text; white is the one literal DESIGN.md allows (paper-75's formula).
+    const offenders: string[] = [];
+    for (const file of await runtime()) {
+      const text = await read(file);
+      if (/\bfetch\s*\(/.test(text)) offenders.push(`${file}: fetch(`);
+      if (/['"`]\/estate\/v\d/.test(text)) offenders.push(`${file}: a pack URL`);
+      const hex = text.match(/#(?!ffffff\b)[0-9a-f]{6}\b/gi);
+      if (hex && file !== 'components/workbench/drawing/palette.ts') offenders.push(`${file}: ${hex.join(', ')}`);
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('reaches the generator only from its exporter and the tests', async () => {
+    const refs = (await Promise.all((await appFiles()).map(async (file) => moduleRefs(file, await read(file))
+      .filter((ref) => resolveRef(file, ref.specifier)?.replace(/\.[cm]?[jt]sx?$/, '') === 'scripts/drawings/build')
+      .map((ref) => `${file}: ${ref.kind}`)))).flat();
+    expect(refs).toEqual([]);
+    const exporter = await read('scripts/drawings/export.mjs');
+    expect(exporter).toContain("ssrLoadModule('/scripts/drawings/build.ts')");
+  });
+
+  it('loads the drawing field and the film only through import(), so neither is in the main bundle', async () => {
+    const targets = ['components/workbench/drawing/DrawingField', 'components/workbench/drawing/drawingFilm'];
+    const refs = (await Promise.all((await appFiles()).map(async (file) => moduleRefs(file, await read(file))
+      .filter((ref) => ref.kind !== 'type' && targets.includes(resolveRef(file, ref.specifier)?.replace(/\.[cm]?[jt]sx?$/, '') ?? ''))
+      .map((ref) => `${file}: ${ref.kind} '${ref.specifier}'`)))).flat();
+    expect(refs.sort()).toEqual([
+      "components/workbench/DeskBackdropLayer.tsx: dynamic './drawing/DrawingField'",
+      "components/workbench/drawing/DrawingField.tsx: dynamic './drawingFilm'",
+    ]);
+  });
+});

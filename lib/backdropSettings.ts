@@ -1,8 +1,10 @@
 import type { FluidPreferences, NBodyPreferences } from '../types';
 
-// The two desk backgrounds are FX toggles. Their engine parameters used to live
-// in the (retired) appearance system; they live here now, beside the effects
-// settings that own them. Both are OFF at boot: the e2e boot state is pinned.
+// The desk backgrounds are FX toggles. N-body's and smoke's engine parameters
+// used to live in the (retired) appearance system; they live here now, beside the
+// effects settings that own them. Both are OFF at boot: the e2e boot state is
+// pinned. The third, the Estate drawing set (docs/portfolio/desk-drawing-set.md),
+// has no parameters, only its switch.
 
 export const defaultNBodyPreferences: NBodyPreferences = {
   preset: 'galaxy',
@@ -31,12 +33,16 @@ export const defaultFluidPreferences: FluidPreferences = {
 export type NBodyEffect = { enabled: boolean } & NBodyPreferences;
 export type FluidEffect = { enabled: boolean } & FluidPreferences;
 
+export type DrawingEffect = { enabled: boolean };
+
 export type BackdropSettings = {
   nbody: NBodyEffect;
   fluid: FluidEffect;
+  drawing: DrawingEffect;
 };
 
 export const defaultBackdropSettings: BackdropSettings = {
   nbody: { enabled: false, ...defaultNBodyPreferences },
   fluid: { enabled: false, ...defaultFluidPreferences },
+  drawing: { enabled: false },
 };

@@ -116,6 +116,82 @@ export const checkDrawingSet = async (distDirectory, {
   return failures;
 };
 
+// The desk drawing set's chunks (docs/portfolio/desk-drawing-set.md §5). Gzipped
+// caps at the measured size plus about 10 % (2026-10: layer 3,917 B, field
+// 15,653 B, film 10,364 B, the largest building 4,321 B): the layer loads on every
+// desktop visit with a backdrop on (the drawing's default), the field once the desk
+// has room for a sheet, the film when the drawing may move, one building at a time.
+export const DRAWING_BUDGETS = { layer: 4_400, layerAndField: 21_500, film: 11_500, sheet: 4_800 };
+export const DRAWING_SET_MARKER = 'portfolio/drawing-set/1';
+export const DRAWING_SHEET_MARKER = 'portfolio/drawing-sheet/1';
+const DRAWING_CHUNKS = {
+  layer: /^DeskBackdropLayer-[\w-]+\.js$/,
+  field: /^DrawingField-[\w-]+\.js$/,
+  film: /^drawingFilm-[\w-]+\.js$/,
+  sheet: /^[A-Z]+_\d+\.generated-[\w-]+\.js$/,
+};
+const ESTATE_CHUNK = /(?:^|\/)(?:estate-(?:engine|shared|bench)|EstateHud)-[\w-]+\.js$/;
+
+/**
+ * The drawing's chunks: none of its markers in the main bundle; each chunk within
+ * its cap; and nothing of the Estate engine in their static closure (the drawing
+ * draws without three, and a value import of lib/estate would have put an
+ * estate-shared chunk there, which the Estate's own boot pins forbid).
+ */
+export const checkDrawingChunks = async (distDirectory, { budgets = DRAWING_BUDGETS } = {}) => {
+  const failures = [];
+  const read = async (file) => readFile(path.join(distDirectory, file));
+  const html = await readFile(path.join(distDirectory, 'index.html'), 'utf8');
+  const entry = findEntryScript(html);
+  const assets = (await readdir(path.join(distDirectory, 'assets'))).filter((name) => name.endsWith('.js')).sort();
+  const named = (pattern) => assets.filter((name) => pattern.test(name)).map((name) => `assets/${name}`);
+  const closure = async (start) => {
+    const files = [];
+    const visit = async (file) => {
+      if (files.includes(file)) return;
+      files.push(file);
+      for (const specifier of staticImports((await read(file)).toString('utf8'))) await visit(path.posix.join(path.posix.dirname(file), specifier));
+    };
+    await visit(start);
+    return files;
+  };
+  const main = await closure(entry);
+  for (const file of main) {
+    const code = (await read(file)).toString('utf8');
+    for (const marker of [DRAWING_SET_MARKER, DRAWING_SHEET_MARKER]) if (code.includes(marker)) failures.push(`${file} is in the main bundle and carries the drawing set (${marker}): it must stay lazy`);
+  }
+  const gz = async (file) => gzipSync(await read(file), { level: 9 }).length;
+  const one = (kind) => {
+    const files = named(DRAWING_CHUNKS[kind]);
+    if (files.length !== 1) failures.push(`expected one ${kind} chunk of the drawing set, found ${files.length}`);
+    return files[0] ?? null;
+  };
+  const layer = one('layer');
+  const field = one('field');
+  const film = one('film');
+  const sheets = named(DRAWING_CHUNKS.sheet);
+  if (sheets.length !== 14) failures.push(`expected 14 building chunks of the drawing set, found ${sheets.length}`);
+  if (field && !(await read(field)).toString('utf8').includes(DRAWING_SET_MARKER)) failures.push(`${field} does not carry the drawing set (${DRAWING_SET_MARKER})`);
+  const sizes = {};
+  if (layer) sizes.layer = await gz(layer);
+  if (field) sizes.field = await gz(field);
+  if (film) sizes.film = await gz(film);
+  let largest = 0;
+  for (const sheet of sheets) {
+    const size = await gz(sheet);
+    largest = Math.max(largest, size);
+    if (size > budgets.sheet) failures.push(`${sheet} is ${size} B gzipped, over the drawing set's ${budgets.sheet} B per building`);
+  }
+  if (sizes.layer > budgets.layer) failures.push(`${layer} is ${sizes.layer} B gzipped, over ${budgets.layer} B`);
+  if (sizes.layer + sizes.field > budgets.layerAndField) failures.push(`the desk layer and the drawing field are ${sizes.layer + sizes.field} B gzipped, over ${budgets.layerAndField} B`);
+  if (sizes.film > budgets.film) failures.push(`${film} is ${sizes.film} B gzipped, over ${budgets.film} B`);
+  for (const start of [layer, field, film].filter(Boolean)) {
+    for (const file of await closure(start)) if (ESTATE_CHUNK.test(file)) failures.push(`${start} statically imports ${file}: the drawing set must not pull in the Estate engine`);
+  }
+  console.log(`drawing chunks: layer ${format(sizes.layer ?? 0)} B, field ${format(sizes.field ?? 0)} B, film ${format(sizes.film ?? 0)} B, largest building ${format(largest)} B (gzip)`);
+  return failures;
+};
+
 // engineGzip is what the consent label counts for the engine (lib/estate/policy.ts
 // consentBytes), so it must be an upper bound of what the click downloads;
 // engineMinified caps the engine chunk itself. Missing either is a failure, never
@@ -252,9 +328,9 @@ export const checkBundle = async (distDirectory, options = {}) => {
 // but leaves argv[1] as typed, and a mismatch here would skip the check silently.
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const distDirectory = path.resolve(import.meta.dirname, '..', 'dist');
-  Promise.all([checkBundle(distDirectory), checkEstateCatalogue(distDirectory), checkDrawingSet(distDirectory)]).then(([{ failures }, catalogue, drawings]) => {
-    for (const failure of [...failures, ...catalogue, ...drawings]) console.error(failure);
-    if (failures.length || catalogue.length || drawings.length) process.exitCode = 1;
+  Promise.all([checkBundle(distDirectory), checkEstateCatalogue(distDirectory), checkDrawingSet(distDirectory), checkDrawingChunks(distDirectory)]).then(([{ failures }, catalogue, drawings, chunks]) => {
+    for (const failure of [...failures, ...catalogue, ...drawings, ...chunks]) console.error(failure);
+    if (failures.length || catalogue.length || drawings.length || chunks.length) process.exitCode = 1;
   }).catch((error) => {
 
     console.error(error.message);

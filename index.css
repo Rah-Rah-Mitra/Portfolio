@@ -758,6 +758,40 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-desk:has(> .wb-backdrop) .wb-shortcuts button span { background: var(--paper-55); }
 /* === end FX: desk backdrops === */
 
+/* === Desk drawing set (components/workbench/drawing; docs/portfolio/desk-drawing-set.md) === */
+/* Two hosts around the FX layer: .wb-drawing (the canvas) before .wb-backdrop, so
+   smoke composites over the line work, and .wb-drawing-text (labels, the sheet
+   chip) after it, so text stands on its own opaque ground over the smoke. Neither
+   is .wb-backdrop, so the desk's hint and shortcut labels keep their default look.
+   Decorative: aria-hidden, no pointer events. */
+.wb-drawing, .wb-drawing-text { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.wb-drawing-canvas { position: absolute; display: block; }
+.wb-drawing-labels { position: absolute; inset: 0; }
+.wb-drawing-label {
+  position: absolute; padding: 1px 4px; background: var(--paper-55); white-space: nowrap;
+  font-size: 9.5px; font-weight: 500; line-height: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-neutral-700);
+}
+.wb-drawing-label-unit {
+  font-family: var(--font-heading); font-weight: 600; font-size: 11px; line-height: 13px; letter-spacing: 0.04em;
+  color: var(--color-text);
+}
+.wb-drawing-chip {
+  position: absolute; padding: 5px 9px; background: var(--paper-55); border: 1px solid var(--color-divider);
+  font-size: 10px; line-height: 14px; letter-spacing: 0.1em; color: var(--color-neutral-700);
+}
+.wb-drawing-chip[hidden] { display: none; }
+.wb-drawing-chip-title { font-family: var(--font-heading); font-weight: 600; font-size: 11px; letter-spacing: 0.05em; color: var(--color-text); }
+/* The title plate's SHEET row becomes the sheet's caption while one is placed:
+   two fixed lines that never wrap, so the plate grows by one line at most. */
+.wb-plate-grid > .wb-plate-sheet { border-bottom: 0; }
+.wb-plate-slot { display: contents; }
+.wb-plate-slot > div { padding: 6px 9px; }
+.wb-plate-slot > .wb-plate-key { border-right: 1px solid var(--color-divider); color: var(--color-neutral-700); }
+.wb-plate-lines span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wb-plate-grid:has(> .wb-plate-slot:not(:empty)) > .wb-plate-sheet { display: none; }
+/* === end desk drawing set === */
+
 /* === Systems Lab: flow-shop bench (FlowShopBench.tsx) === */
 /* FIG. 05d. SVG + DOM only: no canvas, no rAF. Ops and the makespan line move
    by CSS transition and the overlays fade in; all three stop under the FX

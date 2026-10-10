@@ -48,3 +48,23 @@ dimension) was added.
 
 If you reuse the data, credit it as above, link the licence and the
 repository, and say whether you changed it.
+
+Desk drawing set (derived)
+--------------------------
+
+The desktop workbench's desk draws this data as engineering drawings: site
+plan, floor plans, axonometric views and the aerial through the poster's
+camera. Those line drawings are derived from the v1.2 pack in this folder
+(pack.json, the nav files and the ground raster) by the portfolio's
+scripts/drawings generator, and ship in the site's /assets/*.js under the
+same CC BY 4.0 licence and attribution as above.
+
+They add, and mark as inferred where they are drawn: wall fill from the thin
+gaps between spaces (walls are not modelled in the data); lift cores, the
+thick unroomed rectangle behind a bank of lift landings; open-air slab edges
+beside void and roof decks; dashed boundaries where two spaces meet with no
+gap; massing extruded from each footprint to its roof level, plus the
+roof's enclosed rooms by their clear height. Doors are drawn as openings
+(the data holds no swing or hinge). They never draw door swings, glazing,
+furniture, columns, hatching, areas, facades, trees, parapets or a site
+boundary. The files in this folder are unchanged by them.

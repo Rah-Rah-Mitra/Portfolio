@@ -157,15 +157,17 @@ const EffectsLabPanel: React.FC = () => {
 
   if (!open) return dockTrigger;
 
-  const { nbody, fluid } = settings;
+  const { nbody, fluid, drawing } = settings;
   // ?mode=scan, Data Saver and reduced motion never let a backdrop mount
   // (lib/desktopBackgroundPolicy), so say so on the toggle rather than show
   // live settings over a desk that stays plain. Not on the narrow surface,
   // whose note already says why the toggles are off there.
   const backdropHold = narrow ? null : describeBackdropHold(policy);
   // An enabled backdrop also yields while the Estate window holds the GPU.
-  const holdStatus = (enabled: boolean) => (backdropHold ? `${enabled ? 'On' : 'Off'} · ${backdropHold}`
+  const holdStatus = (enabled: boolean, hold = backdropHold) => (hold ? `${enabled ? 'On' : 'Off'} · ${hold}`
     : enabled && gpuClaimed && !narrow ? `On · ${BACKDROP_YIELD_HOLD}` : undefined);
+  // The Estate drawings still draw on Data Saver and reduced motion, as one finished sheet (lib/drawings/policy.ts).
+  const drawingHold = backdropHold && policy.reason !== 'query' ? backdropHold.replace('held', 'still') : backdropHold;
   const motionNote = enhancements.motionPaused
     ? 'Paused. Window rigs, Systems Lab mechanisms and the desk backgrounds hold their current frame; the labs skip straight to their end state, and the Estate camera’s flights, lift fades and stair climbs cut to the end.'
     : reducedMotion
@@ -204,7 +206,7 @@ const EffectsLabPanel: React.FC = () => {
               <p className="lab-note">
                 {narrow
                   ? 'These draw behind the desktop workbench, wider than 880px. This screen shows the registry instead, so they stay off here.'
-                  : 'Drawn on the desk behind the windows. Both freeze while motion is paused.'}
+                  : 'Drawn on the desk behind the windows. All three hold still while motion is paused.'}
               </p>
 
               <EffectToggle
@@ -268,6 +270,15 @@ const EffectsLabPanel: React.FC = () => {
                   <CheckField label="Pointer stirs the smoke" checked={fluid.pointerInteraction} onChange={(pointerInteraction) => updateEffect('fluid', { pointerInteraction })} />
                 </div>
               )}
+
+              <EffectToggle
+                enabled={drawing.enabled}
+                title="Estate drawings"
+                description="Plans of Sample Town N5, a generated sample (not a real town or HDB’s own plans), drawn sheet by sheet on the desk, stacked into a block and set into the aerial view. Press DESK to watch."
+                status={holdStatus(drawing.enabled, drawingHold)}
+                disabled={narrow}
+                onClick={() => toggle('drawing')}
+              />
             </section>
 
             {!narrow && (

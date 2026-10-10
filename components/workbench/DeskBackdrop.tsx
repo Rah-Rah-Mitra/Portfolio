@@ -1,7 +1,8 @@
 import React, { Suspense, useContext, useEffect, useState } from 'react';
 import { EffectsContext } from '../../contexts/PhysicsContext';
 
-// The desk backdrops behind the desktop workbench (N-body field, fluid smoke).
+// The desk backdrops behind the desktop workbench (the Estate drawing set, an
+// N-body field, fluid smoke).
 // This file ships in the main bundle, so it is only the gate: the layer itself
 // (DeskBackdropLayer: policy, caption, the engines' lazy chunks) is a lazy
 // chunk, loaded once a backdrop is on. When all are off — the pinned boot
@@ -31,7 +32,7 @@ export const DeskBackdrop: React.FC = () => {
   const settings = useContext(EffectsContext)?.settings;
   const [live, setLive] = useState(false);
   useEffect(() => { if (window.innerWidth > 880) setLive(true); }, []);
-  if (!live || !settings || (!settings.nbody.enabled && !settings.fluid.enabled)) return null;
+  if (!live || !settings || !(settings.nbody.enabled || settings.fluid.enabled || settings.drawing?.enabled)) return null;
   return (
     <BackdropBoundary>
       <Suspense fallback={null}><DeskBackdropLayer settings={settings} /></Suspense>

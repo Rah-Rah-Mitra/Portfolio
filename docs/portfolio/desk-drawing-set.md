@@ -118,7 +118,8 @@ Door swings or hinges, glazing, furniture, columns or a structural grid, hatch
 patterns, areas, façades, trees, parapets, massing above the roof other than
 the roof's rooms, and a site boundary (the pack holds only the 400 × 400 m
 extent). The car park's lot labels name their storey and are counted instead
-(`126 CAR · 51 MOTORCYCLE LOTS PER DECK`). tests/drawing-set.test.ts pins the
+(`126 CAR · 51 MOTORCYCLE LOTS PER DECK` on the deck plan, `123 CAR · 51 MOTORCYCLE
+LOTS ON L1` on L1's). tests/drawing-set.test.ts pins the
 sheet's key list and refuses any key named after a swing, hinge, glazing,
 column or parapet.
 
@@ -132,8 +133,14 @@ column or parapet.
 - `scripts/check-bundle.mjs` `checkDrawingSet` is the deploy twin (Vercel runs
   only `npm run build`): the set must name the catalogue's pack, edition and
   commit, carry the sha256 of the pack the build ships and the digest of the
-  generator (`scripts/drawings/build.ts`, LF), and a dev set never builds on
-  Vercel or CI.
+  generator's sources (`GENERATOR_SOURCES`: `scripts/drawings/build.ts` and the
+  `lib/estate` modules and JSON it reaches through relative value imports, each as its
+  path and LF text; `DRAWING_GENERATOR_FILES` in check-bundle restates the list and
+  `tests/drawing-set.test.ts` parses build.ts's imports to keep both honest), and a dev
+  set never builds on Vercel or CI. So an edit to any of those files — a Walk tweak in
+  `lib/estate/walk.ts`, an engine budget re-pinned in `lib/estate/packBudgets.json` —
+  needs `npm run drawings` in the same commit; when the output is unchanged it rewrites
+  only the `generatorDigest` line.
 - `.gitattributes`: `lib/drawings/**/*.generated.ts text eol=lf`.
 
 **After a release re-pack** (docs/portfolio/estate-pack.md "Moving to a new
@@ -186,7 +193,7 @@ the hawker centre 78.1 s; every hold at least 2.5× its arrival):
 | S4 | typical | draw-in by several pens, then the wall fill and jambs, treads and dimension chains | 10 s |
 | S5 | roof | scan wipe | 6 s |
 | S6 | exploded | tilt from plan into the poster's axonometric while the storeys separate, then stair and lift links rise | 10 s |
-| S7 | block | links retract, plates close, the typical storey's rooms rise, the storey is stamped up the block, the massing appears, the level ruler runs up | 10.5 s |
+| S7 | block | links retract, plates close, the typical storey's outline rises to the next level, the storey is stamped up the block, the massing appears, the level ruler runs up | 10.5 s |
 | S8 | aerial | dolly-zoom into the poster camera, the estate coming in around the building; then the building cut in place at L2 + 1.2 m | 12 s |
 
 From S8 the next building's S1 lifts out of the aerial. Where the axonometric would be
@@ -207,8 +214,9 @@ visible bar), POCHÉ FLOOD (a circle from the lift landings over the wall fill),
 TICK-IN (extension lines, the line from both ends, then the 45° ticks and the value),
 TREAD TICK-IN (each riser in walking order, 30 ms apart), DOLLY, TILT (plan to the
 poster's axonometric, ψ 225°, φ 30°), EXPLODE / CLOSE (in the axonometric a rise is a pure
-screen shift), LINK (stairs solid, lifts dash-dot through their landings), EXTRUDE (the
-typical storey's rooms rising to their clear height), STACK (the storey stamped at each
+screen shift), LINK (stairs solid, lifts dash-dot through their landings, each lift up to
+the highest plate that has its landing), EXTRUDE (the typical storey's outline rising to
+the next level), STACK (the storey stamped at each
 real level, the roof riding on top), SILHOUETTE (the massing, its front faces filled with
 the paper colour so it hides what is behind), DOLLY-ZOOM (an orthographic pose into the
 poster's shifted pinhole: p grows from 0 while k holds the scale), CUT IN PLACE (the
@@ -230,11 +238,14 @@ cumulative mask; the visible canvas shows the cache only where the mask is
 - **Placement** (`lib/drawings/occupancy.ts`, `compose.ts`). The desk is cut into its own
   24 px squares (rows from the bottom: the grid's phase); every window, the shortcuts, the
   hint, the title plate (with one line's reserve) and the two docks are obstacles, grown
-  8 px. A sheet takes the largest free rectangle, at a step of a ladder on which one
-  square is a whole number of metres (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 30 or 40),
-  north up or turned a quarter, its building's origin snapped to a grid crossing: the
-  desk's grid is the drawing's metre grid. In a wide, short band the chip stands beside
-  the sheet instead of under it.
+  8 px. A sheet takes the largest free rectangle of at least 11 × 8 squares
+  (`sheetRegions`: a long thin band bigger than a qualifying corner never parks the
+  drawing or takes its place), at a step of a ladder on which one square is a whole
+  number of metres (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 30 or 40): the largest step that
+  fits, north up on a tie, then the larger region. It is north up or turned a quarter,
+  its building's origin snapped to a grid crossing: the desk's grid is the drawing's
+  metre grid. In a wide, short band the chip stands beside the sheet instead of under
+  it. A cropped aerial's chip prints the crop it shows, never past the poster's edge.
 - **Inks** (`lib/drawings/ink.ts`). Every ink is a design token mixed with the desk's
   ground, drawn opaque. Strokes at most 2.2:1 against the ground on an open desk and
   1.6:1 behind windows, fills at most 1.5:1. Poché is accent-900 (the Estate's Plan
@@ -245,11 +256,15 @@ cumulative mask; the visible canvas shows the cache only where the mask is
   geometry labels — `LIFT CORE · 2 LIFTS (INFERRED)` from 4 px/m, `UP · 21 R × 171` from
   6 px/m, `NOT A ROOM IN THE DATA`, `OUTLINE OF L1 BELOW`, dimension values, level tags —
   inside their piece or beside it on a leader. A dimension whose value cannot be placed
-  is not drawn.
+  is not drawn; a stair below 6 px/m, a core below 4 px/m and the ruler's levels between
+  its tagged ones are drawn unlabelled.
 - **The sheet chip** (the region's bottom-left): the sheet's title; its notes (scale,
-  north, what it infers); the exact credit; and "Redrawn; inferences marked · a generated
-  sample, not a real town or HDB’s own plans · /estate/LICENSE.txt". Shown whenever a
-  sheet is.
+  north, what it infers — every sheet that draws inferred walls, cores or massing says so,
+  the aerials' massing and S8's cut plan included; an aerial names its crop, or that the
+  welcome is registered to the Estate still when it is drawn in the poster's own
+  rectangle); the exact credit; and "Redrawn; inferences marked · a generated sample, not
+  a real town or HDB’s own plans · /estate/LICENSE.txt". Shown whenever a sheet is; its
+  band is reserved from the tallest chip the cycle shows before the scale is chosen.
 - **The title plate.** While a sheet is placed its SHEET row reads two fixed lines, e.g.
   `03 OF 07 · BLK 501 TYPICAL` and `GENERATED SAMPLE · LIVE` (STILL, HELD or AT REST),
   pinned to at most 30 and 26 characters.
@@ -283,7 +298,9 @@ drawing's markers out of the main bundle and the Estate engine out of its closur
   the poster's shifted pinhole — so every camera move is a pose interpolation. With
   `views.aerialNE` it puts the estate's corners where the poster has them (±0.5 px).
 - **Canvas**: the region at the device pixel ratio (at most 2), lowered so the backing
-  store stays within 2.4 MP; two caches (the line work and the pen mask) only for the
+  store stays within 2.4 MP, but never below 1× (line work drawn under 1× goes soft): on a
+  desk larger than 2.4 MP in CSS pixels, such as an uncovered 2560 × 1440 or 4K desk at
+  100 %, the store is the region at 1×, 3.5–8 MP; two caches (the line work and the pen mask) only for the
   sheets that use them, released on park, off and teardown.
 - **Welcome registration**: the layer's watcher keeps the Estate window's poster rectangle
   (its cover-fit 4:3) while that window shows its poster; on the first uncovered desk the
@@ -303,4 +320,10 @@ drawing's markers out of the main bundle and the Estate engine out of its closur
 - `tests/estate-boundary.test.ts` "the desk drawing set": types-only lib/estate imports, no
   fetch, no pack URL, no colour literal, the generator reached only by its exporter, the
   field and the film reached only by `import()`.
-- `tests/e2e/drawing.spec.ts`: the real thing in Chromium.
+- `tests/e2e/drawing.spec.ts`: the real thing in Chromium — at 1920 × 1080 reading behind
+  the boot windows with no frame in a hold, clear of every window, credited, fetching
+  nothing of the Estate; DESK's welcome then site plan with the plate's height held; 1280 ×
+  720 parked on the layer chunk alone until DESK; reduced motion and Data Saver as one
+  still and exactly the chunks that costs; `?mode=scan`; switched off in FX; axe.
+- `tests/e2e/estate.spec.ts` case 1c: at 1920 × 1080 the drawing yields to the live
+  Estate, requests no frame while the window is dragged over it, and runs once it closes.

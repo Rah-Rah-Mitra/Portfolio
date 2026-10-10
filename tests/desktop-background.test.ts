@@ -10,6 +10,9 @@ describe('desk backdrop policy', () => {
   it('ships both backdrops off at boot (the e2e boot state is pinned)', () => {
     expect(defaultBackdropSettings.nbody.enabled).toBe(false);
     expect(defaultBackdropSettings.fluid.enabled).toBe(false);
+    // The third desk background, the Estate drawing set, is on: lib/drawings/policy.ts
+    // decides how it draws, and it never takes these two's lease.
+    expect(defaultBackdropSettings.drawing.enabled).toBe(true);
   });
 
   it('runs an enabled backdrop on a capable, visible, moving page', () => {

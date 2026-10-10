@@ -35,12 +35,17 @@ afterEach(() => {
 });
 
 describe('effects lab drawer', () => {
-  it('offers motion, sound and the two desk backgrounds, all off at boot, and none of the retired controls', () => {
+  it('offers motion, sound and the three desk backgrounds, only the Estate drawings on at boot, and none of the retired controls', () => {
     const dialog = openDrawer();
+    expect(dialog.querySelector('.panel-intro')?.textContent).toBe('The Estate drawings are on; everything else here is off until you turn it on. A reduced-motion setting on your device always wins.');
     expect(within(dialog).getByRole('button', { name: 'Pause all motion' }).getAttribute('aria-pressed')).toBe('false');
     expect(within(dialog).getByRole('button', { name: /Sound cues/ }).getAttribute('aria-pressed')).toBe('false');
     expect(within(dialog).getByRole('button', { name: /N-body field/ }).getAttribute('aria-pressed')).toBe('false');
     expect(within(dialog).getByRole('button', { name: /Fluid smoke/ }).getAttribute('aria-pressed')).toBe('false');
+    const drawing = within(dialog).getByRole('button', { name: /Estate drawings/ });
+    expect(drawing.getAttribute('aria-pressed')).toBe('true');
+    expect(drawing.textContent).toContain('not a real town or HDB’s own plans');
+    expect(drawing.textContent).toContain('Press DESK to watch.');
     expect(within(dialog).getByRole('button', { name: /Drop test.*Systems Lab/ })).not.toBeNull();
 
     expect(dialog.textContent).not.toMatch(/Smash\b(?! and gravity)|Text signal|Supporting media|Visual density|World quality|Explore World|Reset displaced text/);
@@ -104,6 +109,58 @@ describe('effects lab drawer', () => {
     expect(within(dialog).getByRole('button', { name: /Fluid smoke/ }).textContent).toContain('held: Data Saver is on');
   });
 
+  it('says the Estate drawings hold still, rather than stay off, on Data Saver and reduced motion; plain under ?mode=scan', () => {
+    const drawingOn = (device: typeof capabilities) => {
+      const dialog = openDrawer(device);
+      const text = within(dialog).getByRole('button', { name: /Estate drawings/ }).textContent;
+      cleanup();
+      return text;
+    };
+    expect(drawingOn({ saveData: true, reducedMotion: false })).toContain('On · still: Data Saver is on');
+    expect(drawingOn({ saveData: false, reducedMotion: true })).toContain('On · still: your system asks for reduced motion');
+    window.history.replaceState(null, '', '/?mode=scan');
+    try {
+      expect(drawingOn(capabilities)).toContain('On · held: this page was opened with ?mode=scan');
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+    expect(drawingOn(capabilities)).not.toMatch(/held:|still:/);
+  });
+
+  it('says in its intro that the Estate drawings are on only where they draw: not once off, under ?mode=scan or on the phone registry', () => {
+    const intro = (dialog: HTMLElement) => dialog.querySelector('.panel-intro')?.textContent;
+    const OFF = 'Everything here is off until you turn it on. A reduced-motion setting on your device always wins.';
+    let dialog = openDrawer();
+    expect(intro(dialog)).toMatch(/^The Estate drawings are on;/);
+    fireEvent.click(within(dialog).getByRole('button', { name: /Estate drawings/ }));
+    expect(intro(dialog)).toBe(OFF);
+    cleanup();
+    window.history.replaceState(null, '', '/?mode=scan');
+    try {
+      expect(intro(openDrawer())).toBe(OFF);
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+    cleanup();
+    stubMedia({ narrow: true });
+    dialog = openDrawer();
+    expect(intro(dialog)).toBe(OFF);
+  });
+
+  it('says the Estate drawings are held while the Estate window uses the GPU, and off says nothing', () => {
+    const dialog = openDrawer();
+    const drawing = within(dialog).getByRole('button', { name: /Estate drawings/ });
+    try {
+      act(() => { claimGpu('estate'); });
+      expect(drawing.textContent).toContain('On · held: the Estate window is using the GPU');
+      fireEvent.click(drawing);
+      expect(drawing.getAttribute('aria-pressed')).toBe('false');
+      expect(drawing.textContent).not.toMatch(/held:/);
+    } finally {
+      act(() => { releaseGpu('estate'); });
+    }
+  });
+
   it('says nothing is held on a capable device', () => {
     const dialog = openDrawer();
     expect(dialog.textContent).not.toMatch(/held:/i);
@@ -130,6 +187,9 @@ describe('effects lab drawer', () => {
     const dialog = openDrawer();
     expect((within(dialog).getByRole('button', { name: /N-body field/ }) as HTMLButtonElement).disabled).toBe(true);
     expect((within(dialog).getByRole('button', { name: /Fluid smoke/ }) as HTMLButtonElement).disabled).toBe(true);
+    const drawing = within(dialog).getByRole('button', { name: /Estate drawings/ }) as HTMLButtonElement;
+    expect(drawing.disabled).toBe(true);
+    expect(drawing.textContent).not.toMatch(/held:|still:/);
     expect(dialog.textContent).toContain('This screen shows the registry instead');
     expect(within(dialog).queryByRole('button', { name: /Drop test/ })).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Pause all motion' })).not.toBeNull();
@@ -177,7 +237,7 @@ describe('effects context surface', () => {
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
     const payload = JSON.parse(String(request.body)) as { pageState: Record<string, unknown> };
     // lib/askPageState.ts (assistant layer) sends only whether each backdrop is on.
-    expect(payload.pageState.backdrops).toEqual({ nbody: false, fluid: false });
+    expect(payload.pageState.backdrops).toEqual({ nbody: false, fluid: false, drawing: true });
     expect(JSON.stringify(payload.pageState)).not.toMatch(/"(smash|pretext|world|registerWords)"/);
     expect(payload.pageState.surface).toBe('field-workbench');
   });

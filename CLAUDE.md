@@ -634,8 +634,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
   whichever pure module it lists first), and the engine chunk is found by the
   module it holds, not by its facade, which Rollup drops once the bench chunk
-  imports from it. Main bundle: 508,334 / 508,834 B since the Estate became a
-  boot window (+160 B; the P6/P7 review left it at 508,174 and the release
+  imports from it. Main bundle: 506,423 / 508,834 B since the desk drawing set
+  (which moved the desk-backdrop layer and its policy out of it, −2,807 B, and
+  spent 896 B on its gate, toggle, plate slot and copy); 508,334 B before, since
+  the Estate became a boot window (+160 B; the P6/P7 review left it at 508,174 and the release
   round unchanged; the viewer settings added nothing: `lib/estate/settings.ts`
   lands in the controller chunk, 30.9 kB, which no pin counts).
   Pinned by `tests/estate-window.dom.test.tsx` (fake engine; the real HUD inside
@@ -711,17 +713,82 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   Firefox, a hardware GPU and pointer lock (plan §12's sign-off; every
   measurement here is SwiftShader).
 - **FX desk backdrops** (`DeskBackdrop.tsx`, first child of `.wb-desk`, desktop
-  only): two FX-panel toggles, both off at boot — the N-body field (`NBodyField.tsx`,
+  only — in the main bundle it is only a gate that opens in an effect; the layer
+  is the lazy `DeskBackdropLayer.tsx`, one `EngineBoundary` per engine so one
+  engine's failure is a `console.warn` that leaves the others up): three FX-panel
+  toggles. Two are off at boot — the N-body field (`NBodyField.tsx`,
   a 2-D fast multipole solver in `lib/nbody/fmm.ts` run by `workers/nbody.worker.ts`,
   painted by `lib/nbody/paint.ts`) and WebGL2 stable-fluids smoke (`FluidField.tsx`).
   Each engine is a lazy chunk loaded on first switch-on. `lib/desktopBackgroundPolicy.ts`
-  decides: mount only once `allowHeavyAssets` (false under reduced motion and
+  decides for those two: mount only once `allowHeavyAssets` (false under reduced motion and
   Save-Data), then freeze rather than tear down when the page hides or motion
-  halts. Settings are `BackdropSettings` (`lib/backdropSettings.ts`) in
+  halts. The panel's hold wording is `lib/backdropHold.ts` (main bundle; the
+  policy, which is not, re-exports it). The third, the Estate drawing set, is on
+  at boot and has its own policy (next bullet). Settings are `BackdropSettings` (`lib/backdropSettings.ts`) in
   `EffectsProvider` (`contexts/PhysicsContext.tsx`); DeskBackdrop reads
   `EffectsContext` directly so a bare `<FieldWorkbench/>` still mounts in tests.
   A mounted backdrop also freezes (reason `yielded`, "HELD · ESTATE") while the
   Estate window holds the GPU claim (`lib/gpuClaim.ts`, see the Estate bullet).
+  `.wb-backdrop-caption` renders only while N-body or smoke is mounted (estate
+  e2e case 9 counts one caption), and the drawing's canvas is
+  `canvas[data-drawing-canvas]`, never `data-backdrop` (quality.spec counts
+  exactly two of those).
+- **Desk drawing set** (the FX toggle "Estate drawings", on at boot; spec
+  `docs/portfolio/desk-drawing-set.md`): line drawings of Sample Town N5 — the
+  site plan, L1, typical and roof plans, an exploded axonometric, the stacked
+  block and the aerial through the poster camera (`views.aerialNE` as a shifted
+  pinhole, `lib/drawings/project.ts`, so the welcome registers with the poster it
+  replaces) — drawn on the desk behind the windows on the desk's own 24 px grid,
+  one square a whole number of metres. **Data** is committed and generated:
+  `lib/drawings/site.generated.ts`, `sheetLoaders.generated.ts` and
+  `sheets/<ID>.generated.ts` ×14, written by `npm run drawings`
+  (`scripts/drawings/build.ts` through `export.mjs`, Vite SSR) from the committed
+  pack alone (pack.json, nav, ground; never `external/`). Never hand-edit them;
+  after a release re-pack run `npm run drawings` and commit both together. Two
+  staleness gates: `tests/drawing-set.test.ts` regenerates in memory and compares
+  byte for byte, and `checkDrawingSet` in `scripts/check-bundle.mjs` fails a
+  deploy whose drawing set names another pack, sha or generator digest, or is
+  `dev` on Vercel/CI. The digest covers `GENERATOR_SOURCES` — build.ts and every
+  `lib/estate` module and JSON it reaches by a relative value import (plan, nav,
+  ground, ids, walk, `packBudgets.json`, `palette.json`, …) — so an edit to any of
+  them, an engine re-pin included, needs `npm run drawings` in the same commit
+  (it then rewrites only the `generatorDigest` line). The generator asserts what the drawing relies on
+  (axis-aligned rooms inside the footprint, door depths, flights = ΔFFL,
+  rectangular cores), so a pack that breaks one fails generation rather than
+  drawing wrongly. **Chunks:** the layer (with `lib/drawings/{policy,occupancy,
+  deskWatch}`) watches the desk — windows by their section `style`, docks, the
+  hint, the plate, the Estate poster's last rectangle — and loads
+  `drawing/DrawingField.tsx` only once a sheet fits (`sheetRegions`: a free
+  rectangle of 11 × 8 squares), else `data-drawing-state="covered"`: every
+  1280–1536 boot parks behind Home and the Estate (layer chunk only), DESK or the
+  last window closed plays the film, and at 1920 × 1080 finished sheets read in
+  the free bands. DrawingField paints one still cover under Save-Data or reduced
+  motion at boot; otherwise it imports `drawing/drawingFilm.ts`, which requests
+  animation frames only during an act (holds are `setTimeout`s, rest after 240 s
+  without input) and subscribes to the GPU claim, the motion switch and
+  visibility itself, cancelling its frame synchronously. Building sheets load per
+  hero. `checkDrawingChunks` keeps the drawing out of the main bundle and holds
+  the gzip caps (layer 4,400; layer + field 21,500; film 11,500; a building
+  4,800). **Honesty:** nothing is drawn the data does not hold (no door swings,
+  glazing, columns, hatch or parapets); inferences are labelled (walls as the
+  poché between spaces, lift cores, massing to the RF level, on every sheet that
+  draws them, aerials included); a dimension whose value cannot be placed is not
+  drawn (stairs, cores and ruler levels are labelled where the scale leaves room,
+  and drawn regardless); every placed sheet's chip carries
+  `CREDIT`, "a generated sample, not a real town or HDB’s own plans" and
+  `/estate/LICENSE.txt`, whose "Desk drawing set (derived)" section lists the
+  inferences. Inks are tokens mixed with `--color-bg` under contrast ceilings
+  (`lib/drawings/ink.ts`: strokes 2.2:1 on the desk, 1.6:1 behind windows, fills
+  1.5:1). Runtime drawing code imports `lib/estate` types only, never
+  `fetch(`, `'/estate/'` or a hex (`tests/estate-boundary.test.ts`, "the desk
+  drawing set"). DOM: `.wb-drawing` (the canvas host, before `.wb-backdrop`, so
+  smoke composites over it) and `.wb-drawing-text` (labels and the opaque chip,
+  after it), both `aria-hidden`; the title plate's `.wb-plate-slot` takes the
+  sheet's two caption lines and CSS hides its SHEET row only while the slot is
+  filled. Pinned by `tests/drawing-*.test.ts`, `tests/desk-drawing.dom.test.tsx`
+  and `tests/e2e/drawing.spec.ts` (1920 reading with 0 frames in a hold, DESK's
+  welcome then site plan, 1280 parked, reduced motion and Save-Data stills and
+  their downloads, `?mode=scan`, FX off, axe).
 - **Motion rule.** `lib/motion.ts`: `motionHalted()` is prefers-reduced-motion OR
   the FX "Pause all motion" switch (`html[data-motion-paused="true"]`), and
   `onMotionChange()` re-syncs. Every animation loop stops, or draws one still
@@ -735,7 +802,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   tests/mechanism-bench.dom.test.tsx. The Estate engine renders only on change
   and, halted, turns every flight into a cut while a visitor's own drag still
   redraws; the real engine is pinned idle and cutting by
-  `tests/e2e/estate.spec.ts` (cases 11 and 12), not by a fake.
+  `tests/e2e/estate.spec.ts` (cases 11 and 12), not by a fake. The desk drawing
+  set's film requests frames only during an act (`lib/drawings/schedule.ts`:
+  `startAct()` is its only frame source), sleeps through its holds on timers and
+  rests after 240 s without input; halted, an act ends in one paint
+  (`tests/drawing-schedule.test.ts`, `tests/e2e/drawing.spec.ts`).
 - Retained layers: `AskThePage` (AI), `EffectsLabPanel` (FX) and
   `AudioSpriteController` (opt-in sound cues) plus their providers
   (`ExperienceModeProvider`, `EffectsProvider`). The panels reach the workbench via
@@ -1155,14 +1226,19 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   has not loaded) within `engineGzip`, because the consent label counts that
   cap. Both budgets were re-pinned in P4b and again in P5 (interiors, Walk and
   the Walk HUD) at the measured size + 5%, and `engineGzip` alone in P7
-  (278,000); a re-pin may move them but never above the plan's 307,200 B /
-  950,000 B. The main cap is NOT re-pinnable: after the P6/P7 review the main
-  bundle is 508,334 B of 508,834 B (P6 spent ~1.3 KB: the `focusEstate` check,
-  routing and dispatch in AskThePage, the phone row, the registry's Plan keys and
-  the side slot; P7 8 B, the `estate_live` export; the review 86 B, the wider
-  local routing and the phone's assistant row; the boot layout 160 B, the
-  Estate open at boot and its controller's phone guard), so **500 B are left** —
-  anything bigger goes into the controller, engine or HUD chunk. The
+  (278,000); a re-pin also needs `npm run drawings` in the same commit
+  (`packBudgets.json` is one of the drawing generator's sources, so the drawing
+  set's digest moves); a re-pin may move them but never above the plan's 307,200 B /
+  950,000 B. The main cap is NOT re-pinnable: the main bundle is 506,423 B of
+  508,834 B. After the P6/P7 review it was 508,334 B (P6 spent ~1.3 KB: the
+  `focusEstate` check, routing and dispatch in AskThePage, the phone row, the
+  registry's Plan keys and the side slot; P7 8 B, the `estate_live` export; the
+  review 86 B, the wider local routing and the phone's assistant row; the boot
+  layout 160 B, the Estate open at boot and its controller's phone guard); the
+  desk drawing set moved the desk-backdrop layer and its policy into a lazy chunk
+  (−2,807 B) and spent 896 B on its gate, FX toggle, plate slot and assistant
+  copy, so **2,411 B are left** — anything bigger goes into the controller,
+  engine, HUD or desk-backdrop layer chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).
 - `npm run test:e2e` runs two Playwright projects: `chromium` (everything but the

@@ -32,7 +32,7 @@ export const buildPageState = (settings: BackdropSettings, surface: AssistantSur
   surface,
   // Only whether each FX desk background is on. Their engine parameters are not
   // evidence of anything and would spend the budget the projects need.
-  backdrops: { nbody: settings.nbody.enabled, fluid: settings.fluid.enabled },
+  backdrops: { nbody: settings.nbody.enabled, fluid: settings.fluid.enabled, drawing: settings.drawing.enabled },
   allowedLinks: Array.from(allowedLinks),
   chapters: JOURNEY_STAGES.map((stage) => stage.id),
   apps: workstationApps.map((app) => app.id),

@@ -108,8 +108,10 @@ flow-shop sequencing model and a contained drop test. The Estate window shows
 Sample Town N5, a generated sample HDB neighbourhood, as a duotone still render
 with a text registry of its fourteen buildings, and a 3D viewer to orbit it,
 fly to a building, open one storey of it as a cut plan, and walk in through its
-void decks, stairs and lifts or straight into a room picked on the plan. The FX panel can switch on two desk backdrops, an N-body
-gravity field and a fluid; both are off at boot.
+void decks, stairs and lifts or straight into a room picked on the plan. The desk itself carries the Estate drawing set, on at
+boot: plans of Sample Town N5 drawn sheet by sheet on the desk's grid behind the windows, stacked into a block and set into the
+aerial view. The FX panel can switch it off, and can switch on two more desk backdrops, an N-body gravity field and a fluid;
+both are off at boot.
 
 **Key characteristics:**
 
@@ -175,7 +177,13 @@ scroller of its own that chains to the panel at either end (no
 `overscroll-behavior`), so a wheel over it still reaches BUILDINGS. Below 620px
 of window width the panel stacks under the stage. A window's body may carry a hoist rig across its top; hoisted cards
 (`[data-hoist]`) hang from it. The desk carries a 24px minor and 120px major
-grid, the desk shortcuts and the title-block plate.
+grid, the desk shortcuts and the title-block plate. The grid is also the drawing
+set's scale: a sheet's origin sits on a grid crossing and one square is a whole
+number of metres (1 m at 24 px/m, up to 40 m a square for the site plan), so the
+desk's grid is the drawing's grid. Finished sheets take only the free rectangles
+the windows leave (11 × 8 squares at least) and read there behind them; the film
+of sheets plays when the desk is uncovered (DESK, or the last window closed),
+and the title plate's SHEET row then names the sheet.
 
 The mobile Field Index is a single column: status bar, search, kind chips, the
 grouped registry rows (each expands in place), and a contact tab bar fixed to
@@ -205,6 +213,11 @@ four `<i class="corner tl|tr|bl|br">` children (the `Corners` helper in
 
 **The Geometry Must Measure Rule.** Lines, ticks, dimension marks and hatching
 must measure or label something: a time axis, a blast radius, a field of view.
+The drawing set keeps to it: every line is a surface, a level or a measurement in
+the data; a dimension whose value cannot be placed is not drawn; stairs, lift cores
+and the level ruler are labelled where the scale leaves room (the ruler tags its
+ground, typical and roof levels and ticks every floor between); and it draws no
+hatching at all (that would claim a material the data does not hold).
 
 ## Components
 
@@ -328,7 +341,8 @@ the FX "Pause all motion").
     poster it fades from. That is accepted rather than holding the poster,
     which at min would never give way; trees within 15 m of the camera are
     drawn whole there too, crowns on stubs beyond. While the Estate is in use (live, focused, no panel open) the desk
-    backdrops hold still and their caption says so ("HELD · ESTATE").
+    backdrops hold still and say so: the N-body and smoke caption reads "HELD · ESTATE",
+    the drawing set's line on the title plate "· HELD".
     `?estate-bench=1` (`=max` maximised) is a debug mode that drives the
     camera by itself and shows the stats row; nothing in the UI links to it;
   - **one palette:** every 3D material role maps onto the design tokens
@@ -343,15 +357,20 @@ the FX "Pause all motion").
 
 FX and AI are docks at the bottom corners that open labelled dialogs with a
 focus trap. FX holds Pause all motion, sound cues (muted until opted in) and
-the two desk backdrops; the backdrops are desktop-only and paint behind every
-window with `pointer-events: none`. The assistant answers from the page state
+the three desk backgrounds (the Estate drawing set, on; N-body and smoke, off);
+the backgrounds are desktop-only and paint behind every window with
+`pointer-events: none`. The assistant answers from the page state
 and opens windows through `dispatchWorkbenchOpen`.
 
 ### Motion
 
 Motion explains state: windows swing on their rigs, lab results transition.
 Reading copy never animates. Under reduced motion or Pause all motion every
-loop halts and the labs resolve straight to their end state.
+loop halts and the labs resolve straight to their end state. The drawing set is
+the one ambient motion: a sheet is drawn in (or faded, wiped, flooded) and then
+held as a finished drawing with no frames requested; its labels and chip are set
+whole. Halted, it finishes the sheet it is on in one paint and holds it, and
+under reduced motion or Data Saver it is one finished still from the start.
 
 ## Do's and Don'ts
 

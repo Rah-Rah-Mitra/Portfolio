@@ -168,6 +168,8 @@ const EffectsLabPanel: React.FC = () => {
     : enabled && gpuClaimed && !narrow ? `On · ${BACKDROP_YIELD_HOLD}` : undefined);
   // The Estate drawings still draw on Data Saver and reduced motion, as one finished sheet (lib/drawings/policy.ts).
   const drawingHold = backdropHold && policy.reason !== 'query' ? backdropHold.replace('held', 'still') : backdropHold;
+  // The intro says they are on only where they can be: not on the phone registry, not under ?mode=scan.
+  const drawingShown = drawing.enabled && !narrow && policy.reason !== 'query';
   const motionNote = enhancements.motionPaused
     ? 'Paused. Window rigs, Systems Lab mechanisms and the desk backgrounds hold their current frame; the labs skip straight to their end state, and the Estate camera’s flights, lift fades and stair climbs cut to the end.'
     : reducedMotion
@@ -183,7 +185,7 @@ const EffectsLabPanel: React.FC = () => {
             <div><h2 id="effects-title">Effects lab</h2><p className="panel-context">Optional interaction layer</p></div>
             <button type="button" onClick={() => close('close_button')}>Close</button>
           </header>
-          <p className="panel-intro">Everything here is off until you turn it on. A reduced-motion setting on your device always wins.</p>
+          <p className="panel-intro">{drawingShown ? 'The Estate drawings are on; everything else here is off until you turn it on.' : 'Everything here is off until you turn it on.'} A reduced-motion setting on your device always wins.</p>
 
           <div className="lab-sections">
             <section aria-labelledby="fx-motion-title">

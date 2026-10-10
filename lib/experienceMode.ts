@@ -8,8 +8,9 @@ export interface ExperienceCapabilities {
 /**
  * How much optional weight the page may carry. The desk backdrops and the
  * Estate window read allowHeavyAssets (false for Save-Data and for reduced
- * motion: the Estate then waits for a click); audio reads lowMotion and the
- * Save-Data capability.
+ * motion: the Estate then waits for a click, N-body and smoke never mount, and
+ * the desk drawing set is one finished still — lib/drawings/policy.ts reads
+ * `reason`); audio reads lowMotion and the Save-Data capability.
  *
  * There is no WebGL probe here any more. It existed to guard a WebGL world the
  * site no longer ships, and the GPU surfaces left — the desk backdrops and the

@@ -2,7 +2,9 @@
 // window. While the Estate is live, focused, on screen and under no modal panel,
 // it claims the GPU, and a mounted backdrop yields: it keeps its context and its
 // last frame but stops animating (desktopBackgroundPolicy 'yielded'), so the
-// estate's frame budget is not shared with smoke behind the window.
+// estate's frame budget is not shared with smoke behind the window. The desk
+// drawing set (Canvas2D, not WebGL) yields too: its film subscribes here itself
+// and cancels its frame inside the claim's own call.
 //
 // Claims are named, so two holders cannot release each other's, and every
 // change is announced on window as `portfolio:gpu-claim`. Browser-only in

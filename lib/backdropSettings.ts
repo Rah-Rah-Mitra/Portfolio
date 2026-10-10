@@ -4,7 +4,9 @@ import type { FluidPreferences, NBodyPreferences } from '../types';
 // used to live in the (retired) appearance system; they live here now, beside the
 // effects settings that own them. Both are OFF at boot: the e2e boot state is
 // pinned. The third, the Estate drawing set (docs/portfolio/desk-drawing-set.md),
-// has no parameters, only its switch.
+// has no parameters, only its switch, and is ON at boot: it draws on the desk
+// behind the windows, and holds still rather than turning off where the other
+// two never mount (Data Saver, reduced motion).
 
 export const defaultNBodyPreferences: NBodyPreferences = {
   preset: 'galaxy',
@@ -44,5 +46,5 @@ export type BackdropSettings = {
 export const defaultBackdropSettings: BackdropSettings = {
   nbody: { enabled: false, ...defaultNBodyPreferences },
   fluid: { enabled: false, ...defaultFluidPreferences },
-  drawing: { enabled: false },
+  drawing: { enabled: true },
 };

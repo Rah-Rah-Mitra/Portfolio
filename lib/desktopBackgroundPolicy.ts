@@ -1,6 +1,11 @@
 // Policy for the two desk backdrops (N-body gravity field, fluid smoke) that
-// the FX panel switches on behind the desktop workbench. Everything here but
-// readBackdropPalette() is pure, so the rules are unit-tested without a DOM.
+// the FX panel switches on behind the desktop workbench. The third desk
+// background, the Estate drawing set, is on at boot and has its own rules
+// (lib/drawings/policy.ts): it holds still where these two never mount. Its
+// layer chunk is this module's only reader besides the tests; the FX panel's
+// hold wording lives in lib/backdropHold.ts (main bundle), re-exported here.
+// Everything here but readBackdropPalette() is pure, so the rules are
+// unit-tested without a DOM.
 //
 // Two separate questions per engine:
 //  - mount:   does the engine exist at all? Only while its FX toggle is on, and

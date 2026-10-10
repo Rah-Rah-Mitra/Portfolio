@@ -94,6 +94,10 @@ afterEach(() => {
   document.documentElement.style.removeProperty('--color-accent-700');
 });
 
+// The Estate drawing set is on by default; these cases are about the other two,
+// so they start from every backdrop off (the drawing's own: desk-drawing.dom).
+const allOff: BackdropSettings = { ...defaultBackdropSettings, drawing: { enabled: false } };
+
 const withSettings = (settings: BackdropSettings) => (
   <EffectsContext.Provider value={{ settings } as never}>
     <main data-desk><DeskBackdrop /></main>
@@ -101,22 +105,30 @@ const withSettings = (settings: BackdropSettings) => (
 );
 
 describe('DeskBackdrop host', () => {
-  it('renders nothing while both effects are off, or with no FX provider at all', () => {
-    expect(render(withSettings(defaultBackdropSettings)).container.querySelector('main')!.childElementCount).toBe(0);
+  it('renders nothing while every backdrop is off, or with no FX provider at all', () => {
+    expect(render(withSettings(allOff)).container.querySelector('main')!.childElementCount).toBe(0);
     cleanup();
     expect(render(<main data-desk><DeskBackdrop /></main>).container.querySelector('main')!.childElementCount).toBe(0);
     expect(WorkerStub.instances).toHaveLength(0);
   });
 
+  it('on the shared defaults mounts the drawing’s hosts and neither engine', async () => {
+    const { container } = render(withSettings(defaultBackdropSettings));
+    await waitFor(() => expect(container.querySelector('.wb-drawing')).not.toBeNull());
+    expect(container.querySelector('.wb-backdrop')).toBeNull();
+    expect(container.querySelector('canvas[data-backdrop]')).toBeNull();
+    expect(WorkerStub.instances).toHaveLength(0);
+  });
+
   it('never takes the N-body lease on the light policy', () => {
     policy.allowHeavyAssets = false;
-    const { container } = render(withSettings({ ...defaultBackdropSettings, nbody: { ...defaultBackdropSettings.nbody, enabled: true } }));
+    const { container } = render(withSettings({ ...allOff, nbody: { ...defaultBackdropSettings.nbody, enabled: true } }));
     expect(container.querySelector('.wb-backdrop')).toBeNull();
     expect(WorkerStub.instances).toHaveLength(0);
   });
 
   it('lazy-mounts the N-body engine behind an aria-hidden layer with a plain-text caption', async () => {
-    const { container } = render(withSettings({ ...defaultBackdropSettings, nbody: { ...defaultBackdropSettings.nbody, enabled: true } }));
+    const { container } = render(withSettings({ ...allOff, nbody: { ...defaultBackdropSettings.nbody, enabled: true } }));
     await waitFor(() => expect(WorkerStub.instances).toHaveLength(1));
     const layer = container.querySelector('.wb-backdrop')!;
     expect(layer.getAttribute('aria-hidden')).toBe('true');
@@ -127,7 +139,7 @@ describe('DeskBackdrop host', () => {
   });
 
   it('yields to the Estate window: a claim holds a live field (HELD · ESTATE), a release resumes it', async () => {
-    const { container } = render(withSettings({ ...defaultBackdropSettings, nbody: { ...defaultBackdropSettings.nbody, enabled: true } }));
+    const { container } = render(withSettings({ ...allOff, nbody: { ...defaultBackdropSettings.nbody, enabled: true } }));
     await waitFor(() => expect(WorkerStub.instances).toHaveLength(1));
     const state = () => container.querySelector('[data-backdrop-state]');
     expect(state()?.getAttribute('data-backdrop-state')).toBe('running');

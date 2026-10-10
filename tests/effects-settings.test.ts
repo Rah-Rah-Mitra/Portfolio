@@ -3,12 +3,12 @@ import { applyEffectPatch, defaultSettings, sanitizeEffectPatch } from '../conte
 import { defaultBackdropSettings } from '../lib/backdropSettings';
 
 describe('FX backdrop settings', () => {
-  it('boots with N-body and smoke off, on the shared defaults', () => {
+  it('boots with N-body and smoke off and the Estate drawings on, on the shared defaults', () => {
     expect(defaultSettings).toBe(defaultBackdropSettings);
     expect(Object.keys(defaultSettings)).toEqual(['nbody', 'fluid', 'drawing']);
     expect(defaultSettings.nbody.enabled).toBe(false);
     expect(defaultSettings.fluid.enabled).toBe(false);
-    expect(defaultSettings.drawing.enabled).toBe(false);
+    expect(defaultSettings.drawing.enabled).toBe(true);
   });
 
   it('takes only the Estate drawings’ switch: the drawing set has no parameters', () => {

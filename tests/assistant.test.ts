@@ -40,6 +40,7 @@ describe('portfolio AI commands', () => {
       const response = localAgent(prompt);
       expect(response.reply, prompt).toMatch(/Pause all motion/);
       expect(response.reply, prompt).toMatch(/N-body gravity field/);
+      expect(response.reply, prompt).toMatch(/drawing set[\s\S]*on by default/i);
       expect(response.commands, prompt).toEqual([]);
     }
     // lib/experienceMode.ts still honours ?mode=scan (links to it exist), and the

@@ -9,6 +9,7 @@
     "api": "node server.mjs",
     "build": "vite build && node scripts/prerender-semantic.mjs && node scripts/check-bundle.mjs",
     "snapshot": "node scripts/export-portfolio-snapshot.mjs",
+    "drawings": "node scripts/drawings/export.mjs",
     "resume:lint": "node scripts/resume/lint_pool.mjs",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",

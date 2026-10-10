@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -8,7 +9,7 @@ import ts from 'typescript';
 import { normalizePath, resolveConfig, type UserConfig } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  BENCH_MARKER, ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, catalogueUrls, checkBundle, checkEstateCatalogue, findEntryScript,
+  BENCH_MARKER, ENGINE_MARKERS, MAIN_BASELINE, MAIN_CHUNK_LIMIT, MAIN_LIMIT, catalogueUrls, checkBundle, checkDrawingSet, checkEstateCatalogue, findEntryScript,
   readEngineBudgets, staticImports,
 } from '../scripts/check-bundle.mjs';
 import viteConfig from '../vite.config';
@@ -330,6 +331,68 @@ describe('build hygiene', () => {
     }
   });
 
+  it('fails the build on a stale desk drawing set: another pack, another generator, or a dev pack on Vercel or CI', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'check-bundle-drawings-'));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const dist = path.join(dir, 'dist');
+      const catalogueFile = path.join(dir, 'catalogue.generated.ts');
+      const siteFile = path.join(dir, 'site.generated.ts');
+      const generatorFile = path.join(dir, 'build.ts');
+      const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+      const generator = 'export const build = 1;\nexport const two = 2;\n';
+      await writeFile(generatorFile, generator);
+      await writeFile(catalogueFile, 'export const ESTATE_CATALOGUE = {\n  edition: "v1.2",\n  packUrl: "/estate/v1.2/pack.0000aaaa.json",\n  commit: "abc123def",\n  dev: false,\n} as const;\n');
+      await mkdir(path.join(dist, 'estate', 'v1.2'), { recursive: true });
+      await writeFile(path.join(dist, 'estate', 'v1.2', 'pack.0000aaaa.json'), '{"pack":1}');
+      const site = (o: Partial<Record<'packName' | 'packSha256' | 'edition' | 'commit' | 'generatorDigest', string>> & { dev?: boolean } = {}) => [
+        'export const DRAWING_SOURCE: DrawingSource = {',
+        `  packName: "${o.packName ?? 'pack.0000aaaa.json'}",`,
+        `  packSha256: "${o.packSha256 ?? sha('{"pack":1}')}",`,
+        `  edition: "${o.edition ?? 'v1.2'}",`,
+        `  commit: "${o.commit ?? 'abc123def'}",`,
+        `  dev: ${o.dev ?? false},`,
+        `  generatorDigest: "${o.generatorDigest ?? sha(generator)}",`,
+        '};',
+      ].join('\n');
+      const check = async (text: string, env: Record<string, string> = {}) => {
+        await writeFile(siteFile, text);
+        return checkDrawingSet(dist, { siteFile, catalogueFile, generatorFile, env });
+      };
+      expect(await check(site())).toEqual([]);
+      expect(await check(site({ packName: 'pack.1111bbbb.json' }))).toEqual([expect.stringMatching(/generated from pack\.1111bbbb\.json/)]);
+      expect(await check(site({ packSha256: sha('another pack') }))).toEqual([expect.stringMatching(/packSha256 does not match/)]);
+      expect(await check(site({ commit: 'fff' }))).toEqual([expect.stringMatching(/commit fff is not the catalogue's/)]);
+      expect(await check(site({ generatorDigest: sha('an older generator') }))).toEqual([expect.stringMatching(/build\.ts changed/)]);
+      // The digest is of the generator with LF line endings, whatever the checkout wrote.
+      await writeFile(generatorFile, generator.replace(/\n/g, '\r\n'));
+      expect(await check(site())).toEqual([]);
+      // A dev set builds locally, never on Vercel or CI.
+      expect(await check(site({ dev: true }))).toEqual([]);
+      expect(await check(site({ dev: true }), { VERCEL: '1' })).toEqual([expect.stringMatching(/generated from a dev pack/)]);
+      expect(await check(site({ dev: true }), { CI: 'true' })).toHaveLength(1);
+    } finally {
+      log.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('checks the committed drawing set against the committed pack and generator', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'check-bundle-drawings-real-'));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      // The real files, with the pack where the build puts it.
+      const catalogue = await read('lib/estate/catalogue.generated.ts');
+      const packUrl = /packUrl: "([^"]+)"/.exec(catalogue)![1];
+      await mkdir(path.dirname(path.join(dir, packUrl)), { recursive: true });
+      await writeFile(path.join(dir, packUrl), await readFile(path.join(root, 'public', packUrl)));
+      expect(await checkDrawingSet(dir, { env: { CI: 'true' } })).toEqual([]);
+    } finally {
+      log.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('reads both engine budgets from packBudgets.json and refuses a missing one', async () => {
 
     const budgets = await readEngineBudgets();
@@ -355,6 +418,7 @@ describe('build hygiene', () => {
       '*.glb binary',
       '*.gz binary',
       'lib/estate/catalogue.generated.ts text eol=lf',
+      'lib/drawings/**/*.generated.ts text eol=lf',
     ]));
     const immutable = [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }];
     const vercel = JSON.parse(await read('vercel.json')) as { headers: { source: string }[] };

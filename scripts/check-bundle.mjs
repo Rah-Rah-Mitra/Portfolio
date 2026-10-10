@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { realpathSync } from 'node:fs';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -65,6 +66,53 @@ export const checkEstateCatalogue = async (distDirectory, { catalogueFile = CATA
     failures.push(`${path.basename(catalogueFile)} was generated from a dev pack (dev: true): regenerate it from the published release pack before this deploys`);
   }
   console.log(`estate catalogue: ${urls.length} URLs in the build${/^\s*dev: true,/m.test(text) ? ' (DEV catalogue: never merge)' : ''}`);
+  return failures;
+};
+
+const DRAWING_SITE_FILE = path.resolve(import.meta.dirname, '..', 'lib', 'drawings', 'site.generated.ts');
+const DRAWING_GENERATOR_FILE = path.resolve(import.meta.dirname, 'drawings', 'build.ts');
+
+const quoted = (text, key) => text.match(new RegExp(`\\b${key}: "([^"]*)"`))?.[1];
+
+/**
+ * The desk drawing set's deploy gate (docs/portfolio/desk-drawing-set.md §4).
+ * lib/drawings/*.generated.ts are generated from the committed estate pack by
+ * scripts/drawings/build.ts (npm run drawings), and Vercel runs only this build:
+ * tests/drawing-set.test.ts never runs on a deploy. So the build itself refuses a
+ * drawing set that was not generated from the pack it ships (its name, edition,
+ * commit and sha256), by the generator it ships (the generator's digest, with LF
+ * line endings), or from a dev pack on Vercel or CI.
+ */
+export const checkDrawingSet = async (distDirectory, {
+  siteFile = DRAWING_SITE_FILE, catalogueFile = CATALOGUE_FILE, generatorFile = DRAWING_GENERATOR_FILE, env = process.env,
+} = {}) => {
+  const failures = [];
+  const stale = 'run `npm run drawings` and commit lib/drawings with the pack';
+  const site = await readFile(siteFile, 'utf8');
+  const catalogue = await readFile(catalogueFile, 'utf8');
+  const packUrl = quoted(catalogue, 'packUrl');
+  const source = {
+    packName: quoted(site, 'packName'), packSha256: quoted(site, 'packSha256'), edition: quoted(site, 'edition'),
+    commit: quoted(site, 'commit'), generatorDigest: quoted(site, 'generatorDigest'),
+  };
+  const dev = /\bdev: true,/.test(site);
+  if (!packUrl || Object.values(source).some((value) => !value)) {
+    failures.push(`${path.basename(siteFile)} or the catalogue is missing its source fields`);
+    return failures;
+  }
+  if (source.packName !== path.posix.basename(packUrl)) failures.push(`the drawing set was generated from ${source.packName}, but the catalogue's pack is ${path.posix.basename(packUrl)}: ${stale}`);
+  if (source.edition !== quoted(catalogue, 'edition')) failures.push(`the drawing set's edition ${source.edition} is not the catalogue's: ${stale}`);
+  if (source.commit !== quoted(catalogue, 'commit')) failures.push(`the drawing set's commit ${source.commit} is not the catalogue's: ${stale}`);
+  try {
+    const pack = await readFile(path.join(distDirectory, ...packUrl.slice(1).split('/')));
+    if (createHash('sha256').update(pack).digest('hex') !== source.packSha256) failures.push(`the drawing set's packSha256 does not match ${packUrl} in the build: ${stale}`);
+  } catch {
+    failures.push(`${packUrl} is not in the build, so the drawing set cannot be checked against it`);
+  }
+  const generator = (await readFile(generatorFile, 'utf8')).replace(/\r\n/g, '\n');
+  if (createHash('sha256').update(generator).digest('hex') !== source.generatorDigest) failures.push(`scripts/drawings/build.ts changed since the drawing set was generated: ${stale}`);
+  if (dev && (env.VERCEL || env.CI)) failures.push(`${path.basename(siteFile)} was generated from a dev pack (dev: true): regenerate it from the published release pack before this deploys`);
+  console.log(`drawing set: ${source.packName}, ${source.edition} @ ${source.commit.slice(0, 7)}${dev ? ' (DEV: never merge)' : ''}`);
   return failures;
 };
 
@@ -204,9 +252,9 @@ export const checkBundle = async (distDirectory, options = {}) => {
 // but leaves argv[1] as typed, and a mismatch here would skip the check silently.
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const distDirectory = path.resolve(import.meta.dirname, '..', 'dist');
-  Promise.all([checkBundle(distDirectory), checkEstateCatalogue(distDirectory)]).then(([{ failures }, catalogue]) => {
-    for (const failure of [...failures, ...catalogue]) console.error(failure);
-    if (failures.length || catalogue.length) process.exitCode = 1;
+  Promise.all([checkBundle(distDirectory), checkEstateCatalogue(distDirectory), checkDrawingSet(distDirectory)]).then(([{ failures }, catalogue, drawings]) => {
+    for (const failure of [...failures, ...catalogue, ...drawings]) console.error(failure);
+    if (failures.length || catalogue.length || drawings.length) process.exitCode = 1;
   }).catch((error) => {
 
     console.error(error.message);

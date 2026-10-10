@@ -5,3 +5,5 @@ tests/fixtures/estate/** -text
 *.glb binary
 *.gz binary
 lib/estate/catalogue.generated.ts text eol=lf
+# The desk drawing set is generated text, compared byte for byte (tests/drawing-set).
+lib/drawings/**/*.generated.ts text eol=lf

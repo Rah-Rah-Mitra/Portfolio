@@ -602,7 +602,10 @@ real GPUs: not run here (Rahul's §12 sign-off).
 3. Copy the candidate's `release_manifest.json` beside the downloaded zips, then
    `npm run estate:pack -- --zips <downloaded> --classes poster,s0,f,d,i,w,nav,ground --out public\estate\vX.Y --release --expect-assets <candidate pack.json>`, then `--verify` (the full set, `SHIPPED_CLASSES` in `scripts/estate/check.mjs`).
 4. `git rm -r public/estate/v<old>`; exactly one version folder may exist.
-5. `npm run estate:check -- --provenance --zips <downloaded>`, then commit the
-   pack, the catalogue and the gitlink together.
+5. `npm run estate:check -- --provenance --zips <downloaded>`, then
+   `npm run drawings` (the desk drawing set is generated from the pack:
+   docs/portfolio/desk-drawing-set.md), then commit the pack, the catalogue, the
+   gitlink and `lib/drawings/**/*.generated.ts` together. tests/drawing-set.test.ts
+   and the build's checkDrawingSet fail until the drawing set matches the pack.
 6. Run the bench (above) and the e2e tour; re-pin S1–S5 in
    `tests/estate-budget.test.ts` with a reason.

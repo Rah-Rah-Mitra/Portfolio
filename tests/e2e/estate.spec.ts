@@ -227,6 +227,52 @@ test.describe('estate window — live 3D view', () => {
     expect(errors).toEqual([]);
   });
 
+  // The desk drawing set (tests/e2e/drawing.spec.ts) reads behind the boot windows at
+  // 1920 × 1080. While the live Estate holds the GPU it requests no frame of its own,
+  // even as the window is dragged over it (each drag re-fits it in one paint), and it
+  // runs again once the window closes. Its own frames are told apart by the stack.
+  test('1c · at 1920 × 1080 the desk drawing set yields to the live Estate, dragged or not, and runs again once it closes', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await countFrames(page);
+    await page.addInitScript(() => {
+      const counted = window as Window & { __drawingRaf?: number };
+      counted.__drawingRaf = 0;
+      const raf = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = (callback) => {
+        if (/drawingFilm-/.test(new Error().stack ?? '')) counted.__drawingRaf = (counted.__drawingRaf ?? 0) + 1;
+        return raf(callback);
+      };
+    });
+    const drawingFrames = () => page.evaluate(() => (window as Window & { __drawingRaf?: number }).__drawingRaf ?? 0);
+    const drawing = page.locator('.wb-drawing');
+    await openEstate(page);
+    await waitLive(page);
+    await settle(page);
+    await expect(drawing).toHaveAttribute('data-drawing-state', 'yielded');
+    const rest = [await frames(page), await drawingFrames()];
+    await page.waitForTimeout(1_000);
+    expect(await frames(page) - rest[0], 'requestAnimationFrame calls in 1 s at rest').toBe(0);
+    expect(await drawingFrames() - rest[1]).toBe(0);
+
+    const title = page.locator('[data-win="world-3d"] .wb-win-title');
+    const left = () => page.locator('section[data-win="world-3d"]').evaluate((el) => (el as HTMLElement).getBoundingClientRect().left);
+    const before = await left();
+    const box = (await title.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 200, box.y + box.height / 2, { steps: 10 });
+    await page.mouse.up();
+    await page.waitForTimeout(1_000); // past the desk watcher's 250 ms debounce
+    expect(before - await left(), 'the drag moved the window').toBeGreaterThan(150);
+    await expect(drawing).toHaveAttribute('data-drawing-state', 'yielded');
+    expect(await drawingFrames() - rest[1], 'drawing frames while the Estate holds the GPU').toBe(0);
+
+    await page.getByRole('button', { name: 'Close Estate' }).click();
+    await expect(drawing).toHaveAttribute('data-drawing-state', 'running', { timeout: 10_000 });
+    expect(errors).toEqual([]);
+  });
+
   test('2 · opens live within 30 s on stage 0 and facades only, inside the caps', async ({ page }) => {
     const errors = collectErrors(page);
     const paths = collectPaths(page);

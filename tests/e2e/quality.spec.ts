@@ -173,8 +173,10 @@ test.describe('field workbench — desktop', () => {
     expect(serious).toEqual([]);
   });
 
-  // The labs and desk backgrounds are closed at boot, so the scan above never
-  // sees them. Motion is paused first: the hoisted exhibit cards swing, and
+  // The labs and the N-body and smoke backgrounds are closed at boot, so the scan
+  // above never sees them (the Estate drawing set is on, but parks behind the boot
+  // windows at 1280 × 720; tests/e2e/drawing.spec.ts scans it drawing at 1920).
+  // Motion is paused first: the hoisted exhibit cards swing, and
   // Playwright will not click an element that is still moving.
   test('lab windows and desk backgrounds stay accessible and error-free', async ({ page }) => {
     test.setTimeout(90_000); // several axe passes over a large prerendered document

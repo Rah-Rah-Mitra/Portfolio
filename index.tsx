@@ -4,6 +4,7 @@ import { createRoot, hydrateRoot } from 'react-dom/client';
 import App from './App';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import { initAnalytics } from './lib/analytics';
+import { onCaughtError } from './lib/rootErrors';
 import './index.css';
 
 // Queue early events, then load PostHog after first interaction or a bounded idle fallback.
@@ -24,11 +25,12 @@ const application = (
 
 if (rootElement.hasChildNodes()) {
   hydrateRoot(rootElement, application, {
+    onCaughtError,
     onRecoverableError: (error, errorInfo) => {
       console.warn('[hydration]', error, errorInfo?.componentStack ?? '');
     },
   });
 } else {
-  createRoot(rootElement).render(application);
+  createRoot(rootElement, { onCaughtError }).render(application);
 }
     

@@ -12,7 +12,10 @@ class AppErrorBoundary extends React.Component<React.PropsWithChildren, AppError
     return { failed: true };
   }
 
-  componentDidCatch(error: Error): void {
+  // The one report of a failure that took the whole page down, so an error, not a
+  // warning; the root says nothing more for a boundary that reports (lib/rootErrors).
+  componentDidCatch(error: Error, info: React.ErrorInfo): void {
+    console.error('[app]', error, info.componentStack ?? '');
     captureAnalyticsException(error, { area: 'react_render' });
   }
 

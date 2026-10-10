@@ -634,7 +634,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `estate-shared-<hash>.js` in `vite.config.ts` (Rollup otherwise names it after
   whichever pure module it lists first), and the engine chunk is found by the
   module it holds, not by its facade, which Rollup drops once the bench chunk
-  imports from it. Main bundle: 506,423 / 508,834 B since the desk drawing set
+  imports from it. Main bundle: 506,606 / 508,834 B since the root's
+  `onCaughtError` (+226 B over 506,380 B, see Gotchas); 506,423 B when the desk drawing set landed
   (which moved the desk-backdrop layer and its policy out of it, −2,807 B, and
   spent 896 B on its gate, toggle, plate slot and copy); 508,334 B before, since
   the Estate became a boot window (+160 B; the P6/P7 review left it at 508,174 and the release
@@ -1229,7 +1230,7 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   (278,000); a re-pin also needs `npm run drawings` in the same commit
   (`packBudgets.json` is one of the drawing generator's sources, so the drawing
   set's digest moves); a re-pin may move them but never above the plan's 307,200 B /
-  950,000 B. The main cap is NOT re-pinnable: the main bundle is 506,423 B of
+  950,000 B. The main cap is NOT re-pinnable: the main bundle is 506,606 B of
   508,834 B. After the P6/P7 review it was 508,334 B (P6 spent ~1.3 KB: the
   `focusEstate` check, routing and dispatch in AskThePage, the phone row, the
   registry's Plan keys and the side slot; P7 8 B, the `estate_live` export; the
@@ -1237,10 +1238,21 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   layout 160 B, the Estate open at boot and its controller's phone guard); the
   desk drawing set moved the desk-backdrop layer and its policy into a lazy chunk
   (−2,807 B) and spent 896 B on its gate, FX toggle, plate slot and assistant
-  copy, so **2,411 B are left** — anything bigger goes into the controller,
+  copy (506,380 B by the time it merged); the root's `onCaughtError` and
+  `AppErrorBoundary`'s own report spent 226 B, so **2,228 B are left** — anything bigger goes into the controller,
   engine, HUD or desk-backdrop layer chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).
+- **One report per caught error.** React 19 hands every error a boundary catches
+  to the root's `onCaughtError`, whose default is `console.error` (production
+  too), and quality.spec fails on any `console.error`. `index.tsx` passes
+  `onCaughtError` from `lib/rootErrors.ts` to both `hydrateRoot` and `createRoot`:
+  silent for a boundary with a `componentDidCatch`, which reports its own failure
+  once (the desk backdrops `console.warn('[backdrop…]')`; `AppErrorBoundary`
+  `console.error('[app]')`, since the whole page is gone), one
+  `console.warn('[boundary]')` for a boundary without one. `onUncaughtError`
+  keeps React's default. A new boundary reports in `componentDidCatch`, once,
+  with a tag. Pinned by `tests/root-errors.dom.test.tsx`.
 - `npm run test:e2e` runs two Playwright projects: `chromium` (everything but the
   Estate engine) and `chromium-webgl` (`tests/e2e/estate.spec.ts` only, launched
   with `--use-angle=swiftshader --enable-unsafe-swiftshader` so headless Chromium

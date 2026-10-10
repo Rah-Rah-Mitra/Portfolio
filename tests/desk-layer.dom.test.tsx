@@ -5,6 +5,7 @@ import { defaultBackdropSettings, type BackdropSettings } from '../lib/backdropS
 import { DeskBackdrop } from '../components/workbench/DeskBackdrop';
 import { readDesk, watchDesk, type DeskSnapshot } from '../lib/drawings/deskWatch';
 import { resolveExperiencePolicy } from '../lib/experienceMode';
+import { onCaughtError } from '../lib/rootErrors';
 
 // The desk-backdrop layer as one composition: the Estate drawing beside the N-body
 // field (docs/portfolio/desk-drawing-set.md §5), and the desk watcher it runs. The
@@ -157,8 +158,8 @@ describe('the desk-backdrop layer', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const error = vi.spyOn(console, 'error');
     // React reports an error a boundary caught through the root's onCaughtError,
-    // which logs it with console.error unless the root says otherwise.
-    const caught = vi.fn();
+    // whose default is console.error: the root option index.tsx passes keeps it quiet.
+    const caught = vi.fn(onCaughtError);
     const view = render(tree(false), { onCaughtError: caught });
     await waitFor(() => expect(canvasOf(view.container)).not.toBeNull());
     const canvas = canvasOf(view.container)!;

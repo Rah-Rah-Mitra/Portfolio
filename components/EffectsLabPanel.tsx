@@ -3,7 +3,7 @@ import { useEffects, type EffectId, type EffectPatch } from '../contexts/Physics
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { track } from '../lib/analytics';
 import { describeAudioPolicy } from '../lib/audioPolicy';
-import { BACKDROP_YIELD_HOLD, describeBackdropHold } from '../lib/desktopBackgroundPolicy';
+import { BACKDROP_YIELD_HOLD, describeBackdropHold } from '../lib/backdropHold';
 import { isGpuClaimed, onGpuClaimChange } from '../lib/gpuClaim';
 import { dispatchWorkbenchOpen } from '../lib/workbench';
 import { useExperienceMode } from '../contexts/ExperienceModeContext';

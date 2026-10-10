@@ -21,8 +21,6 @@
 // (lib/gpuClaim.ts), and a mounted backdrop yields — still mounted, not
 // running. It is checked last, so every existing reason keeps its precedence.
 
-import type { ExperiencePolicy } from './experienceMode';
-
 export interface BackdropActivityInput {
   enabled: boolean;
   allowHeavyAssets: boolean;
@@ -51,28 +49,12 @@ export const resolveBackdropActivity = (input: BackdropActivityInput, leased: bo
   return { mount, running: true, reason: 'running' };
 };
 
-/**
- * The FX panel's answer to "why is the desk still plain?". On the light policy a
- * backdrop never takes a lease (above), so its toggle would read as on, with live
- * settings, over a desk that draws nothing. Worded like describeAudioPolicy.
- * null when the backdrops may mount, and for the pre-hydration static policy
- * (reason 'default'), which is never what an opened drawer sees.
- */
-export const describeBackdropHold = (policy: Pick<ExperiencePolicy, 'allowHeavyAssets' | 'reason'>): string | null => {
-  if (policy.allowHeavyAssets) return null;
-  switch (policy.reason) {
-    case 'query': return 'held: this page was opened with ?mode=scan';
-    case 'save-data': return 'held: Data Saver is on';
-    case 'reduced-motion': return 'held: your system asks for reduced motion';
-    default: return null;
-  }
-};
-
-/** The FX toggle's line while an enabled backdrop yields to the Estate window. */
-export const BACKDROP_YIELD_HOLD = 'held: the Estate window is using the GPU';
+// The FX panel's hold wording ships in the main bundle, so it lives in
+// lib/backdropHold.ts; this module (lazy, with the desk-backdrop layer) re-exports it.
+export { BACKDROP_YIELD_HOLD, describeBackdropHold } from './backdropHold';
 
 // Fluid grid sizes live here rather than in FluidField so the caption in the
-// (eagerly loaded) DeskBackdrop can name them without pulling the lazy engine
+// desk-backdrop layer (DeskBackdropLayer) can name them without pulling the lazy engine
 // chunk into the main bundle.
 export const FLUID_GRID = { balanced: 128, high: 192 } as const;
 export const FLUID_DYE = { balanced: 768, high: 1024 } as const;

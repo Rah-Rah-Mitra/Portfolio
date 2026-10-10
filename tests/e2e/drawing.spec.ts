@@ -43,6 +43,16 @@ const drawingFrames = (page: Page) => page.evaluate(() => (window as Window & { 
 const booted = (page: Page) => page.waitForFunction(() => document.readyState === 'complete' && !document.querySelector('.fi-root'), undefined, { timeout: 30_000 });
 const drawing = (page: Page) => page.locator('.wb-drawing');
 const desk = (page: Page) => page.evaluate(() => document.querySelector<HTMLButtonElement>('.wb-rail-desk')!.click());
+const traverse = (page: Page) => page.getByRole('toolbar', { name: 'Drawing sheets' });
+const sheet = (page: Page) => drawing(page).getAttribute('data-drawing-sheet');
+
+/** The station Next lands on: the first drawable one after the sheet on show (from the opening aerial, the first of all). */
+const nextStation = (page: Page) => traverse(page).evaluate((bar) => {
+  const stations = [...bar.querySelectorAll('.wb-drawing-nav-stn')];
+  const opening = /:(R0|W)$/.test(document.querySelector<HTMLElement>('.wb-drawing')!.dataset.drawingSheet ?? '');
+  const at = opening ? -1 : stations.findIndex((s) => s.hasAttribute('aria-current'));
+  return stations.find((s, i) => i > at && s.getAttribute('aria-disabled') !== 'true')?.textContent ?? null;
+});
 
 test.describe('desk drawing set', () => {
   test.describe.configure({ timeout: 90_000 });
@@ -110,6 +120,7 @@ test.describe('desk drawing set', () => {
     await page.waitForTimeout(800);
     expect(paths.filter((p) => /DrawingField-|drawingFilm-/.test(p))).toEqual([]);
     expect(await drawingFrames(page)).toBe(0);
+    await expect(page.locator('.wb-drawing-nav')).toHaveCount(0);
     await expect(page.locator('.wb-plate')).toContainText('01 OF 01 · SCALE 1:1');
     await desk(page);
     await expect(drawing(page)).toHaveAttribute('data-drawing-state', 'running', { timeout: 10_000 });
@@ -130,6 +141,9 @@ test.describe('desk drawing set', () => {
     await page.waitForTimeout(2000);
     expect(await drawingFrames(page)).toBe(0);
     expect(paths.filter((p) => /drawingFilm-/.test(p) || SHEET_CHUNK.test(p))).toEqual([]);
+    // The still has no film to step through: no traverse, no row kept for one.
+    await expect(page.locator('.wb-drawing-nav')).toHaveCount(0);
+    await expect(page.locator('.wb-drawing-chip')).not.toHaveAttribute('data-nav', /.*/);
   });
 
   for (const size of [{ width: 1920, height: 1080, chunks: 2 }, { width: 1280, height: 720, chunks: 1 }]) {
@@ -151,6 +165,7 @@ test.describe('desk drawing set', () => {
       await page.waitForTimeout(800);
       expect(paths.filter((p) => DRAWING_CHUNK.test(p) || SHEET_CHUNK.test(p))).toHaveLength(size.chunks);
       expect(paths.filter((p) => /drawingFilm-/.test(p))).toEqual([]);
+      await expect(page.locator('.wb-drawing-nav')).toHaveCount(0);
     });
   }
 
@@ -178,13 +193,116 @@ test.describe('desk drawing set', () => {
     await expect(page.locator('.wb-plate')).toContainText('01 OF 01 · SCALE 1:1');
   });
 
-  test('has no serious accessibility violations at 1920 × 1080 with the drawing on', async ({ page }) => {
+  test('has no serious accessibility violations at 1920 × 1080 with the drawing on, its traverse up and focused', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto('/');
     await booted(page);
     await expect(drawing(page)).toHaveAttribute('data-drawing-phase', 'hold', { timeout: 20_000 });
+    await expect(traverse(page)).toBeVisible();
+    await traverse(page).locator('[aria-current="step"]').focus();
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations.filter((v) => ['serious', 'critical'].includes(v.impact ?? ''))).toEqual([]);
+  });
+
+  test('at 1920 × 1080 the sheet traverse rides the chip in the drawing’s own region, over no window; Next re-issues the next sheet, then sleeps in its hold', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await countDrawingFrames(page);
+    const errors = collectErrors(page);
+    await page.goto('/');
+    await booted(page);
+    await expect(drawing(page)).toHaveAttribute('data-drawing-mode', 'reading', { timeout: 20_000 });
+    await expect(drawing(page)).toHaveAttribute('data-drawing-phase', 'hold', { timeout: 20_000 });
+    const bar = traverse(page);
+    await expect(bar).toBeVisible();
+    const place = await page.evaluate(() => {
+      const box = (el: Element) => el.getBoundingClientRect();
+      const nav = box(document.querySelector('[data-drawing-nav]')!);
+      const canvas = box(document.querySelector('canvas[data-drawing-canvas]')!);
+      const chip = box(document.querySelector('.wb-drawing-chip')!);
+      const meets = (b: DOMRect) => nav.left < b.right && b.left < nav.right && nav.top < b.bottom && b.top < nav.bottom;
+      return {
+        inside: nav.left >= canvas.left - 0.5 && nav.right <= canvas.right + 0.5 && nav.top >= canvas.top - 0.5 && nav.bottom <= canvas.bottom + 0.5,
+        onChip: [nav.left - chip.left, nav.top - chip.top, nav.width - chip.width].every((d) => Math.abs(d) < 0.5),
+        overWindow: [...document.querySelectorAll<HTMLElement>('section[data-win]')].filter((w) => w.style.display !== 'none').some((w) => meets(box(w))),
+        host: getComputedStyle(document.querySelector('.wb-drawing-nav')!).pointerEvents,
+        hidden: document.querySelector('.wb-drawing-nav')!.closest('[aria-hidden="true"]') !== null,
+      };
+    });
+    expect(place).toEqual({ inside: true, onChip: true, overWindow: false, host: 'none', hidden: false });
+    const before = await sheet(page);
+    const expected = await nextStation(page);
+    expect(expected).toMatch(/^0\d$/);
+    // A real pointer: nothing over the button may take the click.
+    await bar.getByRole('button', { name: 'Next sheet' }).click();
+    await expect(drawing(page)).not.toHaveAttribute('data-drawing-sheet', before!, { timeout: 1_500 });
+    await expect(bar.locator('[aria-current="step"]')).toHaveText(expected!, { timeout: 1_500 });
+    await expect(page.locator('.wb-plate-slot .wb-plate-lines span').first()).toHaveText(new RegExp(`^${expected} OF 0[67] · `));
+    await expect(page.locator('.wb-drawing-nav [role="status"]')).toHaveText(new RegExp(`^Sheet ${expected} of 0[67], `));
+    await expect(drawing(page)).toHaveAttribute('data-drawing-phase', 'hold', { timeout: 3_000 });
+    const frames = await drawingFrames(page);
+    await page.waitForTimeout(1000);
+    expect(await drawingFrames(page) - frames, 'drawing frames in 1 s of the hold a jump landed in').toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('the sheet traverse is one Tab stop: Tab reaches it, → moves along it, Enter jumps', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('/');
+    await booted(page);
+    await expect(drawing(page)).toHaveAttribute('data-drawing-phase', 'hold', { timeout: 20_000 });
+    await expect(traverse(page)).toBeVisible();
+    const focused = () => page.evaluate(() => {
+      const el = document.activeElement;
+      return el?.closest('[data-drawing-nav]') ? el.getAttribute('aria-label') : null;
+    });
+    let at: string | null = null;
+    for (let i = 0; i < 80 && at === null; i += 1) {
+      await page.keyboard.press('Tab');
+      at = await focused();
+    }
+    // It enters on the sheet on show.
+    expect(at).toBe(await traverse(page).locator('[aria-current="step"]').getAttribute('aria-label'));
+    await page.keyboard.press('ArrowRight');
+    const moved = await focused();
+    expect(moved).not.toBeNull();
+    expect(moved).not.toBe(at);
+    // From the last station, → is Next sheet; from any other, the next station: either jumps on Enter.
+    const before = await sheet(page);
+    if (moved !== 'Next sheet') {
+      await page.keyboard.press('End');
+      await page.keyboard.press('ArrowLeft');
+      expect(await focused()).toBe('Next sheet');
+    }
+    await page.keyboard.press('Enter');
+    await expect(drawing(page)).not.toHaveAttribute('data-drawing-sheet', before!, { timeout: 1_500 });
+    expect(await focused()).toBe('Next sheet');
+    // A second Tab leaves it: one stop.
+    await page.keyboard.press('Tab');
+    expect(await focused()).toBeNull();
+  });
+
+  test('with Pause all motion on, a jump changes the sheet in one paint: no drawing frame, the trolley’s transition off', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await countDrawingFrames(page);
+    await page.goto('/');
+    await booted(page);
+    await expect(drawing(page)).toHaveAttribute('data-drawing-phase', 'hold', { timeout: 20_000 });
+    await page.getByRole('button', { name: 'FX, open optional effects lab' }).click();
+    const fx = page.getByRole('dialog', { name: 'Effects lab' });
+    await fx.getByRole('button', { name: /^Pause all motion/ }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-motion-paused', 'true');
+    await fx.getByRole('button', { name: 'Close' }).click();
+    await expect(page.locator('.wb-plate-slot')).toContainText('· STILL');
+    const frames = await drawingFrames(page);
+    const before = await sheet(page);
+    const expected = await nextStation(page);
+    await traverse(page).getByRole('button', { name: 'Next sheet' }).click();
+    await expect(drawing(page)).not.toHaveAttribute('data-drawing-sheet', before!);
+    await expect(traverse(page).locator('[aria-current="step"]')).toHaveText(expected!);
+    await expect(page.locator('.wb-plate-slot')).toContainText('· STILL');
+    await page.waitForTimeout(500);
+    expect(await drawingFrames(page) - frames, 'drawing frames for a jump while motion is paused').toBe(0);
+    expect(await page.locator('.wb-drawing-nav-car').evaluate((car) => getComputedStyle(car).transitionDuration)).toBe('0s');
   });
 
   test('with the page’s own requestAnimationFrame unwrapped, an act still runs to its hold', async ({ page }) => {

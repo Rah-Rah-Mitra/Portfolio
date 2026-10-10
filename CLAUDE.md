@@ -769,8 +769,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   without input) and subscribes to the GPU claim, the motion switch and
   visibility itself, cancelling its frame synchronously. Building sheets load per
   hero. `checkDrawingChunks` keeps the drawing out of the main bundle and holds
-  the gzip caps (layer 4,400; layer + field 21,500; film 11,500; a building
-  4,800). **Honesty:** nothing is drawn the data does not hold (no door swings,
+  the gzip caps (layer 4,400; layer + field 24,000; film 12,800; a building
+  4,800; the last two re-pinned for the sheet traverse at 21,748 and 11,621 B
+  measured + 10 %). **Honesty:** nothing is drawn the data does not hold (no door swings,
   glazing, columns, hatch or parapets); inferences are labelled (walls as the
   poché between spaces, lift cores, massing to the RF level, on every sheet that
   draws them, aerials included); a dimension whose value cannot be placed is not
@@ -784,12 +785,23 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `fetch(`, `'/estate/'` or a hex (`tests/estate-boundary.test.ts`, "the desk
   drawing set"). DOM: `.wb-drawing` (the canvas host, before `.wb-backdrop`, so
   smoke composites over it) and `.wb-drawing-text` (labels and the opaque chip,
-  after it), both `aria-hidden`; the title plate's `.wb-plate-slot` takes the
+  after it), both `aria-hidden`; under the film a third, `.wb-drawing-nav` (after
+  the text, NOT `aria-hidden`, `pointer-events: none`, `tabIndex` −1 for focus to
+  wait on through a park): the **sheet traverse** (`drawing/SheetTraverse.tsx`,
+  field chunk, DrawingField's portal), a `role="toolbar"` on the chip's top row —
+  ‹ › a sheet, « » a building, a station per sheet with its reason in the name when
+  closed, one roving Tab stop, a focus rescue, the trolley a CSS transition the
+  motion rule stops — asking the film's `goTo` (E19 RE-ISSUE; one paint when
+  halted) and fed by its `onNav`. The film adds the row (`NAV_H`, 30 px) to the
+  chip's box only, in the margin over the chip band, never to the band the sheets
+  are measured in: shrinking that area dropped BLK 510's 3D sheets at 1280 × 720
+  (pinned in drawing-film.dom). The title plate's `.wb-plate-slot` takes the
   sheet's two caption lines and CSS hides its SHEET row only while the slot is
-  filled. Pinned by `tests/drawing-*.test.ts`, `tests/desk-drawing.dom.test.tsx`
-  and `tests/e2e/drawing.spec.ts` (1920 reading with 0 frames in a hold, DESK's
-  welcome then site plan, 1280 parked, reduced motion and Save-Data stills and
-  their downloads, `?mode=scan`, FX off, axe).
+  filled. Pinned by `tests/drawing-*.test.ts`, `tests/desk-drawing.dom.test.tsx`,
+  `tests/drawing-{film,nav}.dom.test.tsx` and `tests/e2e/drawing.spec.ts` (1920
+  reading with 0 frames in a hold, DESK's welcome then site plan, 1280 parked,
+  reduced motion and Save-Data stills and their downloads, `?mode=scan`, FX off,
+  axe, the traverse's place, pointer, keyboard and paused jumps).
 - **Motion rule.** `lib/motion.ts`: `motionHalted()` is prefers-reduced-motion OR
   the FX "Pause all motion" switch (`html[data-motion-paused="true"]`), and
   `onMotionChange()` re-syncs. Every animation loop stops, or draws one still

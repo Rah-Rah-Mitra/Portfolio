@@ -48,12 +48,51 @@ export interface FilmHost {
   credit: string;
   startHero: number;
   onWarn(error: unknown): void;
+  /** Where the sheet traverse stands and what it offers: on every shot and layout, null when parked or gone. */
+  onNav?(state: NavState | null): void;
+  /**
+   * The traverse's row over the chip, px. The chip's box grows by it into the
+   * margin above the chip band; the band the sheets are measured against does not,
+   * so every scale and the plans-only rule are what they are without the traverse.
+   */
+  navHeight?: number;
+}
+
+/** A jump the sheet traverse asks for: one sheet of the building on show, the next or previous sheet, the next or previous building. */
+export type FilmTarget = { sheet: number } | { step: 1 | -1 } | { building: 1 | -1 };
+
+export interface NavSheet {
+  no: number;
+  /** The sheet's own title, as sheetsFor writes it. */
+  title: string;
+  /** A jump may land on it: its cycle shows it here and it can be drawn at this size. */
+  available: boolean;
+  /** Why it is not available ('not drawn at this size', 'still loading'); '' where it is. */
+  reason: string;
+}
+
+export interface NavState {
+  hero: string;
+  /** The building's short name: 'BLK 501'. */
+  name: string;
+  sheets: NavSheet[];
+  /** The sheet on show (the aerial during the welcome and R0; the sheet before it during a dolly). */
+  current: number;
+  /** The chip's box, desk px: the traverse rides its top row. */
+  chip: { x: number; y: number; w: number };
+  mode: 'desk' | 'reading';
+  /** A jump the visitor asked for has landed (the film's own advance never sets it). */
+  jump: boolean;
 }
 
 export interface Film {
   setDesk(snapshot: DeskSnapshot): void;
   setFx(fx: boolean): void;
   input(): void;
+  /** Jump (docs/portfolio/desk-drawing-set.md §3 RE-ISSUE, §4 "The sheet traverse"); a no-op while parked. */
+  goTo(target: FilmTarget): void;
+  /** Load the previous building's sheets ahead of a press (the next one's load as each cycle starts). */
+  prefetch(): void;
   dispose(): void;
 }
 
@@ -81,9 +120,12 @@ interface Layout {
 }
 
 export const createFilm = (host: FilmHost): Film => {
-  const { canvas, scene } = host;
+  const { canvas, scene, onNav } = host;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('drawing film: no 2D context');
+  // The traverse rides the chip's top row (index.css .wb-drawing-chip[data-nav]), which the chip's box adds.
+  if (onNav) host.chip.dataset.nav = '';
+  const navRow = host.navHeight ?? 0;
   const cache = { lines: document.createElement('canvas'), mask: document.createElement('canvas') };
   let dpr = 1;
   /** The device pixel ratio the backing store was last sized for. */
@@ -102,6 +144,16 @@ export const createFilm = (host: FilmHost): Film => {
   let run: Run | null = null;
   let shot: Shot | null = null;
   let sheetDef: SheetDef | null = null;
+  /** The building on show: `hero` runs ahead of it while the next building's sheets load. */
+  let shownHero = hero;
+  /** The last jump asked for: a step goes on from it, so quick presses advance one sheet each. */
+  let navTarget: { hero: number; sheet: number } | null = null;
+  /** The latest jump: a building whose sheets arrive after a later press is dropped. */
+  let jumps = 0;
+  let nav: NavState | null = null;
+  let chipAt: Box = { x: 0, y: 0, w: 0, h: 0 };
+  /** Shots skipped since one was drawn: a whole lap of the estate with nothing to draw ends the film. */
+  let skipped = 0;
   let disposed = false;
   let fx = false;
   let slow = false;
@@ -215,6 +267,14 @@ export const createFilm = (host: FilmHost): Film => {
     ctx.restore();
   };
 
+  const placeChip = () => {
+    const { style } = host.chip;
+    chipAt = layout!.chip;
+    style.left = `${chipAt.x}px`;
+    style.top = `${chipAt.y}px`;
+    style.maxWidth = `${chipAt.w}px`;
+  };
+
   const setChip = (lines: string[] | null) => {
     const chip = host.chip;
     if (!lines || !layout) {
@@ -223,9 +283,7 @@ export const createFilm = (host: FilmHost): Film => {
       return;
     }
     chip.hidden = false;
-    chip.style.left = `${layout.chip.x}px`;
-    chip.style.top = `${layout.chip.y}px`;
-    chip.style.maxWidth = `${layout.chip.w}px`;
+    placeChip();
     chip.replaceChildren(...lines.map((text, i) => {
       const div = document.createElement('div');
       div.className = i === 0 ? 'wb-drawing-chip-title' : 'wb-drawing-chip-line';
@@ -240,10 +298,10 @@ export const createFilm = (host: FilmHost): Film => {
     return 'LIVE';
   };
 
+  // The welcome has no sheet: the plate names the estate's aerial.
   const syncPlate = () => {
     if (!layout || !run) { host.setPlate(null); return; }
-    const site = scene.sites.find((s) => s.id === HERO_ORDER[hero]) ?? null;
-    host.setPlate(plateLines(shot?.id === 'W' ? null : site, shot?.id === 'W' ? null : sheetDef, plateState()));
+    host.setPlate(plateLines(scene.sites.find((s) => s.id === HERO_ORDER[shownHero]) ?? null, sheetDef, plateState()));
   };
 
   // ---- data ------------------------------------------------------------------------------
@@ -291,6 +349,8 @@ export const createFilm = (host: FilmHost): Film => {
     if (!layout) return;
     layout = layoutFor(layout.region);
     leaveWait();
+    // Its plans can be placed now: the traverse's stations for them open.
+    emit();
   };
 
   // ---- layout ----------------------------------------------------------------------------
@@ -336,7 +396,7 @@ export const createFilm = (host: FilmHost): Film => {
       const need = tallestChip(lay);
       if (need <= chipH) return lay;
       // Unsettled after four: the chip still gets the band its own facts need.
-      if (round === 3) return { ...lay, chip: chipBox(region, need) };
+      if (round === 3) return { ...lay, chip: chipBox(region, need + navRow) };
       chipH = need;
     }
   };
@@ -356,7 +416,9 @@ export const createFilm = (host: FilmHost): Film => {
     return {
       region,
       canvas: { x: region.x, y: region.y, w: region.w, h: region.h },
-      chip: chipBox(region, chipH),
+      // The traverse's row stands in the margin between the area and the chip band (a
+      // square and 8 px), so the area is the same with the traverse as without it.
+      chip: chipBox(region, chipH + navRow),
       plan,
       site: sitePlacement,
       area: drawingArea(region, { chip: chipH + 8, chipWidth: chipW, dims: false }),
@@ -980,38 +1042,62 @@ export const createFilm = (host: FilmHost): Film => {
       cursor += 1;
       s = cycle[cursor];
     }
-    const site = heroSite();
-    const def = s.sheet >= 0 ? sheetsFor(site)[s.sheet] : null;
-    let made: Run | null = null;
-    try {
-      made = makeRun(s, def);
-    } catch (error) {
-      host.onWarn(error);
-    }
+    const def = s.sheet >= 0 ? sheetsFor(heroSite())[s.sheet] : null;
+    const made = makeSafe(s, def);
+    // Nothing to draw here (no room at a readable scale): straight on to the next shot.
+    // Not through a 0 ms hold, which a film that may not move would never end. A whole
+    // lap of the estate with nothing to draw leaves the desk blank until it changes.
     if (!made) {
-      // Nothing to draw here (no room at a readable scale): go on.
-      return { kind: 'hold', id: `skip:${s.id}`, ms: 0, rest: false };
+      if (++skipped < 160) return nextStep();
+      skipped = 0;
+      blank();
+      return null;
     }
-    // The camera moves start from where the last shot's view stood.
-    shot = s;
-    sheetDef = def;
-    run = made;
-    lastView = viewForShot(s, def);
-    host.labels.replaceChildren();
-    if (s.id !== 'S2') setChip(chipLines(s.id === 'W' ? null : def, layout));
-    syncPlate();
-    host.setAttrs({ sheet: `${site.id}:${s.id}`, mode });
-    const current = made;
+    skipped = 0;
+    navTarget = null;
+    show(s, def, made);
     const steps: Step[] = [];
     if (s.arrive > 0) {
       steps.push({
         kind: 'act', id: `${s.id}:arrive`, ms: s.arrive, draw: (ms) => {
           measureFrame();
-          current.arrive(ms);
-          if (ms >= s.arrive) showLabels(current.labels);
+          made.arrive(ms);
+          if (ms >= s.arrive) showLabels(made.labels);
         },
       });
     }
+    queue = [...steps, ...after(s, made)];
+    return queue.shift() ?? { kind: 'hold', id: 'empty', ms: 0, rest: false };
+  };
+
+  const makeSafe = (s: Shot, def: SheetDef | null): Run | null => {
+    try {
+      return makeRun(s, def);
+    } catch (error) {
+      host.onWarn(error);
+      return null;
+    }
+  };
+
+  /** A shot's run goes up: the chip, plate and traverse name it, and the next camera move starts from its view. */
+  const show = (s: Shot, def: SheetDef | null, made: Run, jump = false) => {
+    shot = s;
+    // A dolly between sheets keeps the sheet before it: its chip, plate and station stay
+    // up, the chip placed afresh (a park hid it, a relayout moved its box).
+    if (s.id !== 'S2') sheetDef = def;
+    setChip(chipLines(sheetDef, layout!));
+    run = made;
+    shownHero = hero;
+    lastView = viewForShot(s, def);
+    host.labels.replaceChildren();
+    syncPlate();
+    host.setAttrs({ sheet: `${heroId()}:${s.id}`, mode });
+    emit(jump);
+  };
+
+  /** A shot's hold and exit, once it has arrived. */
+  const after = (s: Shot, made: Run): Step[] => {
+    const steps: Step[] = [];
     if (s.hold > 0) steps.push({ kind: 'hold', id: `${s.id}:hold`, ms: s.hold });
     if (s.exit > 0) {
       steps.push({
@@ -1019,17 +1105,163 @@ export const createFilm = (host: FilmHost): Film => {
           // A halt mid-fade paints the act's end: the sheet stays up, finished, under the
           // chip and plate that name it, rather than faded out from under them.
           if (ms >= s.exit && !scheduler.isRunning) {
-            current.finished(1);
-            showLabels(current.labels);
+            made.finished(1);
+            showLabels(made.labels);
             return;
           }
           host.labels.replaceChildren();
-          current.finished(1 - ease.cubic(ms / s.exit));
+          made.finished(1 - ease.cubic(ms / s.exit));
         },
       });
     }
-    queue = steps;
-    return queue.shift() ?? { kind: 'hold', id: 'empty', ms: 0, rest: false };
+    return steps;
+  };
+
+  // ---- the sheet traverse -------------------------------------------------------------------
+
+  /**
+   * Why a jump may not land on each of the hero's sheets, '' where it may: its cycle
+   * shows the sheet here (R0's aerial is R7's too) and it can be drawn at this size,
+   * or its building's sheets are still on their way. A plans-only cycle leaves out
+   * its 3D sheets because they would draw under 3 px/m: that is a size too.
+   */
+  const stations = (): string[] => {
+    const site = heroSite();
+    const shots = (mode === 'desk' ? deskCycle : readingCycle)(site, factsFor(), false);
+    const size = 'not drawn at this size';
+    return sheetsFor(site).map((def, i) => {
+      if (!shots.some((s) => s.sheet === i)) return size;
+      if (def.kind === 'site') return layout!.site ? '' : size;
+      if (def.kind === 'aerial') return '';
+      if (!sheets.has(heroId())) return 'still loading';
+      return (def.kind === 'plan' ? layout!.plan && sheetOf(def.key) : heroPlates().length) ? '' : size;
+    });
+  };
+
+  const emit = (jump = false) => {
+    if (!onNav || hero !== shownHero || !run) return;
+    const site = heroSite();
+    const why = stations();
+    const defs = sheetsFor(site);
+    onNav(nav = {
+      hero: site.id, name: site.short, mode, jump, chip: chipAt,
+      sheets: defs.map((d, i) => ({ ...d, available: !why[i], reason: why[i] })),
+      current: (sheetDef ? sheetDef.no : defs.length) - 1,
+    });
+  };
+
+  /** `sheet` if a jump may land on it, else the next one that way; -1 for none (past an end, why[s] is undefined). */
+  const pick = (why: string[], sheet: number, dir: number): number => {
+    let s = Math.min(sheet, why.length - 1);
+    while (why[s]) s += dir;
+    return why[s] === '' ? s : -1;
+  };
+
+  /**
+   * E19 RE-ISSUE to building `h`'s sheet, its sheets here: the canvas's pixels fade
+   * out, then the sheet comes in finished and the film goes on from it, its hold,
+   * its exit and the rest of its cycle. A film that may not move shows it in one
+   * paint and goes on to its hold when it may.
+   */
+  const apply = (h: number, sheet: number, dir: number) => {
+    if (!nav) return;
+    if (h !== hero) {
+      hero = h;
+      cycle = [];
+      layout = layoutFor(layout!.region);
+    }
+    if (!cycle.length) newCycle();
+    const why = stations();
+    // A step searches its own way; a building keeps the sheet, else takes the nearest, below first.
+    let s = pick(why, sheet, dir || -1);
+    if (s < 0) s = pick(why, sheet, -dir || 1);
+    // The last shot of that sheet (R7, not R0's opening); a dolly's sheet is -1.
+    let i = cycle.length;
+    while (i-- > 0 && cycle[i].sheet !== s);
+    if (i < 0 || s < 0) return;
+    const target = cycle[i];
+    navTarget = { hero, sheet: s };
+    cursor = i;
+    lastView = null;
+    host.labels.replaceChildren();
+    // The old shot's hold and exit go with it: a sheet that cannot be drawn after all leaves the film to go on to the next shot.
+    queue = [];
+    if (scheduler.isRunning) {
+      // The old sheet is not drawn again (hero may have moved on): its pixels fade where they stand.
+      let left = 1;
+      queue = [{
+        kind: 'act', id: 'reissue:out', ms: EFFECT_MS.reissueOut, draw: (ms) => {
+          const next = 1 - ease.cubic(ms / EFFECT_MS.reissueOut);
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.globalAlpha = 1 - next / left;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          prepare(ctx);
+          left = next;
+          if (ms >= EFFECT_MS.reissueOut) land(target);
+        },
+      }];
+    } else land(target);
+    scheduler.restart();
+    // The film's own input listener lets presses on the traverse by: this is their one wake.
+    scheduler.input();
+  };
+
+  /** The jump's sheet goes up: faded in while the film runs, else finished at once with its labels. */
+  const land = (s: Shot) => {
+    const def = sheetsFor(heroSite())[s.sheet];
+    const made = makeSafe(s, def);
+    // Not drawable after all (a re-layout since the press): the queue is empty, so the
+    // scheduler goes on to the next shot, which puts up its own chip, plate and traverse.
+    if (!made) return;
+    show(s, def, made, true);
+    const rest = after(s, made);
+    if (!scheduler.isRunning) {
+      made.finished(1);
+      showLabels(made.labels);
+      queue = rest;
+      return;
+    }
+    queue = [{
+      kind: 'act', id: `${s.id}:in`, ms: EFFECT_MS.reissueIn, draw: (ms) => {
+        made.finished(ease.outCubic(ms / EFFECT_MS.reissueIn));
+        if (ms >= EFFECT_MS.reissueIn) showLabels(made.labels);
+      },
+    }, ...rest];
+  };
+
+  const goTo = (t: FilmTarget) => {
+    if (!nav) return;
+    const n = HERO_ORDER.length;
+    const base = navTarget ?? { hero: shownHero, sheet: nav.current };
+    let h = base.hero;
+    let s = base.sheet;
+    let dir = 0;
+    if ('sheet' in t) {
+      // A station names a sheet of the building on show.
+      if (!nav.sheets[t.sheet].available) return;
+      h = shownHero;
+      s = t.sheet;
+    } else if ('building' in t) h = (h + t.building + n) % n;
+    else {
+      const d = t.step;
+      // The opening aerial (the welcome, R0) leads into this building's site plan.
+      if (!navTarget && d > 0 && /^(W|R0)$/.test(shot!.id)) s = -1;
+      const why = h === hero && sheets.has(heroId()) ? stations() : null;
+      dir = d;
+      s += d;
+      if (why) while (why[s]) s += d;
+      // Past either end: the next building's first sheet, or the previous one's last (pick's search finds it).
+      if (s < 0 || s >= (why ? why.length : 7)) {
+        h = (h + d + n) % n;
+        s = d > 0 ? 0 : 6;
+      }
+    }
+    const id = HERO_ORDER[h];
+    const seq = ++jumps;
+    navTarget = { hero: h, sheet: s };
+    // A building whose sheets are still on their way: the sheet on show stays up until they arrive.
+    if (sheets.has(id)) apply(h, s, dir);
+    else void loadSheets(id).then(() => { if (seq === jumps && sheets.has(id)) apply(h, s, dir); });
   };
 
   /** The view a shot ends on (the next camera move starts there). */
@@ -1109,19 +1341,30 @@ export const createFilm = (host: FilmHost): Film => {
   const stopMotion = onMotionChange(() => { flags.halted = motionHalted(); sync(); });
   const onVisibility = () => { flags.hidden = document.hidden; sync(); };
   document.addEventListener('visibilitychange', onVisibility);
-  const onInput = () => scheduler.input();
+  // A press on the traverse wakes the film through its jump, once, not here as well.
+  const onInput = (event: Event) => {
+    const target = event.target as Element;
+    if (!(target.closest && target.closest('[data-drawing-nav]'))) scheduler.input();
+  };
   const inputs = ['pointerdown', 'keydown', 'wheel', 'pointermove'] as const;
   for (const type of inputs) document.addEventListener(type, onInput, { capture: true, passive: true });
 
-  const park = () => {
+  /** Nothing on the desk: no sheet, chip, plate or traverse. */
+  const blank = () => {
     clear();
     releaseCaches();
     host.labels.replaceChildren();
     setChip(null);
     run = null;
     host.setPlate(null);
-    scheduler.park();
     host.setAttrs({ sheet: undefined });
+    nav = null;
+    if (onNav) onNav(null);
+  };
+
+  const park = () => {
+    blank();
+    scheduler.park();
   };
 
   const relayoutNow = (snapshot: DeskSnapshot) => {
@@ -1152,7 +1395,15 @@ export const createFilm = (host: FilmHost): Film => {
       readFlags();
       sync();
       scheduler.unpark();
-    } else scheduler.restart();
+      return;
+    }
+    // The chip and its traverse go with the region now, whatever comes next: a wait
+    // for the next building's sheets puts up no shot to place them.
+    if (!host.chip.hidden) {
+      placeChip();
+      if (nav) onNav!(nav = { ...nav, chip: chipAt, jump: false });
+    }
+    scheduler.restart();
   };
 
   return {
@@ -1183,6 +1434,10 @@ export const createFilm = (host: FilmHost): Film => {
     input() {
       scheduler.input();
     },
+    goTo,
+    prefetch() {
+      void loadSheets(HERO_ORDER[(shownHero + HERO_ORDER.length - 1) % HERO_ORDER.length]);
+    },
     dispose() {
       disposed = true;
       scheduler.dispose();
@@ -1193,6 +1448,7 @@ export const createFilm = (host: FilmHost): Film => {
       releaseCaches();
       host.labels.replaceChildren();
       host.setPlate(null);
+      if (onNav) onNav(null);
     },
   };
 };

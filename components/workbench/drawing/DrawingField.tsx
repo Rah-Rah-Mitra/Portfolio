@@ -10,7 +10,8 @@ import { CHIP_QUALIFIER, chipNotes, chipTitle, HERO_ORDER, plateLines, sheetsFor
 import type { DeskSnapshot } from '../../../lib/drawings/deskWatch';
 import type { DrawingScope } from '../../../lib/drawings/policy';
 import { readDrawingTokens } from './palette';
-import type { Film } from './drawingFilm';
+import SheetTraverse from './SheetTraverse';
+import type { Film, NavState } from './drawingFilm';
 
 // The desk drawing set's field (docs/portfolio/desk-drawing-set.md §5): a lazy
 // chunk the desk-backdrop layer loads once the desk has room for a sheet. It owns
@@ -19,7 +20,10 @@ import type { Film } from './drawingFilm';
 // slot). On a light policy (Save-Data, reduced motion at boot) it paints one
 // finished still — the estate's aerial through the poster camera — and never
 // downloads the film; otherwise it imports the film (drawingFilm.ts), which plays
-// the sequence. Everything here reads the DOM in effects only (App is prerendered).
+// the sequence, and adds the sheet traverse (SheetTraverse.tsx) on the chip's top
+// row, in a third host after the text: the one drawing host a visitor can use, so
+// it is not aria-hidden. Everything here reads the DOM in effects only (App is
+// prerendered).
 
 export interface DrawingFieldProps {
   scope: DrawingScope;
@@ -83,6 +87,13 @@ export const makeChipHeight = (): ChipHeight => {
   };
 };
 
+/**
+ * The traverse's row on the chip, px: the film adds it to the chip's box, in the
+ * margin over the chip band, and index.css .wb-drawing-chip[data-nav] pads the
+ * text below it. The band the sheets are measured against stays as it is.
+ */
+export const NAV_H = 30;
+
 const idle = (fn: () => void): (() => void) => {
   const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
   if (typeof w.requestIdleCallback === 'function') {
@@ -109,6 +120,8 @@ const DrawingField: React.FC<DrawingFieldProps> = ({ scope, snapshot, fx, canvas
   fxRef.current = fx;
   const filmRef = useRef<Film | null>(null);
   const coverRef = useRef<((s: DeskSnapshot) => void) | null>(null);
+  const [nav, setNav] = useState<NavState | null>(null);
+  const [navHost, setNavHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -122,6 +135,15 @@ const DrawingField: React.FC<DrawingFieldProps> = ({ scope, snapshot, fx, canvas
     chip.hidden = true;
     canvasHost.append(canvas);
     textHost.append(labels, chip);
+    // The film's traverse: over the chip, under every window, and not decorative.
+    const navBox = scope === 'film' ? document.createElement('div') : null;
+    if (navBox) {
+      navBox.className = 'wb-drawing-nav';
+      // Where focus waits while the film is parked and its toolbar gone (SheetTraverse's rescue).
+      navBox.tabIndex = -1;
+      textHost.after(navBox);
+      setNavHost(navBox);
+    }
     canvasHost.dataset.drawingSchema = DRAWING_SET_SCHEMA;
     setSlot(canvasHost.closest('[data-desk]')?.querySelector<HTMLElement>('.wb-plate-slot') ?? null);
     const setAttrs = (attrs: Record<string, string | undefined>) => {
@@ -151,8 +173,8 @@ const DrawingField: React.FC<DrawingFieldProps> = ({ scope, snapshot, fx, canvas
           if (disposed) return;
           try {
             const film = filmModule.createFilm({
-              canvas, labels, chip, setPlate, setAttrs, tokens, measure, chipHeight, scene, credit: CREDIT,
-              startHero: startHero(Date.now()), onWarn: warn,
+              canvas, labels, chip, setPlate, setAttrs, tokens, measure, scene, credit: CREDIT,
+              chipHeight, navHeight: NAV_H, startHero: startHero(Date.now()), onWarn: warn, onNav: setNav,
             });
             filmRef.current = film;
             film.setFx(fxRef.current);
@@ -187,6 +209,9 @@ const DrawingField: React.FC<DrawingFieldProps> = ({ scope, snapshot, fx, canvas
       canvas.remove();
       labels.remove();
       chip.remove();
+      navBox?.remove();
+      setNavHost(null);
+      setNav(null);
       delete canvasHost.dataset.drawingSchema;
       setPlate(null);
     };
@@ -202,13 +227,18 @@ const DrawingField: React.FC<DrawingFieldProps> = ({ scope, snapshot, fx, canvas
     filmRef.current?.setFx(fx);
   }, [fx]);
 
-  if (!slot || !plate) return null;
-  return createPortal(
+  return (
     <>
-      <div className="wb-plate-key">SHEET</div>
-      <div className="wb-plate-val wb-plate-lines"><span>{plate[0]}</span><span>{plate[1]}</span></div>
-    </>,
-    slot,
+      {slot && plate && createPortal(
+        <>
+          <div className="wb-plate-key">SHEET</div>
+          <div className="wb-plate-val wb-plate-lines"><span>{plate[0]}</span><span>{plate[1]}</span></div>
+        </>,
+        slot,
+      )}
+      {/* Mounted with its host, so its status line and focus outlive a park; the toolbar is up while the film reports a state. */}
+      {navHost && createPortal(<SheetTraverse nav={nav} film={filmRef.current} host={navHost} />, navHost)}
+    </>
   );
 };
 

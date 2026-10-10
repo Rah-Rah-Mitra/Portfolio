@@ -183,7 +183,13 @@ number of metres (1 m at 24 px/m, up to 40 m a square for the site plan), so the
 desk's grid is the drawing's grid. Finished sheets take only the free rectangles
 the windows leave (11 × 8 squares at least) and read there behind them; the film
 of sheets plays when the desk is uncovered (DESK, or the last window closed),
-and the title plate's SHEET row then names the sheet.
+and the title plate's SHEET row then names the sheet. While the film plays, the
+sheet chip's top row is the sheet traverse: a ticked accent rail with a station
+per sheet of the building (its lamp filled on the sheet on show, dashed where the
+sheet cannot be drawn), FieldIndex's trolley over the current one, ‹ › for the
+previous and next sheet and « » for the previous and next building, in the Estate
+HUD's button metrics. It is one Tab stop, and it lies in the drawing's own free
+region, so no window covers it.
 
 The mobile Field Index is a single column: status bar, search, kind chips, the
 grouped registry rows (each expands in place), and a contact tab bar fixed to
@@ -373,7 +379,10 @@ loop halts and the labs resolve straight to their end state. The drawing set is
 the one ambient motion: a sheet is drawn in (or faded, wiped, flooded) and then
 held as a finished drawing with no frames requested; its labels and chip are set
 whole. Halted, it finishes the sheet it is on in one paint and holds it, and
-under reduced motion or Data Saver it is one finished still from the start.
+under reduced motion or Data Saver it is one finished still from the start. A
+jump from the sheet traverse re-issues the sheet (the old one's pixels fade out,
+the new one fades in finished); halted, it lands in one paint. The traverse's
+trolley slides by a CSS transition that the motion rule switches off.
 
 ## Do's and Don'ts
 

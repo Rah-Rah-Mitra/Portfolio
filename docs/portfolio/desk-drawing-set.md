@@ -202,7 +202,9 @@ smaller than 3 px/m the cycle is plans only (S1–S5, then the dolly out).
 **Reading** (≈183 s a cycle, 8 % animating): R0 (once) the aerial, R1 the site, R2 L1,
 R3 typical, R4 roof, R5 exploded (the plates slide apart in place), R6 block (stamped,
 then the massing), R7 the aerial; each holds 24 s and fades out. A sheet that does not
-fit the region at a readable scale is skipped.
+fit the region at a readable scale is skipped, straight on to the next shot; a whole lap
+of the estate with nothing to draw (a plans-only desk too small for any plan) leaves the
+desk blank until it changes.
 
 ## 3. Effects
 
@@ -221,7 +223,13 @@ real level, the roof riding on top), SILHOUETTE (the massing, its front faces fi
 the paper colour so it hides what is behind), DOLLY-ZOOM (an orthographic pose into the
 poster's shifted pinhole: p grows from 0 while k holds the scale), CUT IN PLACE (the
 building above L2 + 1.2 m as hidden dashes, its typical plan drawn at the cut), LIFT TO
-PLAN (the reverse, heights scaled to nothing) and RE-ISSUE (a covered sheet moves).
+PLAN (the reverse, heights scaled to nothing) and RE-ISSUE (E19 in `effects.ts`: a jump
+from the sheet traverse, §4. The canvas's own pixels fade out over 250 ms by
+`destination-out`, never the old sheet redrawn, which after a building change would
+already be the new building; at 250 ms the chip, plate and traverse name the target and
+its finished state fades in over 400 ms, its labels set whole at the end; then its full
+hold, its exit and the rest of its cycle. A film that may not move shows the target
+finished in one paint, with no frame and no timer, and goes on to its hold when it may).
 
 **The reveal rule.** DRAW-IN never strokes line work incrementally. The finished line
 work is painted once into a cache; the pens stroke the same paths, slightly wider, into a
@@ -234,7 +242,11 @@ cumulative mask; the visible canvas shows the cache only where the mask is
   (`.wb-backdrop`), so smoke composites over the line work; `.wb-drawing-text` (labels and
   the sheet chip) comes after it, on an opaque paper ground. Both `aria-hidden`, no
   pointer events, and neither is `.wb-backdrop`, so the hint and shortcut labels keep
-  their look.
+  their look. The film adds a third, `.wb-drawing-nav`, after the text: the sheet
+  traverse's host, the one drawing host a visitor uses, so it is not `aria-hidden`; it
+  spans the desk with no pointer events (only its toolbar takes them) and is focusable by
+  script alone (`tabIndex` −1), for focus to wait on while a park takes the toolbar away.
+  The cover still has none.
 - **Placement** (`lib/drawings/occupancy.ts`, `compose.ts`). The desk is cut into its own
   24 px squares (rows from the bottom: the grid's phase); every window, the shortcuts, the
   hint, the title plate (with one line's reserve) and the two docks are obstacles, grown
@@ -265,6 +277,37 @@ cumulative mask; the visible canvas shows the cache only where the mask is
   rectangle); the exact credit; and "Redrawn; inferences marked · a generated sample, not
   a real town or HDB’s own plans · /estate/LICENSE.txt". Shown whenever a sheet is; its
   band is reserved from the tallest chip the cycle shows before the scale is chosen.
+  Under the film the chip's box is 30 px taller (`NAV_H`) for the traverse's row, which
+  stands in the margin between the drawing area and the band (a square and 8 px): the
+  area, every scale and the plans-only rule are the same with the traverse as without it.
+- **The sheet traverse** (`components/workbench/drawing/SheetTraverse.tsx`, in the field
+  chunk; the film's `goTo` and `onNav`). The chip's top row: a `role="toolbar"` named
+  "Drawing sheets", one Tab stop with a roving tabindex (←/→ wrap, Home/End; nothing else
+  taken, never Esc). ‹ › step a sheet, « » a building (left out on a chip under 290 px);
+  a station per sheet of the building (seven, six for NC 514, on a rail of seven slots),
+  named for its sheet in sentence case ("03 Typical plan L2–L20"). The sheet on show is
+  `aria-current="step"` (the aerial through the welcome and R0, the sheet before it
+  through a dolly); a station a jump cannot reach is `aria-disabled` with its reason in
+  its name ("not drawn at this size", which covers a plans-only cycle's 3D sheets, or
+  "still loading") and does nothing, unless it is the sheet on show. Jumps are absolute
+  and steps go on from the last one asked for, so quick presses advance one sheet each;
+  past a building's end a step takes the next building's first sheet (the previous
+  one's last going back); a building step keeps the sheet where it can, else the
+  nearest; a building whose sheets are still loading keeps the sheet up until they
+  arrive, the latest press winning. A hidden status line speaks a jump once it lands
+  ("Sheet 04 of 07, Blk 501 roof plan"), never the film's own advance. A focused control
+  that goes (station 07 on the way to NC 514, « » on a narrower chip, the toolbar on a
+  park) hands focus to the sheet on show, to ‹ ›, or to the host, and the toolbar takes
+  it back when it returns. FieldIndex's trolley rides the rail by a CSS transition the
+  motion rule switches off, keyed by building so a new building cuts; nothing requests a
+  frame. A press is the film's one wake from rest (its input listener lets presses on
+  `[data-drawing-nav]` by). A modified key (Alt, Ctrl, Meta, Shift) is never taken.
+  Accepted edges: a station's reason is part of its name, so a focused station gains or
+  loses it as the film moves on (the sheet on show is never named closed); while the
+  film is parked, focus waits on the host, a full-desk element with no name of its own,
+  as the Estate's stage holds the keys; steps into a building whose sheets are still in
+  flight assume seven sheets and may land two presses on one; and the strip sits in the
+  32 px margin above the chip band, where a label placed in that margin can sit under it.
 - **The title plate.** While a sheet is placed its SHEET row reads two fixed lines, e.g.
   `03 OF 07 · BLK 501 TYPICAL` and `GENERATED SAMPLE · LIVE` (STILL, HELD or AT REST),
   pinned to at most 30 and 26 characters.
@@ -274,12 +317,13 @@ cumulative mask; the visible canvas shows the cache only where the mask is
 | Chunk | What | Gzip |
 |---|---|---|
 | main | `DeskBackdrop.tsx` (the gate, opened in an effect on the desktop surface), `lib/backdropHold.ts`, the FX toggle | — |
-| `DeskBackdropLayer-*` | the layer, `lib/drawings/policy.ts`, `deskWatch.ts`, `occupancy.ts` (and the N-body/smoke host) | 3.9 KB |
-| `DrawingField-*` | the canvas, chip, plate caption, the cover still, `site.generated.ts`, the painters | 15.7 KB |
-| `drawingFilm-*` | the film: scheduler, sequence, reveal, labels | 10.4 KB |
+| `DeskBackdropLayer-*` | the layer, `lib/drawings/policy.ts`, `deskWatch.ts`, `occupancy.ts` (and the N-body/smoke host) | 4.2 KB |
+| `DrawingField-*` | the canvas, chip, plate caption, the cover still, the sheet traverse, `site.generated.ts`, the painters | 17.5 KB |
+| `drawingFilm-*` | the film: scheduler, sequence, reveal, labels, the traverse's jumps | 11.6 KB |
 | `<ID>.generated-*` ×14 | one building's sheets; the next prefetched during a hold | 2.1–4.3 KB |
 
-`scripts/check-bundle.mjs checkDrawingChunks` holds these at measure + 10 %, keeps the
+`scripts/check-bundle.mjs checkDrawingChunks` holds these at measure + 10 % (layer and
+field together 24,000 B, the film 12,800 B, since the traverse), keeps the
 drawing's markers out of the main bundle and the Estate engine out of its closure.
 
 - **Policy** (`lib/drawings/policy.ts`, pure): off; pending until the experience policy
@@ -313,6 +357,16 @@ drawing's markers out of the main bundle and the Estate engine out of its closur
   the pure modules — the decoder's twin, the poster's corners, the boot layouts that park,
   the ink ceilings against the real tokens, the policy table, the scheduler's frame
   rules, the cycle lengths and plate line lengths, the painters' calls, the labels' rules.
+- `tests/drawing-film.dom.test.tsx`: the film driven directly — the chip's band, parks,
+  held starts; the traverse's jumps (steps, stations, buildings and their rollover, quick
+  presses, deferral until a building loads, halted and frozen jumps in one paint, the
+  capture filter at rest), its `onNav` states and reasons, the chip placed afresh on the
+  dolly and on a relayout, a jump that cannot land, the bounded skip, and the 1280 × 720
+  desk still playing BLK 510's 3D sheets with the traverse's row.
+- `tests/drawing-nav.dom.test.tsx`: the toolbar — names, one Tab stop, `aria-current`
+  and `aria-disabled` reasons, « » as ‹ › doubled, prefetch once a building, the focus
+  rescue, the status only after a press — and its host in the real field (not
+  `aria-hidden`, gone when parked and under the cover still).
 - `tests/desk-drawing.dom.test.tsx`: nothing on the server; a covered desk never
   downloads the drawing; the film animates on an empty desk with the exact credit and the
   plate caption; the GPU claim cancels its frame at once; Pause holds it; Save-Data paints
@@ -324,6 +378,9 @@ drawing's markers out of the main bundle and the Estate engine out of its closur
   the boot windows with no frame in a hold, clear of every window, credited, fetching
   nothing of the Estate; DESK's welcome then site plan with the plate's height held; 1280 ×
   720 parked on the layer chunk alone until DESK; reduced motion and Data Saver as one
-  still and exactly the chunks that costs; `?mode=scan`; switched off in FX; axe.
+  still and exactly the chunks that costs; `?mode=scan`; switched off in FX; axe; the
+  traverse at 1920 × 1080 (inside the region and over no window, Next and the keyboard,
+  no frame in the hold after a jump, a paused jump with no frame, axe, none under
+  reduced motion).
 - `tests/e2e/estate.spec.ts` case 1c: at 1920 × 1080 the drawing yields to the live
   Estate, requests no frame while the window is dragged over it, and runs once it closes.

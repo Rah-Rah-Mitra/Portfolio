@@ -155,7 +155,12 @@ export const checkDrawingSet = async (distDirectory, {
 // 15,653 B, film 10,364 B, the largest building 4,321 B): the layer loads on every
 // desktop visit with a backdrop on (the drawing's default), the field once the desk
 // has room for a sheet, the film when the drawing may move, one building at a time.
-export const DRAWING_BUDGETS = { layer: 4_400, layerAndField: 21_500, film: 11_500, sheet: 4_800 };
+// The sheet traverse re-pinned two of them, 2026-10, at its measure plus about 10 %:
+// layer and field 21,748 B (the toolbar, its focus rescue, the field's host), film
+// 11,621 B (goTo, onNav and its reasons, the bounded skip). Leaving out « » and the
+// building jumps, the cut the traverse's spec named first, saved 64 B and 14 B,
+// short of both old caps (21,500 and 11,500), so the traverse keeps them.
+export const DRAWING_BUDGETS = { layer: 4_400, layerAndField: 24_000, film: 12_800, sheet: 4_800 };
 export const DRAWING_SET_MARKER = 'portfolio/drawing-set/1';
 export const DRAWING_SHEET_MARKER = 'portfolio/drawing-sheet/1';
 const DRAWING_CHUNKS = {

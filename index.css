@@ -805,6 +805,68 @@ button { font-family: var(--font-body); color: inherit; }
 .wb-plate-slot > .wb-plate-key { border-right: 1px solid var(--color-divider); color: var(--color-neutral-700); }
 .wb-plate-lines span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wb-plate-grid:has(> .wb-plate-slot:not(:empty)) > .wb-plate-sheet { display: none; }
+/* The sheet traverse (drawing/SheetTraverse.tsx): a third host after the text, the
+   one that is not aria-hidden. It spans the desk and takes no pointer events; only
+   its toolbar does, laid over the chip's top 30 px, which the film adds to the
+   chip's box (DrawingField NAV_H), so the strip and the chip read as one block. The
+   host holds focus while a park takes the toolbar away; it draws no ring of its own. */
+.wb-drawing-nav { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.wb-drawing-nav:focus { outline: none; }
+.wb-drawing-chip[data-nav] { padding-top: 35px; }
+.wb-drawing-nav-bar {
+  position: absolute; box-sizing: border-box; height: 30px; display: flex; align-items: center; gap: 2px; padding: 0 2px;
+  background: var(--paper-55); border: 1px solid var(--color-divider); pointer-events: auto;
+}
+.wb-drawing-nav-btn {
+  flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0;
+  border: 1px solid var(--color-divider); border-radius: 0; background: var(--paper-55); color: var(--color-text); cursor: pointer;
+}
+.wb-drawing-nav-btn:hover, .wb-drawing-nav-stn:hover { background: var(--color-accent-100); border-color: var(--color-accent-700); }
+/* AppIcon's strokes, at 14 px. */
+.wb-drawing-nav-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+/* The Estate HUD's halo: the ring on paper, not on line work. */
+.wb-drawing-nav-bar :focus-visible { outline: 2px solid var(--color-accent-700); outline-offset: 1px; box-shadow: 0 0 0 4px var(--paper-75); }
+/* Seven slots whatever the building, so the arrows never move under the pointer. */
+.wb-drawing-nav-rail {
+  position: relative; flex: 1; min-width: 0; height: 28px; align-self: flex-start;
+  display: grid; grid-template-columns: repeat(7, minmax(24px, 1fr)); align-items: end;
+}
+/* The rail, from the first station's centre to the last's (the .fi-track line). Its
+   only ticks are the stations' own drops: each one names a sheet. */
+.wb-drawing-nav-rail::before {
+  content: ''; position: absolute; top: 4px; height: 1px; left: calc(100% / 14); right: calc((7.5 - var(--n)) * 100% / 7);
+  background: color-mix(in srgb, var(--color-accent) 60%, transparent);
+}
+.wb-drawing-nav-stn {
+  position: relative; height: 24px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 1px;
+  border: 1px solid transparent; border-radius: 0; background: transparent; cursor: pointer;
+  font-family: var(--font-heading); font-weight: 600; font-size: 10px; line-height: 9px; letter-spacing: 0.04em; font-feature-settings: 'tnum' 1;
+  color: var(--color-neutral-700);
+}
+.wb-drawing-nav-stn::before { content: ''; position: absolute; top: 0; left: calc(50% - 0.5px); width: 1px; height: 6px; background: color-mix(in srgb, var(--color-accent) 60%, transparent); }
+/* The lamp (.wb-rail-lamp) under the drop, the number under it. */
+.wb-drawing-nav-stn::after { content: ''; order: -1; box-sizing: border-box; width: 6px; height: 6px; border: 1px solid var(--color-divider); background: var(--paper-55); }
+.wb-drawing-nav-stn[aria-current] { color: var(--color-accent-700); }
+.wb-drawing-nav-stn[aria-current]::after { background: var(--color-accent-700); border-color: var(--color-accent-700); }
+/* Not drawn here: the dashed lamp says so; the number keeps its contrast. */
+.wb-drawing-nav-stn[aria-disabled='true'] { cursor: not-allowed; }
+.wb-drawing-nav-stn[aria-disabled='true']::after { border-style: dashed; border-color: var(--color-neutral-700); }
+/* FieldIndex's trolley on the rail: its bar on the line, its wheels astride the
+   station's drop. It travels on FieldIndex's x spring (k 88, d 12.5) sampled into
+   linear(), the moving-part curve where linear() is unknown. */
+.wb-drawing-nav-car {
+  position: absolute; left: 0; top: -2px; width: calc(100% / 7); pointer-events: none;
+  fill: none; stroke: currentColor; stroke-width: 1; color: var(--color-accent-800); transform: translateX(calc(var(--at) * 100%));
+  transition: transform 220ms cubic-bezier(.2, .7, .2, 1);
+  transition: transform 800ms linear(0, .059 5%, .198 10%, .37 15%, .544 20%, .699 25%, .826 30%, .922 35%, .989 40%, 1.031 45%, 1.053 50%, 1.06 55%, 1.058 60%, 1.051 65%, 1.04 70%, 1.03 75%, 1.02 80%, 1.006 90%, 1);
+}
+html[data-motion-paused="true"] .wb-drawing-nav-car { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wb-drawing-nav-car { transition: none; }
+}
+@media print {
+  .wb-drawing-nav { display: none; }
+}
 /* === end desk drawing set === */
 
 /* === Systems Lab: flow-shop bench (FlowShopBench.tsx) === */

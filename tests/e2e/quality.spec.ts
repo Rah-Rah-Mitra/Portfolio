@@ -56,7 +56,7 @@ test.describe('field workbench — desktop', () => {
     const rail = page.getByRole('navigation', { name: 'Tool rail' });
     for (let i = 0; i < 30; i += 1) await rail.getByRole('button', { name: 'Open Experience', exact: true }).click();
     const experience = page.getByRole('dialog', { name: 'Experience' });
-    await experience.getByRole('button', { name: 'Maximize Experience' }).click(); // now spans the FX dock's corner
+    await experience.getByRole('button', { name: 'Maximize Experience' }).click(); // its titlebar now runs under the docks
     await expect.poll(() => experience.evaluate((el) => Number((el as HTMLElement).style.zIndex))).toBeGreaterThan(85);
 
     // A real click: Playwright refuses it if the window intercepts the pointer.
@@ -72,6 +72,49 @@ test.describe('field workbench — desktop', () => {
       return { panel: probe(panel.right - 40), backdrop: probe(panel.right + 200) };
     });
     expect(hit).toEqual({ panel: 'panel', backdrop: 'backdrop' });
+  });
+
+  // The AI and FX docks hang from the header's rule under the clock (index.css
+  // .docks): AI then FX, the FX dock's right edge under the status dot. On a short
+  // desk they keep only their badges; on the phone they keep its bottom corners.
+  test('hangs the AI and FX docks under the clock, above the windows, badges only on a short desk', async ({ page }) => {
+    const docks = () => page.evaluate(() => {
+      const box = (selector: string) => {
+        const el = document.querySelector<HTMLElement>(selector)!;
+        const r = el.getBoundingClientRect();
+        const hit = el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+        const label = el.querySelector('span:last-child')!;
+        return { x: r.x, y: r.y, right: r.right, bottom: r.bottom, hit, label: getComputedStyle(label).display !== 'none' };
+      };
+      return { ai: box('.ask-dock'), fx: box('.effects-dock'), dot: document.querySelector('.wb-status-dot')?.getBoundingClientRect().right ?? null, vw: window.innerWidth, vh: window.innerHeight };
+    });
+
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('/');
+    let d = await docks();
+    expect(d.fx.y).toBe(46);
+    expect(d.ai.y).toBe(46);
+    expect(Math.abs(d.fx.right - (d.vw - 18))).toBeLessThan(0.5);
+    expect(Math.abs(d.fx.right - d.dot!)).toBeLessThan(0.5);
+    expect(Math.abs(d.fx.x - 8 - d.ai.right)).toBeLessThan(0.5);
+    expect([d.ai.hit, d.fx.hit, d.ai.label, d.fx.label]).toEqual([true, true, true, true]);
+    // Tab order is the screen's order: AI, then FX.
+    expect(await page.evaluate(() => document.querySelector('.ask-dock')!.compareDocumentPosition(document.querySelector('.effects-dock')!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
+
+    // 1280 × 720: the boot windows come up to the header; the docks shrink to their badges and stay on top.
+    await page.setViewportSize({ width: 1280, height: 720 });
+    d = await docks();
+    expect([d.ai.hit, d.fx.hit, d.ai.label, d.fx.label]).toEqual([true, true, false, false]);
+    expect(d.fx.right - d.ai.x).toBeLessThan(110);
+    await expect(page.getByRole('button', { name: 'AI, open Ask this portfolio' })).toBeVisible();
+
+    // The phone keeps the bottom corners above its tab bar.
+    await page.setViewportSize({ width: 390, height: 844 });
+    d = await docks();
+    expect(Math.abs(d.ai.x - 16)).toBeLessThan(0.5);
+    expect(Math.abs(d.fx.right - (390 - 16))).toBeLessThan(0.5);
+    expect(Math.abs(d.fx.bottom - (844 - 48 - 0.9 * 16))).toBeLessThan(0.5);
+    expect([d.ai.label, d.fx.label]).toEqual([true, true]);
   });
 
   test('a hash deep link opens the archive AND brings the row into view', async ({ page }) => {

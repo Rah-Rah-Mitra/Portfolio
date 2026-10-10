@@ -8,11 +8,17 @@ import FieldWorkbench from './components/workbench/FieldWorkbench';
 import FieldIndex from './components/workbench/FieldIndex';
 import { track } from './lib/analytics';
 
+// The two docks share one fixed rail (index.css .docks): on the desktop it hangs
+// from the header under the clock, AI then FX, in the DOM's own order. Each
+// panel's backdrop stays a sibling of its trigger, inside the rail, which is
+// where the Estate's GPU-claim watcher looks for it.
 export const OptionalExperienceLayers: React.FC = () => {
   return (
     <>
-      <EffectsLabPanel />
-      <AskThePage />
+      <div className="docks">
+        <AskThePage />
+        <EffectsLabPanel />
+      </div>
       <AudioSpriteController />
     </>
   );

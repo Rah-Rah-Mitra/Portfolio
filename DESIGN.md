@@ -355,7 +355,10 @@ the FX "Pause all motion").
 
 ### FX panel and assistant
 
-FX and AI are docks at the bottom corners that open labelled dialogs with a
+AI and FX are docks hung from the header's rule at the top right, under the clock
+(one fixed rail, AI then FX, the header's own 18px inset; on a desk no taller than
+755px they keep only their badges, and on the phone they keep its bottom corners,
+above the tab bar). They open labelled dialogs with a
 focus trap. FX holds Pause all motion, sound cues (muted until opted in) and
 the three desk backgrounds (the Estate drawing set, on; N-body and smoke, off);
 the backgrounds are desktop-only and paint behind every window with

@@ -109,8 +109,8 @@ const nearInteger = (v: number) => Math.abs(v - Math.round(v)) < 1e-6;
 //   .wb-shortcuts  {22, 18, 200, 408.85}            two 96 px columns + 8 px gap, 11 apps in 6 rows
 //   .wb-hint       {24, H − 14 − 15.5, 579.1, 15.5}  one line
 //   .wb-plate      {W − 26 − 308, H − 22 − 88.8 − 13, 308, 88.8 + 13}  3 rows + the 13 px caption reserve
-//   .ask-dock      {−80, H − 16 − 36.65, 135.53, 36.65}   position: fixed, 1rem from the viewport's corner
-//   .effects-dock  {W − 16 − 108.84, H − 16 − 36.65, 108.84, 36.65}
+//   .ask-dock      {FX x − 8 − 135.92, 0, 135.92, 36.05}   position: fixed in the .docks rail, hung from the header
+//   .effects-dock  {W − 18 − 109.25, 0, 109.25, 36.05}      (badges only, 47.89 and 50.03 wide, on a desk ≤ 755 px tall)
 // (.wb-backdrop-caption renders only with N-body or fluid on: not at boot.)
 
 const css = read('index.css');
@@ -133,7 +133,12 @@ const tsBlock = (name: string): string => {
   return m[1];
 };
 
-const MEASURED = { shortcutsH: 408.85, hintW: 579.1, hintH: 15.5, plateH: 88.8, aiDockW: 135.53, fxDockW: 108.84, dockH: 36.65 };
+const MEASURED = {
+  shortcutsH: 408.85, hintW: 579.1, hintH: 15.5, plateH: 88.8,
+  aiDockW: 135.92, fxDockW: 109.25, dockH: 36.05,
+  // Badges only, on a viewport no taller than the short-desk query.
+  aiBadgeW: 47.89, fxBadgeW: 50.03,
+};
 
 const LAYOUT = (() => {
   const header = length('.wb-header', 'height');
@@ -154,9 +159,16 @@ const LAYOUT = (() => {
     },
     hint: { left: length('.wb-hint', 'left'), bottom: length('.wb-hint', 'bottom') },
     plate: { right: length('.wb-plate', 'right'), bottom: length('.wb-plate', 'bottom'), w: length('.wb-plate', 'width'), reserve: Number(reserve[1]) },
-    dock: { bottom: length('.ask-dock, .effects-dock', 'bottom'), left: length('.ask-dock', 'left'), right: length('.effects-dock', 'right') },
+    dock: { top: length('.docks', 'top'), right: length('.docks', 'right'), gap: length('.docks', 'gap'), short: shortDesk() },
   };
 })();
+
+/** The viewport height at and under which the docks keep only their badges (index.css). */
+function shortDesk(): number {
+  const m = /@media \(min-width: 881px\) and \(max-height: (\d+)px\) \{\s*\.ask-dock > span:last-child, \.effects-dock > span:last-child \{ display: none; \}/.exec(css);
+  if (!m) throw new Error('index.css has no short-desk dock query');
+  return Number(m[1]);
+}
 
 /** FieldWorkbench applyBounds, restated (it is a closure over the DOM): the window's box on a W × H desk. */
 const applyBounds = ([x, y, w, h]: readonly number[], W: number, H: number): Box => {
@@ -172,18 +184,24 @@ const bootDesk = (vw: number, vh: number) => {
   const H = vh - LAYOUT.header;
   const windows = LAYOUT.boot.map((id) => applyBounds(LAYOUT.bounds[id], W, H));
   const { shortcuts: s, hint, plate, dock } = LAYOUT;
+  const short = vh <= dock.short;
+  const aiW = short ? MEASURED.aiBadgeW : MEASURED.aiDockW;
+  const fxW = short ? MEASURED.fxBadgeW : MEASURED.fxDockW;
+  const fxX = W - dock.right - fxW;
   const furniture: Box[] = [
     { x: s.left, y: s.top, w: s.w, h: MEASURED.shortcutsH },
     { x: hint.left, y: H - hint.bottom - MEASURED.hintH, w: MEASURED.hintW, h: MEASURED.hintH },
     { x: W - plate.right - plate.w, y: H - plate.bottom - MEASURED.plateH - plate.reserve, w: plate.w, h: MEASURED.plateH + plate.reserve },
     // position: fixed, so measured from the viewport: desk x = viewport x − the rail, desk y = viewport y − the header.
-    { x: dock.left - LAYOUT.rail, y: H - dock.bottom - MEASURED.dockH, w: MEASURED.aiDockW, h: MEASURED.dockH },
-    { x: W - dock.right - MEASURED.fxDockW, y: H - dock.bottom - MEASURED.dockH, w: MEASURED.fxDockW, h: MEASURED.dockH },
+    // The rail hangs from the header (its top is the desk's top) and ends at the viewport's right less 18 px.
+    { x: fxX - dock.gap - aiW, y: dock.top - LAYOUT.header, w: aiW, h: MEASURED.dockH },
+    { x: fxX, y: dock.top - LAYOUT.header, w: fxW, h: MEASURED.dockH },
   ];
   return { W, H, windows, furniture, obstacles: [...windows, ...furniture] };
 };
 
-const LAPTOPS = [[1280, 720], [1366, 768], [1440, 900], [1536, 864]] as const;
+// Screens, and the shorter viewports a browser's own chrome leaves on two of them.
+const LAPTOPS = [[1280, 720], [1366, 768], [1440, 900], [1536, 864], [1366, 650], [1536, 730]] as const;
 
 describe('occupancy — the desk as 24 px squares', () => {
   it('cuts the desk into whole 24 px squares; a partial square at the right or the top is no square', () => {
@@ -230,7 +248,7 @@ describe('occupancy — the desk as 24 px squares', () => {
     expect(freeCount([])).toBe(100);
     expect(freeCount([{ x: 10, y: 10, w: 0, h: 50 }, { x: 10, y: 10, w: 50, h: -1 }, { x: 10, y: 10, w: NaN, h: 5 }])).toBe(100);
     expect(freeCount([{ x: -200, y: 0, w: 100, h: 240 }, { x: 400, y: 0, w: 50, h: 50 }, { x: 0, y: -100, w: 240, h: 50 }, { x: 0, y: 300, w: 240, h: 50 }])).toBe(100);
-    // The AI dock is position: fixed over the rail: it starts left of the desk and reaches x 55.5.
+    // An obstacle fixed over the rail starts left of the desk and reaches x 55.5.
     const g = occupancy(240, 240, [{ x: -80, y: 180, w: 135.53, h: 36.65 }]);
     const cols = [...new Set([...g.free].flatMap((f, i) => (f ? [] : [i % g.cols])))].sort((a, b) => a - b);
     expect(cols).toEqual([0, 1, 2]);
@@ -337,7 +355,7 @@ describe('the real boot layouts', () => {
     expect(LAYOUT.shortcuts).toEqual({ left: 22, top: 18, w: 200 });
     expect(LAYOUT.hint).toEqual({ left: 24, bottom: 14 });
     expect(LAYOUT.plate).toEqual({ right: 26, bottom: 22, w: 308, reserve: 13 });
-    expect(LAYOUT.dock).toEqual({ bottom: 16, left: 16, right: 16 });
+    expect(LAYOUT.dock).toEqual({ top: 46, right: 18, gap: 8, short: 755 });
     // applyBounds, as restated above.
     for (const line of [
       'const mw = Math.max(320, desk.clientWidth - 24);',
@@ -365,8 +383,13 @@ describe('the real boot layouts', () => {
       [22, 18, 200, 408.85],
       [24, 1004.5, 579.1, 15.5],
       [1490, 910.2, 308, 101.8],
-      [-80, 981.35, 135.53, 36.65],
-      [1699.16, 981.35, 108.84, 36.65],
+      [1552.83, 0, 135.92, 36.05],
+      [1696.75, 0, 109.25, 36.05],
+    ]);
+    // On a short desk the pair keeps only its badges.
+    expect(bootDesk(1366, 650).furniture.slice(3).map((b) => [b.x, b.y, b.w].map((v) => Math.round(v * 100) / 100))).toEqual([
+      [1270 - 18 - 50.03 - 8 - 47.89, 0, 47.89],
+      [1270 - 18 - 50.03, 0, 50.03],
     ]);
   });
 
@@ -394,15 +417,19 @@ describe('the real boot layouts', () => {
     const regions = freeRegions(g, Infinity).filter(qualifies);
     const estate = desk.windows[1];
     // Right band: from the first column clear of the Estate's grown right edge (1460 + 8) to the
-    // desk's edge, from the desk's top row down to the title plate.
+    // desk's edge, from the first row under the docks (hung from the header, grown 8 px) down to
+    // the title plate.
     const right = regions.find((r) => r.x >= estate.x + estate.w + 8 && r.col + r.cols === g.cols);
-    expect(right && key(right)).toBe('62,6 14x37');
-    expect(right!.row + right!.rows).toBe(g.rows);
-    // Bottom band: below the Estate's grown bottom edge (736 + 8), right of the AI dock and above the hint.
+    expect(right && key(right)).toBe('62,6 14x35');
+    const docks = desk.furniture[4];
+    expect(right!.y).toBeGreaterThanOrEqual(docks.y + docks.h + 8);
+    expect(right!.y).toBeLessThan(docks.y + docks.h + 8 + CELL);
+    // Bottom band: below the Estate's grown bottom edge (736 + 8) and above the hint, from the
+    // desk's left edge (no dock in that corner any more) to the title plate.
     const bottom = regions.filter((r) => r.y >= estate.y + estate.h + 8 && r.cols >= 55).map(key);
-    expect(bottom).toEqual(['3,2 58x10', '0,3 61x9']);
+    expect(bottom).toEqual(['0,2 61x10']);
     // The largest region is the bottom band, and it qualifies: the drawing runs.
-    expect(key(largestFree(g)!)).toBe('3,2 58x10');
+    expect(key(largestFree(g)!)).toBe('0,2 61x10');
     expect(qualifies(largestFree(g))).toBe(true);
   });
 });
@@ -426,7 +453,7 @@ describe('compose — drawingArea and chipBox', () => {
   });
 
   it('stands the chip in a column beside the sheet in a wide, short region (chipBeside)', () => {
-    // 1920 × 1080's bottom band: 58 × 10 squares.
+    // A wide, short band: 58 × 10 squares (1920 × 1080's bottom band while the AI dock sat in its corner; 61 × 10 now).
     const band: Region = { col: 3, row: 2, cols: 58, rows: 10, x: 72, y: 746, w: 1392, h: 240 };
     const bands: Bands = { chip: 98, chipWidth: 420, dims: true };
     expect(chipBeside(band, bands)).toBe(true);
@@ -441,7 +468,7 @@ describe('compose — drawingArea and chipBox', () => {
     expect(chipBeside(at(420 + 72 + 360), bands)).toBe(true);
     expect(chipBeside(at(420 + 72 + 359), bands)).toBe(false);
     expect(chipBeside(band, { chip: 98, dims: true })).toBe(false); // no chip width given: always below
-    // A tall region keeps the chip below.
+    // A tall region keeps the chip below (14 × 37: 1920 × 1080's right band before the docks hung over its top; 14 × 35 now).
     const tall: Region = { col: 62, row: 6, cols: 14, rows: 37, x: 1488, y: 2, w: 336, h: 888 };
     expect(chipBeside(tall, { chip: 98, chipWidth: 320, dims: false })).toBe(false);
     expect(drawingArea(tall, { chip: 98, chipWidth: 320, dims: false })).toEqual({ x: 1512, y: 26, w: 288, h: 888 - 48 - 98 });
@@ -599,7 +626,8 @@ describe('compose — posterInRegion', () => {
   const scene = sceneOf(SITES, KERBS, EXTENT, POSTER);
   const PW = POSTER.w;
   const PH = POSTER.h;
-  // 1920 × 1080's two bands, as the cover still and the film use them (dims off, the chip measured at ~90 px).
+  // A tall and a wide band, as the cover still and the film use them (dims off, the chip measured at ~90 px):
+  // 1920 × 1080's right and bottom bands before the docks moved to the header (14 × 35 and 61 × 10 now).
   const RIGHT_BAND = drawingArea({ col: 62, row: 6, cols: 14, rows: 37, x: 1488, y: 2, w: 336, h: 888 }, { chip: 98, chipWidth: 320, dims: false });
   const BOTTOM_BAND = drawingArea({ col: 3, row: 2, cols: 58, rows: 10, x: 72, y: 746, w: 1392, h: 240 }, { chip: 98, chipWidth: 420, dims: false });
 

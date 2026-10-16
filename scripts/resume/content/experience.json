@@ -2,9 +2,9 @@
   "entries": [
     {
       "id": "stmicro-or",
-      "organization": "STMicroelectronics",
+      "organization": "STMicroelectronics (NUS System Design Project)",
       "location": "Singapore",
-      "role": "Operations Research (NUS System Design Project), Contract",
+      "role": "Operations Research (Contract)",
       "start": "2026-08",
       "dateLabel": "Aug 2026 – Present",
       "bullets": [
@@ -25,23 +25,41 @@
     },
     {
       "id": "amazon-vision",
-      "organization": "Amazon (BlendED AI+X)",
+      "organization": "Amazon",
       "location": "Singapore",
-      "role": "Robotics Vision Engineer",
+      "role": "Robotics Vision Engineer (AI+X Global Challenge)",
       "start": "2026-07",
-      "dateLabel": "Jul 2026 – Present",
+      "end": "2026-10",
+      "dateLabel": "Jul 2026 – Oct 2026",
       "bullets": [
         {
           "id": "isp",
           "text": {
-            "default": "Build vision systems for 3 imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light."
+            "default": "Built vision systems turning raw camera feeds into perception-ready frames across 3 workstreams: camera ISP, super-resolution, and image restoration under real-world blur."
           }
         },
         {
-          "id": "frame-quality",
+          "id": "sr-reproduction",
           "text": {
-            "default": "Train UNet and other CNN architectures for single-image super-resolution, upscaling frames 4 times and lifting PSNR and SSIM so a low-cost camera reaches frame quality on par with premium sensors.",
-            "deep": "Train UNet and other CNN architectures for single-image super-resolution, upscaling frames 4 times and measuring the gain on PSNR and SSIM so a low-cost camera reaches frame quality on par with premium sensors before those frames reach downstream robotics perception."
+            "default": "Reproduced a published UNet super-resolution model in PyTorch from broken author code, recovering its undocumented evaluation protocol and training 12 models across 3 scales, 2 datasets, and 2 losses, matching reported results at 8x and landing within 0.78 dB at 2x and 4x."
+          }
+        },
+        {
+          "id": "robustness",
+          "text": {
+            "default": "Diagnosed a robustness gap where fixed-blur models lost most PSNR gains under unseen blur, then added randomised-blur training and fine-tuning to recover up to 0.7 dB across 3 real-world blur types: lens, out-of-focus, and resampling."
+          }
+        },
+        {
+          "id": "sr-review",
+          "text": {
+            "default": "Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods, organised around camera information loss and recovery through calibration, extra frames, or learned priors, comparing 4 model families on fidelity and hallucination risk."
+          }
+        },
+        {
+          "id": "deployment",
+          "text": {
+            "default": "Deployed 3 trained models as a public web app: a one-click Flask inference API on a Colab T4 GPU loading weights from a GitHub release, a secure tunnel on a reserved domain, and a hosted front end for image upload, scale selection, and download."
           }
         }
       ]

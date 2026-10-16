@@ -105,7 +105,7 @@ export const localAgent = (message: string): AgentResponse => {
     references = [projectRef('swarmline', 'Inspect Swarmline')];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('amazon')) {
-    reply = 'Since Jul 2026 Rahul has been a Robotics Vision Engineer with Amazon (BlendED AI+X), building vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.';
+    reply = 'From Jul to Oct 2026 Rahul was a Robotics Vision Engineer with Amazon (AI+X Global Challenge), building vision systems across camera ISP, super-resolution, and image restoration under real-world blur.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience', experienceId: 'career-amazon-vision' });
   } else if (text.includes('stmicro') || text.includes('st micro')) {

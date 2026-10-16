@@ -128,7 +128,7 @@
     {
       "id": "hl-ai-data",
       "label": "AI and Machine Learning",
-      "items": "RAG, AI agents, Claude Code, ChatGPT, Codex, Gemini, ComfyUI, vector search, LangChain, PyTorch, ONNX, Chroma, BERT/transformer fine-tuning, model evaluation, deep RL (PPO, A2C, DDPG, DQN), CUDA/HPC on ASPIRE 2A"
+      "items": "RAG, AI agents, vector search, LangChain, PyTorch, ONNX, Chroma, BERT/transformer fine-tuning, model evaluation, deep RL (PPO, A2C, DDPG, DQN), CUDA/HPC on ASPIRE 2A"
     },
     {
       "id": "hl-security",

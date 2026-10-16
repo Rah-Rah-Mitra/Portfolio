@@ -17,7 +17,7 @@ export const SITE_CONFIG = {
     github: 'https://github.com/Rah-Rah-Mitra',
     instagram: 'https://www.instagram.com/rah.rah.mitra/',
   },
-  resumeEdition: '2026-11',
+  resumeEdition: '2026-12',
 } as const;
 
 // Each starter has to land on its own topic in the assistant's local fallback

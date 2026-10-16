@@ -905,8 +905,12 @@ export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillT
  * bullets: [{ ref, variant, text }] }. `role` and `organization` are the entry
  * header strings, needed by P5 mixed-case-title: that field is scored as a set,
  * so the defect lives on the entry rather than on any bullet.
+ *
+ * `today` is pinned, not read from the clock, so the report is reproducible. It
+ * moves when an entry's end month passes it: 2026-10 since the Amazon role ended
+ * that month, or its correct past tense reads as an ongoing role's.
  */
-export const checkPool = (entries, { today = '2026-09' } = {}) => {
+export const checkPool = (entries, { today = '2026-10' } = {}) => {
   const findings = [];
   const texts = entries.flatMap((entry) => entry.bullets.map((bullet) => ({
     ...bullet, sectionType: entry.sectionType, entryId: entry.entryId,

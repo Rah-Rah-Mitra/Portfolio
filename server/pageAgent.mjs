@@ -123,7 +123,7 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     references = [{ label: 'Inspect Swarmline', href: '#project-swarmline' }];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('amazon')) {
-    reply = 'Since Jul 2026 Rahul has been a Robotics Vision Engineer with Amazon (BlendED AI+X), building vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.';
+    reply = 'From Jul to Oct 2026 Rahul was a Robotics Vision Engineer with Amazon (AI+X Global Challenge), building vision systems across camera ISP, super-resolution, and image restoration under real-world blur.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience', experienceId: 'career-amazon-vision' });
   } else if (text.includes('stmicro') || text.includes('st micro')) {
@@ -156,7 +156,7 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     commands.push({ type: 'focusGuideChapter', chapterId: 'domains' });
   } else if (text.includes('resume') || text.includes('résumé') || text.includes('cv')) {
     reply = 'Use the role-specific résumé when the vacancy is clear; use the one-page Highlights résumé for preference forms and broad applications, or the two-page General / Master CV for full detail. Eight PDF and DOCX variants are available.';
-    references = [{ label: 'Compare all eight résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: '/resume/generated/rahul-mitra-general-2026-11.pdf' }];
+    references = [{ label: 'Compare all eight résumés', href: '#resumes' }, { label: 'Download the General / Master CV', href: '/resume/generated/rahul-mitra-general-2026-12.pdf' }];
     commands.push({ type: 'focusGuideChapter', chapterId: 'resumes' });
   } else if (text.includes('security') || text.includes('cyber') || text.includes('bug bounty') || text.includes('adversarial')) {
     reply = 'Rahul’s security record covers responsible bug-bounty research, web-application testing, network inspection, secure architecture, and bespoke vulnerability tooling. Sensitive disclosure details are intentionally omitted.';

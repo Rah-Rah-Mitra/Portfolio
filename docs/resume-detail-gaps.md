@@ -80,8 +80,21 @@ experience record.
 other CNN architectures**, trained for **single-image super-resolution**. Now in
 `amazon-vision.frame-quality` and its deep variant.
 
-Still absent, and still unusable: datasets, the deployment target, specific UNet
-variants or depths, and any figure beyond the 4x factor.
+**Superseded 2026-10-16** (Rahul's Oct 2026 master CV, edition 2026-12): the
+role ended in Oct 2026 and is titled *Robotics Vision Engineer (AI+X Global
+Challenge), Amazon*. `amazon-vision.frame-quality` and the 4x / premium-sensor
+claim are retired; the entry now carries Rahul's own five bullets: `isp`
+(rewritten), `sr-reproduction` (a published UNet super-resolution model
+reproduced in PyTorch, 12 models across 3 scales, 2 datasets and 2 losses,
+matching reported results at 8x and within 0.78 dB at 2x and 4x), `robustness`
+(randomised-blur training and fine-tuning, up to 0.7 dB across 3 blur types),
+`sr-review` (a literature review he authored and presented, comparing 4 model
+families) and `deployment` (3 trained models as a public web app: Flask on a
+Colab T4 GPU, weights from a GitHub release, a tunnel on a reserved domain).
+None has a `deep` variant. Still absent: the dataset names, the paper's
+citation (Rahul's wording calls it "a published UNet super-resolution model"),
+and PSNR as the metric behind the 0.78 dB (only the robustness bullet says
+PSNR).
 
 ## 3. STMicroelectronics — ongoing, so no outcome yet
 

@@ -2,7 +2,7 @@
   "slug": "general",
   "subject": "General Master CV",
   "pages": 2,
-  "bodyPt": 9,
+  "bodyPt": 8.5,
   "marginIn": 0.5,
   "sections": [
     {
@@ -33,7 +33,10 @@
           "id": "amazon-vision",
           "bullets": [
             "isp",
-            "frame-quality"
+            "sr-reproduction",
+            "robustness",
+            "sr-review",
+            "deployment"
           ]
         },
         {

@@ -173,20 +173,22 @@ describe('résumé renderer', () => {
     expect(deep).toContain('Coordinate weekly senior-engagement activities');
   });
 
-  it('holds deep detail on the master CV inside its two pages, in both styles', async () => {
-    // Deep detail used to overflow and get reported. It fits now: this edition
-    // dropped the A-Level entry, narrowed the skills lines to the nine the
-    // master CV carries, and opened the margins to 0.5in. Pinned because it is
-    // the one spec that exercises the bottom of a ladder — nus reaches 8.5pt
-    // for it, and a content edit that pushes it back over should be a red run
-    // rather than a silent 3-page CV.
+  it('holds deep detail on the master CV in two pages in harvard, and reports the nus overflow', async () => {
+    // Deep detail fitted both styles in 2026-11 (the A-Level entry dropped, the
+    // skills lines narrowed to the master CV's nine, 0.5in margins). Edition
+    // 2026-12 took Rahul's own Oct 2026 master CV wording, five Amazon bullets
+    // where there had been two, and the default general CV itself now needs
+    // nus's 8.5pt floor, so deep detail runs to a third page in nus. Pinned
+    // both ways because this is the one spec that exercises the bottom of a
+    // ladder: harvard must keep fitting, and nus must say it does not rather
+    // than hand back a silent 3-page CV.
     const general = configBySlug('general') as Spec;
-    for (const style of ['nus', 'harvard'] as const) {
-      const { fit, pages } = await renderResumePdf({ ...general, detail: 'deep', style }, pools, profile) as { fit: Fit; pages: number };
-      expect(fit.fitted, style).toBe(true);
-      expect(pages, style).toBe(2);
-    }
-    // Overflow reporting itself is pinned by the ladder test above.
+    const harvard = await renderResumePdf({ ...general, detail: 'deep', style: 'harvard' }, pools, profile) as { fit: Fit; pages: number };
+    expect(harvard.fit.fitted).toBe(true);
+    expect(harvard.pages).toBe(2);
+    const nus = await renderResumePdf({ ...general, detail: 'deep', style: 'nus' }, pools, profile) as { fit: Fit & { overflow?: string }; pages: number };
+    expect(nus.fit.fitted).toBe(false);
+    expect(nus.fit.overflow).toMatch(/Does not fit 2 page\(s\) even at 8\.5pt/);
   });
 
   it('refuses a project Rahul has blocked, even when a spec names it directly', async () => {

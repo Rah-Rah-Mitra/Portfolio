@@ -109,9 +109,11 @@ describe('metric classifier', () => {
   const METRIC = ['nus.award', 'abbott-contract.harness', 'abbott-intern.pipeline',
     'pa.sparks', 'ywh.programs', 'brinhack.main', 'maritime.main', 'waaah.main',
     // The 2026-11 wordings write their measurements the way a screener can read
-    // them, so the classifier has to read them too: "4 times" not "4x", a count
-    // with one adjective before its noun, and a power/throughput rating.
-    'amazon-vision.frame-quality', 'hailo.main', 'stmicro-or.putaway', 'pa.singpass',
+    // them, so the classifier has to read them too: a count with one adjective
+    // before its noun, and a power/throughput rating. sr-reproduction (2026-12,
+    // Rahul's own wording) took over from the retired frame-quality: a count and
+    // the "8x" scale factors.
+    'amazon-vision.sr-reproduction', 'hailo.main', 'stmicro-or.putaway', 'pa.singpass',
     // The 2026-11 master CV pass replaced pa.infra's Redis/Kafka wording with a
     // count of the AWS services actually used, so it crossed from the other list.
     'pa.infra'];
@@ -446,10 +448,14 @@ describe('the real corpus', () => {
     // runs joined the population nouns with the first Swarmline bullet), so
     // coverage 0.53 -> 0.54. Its "2.1" (the baseline's average) and "5.8" still
     // mask as product numbers: NON_METRIC's version pattern takes any dotted
-    // number, as it must for "Gemini 2.0".
-    expect(report.metrics.bullets).toBe(43);
-    expect(report.metrics.topOpener).toEqual({ openers: ['Build'], count: 3 });
-    expect(report.metrics.metricCoverage).toBe(0.54);
+    // number, as it must for "Gemini 2.0". 46 in edition 2026-12: Amazon traded
+    // frame-quality for Rahul's four new bullets, three of them measured ("12
+    // models", "4 model families", "3 trained models"; robustness's "0.7 dB" is
+    // no unit the classifier knows), so coverage 0.54 -> 0.55, and the new isp
+    // wording ("Built vision systems") ties the Build family.
+    expect(report.metrics.bullets).toBe(46);
+    expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 3 });
+    expect(report.metrics.metricCoverage).toBe(0.55);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in
@@ -495,11 +501,16 @@ describe('the real corpus', () => {
       // operations-research-engineer had room for both as it stood (13 -> 15).
       // ai-engineer, cyber-security and highlights take one bullet against one cut
       // each, so they hold. No résumé gained a finding code.
+      // Edition 2026-12: the Amazon role ended (Oct 2026), so it now sorts below
+      // the Abbott contract, which is still running. That made two openers
+      // adjacent: cyber-security's STMicro "Design" beside Abbott's "Design", and
+      // general's Abbott "Build" beside Amazon's "Built" (Rahul's own wording).
+      // ai-engineer's top falls to 1 with frame-quality's "Train" gone.
       'software-engineer': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
       'solution-architect': { bullets: 15, top: 2, codes: 'unquantified' },
-      'ai-engineer': { bullets: 13, top: 2, codes: 'unquantified,unused-evidence' },
+      'ai-engineer': { bullets: 13, top: 1, codes: 'unquantified,unused-evidence' },
       'operations-research-engineer': { bullets: 15, top: 1, codes: 'unquantified,unused-evidence' },
-      'cyber-security': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
+      'cyber-security': { bullets: 15, top: 2, codes: 'adjacent-repeat,unquantified,unused-evidence' },
       'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
       highlights: { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
@@ -508,8 +519,9 @@ describe('the real corpus', () => {
       // trips it twice — "engineer" and "train" — and the seven People's
       // Association bullets are why its count jumped from 30 to 33. Swarmline in,
       // coursework and ywh.network out (Sep 2026): 32. Rahul's Oct 2026 master CV
-      // puts both back and gives Swarmline a second bullet: 35.
-      general: { bullets: 35, top: 3, codes: 'unquantified,verb-family-cap,verb-family-cap' },
+      // puts both back and gives Swarmline a second bullet: 35. Its Amazon entry
+      // grew from two bullets to five in edition 2026-12: 38.
+      general: { bullets: 38, top: 2, codes: 'adjacent-repeat,unquantified,verb-family-cap,verb-family-cap' },
     });
   });
 

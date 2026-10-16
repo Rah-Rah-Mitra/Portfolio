@@ -73,14 +73,19 @@ describe('the shipped documents are a function of the content pool', () => {
       // résumés down the trim ladder; the RL certificate took its certificate's
       // title, which touches every certs line but certs-cyber; and BRINHACK became
       // BrainHack. Every DOCX was checked to hold exactly the text these hash.
-      'software-engineer': 'd4c4a264ab97ce7a',
-      'solution-architect': '07dfdd43e7976ff9',
-      'ai-engineer': 'e6be0ce8279908fc',
-      'operations-research-engineer': '27c3fdb3bc867caf',
-      'cyber-security': 'c6418a8fa47672dd',
-      'civic-tech-solution-architect': 'ddb1723ad313b668',
-      highlights: '10029a7bd601eaa7',
-      general: 'acec5d5c03dd06e5',
+      // All eight moved again for edition 2026-12, rebuilt through Word: the
+      // Amazon role ended (Oct 2026) and took Rahul's own wording (title, five
+      // bullets on general, sr-reproduction on ai-engineer), STMicroelectronics'
+      // header moved the System Design Project onto the company, and the
+      // hl-ai-data line (general, highlights) dropped its five assistant tools.
+      'software-engineer': 'e99f7f9bf54b6cf7',
+      'solution-architect': '84a64b3182b526fb',
+      'ai-engineer': '79f2364d45e1241a',
+      'operations-research-engineer': '069cb3896061c11a',
+      'cyber-security': '114329d4058db87d',
+      'civic-tech-solution-architect': '8e469a5a23d9f690',
+      highlights: '163458f015b9e8bc',
+      general: '5aaabd04c13a87e6',
     });
   });
 

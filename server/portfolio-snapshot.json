@@ -9,7 +9,7 @@
       "github": "https://github.com/Rah-Rah-Mitra",
       "instagram": "https://www.instagram.com/rah.rah.mitra/"
     },
-    "resumeEdition": "2026-11"
+    "resumeEdition": "2026-12"
   },
   "profile": {
     "tagline": "Systems Architect & AI Engineer · ISE × CS × Mathematics",
@@ -219,7 +219,7 @@
     },
     {
       "id": "career-amazon-vision",
-      "dateLabel": "Jul 2026-Present",
+      "dateLabel": "Jul 2026-Oct 2026",
       "sortDate": "2026-07-01",
       "tags": [
         "Amazon",
@@ -229,22 +229,24 @@
         "Image Restoration",
         "Super-Resolution",
         "UNet",
-        "Low-Light Imaging",
+        "PyTorch",
         "PSNR",
-        "SSIM"
+        "Flask"
       ],
       "linkedProjectIds": [],
       "kind": "professional",
-      "role": "Robotics Vision Engineer",
-      "organization": "Amazon (BlendED AI+X)",
+      "role": "Robotics Vision Engineer (AI+X Global Challenge)",
+      "organization": "Amazon",
       "location": "Singapore",
       "scope": "Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.",
       "responsibilities": [
-        "Build vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.",
-        "Train UNet and other CNN architectures for single-image super-resolution, upscaling frames four times and lifting PSNR and SSIM."
+        "Reproduced a published UNet super-resolution model in PyTorch from broken author code, training 12 models across three scales, two datasets, and two losses.",
+        "Closed a robustness gap under unseen blur with randomized-blur training and fine-tuning.",
+        "Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods.",
+        "Deployed three trained models as a public web app: a Flask inference API on a Colab T4 GPU and a hosted front end."
       ],
       "outcomes": [
-        "A low-cost camera reaches frame quality on par with premium sensors before its frames reach downstream robotics perception."
+        "Matched reported results at 8x and came within 0.78 dB at 2x and 4x; fine-tuning recovered up to 0.7 dB under real-world blur."
       ]
     },
     {
@@ -1463,8 +1465,8 @@
         "CI/CD",
         "System Design"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-software-engineer-2026-11.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-software-engineer-2026-11.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-software-engineer-2026-12.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-software-engineer-2026-12.docx"
     },
     {
       "id": "solution-architect",
@@ -1479,8 +1481,8 @@
         "Singpass",
         "Stakeholders"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-solution-architect-2026-11.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-solution-architect-2026-11.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-solution-architect-2026-12.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-solution-architect-2026-12.docx"
     },
     {
       "id": "ai-engineer",
@@ -1496,8 +1498,8 @@
         "HPC",
         "Model Evaluation"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-11.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-11.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-12.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-ai-engineer-2026-12.docx"
     },
     {
       "id": "operations-research-engineer",
@@ -1511,8 +1513,8 @@
         "Statistics",
         "Excel VBA"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-11.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-11.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-12.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-operations-research-engineer-2026-12.docx"
     },
     {
       "id": "cyber-security",
@@ -1527,8 +1529,8 @@
         "OAuth2/JWT",
         "Rust"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-cyber-security-2026-11.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-cyber-security-2026-11.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-cyber-security-2026-12.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-cyber-security-2026-12.docx"
     },
     {
       "id": "civic-tech-solution-architect",
@@ -1543,8 +1545,8 @@
         "GIS",
         "Accessibility"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-11.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-11.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-12.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-civic-tech-solution-architect-2026-12.docx"
     },
     {
       "id": "highlights",
@@ -1558,8 +1560,8 @@
         "Security",
         "Defense Tech"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-highlights-2026-11.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-highlights-2026-11.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-highlights-2026-12.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-highlights-2026-12.docx"
     },
     {
       "id": "general",
@@ -1573,8 +1575,8 @@
         "Security",
         "Two Pages"
       ],
-      "pdfUrl": "/resume/generated/rahul-mitra-general-2026-11.pdf",
-      "docxUrl": "/resume/generated/rahul-mitra-general-2026-11.docx"
+      "pdfUrl": "/resume/generated/rahul-mitra-general-2026-12.pdf",
+      "docxUrl": "/resume/generated/rahul-mitra-general-2026-12.docx"
     }
   ]
 }

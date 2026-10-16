@@ -1011,18 +1011,17 @@ const careerAndEducationNotes: FieldNote[] = [
     tags: ['STMicroelectronics', 'Operations Research', 'Warehouse Optimization', 'Demand Forecasting', 'AI'],
   },
   {
-    // The programme name sits with the company, not the job title: an internally
-    // mixed-case token in a Job Position marks the whole field as inconsistently
-    // styled to an ATS, and the Company field applies no such rule.
+    // Never put an internally mixed-case token (the old "BlendED") in the job
+    // title: an ATS marks the whole Job Position field as inconsistently styled.
     id: 'career-amazon-vision',
-    title: 'Amazon (BlendED AI+X) - Robotics Vision Engineer',
+    title: 'Amazon - Robotics Vision Engineer (AI+X Global Challenge)',
     kind: 'career',
     kinds: ['career'],
-    dateLabel: 'Jul 2026-Present',
+    dateLabel: 'Jul 2026-Oct 2026',
     sortDate: '2026-07-01',
     source: 'LinkedIn',
-    summary: 'Building vision systems across three imaging workstreams - camera ISP enhancement, super-resolution, and image restoration under motion and low light - upscaling frames four times so a low-cost camera reaches frame quality on par with premium sensors.',
-    tags: ['Amazon', 'Computer Vision', 'Robotics', 'Camera ISP', 'Image Restoration', 'Super-Resolution', 'UNet', 'Low-Light Imaging', 'PSNR', 'SSIM'],
+    summary: 'Built vision systems across camera ISP, super-resolution, and image restoration under real-world blur, and deployed three trained super-resolution models as a public web app.',
+    tags: ['Amazon', 'Computer Vision', 'Robotics', 'Camera ISP', 'Image Restoration', 'Super-Resolution', 'UNet', 'PyTorch', 'PSNR', 'Flask'],
   },
   {
     id: 'career-abbott-contract',
@@ -1348,15 +1347,19 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
   },
   'career-amazon-vision': {
     kind: 'professional',
-    role: 'Robotics Vision Engineer',
-    organization: 'Amazon (BlendED AI+X)',
+    role: 'Robotics Vision Engineer (AI+X Global Challenge)',
+    organization: 'Amazon',
     location: 'Singapore',
     scope: 'Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.',
+    // Kept short on purpose: this file is in the main bundle, whose cap is fixed.
+    // The full wording is amazon-vision in scripts/resume/content/experience.json.
     responsibilities: [
-      'Build vision systems across three imaging workstreams: camera ISP enhancement, super-resolution, and image restoration under motion and low light.',
-      'Train UNet and other CNN architectures for single-image super-resolution, upscaling frames four times and lifting PSNR and SSIM.',
+      'Reproduced a published UNet super-resolution model in PyTorch from broken author code, training 12 models across three scales, two datasets, and two losses.',
+      'Closed a robustness gap under unseen blur with randomized-blur training and fine-tuning.',
+      'Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods.',
+      'Deployed three trained models as a public web app: a Flask inference API on a Colab T4 GPU and a hosted front end.',
     ],
-    outcomes: ['A low-cost camera reaches frame quality on par with premium sensors before its frames reach downstream robotics perception.'],
+    outcomes: ['Matched reported results at 8x and came within 0.78 dB at 2x and 4x; fine-tuning recovered up to 0.7 dB under real-world blur.'],
   },
   // One merged Abbott record used to cover both roles. Split to match the
   // documents, and the tense is now consistent within each: present for the

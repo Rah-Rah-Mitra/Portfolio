@@ -15,6 +15,7 @@ import { configure } from '@testing-library/react';
 // 5000 → 10000 in the 2026-11 content pass. project-showcase started failing
 // under full-suite load again while passing alone, at ~5.9s against the 5s
 // budget: the pass added two experience records and lengthened a lot of card
-// prose, so every jsdom file does more work. testTimeout is 20000, so this
-// still fails long before the runner gives up.
+// prose, so every jsdom file does more work. testTimeout is 30000 (set once
+// for both projects in vitest.config.ts), so this still fails long before the
+// runner gives up.
 configure({ asyncUtilTimeout: 10000 });

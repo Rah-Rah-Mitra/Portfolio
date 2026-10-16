@@ -1214,6 +1214,15 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   each new flake has already cost someone a red run. Nothing is weakened — a
   genuinely broken assertion still fails. Adding DOM test files raises load for
   every other file, so re-run the full suite a few times after you do.
+- **So are the `pure` suites' heavy tests.** vitest's 5 s test timeout lost the
+  same race on 2026-10-16: drawing-set's regeneration cases and repo-hygiene's
+  repo scan take 2.0–2.3 s alone and ran past 5 s in a full run, and the
+  drawing-chunks case (~700 temp-file writes and reads, under 0.5 s alone)
+  reached 14.2 s in one. `testTimeout: 30000` is now set once at the root of
+  `vitest.config.ts`, so both projects inherit it; the same rule holds: never
+  add a per-test timeout to fix a flake that only happens under full-suite
+  load. A per-test timeout is for a test that is slow alone (the estate
+  suites' 30–120 s), and it overrides the root value.
 - jsdom keeps `localStorage` across a file's tests: a DOM test that mounts the
   Estate controller starts with `localStorage.clear()` (the viewer's settings
   are stored there).

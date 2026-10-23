@@ -452,10 +452,12 @@ describe('the real corpus', () => {
     // frame-quality for Rahul's four new bullets, three of them measured ("12
     // models", "4 model families", "3 trained models"; robustness's "0.7 dB" is
     // no unit the classifier knows), so coverage 0.54 -> 0.55, and the new isp
-    // wording ("Built vision systems") ties the Build family.
+    // wording ("Built vision systems") ties the Build family. Rahul then asked
+    // for abbott-contract.setpoint to say "globally distributed plants" instead
+    // of "4 plants", which was its only measurement, so coverage 0.55 -> 0.52.
     expect(report.metrics.bullets).toBe(46);
     expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 3 });
-    expect(report.metrics.metricCoverage).toBe(0.55);
+    expect(report.metrics.metricCoverage).toBe(0.52);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in

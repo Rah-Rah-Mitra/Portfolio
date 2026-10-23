@@ -856,7 +856,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - Current edition: **2026-12** (the Amazon role ended Oct 2026; Rahul's Oct
   2026 master CV wording). `generated/` keeps the current + previous edition;
   older sets live in `public/resume/archive/`. Its eight PDFs were exported
-  through Word (`export-pdf.ps1`) on 2026-10-16. `general` sits at nus's 8.5pt
+  through Word (`export-pdf.ps1`) on 2026-10-23. `general` sits at nus's 8.5pt
   floor, so any line added to it must buy its room elsewhere.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
   across all profiles), and the two-page `general` master CV, which is the
@@ -1261,7 +1261,7 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   desk drawing set moved the desk-backdrop layer and its policy into a lazy chunk
   (−2,807 B) and spent 896 B on its gate, FX toggle, plate slot and assistant
   copy (506,380 B by the time it merged); the root's `onCaughtError` and
-  `AppErrorBoundary`'s own report spent 226 B; the sheet traverse left it at 506,694 B, and edition 2026-12's Amazon record (kept short in `portfolioData.ts` for this reason) spent 106 B, so at 506,800 B **2,034 B are left** — anything bigger goes into the controller,
+  `AppErrorBoundary`'s own report spent 226 B; the sheet traverse left it at 506,694 B, and edition 2026-12's Amazon record (kept short in `portfolioData.ts` for this reason) spent 106 B, and the Abbott contract's "Global" retitle 40 B, so at 506,840 B **1,994 B are left** — anything bigger goes into the controller,
   engine, HUD or desk-backdrop layer chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).

@@ -68,7 +68,7 @@
       "id": "abbott-contract",
       "organization": "Abbott Laboratories",
       "location": "Singapore",
-      "role": "Operational AI Systems & Data Engineer (Contract)",
+      "role": "Global Operational AI Systems & Data Engineer (Contract)",
       "start": "2026-06",
       "dateLabel": "Jun 2026 – Present",
       "bullets": [
@@ -100,8 +100,8 @@
         {
           "id": "setpoint",
           "text": {
-            "default": "Convert 4 plants' Advanced Process Control models from Excel master files into a single HiGHS linear program returning setpoints, binding constraints, and shadow prices at millisecond latency.",
-            "deep": "Convert 4 site-specific vendor formulations' Advanced Process Control steady-state models from their Excel master files into a single HiGHS linear program (scipy.optimize.linprog) with a tracking QP and PLC predictor covering every site, returning setpoints, binding constraints, shadow prices, and trust-region warnings at millisecond latency with no commercial solver license, back-tested against the production system's own historical targets."
+            "default": "Convert globally distributed plants' Advanced Process Control models from Excel master files into a single HiGHS linear program returning setpoints, binding constraints, and shadow prices at millisecond latency.",
+            "deep": "Convert globally distributed plants' site-specific vendor Advanced Process Control steady-state models from their Excel master files into a single HiGHS linear program (scipy.optimize.linprog) with a tracking QP and PLC predictor covering every site, returning setpoints, binding constraints, shadow prices, and trust-region warnings at millisecond latency with no commercial solver license, back-tested against the production system's own historical targets."
           }
         },
         {

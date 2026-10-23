@@ -833,7 +833,7 @@ export const eventHighlights: EventHighlight[] = [
     dateLabel: 'Jan 2026 - Present',
     exactDateRange: '2026-01-01 to Present',
     source: 'LinkedIn',
-    summary: 'Built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data with zero execution failures. Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use through Docker and Azure App Service, and trained regional engineering teams across Asia and Europe on repeatable AI workflows. Now builds an air-gapped process-intelligence platform for globally distributed spray-drying plants (GPU document parsing, ONNX embeddings, a Chroma vector store, and a locally hosted quantized Gemma model), alongside a Seeq-backed multi-site data layer and a HiGHS setpoint optimizer that converts four plants’ Advanced Process Control models into one linear program.',
+    summary: 'Built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data with zero execution failures. Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use through Docker and Azure App Service, and trained regional engineering teams across Asia and Europe on repeatable AI workflows. Now builds an air-gapped process-intelligence platform for globally distributed spray-drying plants (GPU document parsing, ONNX embeddings, a Chroma vector store, and a locally hosted quantized Gemma model), alongside a Seeq-backed multi-site data layer and a HiGHS setpoint optimizer that converts those plants’ Advanced Process Control models into one linear program.',
     tags: ['Air-Gapped RAG', 'PyTorch', 'ONNX', 'Chroma', 'LangChain', 'llama.cpp', 'Seeq', 'HiGHS', 'SciPy', 'STUMPY', 'Data Quality', 'CP-SAT', 'Robust Optimization', 'Cloud Operations', 'AI Upskilling'],
     organizations: ['Abbott'],
     linkedProjectIds: ['hybrid-flow-shop-digital-twin', 'changeover-data-quality-pipeline', 'azure-apc-web-simulator'],
@@ -1025,13 +1025,13 @@ const careerAndEducationNotes: FieldNote[] = [
   },
   {
     id: 'career-abbott-contract',
-    title: 'Abbott Laboratories - Operational AI Systems & Data Engineer (Contract)',
+    title: 'Abbott Laboratories - Global Operational AI Systems & Data Engineer (Contract)',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Jun 2026-Present',
     sortDate: '2026-06-01',
     source: 'LinkedIn',
-    summary: 'Assembling a five-stage offline process-intelligence platform for globally distributed spray-drying plants, converting four plants\' Advanced Process Control models into one HiGHS linear program, and building the multi-site data layer and test harness underneath both.',
+    summary: 'Assembling a five-stage offline process-intelligence platform for globally distributed spray-drying plants, converting their Advanced Process Control models into one HiGHS linear program, and building the multi-site data layer and test harness underneath both.',
     tags: ['Abbott', 'Offline RAG', 'PyTorch', 'ONNX', 'Chroma', 'LangChain', 'Seeq', 'HiGHS', 'SciPy', 'STUMPY', 'Manufacturing AI'],
     linkedProjectIds: ['changeover-data-quality-pipeline'],
   },
@@ -1366,20 +1366,20 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
   // contract that is still running, past for the internship that ended.
   'career-abbott-contract': {
     kind: 'professional',
-    role: 'Operational AI Systems & Data Engineer (Contract)',
+    role: 'Global Operational AI Systems & Data Engineer (Contract)',
     organization: 'Abbott Laboratories',
     location: 'Singapore',
     scope: 'Offline process intelligence, multi-site historian analytics, setpoint optimization, and manufacturing decision support.',
     responsibilities: [
       'Assemble a five-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, bge-small ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted Gemma model.',
-      'Convert four plants’ Advanced Process Control models from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.',
+      'Convert globally distributed plants’ Advanced Process Control models from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.',
       'Build a live multi-site data layer over read-only Seeq historian pulls, mapping each site through configuration rather than forks, with Kalman smoothing, Welch PSD, change-point detection, and matrix-profile motifs in SciPy and pandas.',
       'Design a tool loop where the model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log with no write path to plant control.',
       'Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference.',
       'Build MCP servers, 20+ regression tests, a headless notebook runner, and a deterministic model stand-in for GPU-free CI, with golden snapshots committed for reproducible runs.',
     ],
     outcomes: [
-      'Consolidates four plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets.',
+      'Consolidates globally distributed plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets.',
     ],
   },
   'career-abbott-intern': {

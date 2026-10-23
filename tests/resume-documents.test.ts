@@ -78,14 +78,19 @@ describe('the shipped documents are a function of the content pool', () => {
       // bullets on general, sr-reproduction on ai-engineer), STMicroelectronics'
       // header moved the System Design Project onto the company, and the
       // hl-ai-data line (general, highlights) dropped its five assistant tools.
+      // Two moved on 2026-10-23, rebuilt through Word in place: Rahul asked for
+      // abbott-contract.setpoint (general, operations-research-engineer) to say
+      // "globally distributed plants" instead of "4 plants". The same rebuild
+      // retitled the role "Global Operational AI Systems & Data Engineer
+      // (Contract)" on all eight, which this digest does not hash.
       'software-engineer': 'e99f7f9bf54b6cf7',
       'solution-architect': '84a64b3182b526fb',
       'ai-engineer': '79f2364d45e1241a',
-      'operations-research-engineer': '069cb3896061c11a',
+      'operations-research-engineer': '51d6e310ea390b9a',
       'cyber-security': '114329d4058db87d',
       'civic-tech-solution-architect': '8e469a5a23d9f690',
       highlights: '163458f015b9e8bc',
-      general: '5aaabd04c13a87e6',
+      general: 'c4b131e0384507a8',
     });
   });
 

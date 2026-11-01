@@ -104,8 +104,9 @@ export const resolveBulletText = (bullet, spec, entryVariant, ref) => {
  * on: the checker reports findings against `ref` (entryId.bulletId), and matching
  * report text back to the pool would be ambiguous across the per-slug overrides
  * and depth variants. `sectionType` rides along because section titles are prose
- * that a spec chooses (the general CV calls its projects section "PROJECTS AND
- * COMPETITIONS"), so no rule may key on the title.
+ * that a spec chooses (a projects section may still say "PROJECTS AND
+ * COMPETITIONS", a leadership one "LEADERSHIP AND ACTIVITIES"), so no rule may
+ * key on the title.
  */
 export const assemble = (spec, pools) => {
   const skillLines = new Map(pools.skills.lines.map((line) => [line.id, line]));

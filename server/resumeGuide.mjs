@@ -142,16 +142,17 @@ The sections, in this order, each optional:
 SUMMARY (the master CV only: Rahul's own paragraph, selected with
 \`{ "type": "summary", "title": "SUMMARY" }\` and never on a role résumé),
 EDUCATION, WORK EXPERIENCE, RESEARCH EXPERIENCE (type \`research\`), PROJECTS,
-LEADERSHIP AND ACTIVITIES (the master CV calls it CO-CURRICULAR ACTIVITIES AND
-VOLUNTEER EXPERIENCES), NATIONAL SERVICE (type \`national-service\`),
-SKILLS AND CERTIFICATIONS.
+CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES (type \`leadership\`),
+NATIONAL SERVICE (type \`national-service\`), SKILLS AND CERTIFICATIONS. These
+are the master CV's headings and every ready-made résumé uses them.
 
 Certifications are not a separate section: they are skills lines whose label is
 "Certifications" (ids beginning \`certs-\`).
 
 Those headings are the exact strings, and the only ones: a section's \`title\` is
-chosen from that list (the experience section may also say plain "EXPERIENCE",
-and \`general\`'s projects section "PROJECTS AND COMPETITIONS"), not written. \`subject\` is chosen too — any of the eight
+chosen from that list (the experience section may also say plain "EXPERIENCE";
+"PROJECTS AND COMPETITIONS" and "LEADERSHIP AND ACTIVITIES" are retired headings
+still accepted so older links work), not written. \`subject\` is chosen too — any of the eight
 ready-made subjects, or "Resume", "Custom Resume", "Tailored résumé" — because it
 becomes the document's title in the PDF and DOCX metadata. Both print on a file
 served under Rahul's name, so neither is a place to put your own words, not even
@@ -174,7 +175,7 @@ the company you are aiming at.
       ] },
     { "type": "projects", "title": "PROJECTS",
       "entries": [{ "id": "voltpulse", "bullets": ["main"] }] },
-    { "type": "leadership", "title": "LEADERSHIP AND ACTIVITIES",
+    { "type": "leadership", "title": "CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES",
       "entries": [{ "id": "ntuc", "bullets": ["main"] }] },
     { "type": "skills", "title": "SKILLS AND CERTIFICATIONS",
       "lines": ["se-skills", "certs-core"] }

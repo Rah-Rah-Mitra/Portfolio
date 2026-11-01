@@ -36,7 +36,7 @@ const SECTIONS: Array<{ type: SectionType; title: string }> = [
   { type: 'experience', title: 'EXPERIENCE' },
   { type: 'research', title: 'RESEARCH EXPERIENCE' },
   { type: 'projects', title: 'PROJECTS' },
-  { type: 'leadership', title: 'LEADERSHIP AND ACTIVITIES' },
+  { type: 'leadership', title: 'CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES' },
   { type: 'national-service', title: 'NATIONAL SERVICE' },
 ];
 const SKILLS_TITLE = 'SKILLS AND CERTIFICATIONS';

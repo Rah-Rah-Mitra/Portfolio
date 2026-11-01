@@ -52,7 +52,7 @@ describe('résumé data', () => {
     expect(markdown).toContain('+65 8515 5413');
     expect(markdown).toContain('put-away');
     // ywh now sits under Leadership rather than Experience.
-    expect(markdown).toContain('## LEADERSHIP AND ACTIVITIES');
+    expect(markdown).toContain('## CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES');
     expect(markdown).toContain('**Languages:**');
     // highlights carries no slug override of its own any more - both of the ones
     // it had became the default - so the override path is checked where one lives.

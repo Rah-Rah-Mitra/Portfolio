@@ -320,10 +320,11 @@ const id = z.string().min(1).max(60);
 // Rahul's name. As a free 80-character string it was eight sections' worth of
 // whatever a caller wanted to say, through the open build_resume tool and
 // through the unauthenticated api/resume endpoint — the one text channel this
-// whole design exists to close. So headings are selected too, from exactly the
-// set the eight canonical résumés use. Per type rather than one shared list
-// because `general` calls its projects section "PROJECTS AND COMPETITIONS" and
-// nothing else may.
+// whole design exists to close. So headings are selected too, from the set the
+// eight canonical résumés use (the Nov 2026 master CV's headings), plus the two
+// they used before it, "PROJECTS AND COMPETITIONS" and "LEADERSHIP AND
+// ACTIVITIES", so a spec in a link built earlier still parses. Per type rather
+// than one shared list, so no heading can land on the wrong kind of section.
 const entries = z.array(z.object({
   id,
   bullets: z.array(id).max(10).optional(),
@@ -408,7 +409,7 @@ export const specSchema = z.object({
     // cv-inline prints each project as one bullet, "Role, Organization (Date):
     // text", the master CV's format; every entry then selects exactly one bullet.
     entrySection('projects', ['PROJECTS', 'PROJECTS AND COMPETITIONS'], { render: z.enum(['cv-inline']).optional() }),
-    entrySection('leadership', ['LEADERSHIP AND ACTIVITIES', 'CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES']),
+    entrySection('leadership', ['CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES', 'LEADERSHIP AND ACTIVITIES']),
     entrySection('national-service', ['NATIONAL SERVICE']),
     skillsSection,
   ])).min(1).max(8),

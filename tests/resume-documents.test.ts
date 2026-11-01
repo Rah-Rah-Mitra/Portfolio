@@ -188,6 +188,25 @@ describe('the master CV house rules hold across the pool', () => {
     expect(entries.filter((entry) => entry.organization.trim() === 'Amazon').map((entry) => entry.id)).toEqual([]);
   });
 
+  it('heads every canonical section the way the master CV does', () => {
+    // The schema still accepts the retired "LEADERSHIP AND ACTIVITIES" and
+    // "PROJECTS AND COMPETITIONS" so older links parse; no shipped résumé uses them.
+    const HEADINGS: Record<string, string> = {
+      summary: 'SUMMARY',
+      education: 'EDUCATION',
+      experience: 'WORK EXPERIENCE',
+      research: 'RESEARCH EXPERIENCE',
+      projects: 'PROJECTS',
+      leadership: 'CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES',
+      'national-service': 'NATIONAL SERVICE',
+      skills: 'SKILLS AND CERTIFICATIONS',
+    };
+    const off = configs.flatMap((config) => (config.sections as Array<Section & { title: string }>)
+      .filter((section) => section.title !== HEADINGS[section.type])
+      .map((section) => `${config.slug}: ${section.type} "${section.title}"`));
+    expect(off).toEqual([]);
+  });
+
   it('writes no em dash into résumé content', () => {
     const everything = JSON.stringify([pools.profile, pools.skills, ...entries]);
     expect(everything.includes('\u2014')).toBe(false);

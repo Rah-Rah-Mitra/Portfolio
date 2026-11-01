@@ -140,7 +140,7 @@ describe('résumé renderer', () => {
         { type: 'experience', title: 'EXPERIENCE', entries: entryIds('experience') },
         { type: 'research', title: 'RESEARCH EXPERIENCE', entries: entryIds('research') },
         { type: 'projects', title: 'PROJECTS', entries: entryIds('projects') },
-        { type: 'leadership', title: 'LEADERSHIP AND ACTIVITIES', entries: entryIds('leadership') },
+        { type: 'leadership', title: 'CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES', entries: entryIds('leadership') },
         { type: 'national-service', title: 'NATIONAL SERVICE', entries: entryIds('national-service') },
       ],
     };

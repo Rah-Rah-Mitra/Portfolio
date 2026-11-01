@@ -384,7 +384,7 @@
         "Designed rules-based balloting workflows across four control points: eligibility checks, conflict resolution, exception handling, and administrative oversight, keeping allocation transparent and auditable."
       ],
       "outcomes": [
-        "Kept garden-plot balloting fair for 150 residents signed up at release, and left the platform production-ready for national rollout across Singapore.",
+        "Kept garden-plot balloting fair for 150 residents signed up at release; the platform is now live in Tengah with national rollout planned.",
         "Won the S$20,000 Sparks Community Innovation Fund."
       ]
     },
@@ -935,7 +935,7 @@
       "id": "churp",
       "title": "Churp",
       "category": "Citizen Developer Platform",
-      "description": "An end-to-end digital garden-plot balloting platform for People's Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - production-ready for national rollout across Singapore.",
+      "description": "An end-to-end digital garden-plot balloting platform for People's Association - admin and public frontends, GIS-based allocation, and Singpass Login + Myinfo identity verification - live in Tengah, with national rollout planned.",
       "tags": [
         "Civic Tech",
         "Singpass",
@@ -962,7 +962,7 @@
         "context": "Community garden-plot allocation needed a complete civic workflow rather than another isolated form.",
         "contribution": "Built the admin and public surfaces, backend, GIS allocation, Singpass/Myinfo identity flow, and the AWS deployment behind it. Singpass secures the sign-in; Myinfo is what keeps the ballot fair.",
         "approach": "Full-stack delivery, GIS-based allocation, OIDC identity, and Terraform-provisioned AWS infrastructure (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager), with stakeholder coordination and rollout planning.",
-        "outcome": "Fair balloting for 150 residents signed up at release, production-ready for national rollout, and the S$20,000 Sparks Community Innovation Fund."
+        "outcome": "Fair balloting for 150 residents signed up at release, live in Tengah with national rollout planned, and the S$20,000 Sparks Community Innovation Fund."
       }
     },
     {

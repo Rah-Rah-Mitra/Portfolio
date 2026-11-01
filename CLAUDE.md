@@ -948,8 +948,9 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   a heading prints full width on the page and `subject` is the PDF/DOCX document
   title, `build_resume` is open and `api/resume.mjs` is unauthenticated, so both
   were a text channel onto a document served under Rahul's name. The enums are
-  exactly what the eight canonical résumés use (`general` alone may say "PROJECTS
-  AND COMPETITIONS"), so a spec from `get_resume` still round-trips. The
+  exactly what the eight canonical résumés use (the Nov 2026 master CV's
+  headings, plus the retired "PROJECTS AND COMPETITIONS" and "LEADERSHIP AND
+  ACTIVITIES" so older links parse), so a spec from `get_resume` still round-trips. The
   same surface is the `resume-builder` window
   (`components/workbench/ResumeBuilder.tsx`), which loads blocks after mount and
   previews the real PDF in an iframe. Bullets carry optional `deep`/`short`

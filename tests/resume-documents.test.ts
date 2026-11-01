@@ -95,14 +95,16 @@ describe('the shipped documents are a function of the content pool', () => {
       // bullets, Amazon's brief, the merged PA infra and survey lines, NTUC's
       // home visits, the Navy's corrected 6-month figure and BrainHack's top 25%,
       // plus general's summary, which add_text prints and this now hashes. Every
-      // DOCX was checked paragraph by paragraph against assemble().
-      'software-engineer': '8f3d3f963d0593fd',
-      'solution-architect': 'd4f312d4c0b98ccf',
-      'ai-engineer': '3dfefe0ffbfe0ff6',
-      'operations-research-engineer': '208f0a153f23ea9e',
+      // DOCX was checked paragraph by paragraph against assemble(). The six that
+      // carry certs-core or certs-or moved again the same day, when Rahul took the
+      // Packt and Intellezy courses off those lines as the CV had.
+      'software-engineer': 'bfd95189a334c0ce',
+      'solution-architect': '6a1b13e05fd6c591',
+      'ai-engineer': '52e2008e76f7bfd3',
+      'operations-research-engineer': '8e9b7f0fff2036f1',
       'cyber-security': 'd2bb31654c280637',
-      'civic-tech-solution-architect': '87919f2eb8ab3682',
-      highlights: '961d3c22d741b634',
+      'civic-tech-solution-architect': 'd6d9730620df57b7',
+      highlights: 'f0c891e33a08acc0',
       general: '0c893f791babf6ff',
     });
   });

@@ -668,7 +668,8 @@ const wordMatch = (keyword) => {
 // Left in, an RL posting came back "covered: DDPG, A2C -- missing: none", which
 // is the applied-experience misreading 12 of that document warns about, on an
 // open tool whose output often reaches an employer unread. "deep RL" itself
-// stays: it is a printed label, and the certification backing it is printed too.
+// stays: Rahul keeps it as a printed skill (Nov 2026) and answers for it, though
+// the Packt certificate behind it is off every résumé's certification line now.
 const UNBACKED = new Set(['PPO', 'A2C', 'DDPG', 'DQN']);
 
 const ATTESTED = [...new Set([...snapshot.resumes.flatMap((resume) => resume.keywords), ...skillTerms])]

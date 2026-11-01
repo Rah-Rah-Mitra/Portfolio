@@ -160,7 +160,7 @@
           "id": "main",
           "text": {
             "default": "Integrated SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning into an autonomous loop managing electricity and utility savings across multiple HDB households at once.",
-            "deep": "Integrated SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing into an autonomous loop managing electricity and utility savings across multiple HDB households at once."
+            "deep": "Integrated SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing into an autonomous loop managing electricity and utility savings across multiple HDB households at once, placing top 8 of 50+ teams at SMU Hack For Cities 2026."
           },
           "phrasings": {
             "loop-first": {

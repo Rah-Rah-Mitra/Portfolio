@@ -84,10 +84,9 @@ keyword is recoverable; an inaccurate one is not.
    accepts a phrasing id and rejects text, and an id that does not exist is an
    error rather than a quiet fallback to something else.
 
-   One phrasing is a standing rule rather than a choice: \`amazon-vision.brief\`
-   names Rahul's mentor on the Amazon Robotics brief, and outside the general
-   master CV it goes out as \`"phrasings": { "amazon-vision.brief": "no-mentor" }\`
-   until her consent to be named on other documents is confirmed.
+   \`amazon-vision.brief\` names Rahul's mentor on the Amazon Robotics brief,
+   and may on any document. Its \`no-mentor\` phrasing is the same brief without
+   that clause, a line shorter, for a page that needs the room.
 8. \`build_resume(spec)\`. You get PDF, DOCX and Markdown URLs plus a fit report.
 
 ## Layout, which you do not control

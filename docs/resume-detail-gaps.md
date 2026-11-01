@@ -100,9 +100,9 @@ PSNR).
 employment. It moved to `research.json` as *Computer Vision Researcher, BlendED x
 Amazon Robotics (AI+X Global Challenge)*, and "Amazon" never stands alone as the
 organisation. General opens it with `brief` (the Amazon Robotics brief, mentored
-by Dan Shao) in place of `isp`; the role résumés keep `isp`. `brief` carries the
-phrasing `no-mentor`, which outside general is the one to select until Dan Shao's
-consent to be named beyond the CV is confirmed (§16).
+by Dan Shao) in place of `isp`; the role résumés keep `isp`. Rahul cleared
+naming Dan Shao on any document (2026-11-01); `brief`'s phrasing `no-mentor` stays
+as the same sentence a line shorter.
 
 ## 3. STMicroelectronics — ongoing, so no outcome yet
 
@@ -543,8 +543,13 @@ settled, and what it left open:
   with the Rust auth gateway), BrainHack (top 25% of 400+ teams), the Navy's
   food-waste figure (a month-long manual analysis of 6 months of data) and
   setpoint's "global plants'".
-- **Still open** (spec §9 and §10, not pre-empted): Dan Shao's consent to be named
-  beyond the CV, the STMicro title and "Global", the ARTC designation, Abbott's
-  detail clearance, the unbacked skills, the counted-list bullets and a fault-type
-  count for `fault-detection`. `certs-core` and `certs-or` still list the Packt and
-  Intellezy courses the CV cut: the spec marks that a decision for Rahul.
+- **Settled the same day:** Dan Shao may be named on any document, so `brief`
+  needs no phrasing outside the CV; and the Packt (RL) and Intellezy (Excel)
+  courses come off `certs-core` and `certs-or` as they came off the CV, leaving
+  NVIDIA alone on every certification line but `certs-cyber`. The site's
+  certificate register still lists them; withholding a line is not withholding a
+  certificate. Volt Pulse's deep variant keeps its whole closing clause ("placing
+  top 8 of 50+ teams at SMU Hack For Cities 2026"): Rahul wants the event named.
+- **Still open** (spec §9 and §10, not pre-empted): the STMicro title and
+  "Global", the ARTC designation, Abbott's detail clearance, the unbacked skills,
+  the counted-list bullets and a fault-type count for `fault-detection`.

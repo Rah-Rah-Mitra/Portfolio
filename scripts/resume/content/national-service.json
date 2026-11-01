@@ -1,0 +1,28 @@
+{
+  "entries": [
+    {
+      "id": "navy",
+      "organization": "Republic of Singapore Navy",
+      "location": "Singapore",
+      "role": "Naval Chef & Base Support Assistant",
+      "start": "2021-01",
+      "end": "2023-01",
+      "dateLabel": "Jan 2021 – Jan 2023",
+      "bullets": [
+        {
+          "id": "vba",
+          "text": {
+            "default": "Compressed a month-long manual analysis of 6 months of food-waste data into a 3-minute Excel VBA reporting workflow inside a security-constrained environment.",
+            "deep": "Mapped the food-waste reporting process end to end, then automated its calculations and reporting steps with an Excel VBA workflow that compressed a month-long manual analysis of 6 months of food-waste data into a repeatable 3-minute process inside a security-constrained environment."
+          }
+        },
+        {
+          "id": "data",
+          "text": {
+            "default": "Managed sensitive operational data under SAF confidentiality expectations while improving reliability, traceability, and analyst capacity."
+          }
+        }
+      ]
+    }
+  ]
+}

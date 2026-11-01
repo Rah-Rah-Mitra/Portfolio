@@ -23,6 +23,29 @@
  */
 const entryOrder = (entry) => (entry.end ? `0${entry.end}` : `1${entry.start}`);
 
+/**
+ * The dated-entry section types, in the order a résumé prints them. Each type is
+ * also the name of its content pool (scripts/resume/content/<type>.json), which
+ * is what keeps `pools[section.type]` the whole lookup. `summary` and `skills`
+ * are the two section types without entries. build_resumes.py loads the same
+ * pools; every list of section types in the repo reads this one.
+ */
+export const ENTRY_SECTION_TYPES = ['education', 'experience', 'research', 'projects', 'leadership', 'national-service'];
+
+/**
+ * The master CV's one-bullet project line, "Role, Organization (Date): text".
+ * A date joins a trailing parenthetical the organisation already has, so
+ * "(1,300+ applicants)" becomes "(1,300+ applicants, Sep 2026)" rather than two
+ * brackets in a row. build_resumes.py:inline_label is the same rule.
+ */
+const inlineLabel = (entry, role) => {
+  const head = role ? `${role}, ${entry.organization}` : entry.organization;
+  return head.endsWith(')') ? `${head.slice(0, -1)}, ${entry.dateLabel})` : `${head} (${entry.dateLabel})`;
+};
+
+/** The text a bullet prints: its sentence, behind its inline label when it has one. */
+export const bulletLine = (item) => (item.label ? `${item.label}: ${item.text}` : item.text);
+
 // text[variant] ?? text[slug] ?? text.default, mirroring build_resumes.py:33-35
 // with the reserved depth keys layered on top.
 export const resolveRole = (entry, selection) => {
@@ -44,7 +67,7 @@ export const resolveRole = (entry, selection) => {
  *             through spec.phrasings. Wins outright: it is the most specific
  *             instruction the caller gave, and falling through to a depth
  *             variant would silently undo the choice they made.
- *   depth     text.deep, chosen per entry or per spec. Only 17 of the 43
+ *   depth     text.deep, chosen per entry or per spec. Only 15 of the 52
  *             selectable bullets carry one and the rest fall back to their
  *             default; that fallback is deliberate and documented in the guide.
  *   targeting text[slug], the per-résumé overrides the Python builder reads.
@@ -81,8 +104,9 @@ export const resolveBulletText = (bullet, spec, entryVariant, ref) => {
  * on: the checker reports findings against `ref` (entryId.bulletId), and matching
  * report text back to the pool would be ambiguous across the per-slug overrides
  * and depth variants. `sectionType` rides along because section titles are prose
- * that a spec chooses (the general CV calls its projects section "PROJECTS AND
- * COMPETITIONS"), so no rule may key on the title.
+ * that a spec chooses (a projects section may still say "PROJECTS AND
+ * COMPETITIONS", a leadership one "LEADERSHIP AND ACTIVITIES"), so no rule may
+ * key on the title.
  */
 export const assemble = (spec, pools) => {
   const skillLines = new Map(pools.skills.lines.map((line) => [line.id, line]));
@@ -90,6 +114,14 @@ export const assemble = (spec, pools) => {
   const used = new Set();
   for (const section of spec.sections) {
     items.push({ kind: 'section', title: section.title.toUpperCase(), sectionType: section.type });
+    if (section.type === 'summary') {
+      // Rahul's own paragraph from profile.json, never a caller's: a summary
+      // section selects it and carries no text of its own.
+      const summary = pools.profile?.summary;
+      if (!summary) throw new Error('a summary section needs profile.summary in the pools');
+      items.push({ kind: 'text', sectionType: 'summary', text: summary });
+      continue;
+    }
     if (section.type === 'skills') {
       for (const id of section.lines) {
         const line = skillLines.get(id);
@@ -103,12 +135,32 @@ export const assemble = (spec, pools) => {
       const entry = pool.get(selection.id);
       if (!entry) throw new Error(`unknown ${section.type} entry: ${selection.id}`);
       if (entry.blocked) throw new Error(`${selection.id} is not available for résumés: ${entry.blocked}`);
-      return { entry, bullets: selection.bullets ?? [], variant: selection.variant, role: resolveRole(entry, selection) };
+      const role = resolveRole(entry, selection);
+      // A degree carries its GPA unless the selection drops it for space.
+      const shown = role && entry.gpa && selection.gpa !== false ? `${role} (GPA: ${entry.gpa})` : role;
+      // `date: false` leaves the heading undated, for an entry whose dates are
+      // in its own bullet: general's A*STAR line, as the master CV prints it.
+      const dateLabel = selection.date === false ? '' : entry.dateLabel;
+      return { entry, bullets: selection.bullets ?? [], variant: selection.variant, role: shown, after: selection.after, dateLabel };
     }).sort((a, b) => (section.type === 'projects'
       ? b.entry.sort.localeCompare(a.entry.sort)
       : entryOrder(b.entry).localeCompare(entryOrder(a.entry))));
+    // `after` groups an entry under another of the same section after the date
+    // sort, which is the one exception to it: general keeps the Abbott
+    // internship under the Abbott contract it was converted into, though People's
+    // Association ended later. Applied in selection order, so it is stable.
+    for (const moving of chosen.filter((item) => item.after)) {
+      const anchor = chosen.find((item) => item.entry.id === moving.after);
+      if (!anchor) throw new Error(`${moving.entry.id} is placed after ${moving.after}, which this section does not select`);
+      chosen.splice(chosen.indexOf(moving), 1);
+      chosen.splice(chosen.indexOf(anchor) + 1, 0, moving);
+    }
+    const inline = section.render === 'cv-inline';
 
-    for (const { entry, bullets, variant, role } of chosen) {
+    for (const { entry, bullets, variant, role, dateLabel } of chosen) {
+      if (inline && bullets.length !== 1) {
+        throw new Error(`a cv-inline section prints each entry as one bullet; ${entry.id} selects ${bullets.length}`);
+      }
       items.push({
         kind: 'entry',
         entryId: entry.id,
@@ -116,7 +168,8 @@ export const assemble = (spec, pools) => {
         organization: entry.organization,
         location: entry.location ?? '',
         role,
-        dateLabel: entry.dateLabel,
+        dateLabel,
+        ...(inline ? { inline: true } : {}),
       });
       const byId = new Map((entry.bullets ?? []).map((bullet) => [bullet.id, bullet]));
       for (const id of bullets) {
@@ -133,6 +186,7 @@ export const assemble = (spec, pools) => {
           sectionType: section.type,
           variant: variant ?? spec.detail ?? 'standard',
           ...(phrasing ? { phrasing } : {}),
+          ...(inline ? { label: inlineLabel(entry, role) } : {}),
           text: resolveBulletText(bullet, spec, variant, ref),
         });
       }

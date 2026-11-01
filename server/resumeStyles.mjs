@@ -10,6 +10,8 @@
 //
 // Imports only pdfkit's measuring surface through the `doc` handed in, so the
 // checker and the builder window can reach the constants without a PDF engine.
+// resumeAssemble.mjs imports nothing, so it costs them nothing either.
+import { bulletLine } from './resumeAssemble.mjs';
 
 // ── shared primitives ─────────────────────────────────────────────────────
 export const measure = (doc, text, font, size, tracking = 0) => {
@@ -127,6 +129,11 @@ const harvard = {
         blocks.push(block(wrapRuns(doc, runs, contentWidth, contentWidth), { size: bodyPt, spaceAfter: 1 }));
         return;
       }
+      if (item.kind === 'text') {
+        blocks.push(block(wrapRuns(doc, [{ text: item.text, font: this.regular, size: bodyPt }], contentWidth, contentWidth), { size: bodyPt, spaceAfter: 1 }));
+        return;
+      }
+      if (item.kind === 'entry' && item.inline) return; // printed inside its bullet
       if (item.kind === 'entry') {
         // Two lines everywhere but projects, where the role reads as a label
         // and the extra line would cost the one-pagers one per project. Which
@@ -146,7 +153,7 @@ const harvard = {
         }
         return;
       }
-      const runs = [{ text: this.bullet + item.text, font: this.regular, size: bodyPt }];
+      const runs = [{ text: this.bullet + bulletLine(item), font: this.regular, size: bodyPt }];
       blocks.push(block(
         wrapRuns(doc, runs, contentWidth, contentWidth - this.bulletIndent),
         { size: bodyPt, spaceAfter: 1, hanging: this.bulletIndent },
@@ -200,6 +207,11 @@ const harvard = {
         }));
         return;
       }
+      if (item.kind === 'text') {
+        children.push(new Paragraph({ spacing: { ...single, before: 0, after: 1 * TWIP }, children: [run(item.text)] }));
+        return;
+      }
+      if (item.kind === 'entry' && item.inline) return;
       if (item.kind === 'entry') {
         const twoLine = Boolean(item.role) && item.sectionType !== 'projects';
         const rightOne = twoLine ? item.location : item.dateLabel;
@@ -222,7 +234,7 @@ const harvard = {
       children.push(new Paragraph({
         spacing: { ...single, before: 0, after: 1 * TWIP },
         indent: { left: 259, hanging: 259 },   // 0.18in hanging indent
-        children: [run(this.bullet + item.text)],
+        children: [run(this.bullet + bulletLine(item))],
       }));
     });
     return children;
@@ -239,6 +251,15 @@ const harvard = {
 // hhea is (1854 + 434 + 67)/2048 = 1.1499, the identical figure. ascentRatio
 // differs — (1854 + 67)/2048 = 0.938 against Times' 0.934.
 const BULLET_LEFT = 39;           // w:ind w:left="780" twips = 0.5417in = 39pt
+
+// One bold line per entry, in the name order the Nov 2026 master CV prints:
+// Role, Organization everywhere except national service, where the service
+// leads ("Republic of Singapore Navy, Naval Chef & Base Support Assistant").
+// Leadership used to flip too; the CV's co-curricular entries no longer do.
+// nus_style.py:add_entry is the same rule.
+const nusEntryHead = (item) => (item.sectionType === 'national-service'
+  ? `${item.organization}, ${item.role}`
+  : `${item.role}, ${item.organization}`);
 
 const nus = {
   id: 'nus',
@@ -318,14 +339,18 @@ const nus = {
         firstInSection = true;
         continue;
       }
-      if (item.kind === 'skill') {
+      if (item.kind === 'skill' || item.kind === 'text') {
+        const text = item.kind === 'skill' ? `${item.label}: ${item.items}` : item.text;
         blocks.push(block(
-          wrapRuns(doc, [{ text: `${item.label}: ${item.items}`, font: this.regular, size: bodyPt }], contentWidth, contentWidth),
+          wrapRuns(doc, [{ text, font: this.regular, size: bodyPt }], contentWidth, contentWidth),
           { size: bodyPt },
         ));
         continue;
       }
       if (item.kind === 'entry') {
+        // An inline entry is printed inside its own bullet, so it has no line
+        // and no blank line of its own: the master CV's projects run as a list.
+        if (item.inline) continue;
         if (!firstInSection) blocks.push(spacer(true));
         firstInSection = false;
         const line = (text, right) => block(
@@ -338,16 +363,12 @@ const nus = {
         } else if (!item.role) {
           blocks.push(line(item.organization, item.dateLabel));
         } else {
-          // Leadership flips the order — an employer leads a job, an
-          // organisation leads a volunteer post. That is in the source.
-          blocks.push(line(item.sectionType === 'leadership'
-            ? `${item.organization}, ${item.role}`
-            : `${item.role}, ${item.organization}`, item.dateLabel));
+          blocks.push(line(nusEntryHead(item), item.dateLabel));
         }
         continue;
       }
       blocks.push(block(
-        wrapRuns(doc, [{ text: this.bullet + item.text, font: this.regular, size: bodyPt }],
+        wrapRuns(doc, [{ text: this.bullet + bulletLine(item), font: this.regular, size: bodyPt }],
           contentWidth - indent, contentWidth - indent - hanging),
         { size: bodyPt, indent, hanging },
       ));
@@ -400,11 +421,12 @@ const nus = {
         firstInSection = true;
         continue;
       }
-      if (item.kind === 'skill') {
-        children.push(new Paragraph({ ...plain, children: [run(`${item.label}: ${item.items}`)] }));
+      if (item.kind === 'skill' || item.kind === 'text') {
+        children.push(new Paragraph({ ...plain, children: [run(item.kind === 'skill' ? `${item.label}: ${item.items}` : item.text)] }));
         continue;
       }
       if (item.kind === 'entry') {
+        if (item.inline) continue;
         if (!firstInSection) children.push(spacer());
         firstInSection = false;
         const line = (text, right) => new Paragraph({
@@ -421,16 +443,14 @@ const nus = {
         } else if (!item.role) {
           children.push(line(item.organization, item.dateLabel));
         } else {
-          children.push(line(item.sectionType === 'leadership'
-            ? `${item.organization}, ${item.role}`
-            : `${item.role}, ${item.organization}`, item.dateLabel));
+          children.push(line(nusEntryHead(item), item.dateLabel));
         }
         continue;
       }
       children.push(new Paragraph({
         ...plain,
         indent: { left: 780, hanging: hangingTwips },
-        children: [run(this.bullet + item.text)],
+        children: [run(this.bullet + bulletLine(item))],
       }));
     }
     return children;

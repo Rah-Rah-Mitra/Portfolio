@@ -2,7 +2,7 @@
   "slug": "highlights",
   "subject": "Highlights Resume (One Page)",
   "pages": 1,
-  "bodyPt": 9,
+  "bodyPt": 8.5,
   "marginIn": 0.5,
   "sections": [
     {
@@ -25,18 +25,13 @@
         {
           "id": "stmicro-or",
           "bullets": [
-            "putaway"
-          ]
-        },
-        {
-          "id": "amazon-vision",
-          "bullets": [
-            "isp"
+            "layout-agnostic"
           ]
         },
         {
           "id": "abbott-contract",
           "bullets": [
+            "fault-detection",
             "platform"
           ]
         },
@@ -53,6 +48,18 @@
             "churp",
             "singpass",
             "sparks"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "research",
+      "title": "RESEARCH EXPERIENCE",
+      "entries": [
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp"
           ]
         }
       ]
@@ -77,7 +84,7 @@
     },
     {
       "type": "leadership",
-      "title": "LEADERSHIP AND ACTIVITIES",
+      "title": "CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES",
       "entries": [
         {
           "id": "ntuc",

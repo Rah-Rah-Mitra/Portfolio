@@ -2,76 +2,52 @@
   "entries": [
     {
       "id": "stmicro-or",
-      "organization": "STMicroelectronics (NUS System Design Project)",
+      "organization": "STMicroelectronics (NUS Capstone)",
       "location": "Singapore",
-      "role": "Operations Research (Contract)",
+      "role": "Warehouse AI & Operations Research Engineer (Part-Time)",
       "start": "2026-08",
       "dateLabel": "Aug 2026 – Present",
       "bullets": [
         {
-          "id": "putaway",
+          "id": "layout-agnostic",
           "text": {
-            "default": "Design an AI-driven put-away recommendation system for STMicroelectronics' Singapore warehouse, replacing experience-based slotting with capacity-aware decisions drawn from 3 live inputs: picking history, demand forecasts, and available capacity.",
-            "deep": "Design an AI-driven put-away recommendation system for STMicroelectronics' Singapore semiconductor warehouse, replacing experience-based slotting with systematic, capacity-aware storage recommendations drawn from 3 live inputs: picking history, demand forecasts, and available capacity."
-          },
-          "phrasings": {
-            "inputs-first": {
-              "text": "Design an AI-driven put-away recommendation system for STMicroelectronics' Singapore warehouse from 3 live inputs: picking history, demand forecasts, and available capacity, in place of experience-based slotting.",
-              "note": "leads on the inputs and closes on a noun phrase rather than a trailing participle"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "amazon-vision",
-      "organization": "Amazon",
-      "location": "Singapore",
-      "role": "Robotics Vision Engineer (AI+X Global Challenge)",
-      "start": "2026-07",
-      "end": "2026-10",
-      "dateLabel": "Jul 2026 – Oct 2026",
-      "bullets": [
-        {
-          "id": "isp",
-          "text": {
-            "default": "Built vision systems turning raw camera feeds into perception-ready frames across 3 workstreams: camera ISP, super-resolution, and image restoration under real-world blur."
+            "default": "Architected a layout-agnostic AI put-away engine to run in any STMicroelectronics warehouse worldwide, ingesting each site's shelf coordinates, dimensions, and operating rules so one model adapts to any floor plan."
           }
         },
         {
-          "id": "sr-reproduction",
+          "id": "ranking-pipeline",
           "text": {
-            "default": "Reproduced a published UNet super-resolution model in PyTorch from broken author code, recovering its undocumented evaluation protocol and training 12 models across 3 scales, 2 datasets, and 2 losses, matching reported results at 8x and landing within 0.78 dB at 2x and 4x."
+            "default": "Designed a 4-stage shelf-ranking pipeline: movement profiling from pick frequency, dwell time, and demand; filtering on packaging zone, fit, capacity, and restricted areas; Golden Region priority for fast movers; and logged rationale per decision."
           }
         },
         {
-          "id": "robustness",
+          "id": "replay-eval",
           "text": {
-            "default": "Diagnosed a robustness gap where fixed-blur models lost most PSNR gains under unseen blur, then added randomised-blur training and fine-tuning to recover up to 0.7 dB across 3 real-world blur types: lens, out-of-focus, and resampling."
-          }
-        },
-        {
-          "id": "sr-review",
-          "text": {
-            "default": "Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods, organised around camera information loss and recovery through calibration, extra frames, or learned priors, comparing 4 model families on fidelity and hallucination risk."
-          }
-        },
-        {
-          "id": "deployment",
-          "text": {
-            "default": "Deployed 3 trained models as a public web app: a one-click Flask inference API on a Colab T4 GPU loading weights from a GitHub release, a secure tunnel on a reserved domain, and a hosted front end for image upload, scale selection, and download."
+            "default": "Defined a historical-replay evaluation comparing 3 metrics against current allocation (travel distance per order, handling time, slow-mover Golden Region occupancy), piloting on 2 AMK warehouses: dice and finished goods."
           }
         }
       ]
     },
     {
       "id": "abbott-contract",
-      "organization": "Abbott Laboratories",
+      "organization": "Abbott Laboratories (Contract)",
       "location": "Singapore",
-      "role": "Global Operational AI Systems & Data Engineer (Contract)",
+      "role": "Global Operational AI Systems & Data Engineer (Part-Time)",
       "start": "2026-06",
       "dateLabel": "Jun 2026 – Present",
       "bullets": [
+        {
+          "id": "fault-detection",
+          "text": {
+            "default": "Develop a chat-based spray-dryer fault-detection tool validated across 5+ plants worldwide, cutting critical-failure diagnosis from days or months of manual raw-signal analysis to within an hour, flagging inconclusive signals rather than false positives."
+          }
+        },
+        {
+          "id": "decision-metrics",
+          "text": {
+            "default": "Deliver fast metrics for high-stakes decisions such as new product introductions (NPI) and planned stoppages, recommending optimal setpoints from an estimated response surface model and answering engineers' and managers' questions, with rollout planned on Abbott servers for 24/7 access."
+          }
+        },
         {
           "id": "ai-systems",
           "text": {
@@ -100,8 +76,8 @@
         {
           "id": "setpoint",
           "text": {
-            "default": "Convert globally distributed plants' Advanced Process Control models from Excel master files into a single HiGHS linear program returning setpoints, binding constraints, and shadow prices at millisecond latency.",
-            "deep": "Convert globally distributed plants' site-specific vendor Advanced Process Control steady-state models from their Excel master files into a single HiGHS linear program (scipy.optimize.linprog) with a tracking QP and PLC predictor covering every site, returning setpoints, binding constraints, shadow prices, and trust-region warnings at millisecond latency with no commercial solver license, back-tested against the production system's own historical targets."
+            "default": "Convert global plants' Advanced Process Control models from Excel master files into a single HiGHS linear program returning setpoints, binding constraints, and shadow prices at millisecond latency.",
+            "deep": "Convert global plants' site-specific vendor Advanced Process Control steady-state models from their Excel master files into a single HiGHS linear program (scipy.optimize.linprog) with a tracking QP and PLC predictor covering every site, returning setpoints, binding constraints, shadow prices, and trust-region warnings at millisecond latency with no commercial solver license, back-tested against the production system's own historical targets."
           }
         },
         {
@@ -133,7 +109,7 @@
     },
     {
       "id": "abbott-intern",
-      "organization": "Abbott Laboratories",
+      "organization": "Abbott Laboratories (Converted to Contract)",
       "location": "Singapore",
       "role": "Data Analytics & Product Management Intern",
       "start": "2026-01",
@@ -157,7 +133,7 @@
         {
           "id": "apc",
           "text": {
-            "default": "Productionized a team-built APC simulator for live internal users on Azure App Service with Docker packaging, access restrictions, and runtime and session hardening.",
+            "default": "Deployed a team-built APC simulator to production for live internal users on Azure App Service, with Docker packaging, access restrictions, and runtime and session hardening.",
             "solution-architect": "Owned cloud deployment and production support for a team-built APC simulator used in manufacturing and engineer training, with Docker packaging, Azure App Service hosting, and documented handover.",
             "deep": "Productionized a team-built Advanced Process Control simulator for live internal users on Azure App Service, handling Flask and JavaScript debugging, Docker packaging, session and request tracking, access restrictions, and documented deployment handover, with the originating team retaining authorship."
           }
@@ -197,8 +173,8 @@
         {
           "id": "churp",
           "text": {
-            "default": "Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment, now production-ready for national rollout across Singapore.",
-            "deep": "Delivered an end-to-end digital garden-plot balloting platform across admin and public frontends, backend, GIS-based plot allocation, and deployment, coordinating stakeholders and rollout planning across product, engineering, and operations, now production-ready for national rollout across Singapore."
+            "default": "Led most software development and deployment of a digital garden-plot balloting platform across admin and public Next.js frontends, a NestJS backend, and GIS mapping, now live in Tengah with national rollout planned.",
+            "deep": "Led most software development and deployment of an end-to-end digital garden-plot balloting platform across admin and public Next.js frontends, a NestJS backend, and GIS-based plot allocation, coordinating stakeholders and rollout planning across product, engineering, and operations, now live in Tengah with national rollout planned."
           }
         },
         {
@@ -217,32 +193,20 @@
         {
           "id": "sparks",
           "text": {
-            "default": "Won a S$20,000 Sparks Community Innovation Fund award for public good initiatives, then led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations."
+            "default": "Won a S$20,000 Sparks Community Innovation Fund award for public good initiatives to seed a civic balloting platform, then led deployment planning, multi-repo coordination, and stakeholder management in an 11-person team across People's Association, Tengah community partners, and PA ICT (GovTech)."
           }
         },
         {
           "id": "infra",
           "text": {
-            "default": "Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager.",
-            "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure across 8 services (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager), with cloud security controls applied environment-wide alongside multi-repo coordination and rollout planning."
-          }
-        },
-        {
-          "id": "cicd",
-          "text": {
-            "default": "Engineered keyless GitHub Actions CI/CD on IAM OIDC federation across 5 pinned service repos, with gated Fargate migrations, mandatory RDS snapshots, and circuit-breaker auto-rollback."
+            "default": "Provisioned 10 AWS services with Terraform (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB behind WAFv2, Route 53, ACM, KMS, Secrets Manager, and a Rust auth gateway on Lambda and API Gateway), shipped via keyless GitHub Actions CI/CD on IAM OIDC across 5 repos with gated migrations, RDS snapshots, and auto-rollback.",
+            "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure across 10 services (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, Secrets Manager, and a Rust auth gateway on Lambda and API Gateway), with cloud security controls applied environment-wide alongside multi-repo coordination and rollout planning."
           }
         },
         {
           "id": "survey",
           "text": {
-            "default": "Conducted field surveys of garden sites and structured physical plot records into geospatial datasets driving 3 platform workflows: mapping, plot allocation, and site planning."
-          }
-        },
-        {
-          "id": "rules",
-          "text": {
-            "default": "Designed rules-based balloting workflows across 4 control points: eligibility checks, conflict resolution, exception handling, and administrative oversight, keeping allocation transparent and auditable."
+            "default": "Surveyed garden sites into geospatial datasets for mapping, plot allocation, and site planning, and designed rules-based balloting across 4 control points (eligibility, conflict resolution, exceptions, admin oversight), keeping allocation auditable."
           }
         }
       ]

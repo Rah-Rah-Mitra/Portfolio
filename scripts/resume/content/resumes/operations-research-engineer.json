@@ -2,7 +2,7 @@
   "slug": "operations-research-engineer",
   "subject": "Operations Research Engineer Resume",
   "pages": 1,
-  "bodyPt": 9,
+  "bodyPt": 8.5,
   "marginIn": 0.5,
   "sections": [
     {
@@ -26,18 +26,13 @@
         {
           "id": "stmicro-or",
           "bullets": [
-            "putaway"
-          ]
-        },
-        {
-          "id": "amazon-vision",
-          "bullets": [
-            "isp"
+            "layout-agnostic"
           ]
         },
         {
           "id": "abbott-contract",
           "bullets": [
+            "fault-detection",
             "setpoint"
           ]
         },
@@ -52,6 +47,18 @@
           "id": "pa",
           "bullets": [
             "churp"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "research",
+      "title": "RESEARCH EXPERIENCE",
+      "entries": [
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp"
           ]
         }
       ]
@@ -83,14 +90,20 @@
     },
     {
       "type": "leadership",
-      "title": "LEADERSHIP AND ACTIVITIES",
+      "title": "CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES",
       "entries": [
         {
           "id": "ntuc",
           "bullets": [
             "main"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "type": "national-service",
+      "title": "NATIONAL SERVICE",
+      "entries": [
         {
           "id": "navy",
           "bullets": [

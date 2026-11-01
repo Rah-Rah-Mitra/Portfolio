@@ -6,6 +6,7 @@ import {
 } from '../server/resumeCheck.mjs';
 import { checkSpec, decoratedBlocks } from '../server/portfolioMcp.mjs';
 import { pools, resumeConfigs } from '../server/resumeContent.mjs';
+import { ENTRY_SECTION_TYPES } from '../server/resumeAssemble.mjs';
 import { poolEntries } from '../scripts/resume/lint_pool.mjs';
 
 // server/*.mjs is plain JS, so name the shapes this test relies on.
@@ -37,8 +38,8 @@ const bullet = (ref: string, text: string, extra: Record<string, unknown> = {}) 
 
 const text = (ref: string) => {
   const [entryId, bulletId] = ref.split('.');
-  for (const type of ['education', 'experience', 'projects', 'leadership'] as const) {
-    const entry = (pools[type].entries as unknown as PoolEntry[]).find((item) => item.id === entryId);
+  for (const type of ENTRY_SECTION_TYPES as Array<keyof typeof pools>) {
+    const entry = ((pools[type] as { entries?: unknown }).entries as PoolEntry[] | undefined)?.find((item) => item.id === entryId);
     const found = entry?.bullets?.find((item) => item.id === bulletId);
     if (found) return found.text.default;
   }
@@ -113,7 +114,9 @@ describe('metric classifier', () => {
     // before its noun, and a power/throughput rating. sr-reproduction (2026-12,
     // Rahul's own wording) took over from the retired frame-quality: a count and
     // the "8x" scale factors.
-    'amazon-vision.sr-reproduction', 'hailo.main', 'stmicro-or.putaway', 'pa.singpass',
+    // The Nov 2026 master CV retired stmicro-or.putaway ("3 live inputs"); its
+    // shelf-ranking bullet's "4-stage" carries the entry's measurement now.
+    'amazon-vision.sr-reproduction', 'hailo.main', 'stmicro-or.ranking-pipeline', 'pa.singpass',
     // The 2026-11 master CV pass replaced pa.infra's Redis/Kafka wording with a
     // count of the AWS services actually used, so it crossed from the other list.
     'pa.infra'];
@@ -455,9 +458,14 @@ describe('the real corpus', () => {
     // wording ("Built vision systems") ties the Build family. Rahul then asked
     // for abbott-contract.setpoint to say "globally distributed plants" instead
     // of "4 plants", which was its only measurement, so coverage 0.55 -> 0.52.
-    expect(report.metrics.bullets).toBe(46);
+    // 52 with the Nov 2026 master CV: +3 STMicro for putaway, +2 Abbott impact
+    // bullets, A*STAR's attachment, Amazon's brief, Swarmline's combined line and
+    // ywh's condensed one, less cicd and rules (merged into infra and survey).
+    // Most of the new ones are measured ("4-stage", "5+ plants", "3 workstreams",
+    // "4-month", "13+ other programs", "S$20,000"), so coverage 0.52 -> 0.54.
+    expect(report.metrics.bullets).toBe(52);
     expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 3 });
-    expect(report.metrics.metricCoverage).toBe(0.52);
+    expect(report.metrics.metricCoverage).toBe(0.54);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in
@@ -466,10 +474,13 @@ describe('the real corpus', () => {
     const projects = report.findings.find((item) => item.category === 'pool-lead-concentration'
       && item.where.sectionType === 'projects');
     expect(projects).toBeUndefined();
-    // Tense fires on exactly one entry, the bug-bounty role that is still open.
+    // Tense fires on three entries whose dates run past today, each the master
+    // CV's own wording: the bug-bounty role that is still open (past-tense
+    // "Assessed"), STMicro's design milestones (Architected, Designed, Defined:
+    // finished stages of work in a running role), and the incoming A*STAR
+    // attachment, whose one bullet says Rahul was "Selected", which he was.
     const tense = report.findings.filter((item) => item.category === 'tense-vs-dates');
-    expect(tense).toHaveLength(1);
-    expect(tense[0].where.entryId).toBe('ywh');
+    expect(tense.map((item) => item.where.entryId).sort()).toEqual(['astar-artc', 'stmicro-or', 'ywh']);
     expect(report.counts.errors).toBe(0);
   });
 
@@ -508,13 +519,18 @@ describe('the real corpus', () => {
       // adjacent: cyber-security's STMicro "Design" beside Abbott's "Design", and
       // general's Abbott "Build" beside Amazon's "Built" (Rahul's own wording).
       // ai-engineer's top falls to 1 with frame-quality's "Train" gone.
-      'software-engineer': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
+      // Nov 2026 master CV: the five one-pagers that take the Abbott
+      // fault-detection bullet gain one (solution-architect also folds cicd into
+      // infra, so it holds at 15), and its "Develop" beside the internship's
+      // "Developed" gives four of them a top of 2. cyber-security loses its
+      // adjacent repeat: STMicro's opener is "Architected" now, not "Design".
+      'software-engineer': { bullets: 16, top: 2, codes: 'unquantified,unused-evidence' },
       'solution-architect': { bullets: 15, top: 2, codes: 'unquantified' },
-      'ai-engineer': { bullets: 13, top: 1, codes: 'unquantified,unused-evidence' },
-      'operations-research-engineer': { bullets: 15, top: 1, codes: 'unquantified,unused-evidence' },
-      'cyber-security': { bullets: 15, top: 2, codes: 'adjacent-repeat,unquantified,unused-evidence' },
+      'ai-engineer': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
+      'operations-research-engineer': { bullets: 16, top: 2, codes: 'unquantified,unused-evidence' },
+      'cyber-security': { bullets: 15, top: 1, codes: 'unquantified,unused-evidence' },
       'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
-      highlights: { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
+      highlights: { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
       // "Built", "Build", "building" and "hackathon build" are four uses of one
       // family that R1's per-section opener tally cannot see. The master CV now
@@ -522,8 +538,13 @@ describe('the real corpus', () => {
       // Association bullets are why its count jumped from 30 to 33. Swarmline in,
       // coursework and ywh.network out (Sep 2026): 32. Rahul's Oct 2026 master CV
       // puts both back and gives Swarmline a second bullet: 35. Its Amazon entry
-      // grew from two bullets to five in edition 2026-12: 38.
-      general: { bullets: 38, top: 2, codes: 'adjacent-repeat,unquantified,verb-family-cap,verb-family-cap' },
+      // grew from two bullets to five in edition 2026-12: 38. The Nov 2026 master
+      // CV: 37 (STMicro 1 -> 3, Abbott contract 3 -> 5, A*STAR in, Amazon's isp
+      // for its brief, Swarmline 2 -> 1, PA 7 -> 5, ywh 3 -> 1, STEM Inc out).
+      // The adjacent repeat and the "engineer" family cap went with the old
+      // order and wording; the trailing participles of the new
+      // bullets ("flagging", "recommending", "running") make a frame repeat.
+      general: { bullets: 37, top: 2, codes: 'frame-repeat,unquantified,unused-evidence,verb-family-cap' },
     });
   });
 

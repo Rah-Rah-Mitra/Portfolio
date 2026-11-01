@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
 import { configBySlug, pools, profile, resumeBlocks, resumeConfigs } from './resumeContent.mjs';
-import { assemble, decodeSpec, encodeSpec, measureBulletLines, renderResume, renderResumeMarkdown, specSchema } from './resumeRender.mjs';
+import { ENTRY_SECTION_TYPES, assemble, bulletLine, decodeSpec, encodeSpec, measureBulletLines, renderResume, renderResumeMarkdown, specSchema } from './resumeRender.mjs';
 import { checkResume, firstWord, framesIn, leadLemma, metricsIn, termsIn } from './resumeCheck.mjs';
 import { RESUME_GUIDE } from './resumeGuide.mjs';
 
@@ -53,7 +53,7 @@ export const swapCandidates = (spec, chosen) => {
   const taken = new Set(chosen);
   const candidates = [];
   for (const section of spec.sections) {
-    if (section.type === 'skills') continue;
+    if (!section.entries) continue; // skills and summary select no entries
     for (const selection of section.entries) {
       const entry = pools[section.type].entries.find((item) => item.id === selection.id);
       for (const bullet of entry?.bullets ?? []) {
@@ -149,7 +149,9 @@ export const checkSpec = (spec, fit = null) => {
   // a supplied count, so it correctly stays silent, and metrics.maxBulletLines
   // falls out null beside metrics.typography null. An agent trimming against a
   // number measured at the wrong size ships a thinner resume than it had room for.
-  const lines = fit ? measureBulletLines(bullets.map((bullet) => bullet.text), typography) : [];
+  // Measured as printed: a cv-inline bullet carries its entry's label on its
+  // first line, and leaving it out would undercount every project by a line.
+  const lines = fit ? measureBulletLines(bullets.map(bulletLine), typography) : [];
   return checkResume(bullets.map((bullet, index) => ({ ...bullet, ...(fit ? { lines: lines[index] } : {}) })), {
     candidates: swapCandidates(spec, bullets.map((bullet) => bullet.ref)),
     rephrasings: rephrasingsFor(spec, bullets, typography),
@@ -269,7 +271,7 @@ export const decoratedBlocks = () => {
   // Alternative wordings, with the same derived fields, so an agent can see that
   // a bullet opening "Built" also has one opening "Turned" before it picks.
   const pool = new Map();
-  for (const type of ['education', 'experience', 'projects', 'leadership']) {
+  for (const type of ENTRY_SECTION_TYPES) {
     for (const entry of pools[type].entries) {
       for (const bullet of entry.bullets ?? []) pool.set(`${entry.id}.${bullet.id}`, bullet);
     }
@@ -340,7 +342,7 @@ const text = (value) => ({ content: [{ type: 'text', text: typeof value === 'str
 export const registerPortfolioTools = (server) => {
   server.registerTool('get_profile', {
     title: 'Profile',
-    description: 'Who Rahul Mitra is: bio, location, links, headline stats, competency clusters, skills, and the current résumé edition.',
+    description: 'Who Rahul Mitra is: bio, the master CV\'s summary paragraph (`summary`, CV-only: no role résumé prints it), location, links, headline stats, competency clusters, skills, and the current résumé edition.',
     inputSchema: z.object({}),
   }, async () => text(getProfile()));
 
@@ -391,7 +393,7 @@ export const registerPortfolioTools = (server) => {
   server.registerTool('list_resume_blocks', {
     title: 'Résumé building blocks',
     description: 'Every entry, bullet (with its depth variants) and skills line you may select, plus the ready-made résumés you can start from. These ids are the only content build_resume accepts. Each bullet also carries its opening verb, its rendered line cost, whether it holds a measurement, `terms` (the technologies from Rahul\'s own skills lines that this wording actually names, lowercased) and `usedBy` (the canonical résumés that select it — an empty list means no canonical résumé does, which is a fact about the block, not a missing field). Alternative wordings carry their own verb, line cost, measurement flag and terms. Select by `terms` to answer a posting in Rahul\'s words, and read `usedBy` to tell a broadly useful bullet from one only a single role résumé wants. Optionally filter to one section type to keep the response small.',
-    inputSchema: z.object({ section: z.enum(['education', 'experience', 'projects', 'leadership', 'skills']).optional() }),
+    inputSchema: z.object({ section: z.enum([...ENTRY_SECTION_TYPES, 'skills']).optional() }),
   }, async ({ section }) => {
     const blocks = decoratedBlocks();
     if (!section) return text(blocks);

@@ -25,6 +25,12 @@
           "text": {
             "default": "Applied Burp Suite for MitM HTTP interception and Wireshark for OSI Layer 3-4 deep packet inspection and TLS handshake analysis."
           }
+        },
+        {
+          "id": "condensed",
+          "text": {
+            "default": "Assessed GovTech GBBP12/13, Land Transport Authority, and 13+ other programs for SSRF, CSRF, injection, and access-control flaws, automating recon and disclosure evidence with Burp Suite and Python fuzzing scripts."
+          }
         }
       ]
     },
@@ -40,37 +46,13 @@
         {
           "id": "main",
           "text": {
-            "default": "Coordinate weekly senior-engagement activities, building empathy for healthcare, accessibility, and community-focused product design."
+            "default": "Coordinated weekly senior-engagement activities, including home visits to check health, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design."
           },
           "phrasings": {
             "activities-first": {
-              "text": "Coordinate weekly senior-engagement activities for healthcare, accessibility, and community-focused product design.",
+              "text": "Coordinated weekly senior-engagement activities for healthcare, accessibility, and community-focused product design.",
               "note": "drops the trailing participle; shorter, and says what the activities serve"
             }
-          }
-        }
-      ]
-    },
-    {
-      "id": "navy",
-      "organization": "Republic of Singapore Navy",
-      "location": "Singapore",
-      "role": "Base Support Assistant",
-      "start": "2022-01",
-      "end": "2023-01",
-      "dateLabel": "Jan 2022 – Jan 2023",
-      "bullets": [
-        {
-          "id": "vba",
-          "text": {
-            "default": "Compressed a 6-month food-waste analysis cycle into a 3-minute reporting process with an Excel VBA automation workflow inside a security-constrained environment.",
-            "deep": "Mapped the food-waste reporting process end to end, then automated its calculations and reporting steps with an Excel VBA workflow that compressed a 6-month manual cycle into a repeatable 3-minute process inside a security-constrained environment."
-          }
-        },
-        {
-          "id": "data",
-          "text": {
-            "default": "Managed sensitive operational data under SAF confidentiality expectations while improving reliability, traceability, and analyst capacity."
           }
         }
       ]

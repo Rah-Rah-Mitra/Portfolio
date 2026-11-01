@@ -1,6 +1,6 @@
 # Rahul Mitra (rahul-mitra.com)
 
-> Multidisciplinary engineer in Singapore: software systems, AI engineering, operations research, 3D computer vision, solution architecture, and cybersecurity. NUS Industrial Systems Engineering (Second Major in Computer Science, Minor in Mathematics).
+> Multidisciplinary engineer in Singapore: software systems, AI engineering, operations research, 3D computer vision, solution architecture, and cybersecurity. NUS Industrial and Systems Engineering (Second Major in Computer Science, Minor in Mathematics).
 
 ## Machine-readable access
 - MCP server (Streamable HTTP): https://rahul-mitra.com/api/mcp

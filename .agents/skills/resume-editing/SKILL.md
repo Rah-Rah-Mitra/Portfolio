@@ -47,8 +47,9 @@ past tense except current roles; literal "• " bullets with a hanging indent
 right-aligned 19.5pt caps name over an 8.5pt right-aligned contact line joined
 by NBSP pipes; 9.5pt caps section headers under a full-width
 `thinThickSmallGap` rule; one bold line per entry with right-flush dates —
-`Role, Organization` in experience and projects, `Organization, Role` in
-leadership (the source document really does flip it), education taking a second
+`Role, Organization` everywhere except national service, which prints
+`Organization, Role` (the Nov 2026 master CV; leadership used to flip too and no
+longer does), education taking a second
 bold line for the degree; a blank body-size line between entries and before each
 section header; skills lines are unlabelled prose, also as the source has them.
 
@@ -65,7 +66,8 @@ powershell -File scripts/resume/export-pdf.ps1 -Edition <YYYY-MM>  # PDF (Word C
 python scripts/resume/verify_resumes.py --edition <YYYY-MM>  # must exit 0
 ```
 
-Content: pools in `scripts/resume/content/{education,experience,projects,leadership,skills}.json`
+Content: pools in `scripts/resume/content/{education,experience,research,projects,leadership,national-service,skills}.json`
+(one per section type; profile.json's `summary` feeds general's SUMMARY section)
 (bullet text supports per-slug overrides via the `text` map); per-resume
 selection in `content/resumes/<slug>.json` (`pages`, optional `bodyPt`,
 `marginIn` side margin in inches — 0.5 on all eight in this edition).

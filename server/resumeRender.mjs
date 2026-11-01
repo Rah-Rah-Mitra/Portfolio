@@ -24,13 +24,13 @@
 // Imports only packages and JSON. Vercel compiles api/ per file as native ESM
 // with no bundling.
 import PDFDocument from 'pdfkit';
-import { assemble, resolveBulletText, resolveRole } from './resumeAssemble.mjs';
+import { ENTRY_SECTION_TYPES, assemble, bulletLine, resolveBulletText, resolveRole } from './resumeAssemble.mjs';
 import { DEFAULT_STYLE, STYLES, block, measure, styleFor, wrapRuns } from './resumeStyles.mjs';
 
 // Spec resolution lives in resumeAssemble.mjs so the checker and the builder
 // window can reach it without loading pdfkit. Re-exported here because this is
 // the path every existing caller imports it from.
-export { assemble, resolveBulletText, resolveRole };
+export { ENTRY_SECTION_TYPES, assemble, bulletLine, resolveBulletText, resolveRole };
 export { DEFAULT_STYLE, STYLES, styleFor };
 
 /** Body size of the default style, for callers that want the plain default. */
@@ -283,11 +283,13 @@ export const renderResumeMarkdown = (spec, pools, profile) => {
   for (const item of assemble(spec, pools)) {
     if (item.kind === 'section') out.push('', `## ${item.title}`);
     else if (item.kind === 'skill') out.push(`- **${item.label}:** ${item.items}`);
+    else if (item.kind === 'text') out.push('', item.text);
     else if (item.kind === 'entry') {
+      if (item.inline) continue; // its label leads its one bullet instead
       out.push('', item.role
-        ? `**${item.organization}**, ${item.location} · *${item.role}* (${item.dateLabel})`
-        : `**${item.organization}** (${item.dateLabel})`);
-    } else out.push(`- ${item.text}`);
+        ? `**${item.organization}**, ${item.location} · *${item.role}*${item.dateLabel ? ` (${item.dateLabel})` : ''}`
+        : `**${item.organization}**${item.dateLabel ? ` (${item.dateLabel})` : ''}`);
+    } else out.push(`- ${bulletLine(item)}`);
   }
   return out.join('\n');
 };
@@ -318,25 +320,40 @@ const id = z.string().min(1).max(60);
 // Rahul's name. As a free 80-character string it was eight sections' worth of
 // whatever a caller wanted to say, through the open build_resume tool and
 // through the unauthenticated api/resume endpoint — the one text channel this
-// whole design exists to close. So headings are selected too, from exactly the
-// set the eight canonical résumés use. Per type rather than one shared list
-// because `general` calls its projects section "PROJECTS AND COMPETITIONS" and
-// nothing else may.
+// whole design exists to close. So headings are selected too, from the set the
+// eight canonical résumés use (the Nov 2026 master CV's headings), plus the two
+// they used before it, "PROJECTS AND COMPETITIONS" and "LEADERSHIP AND
+// ACTIVITIES", so a spec in a link built earlier still parses. Per type rather
+// than one shared list, so no heading can land on the wrong kind of section.
 const entries = z.array(z.object({
   id,
   bullets: z.array(id).max(10).optional(),
   variant: z.enum(['standard', 'deep']).optional(),
   roleVariant: id.optional(),
+  // Place this entry directly below another the section selects, after the date
+  // sort (general keeps the Abbott internship under the Abbott contract). It
+  // only reorders selected entries, so it is no text channel.
+  after: id.optional(),
+  // false drops an education entry's GPA from its degree line, for space.
+  gpa: z.boolean().optional(),
+  // false prints the heading without its dates, for an entry whose bullet
+  // already says when (general's incoming A*STAR attachment).
+  date: z.boolean().optional(),
 })).max(24);
-const entrySection = (type, titles) => z.object({
+const entrySection = (type, titles, extra = {}) => z.object({
   type: z.literal(type),
   title: z.enum(titles),
   entries,
+  ...extra,
 });
 const skillsSection = z.object({
   type: z.literal('skills'),
   title: z.enum(['SKILLS AND CERTIFICATIONS']),
   lines: z.array(id).max(16),
+});
+const summarySection = z.object({
+  type: z.literal('summary'),
+  title: z.enum(['SUMMARY']),
 });
 
 export const specSchema = z.object({
@@ -383,10 +400,17 @@ export const specSchema = z.object({
     z.string().regex(/^[a-z][a-z0-9-]{1,28}$/),
   ).optional(),
   sections: z.array(z.discriminatedUnion('type', [
+    // Rahul's own summary paragraph (profile.json). It has no entries and takes
+    // no text from the caller, so selecting it adds nothing a caller wrote.
+    summarySection,
     entrySection('education', ['EDUCATION']),
     entrySection('experience', ['WORK EXPERIENCE', 'EXPERIENCE']),
-    entrySection('projects', ['PROJECTS', 'PROJECTS AND COMPETITIONS']),
-    entrySection('leadership', ['LEADERSHIP AND ACTIVITIES']),
+    entrySection('research', ['RESEARCH EXPERIENCE']),
+    // cv-inline prints each project as one bullet, "Role, Organization (Date):
+    // text", the master CV's format; every entry then selects exactly one bullet.
+    entrySection('projects', ['PROJECTS', 'PROJECTS AND COMPETITIONS'], { render: z.enum(['cv-inline']).optional() }),
+    entrySection('leadership', ['CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES', 'LEADERSHIP AND ACTIVITIES']),
+    entrySection('national-service', ['NATIONAL SERVICE']),
     skillsSection,
   ])).min(1).max(8),
 });

@@ -13,8 +13,9 @@ describe('deterministic semantic prerender', () => {
     // (it existed only as a project card and an event note, and events are
     // filtered out of experienceNotes), the two Abbott roles were one merged
     // record where the résumés carry two, and NTUC Health, on every résumé, had
-    // no record until Oct 2026.
-    expect(experienceRecords).toHaveLength(10);
+    // no record until Oct 2026. Eleven since the Nov 2026 master CV added the
+    // incoming A*STAR ARTC research attachment.
+    expect(experienceRecords).toHaveLength(11);
     experienceRecords.forEach((record) => expect(markup).toContain(`experience-${record.id}`));
     expect(allProjects).toHaveLength(29);
     allProjects.forEach((project) => expect(markup).toContain(`project-${project.id}`));

@@ -101,15 +101,15 @@ export const localAgent = (message: string): AgentResponse => {
     references = [projectRef('asyncddgs', 'Inspect AsyncDDGS')];
     commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
   } else if (text.includes('swarm') || text.includes('drone') || text.includes('defence tech') || text.includes('defense tech')) {
-    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took the five-person team Rahul led to the finals of the Singapore Defense Tech Hackathon 2026 (1,300+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
+    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took the five-person team Rahul led to the finals of the Singapore Defence Tech Hackathon 2026 (1,300+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
     references = [projectRef('swarmline', 'Inspect Swarmline')];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('amazon')) {
-    reply = 'From Jul to Oct 2026 Rahul was a Robotics Vision Engineer with Amazon (AI+X Global Challenge), building vision systems across camera ISP, super-resolution, and image restoration under real-world blur.';
+    reply = 'From Jul to Oct 2026 Rahul was a Computer Vision Researcher on BlendED x Amazon Robotics (AI+X Global Challenge), tackling an Amazon Robotics brief across camera ISP, super-resolution, and image restoration under real-world blur.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience', experienceId: 'career-amazon-vision' });
   } else if (text.includes('stmicro') || text.includes('st micro')) {
-    reply = 'Since Aug 2026 Rahul has been designing an AI-driven put-away recommendation system for STMicroelectronics’ Singapore warehouse, an NUS System Design Project in operations research, with capacity-aware decisions drawn from picking history, demand forecasts, and available capacity.';
+    reply = 'Since Aug 2026 Rahul has been architecting a layout-agnostic AI put-away engine to run in any STMicroelectronics warehouse worldwide, an NUS Capstone in operations research, ingesting each site’s shelf coordinates, dimensions, and operating rules so one model adapts to any floor plan.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience', experienceId: 'career-stmicro-or' });
   } else if (text.includes('contact') || text.includes('email') || text.includes('get in touch')) {

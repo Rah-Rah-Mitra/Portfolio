@@ -145,3 +145,10 @@ def add_skill_line(doc, label, items):
     p.add_run(f"{label}: ").bold = True
     p.add_run(items)
     return p
+
+
+def add_text(doc, text, body_pt=BODY_PT):
+    """A plain paragraph: the master CV's summary."""
+    p = para(doc, space_after=1)
+    p.add_run(text)
+    return p

@@ -18,7 +18,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
 import { blocksByTerm, buildResume, checkSpec, listResumes, reportedFindings, resumeMarkdown, skillTerms } from './portfolioMcp.mjs';
 import { configBySlug, pools, resumeBlocks } from './resumeContent.mjs';
-import { assemble, specSchema } from './resumeRender.mjs';
+import { ENTRY_SECTION_TYPES, assemble, specSchema } from './resumeRender.mjs';
 
 // Compact, not pretty-printed, for the same reason portfolioMcp.mjs gives:
 // every payload here is read by a model through a tool result.
@@ -292,7 +292,10 @@ export const cvMarkdown = () => {
   // renderResumeMarkdown already emits "# RAHUL MITRA", a contact line, "##"
   // sections and "- " bullets. career-ops reads cv.md verbatim and enforces no
   // heading contract, so this is a splice rather than a translation.
-  const lines = resumeMarkdown(configBySlug('general')).split('\n');
+  // general's own SUMMARY section is left out: the splice below is cv.md's one
+  // summary, and two would read as a document repeating itself.
+  const general = configBySlug('general');
+  const lines = resumeMarkdown({ ...general, sections: general.sections.filter((section) => section.type !== 'summary') }).split('\n');
   const summary = ['', '## PROFESSIONAL SUMMARY', '', snapshot.profile.tagline, '', snapshot.profile.bio];
   const editions = ['', '## RESUME EDITIONS', '',
     ...listResumes().map((resume) => `- ${resume.role} (${resume.pages ?? '?'}pp): ${resume.pdfUrl}`)];
@@ -519,11 +522,15 @@ export const exportProfile = (format, preferences) => ({
 const SECTION_TITLES = {
   education: 'EDUCATION',
   experience: 'WORK EXPERIENCE',
+  research: 'RESEARCH EXPERIENCE',
   projects: 'PROJECTS',
-  leadership: 'LEADERSHIP AND ACTIVITIES',
+  leadership: 'CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES',
+  'national-service': 'NATIONAL SERVICE',
 };
 const SKILLS_TITLE = 'SKILLS AND CERTIFICATIONS';
-const SECTION_ORDER = ['education', 'experience', 'projects', 'leadership'];
+// ENTRY_SECTION_TYPES is already in print order; a tailored résumé never gets
+// general's summary, which is CV-only.
+const SECTION_ORDER = ENTRY_SECTION_TYPES;
 // Never from jd_text. `subject` reaches PDF and DOCX metadata only, and it is a
 // closed enum in specSchema now, but it stays a module constant here because it
 // is the one place a posting's prose could have got onto a document.
@@ -661,7 +668,8 @@ const wordMatch = (keyword) => {
 // Left in, an RL posting came back "covered: DDPG, A2C -- missing: none", which
 // is the applied-experience misreading 12 of that document warns about, on an
 // open tool whose output often reaches an employer unread. "deep RL" itself
-// stays: it is a printed label, and the certification backing it is printed too.
+// stays: Rahul keeps it as a printed skill (Nov 2026) and answers for it, though
+// the Packt certificate behind it is off every résumé's certification line now.
 const UNBACKED = new Set(['PPO', 'A2C', 'DDPG', 'DQN']);
 
 const ATTESTED = [...new Set([...snapshot.resumes.flatMap((resume) => resume.keywords), ...skillTerms])]
@@ -841,7 +849,7 @@ const jdHashOf = ({ jd_text, jd_url }) => (jd_url
 
 const idsOfSpec = (spec) => spec.sections.flatMap((section) => (section.type === 'skills'
   ? section.lines
-  : section.entries.flatMap((entry) => [entry.id, ...(entry.bullets ?? []).map((bullet) => `${entry.id}.${bullet}`)])));
+  : (section.entries ?? []).flatMap((entry) => [entry.id, ...(entry.bullets ?? []).map((bullet) => `${entry.id}.${bullet}`)])));
 
 // Key order is not part of a spec's meaning, and the two paths here build one in
 // different orders — specSchema.parse() returns schema order, the ready-made path

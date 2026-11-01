@@ -11,7 +11,7 @@ const canonicalProjectIds = new Set([
   'portfolio-repo', 'github-profile-repo', 'kalidokit-fork', 'tp-java', 'ip-java', 'crawl4ai-deepseek-example',
   'ie2110-grp-13', 'fine-tuning-llms-cybersecurity', 'references', 'eg1311-project',
 ]);
-const canonicalExperienceIds = new Set(['career-stmicro-or', 'career-amazon-vision', 'career-abbott-contract', 'career-abbott-intern', 'abbott-internship', 'career-pa-churp', 'career-ntuc-active-ageing', 'nus-education', 'cyber-achievement-3', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
+const canonicalExperienceIds = new Set(['career-astar-artc', 'career-stmicro-or', 'career-amazon-vision', 'career-abbott-contract', 'career-abbott-intern', 'abbott-internship', 'career-pa-churp', 'career-ntuc-active-ageing', 'nus-education', 'cyber-achievement-3', 'career-yeswehack-independent-researcher', 'career-singapore-navy', 'education-asrjc-stem']);
 const canonicalChapterIds = new Set(['home', 'work', 'experience', 'all-work', 'technical-lab', 'domains', 'proof', 'resumes', 'contact']);
 const canonicalDesktopAppIds = new Set(['home', 'selected-work', 'experience', 'project-archive', 'systems-lab', 'camera-lab', 'world-3d', 'capabilities', 'proof-vault', 'resumes-contact', 'resume-builder']);
 
@@ -119,15 +119,15 @@ export const localAgent = (message, reason = 'model_unavailable') => {
     references = [{ label: 'Inspect AsyncDDGS', href: '#project-asyncddgs' }];
     commands.push({ type: 'focusProject', projectId: 'asyncddgs' });
   } else if (text.includes('swarm') || text.includes('drone') || text.includes('defence tech') || text.includes('defense tech')) {
-    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took the five-person team Rahul led to the finals of the Singapore Defense Tech Hackathon 2026 (1,300+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
+    reply = 'Swarmline is decentralised drone-swarm coordination, demonstrated in simulation, that took the five-person team Rahul led to the finals of the Singapore Defence Tech Hackathon 2026 (1,300+ applicants). With the ground link jammed, its 30 simulated drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.';
     references = [{ label: 'Inspect Swarmline', href: '#project-swarmline' }];
     commands.push({ type: 'focusProject', projectId: 'swarmline' });
   } else if (text.includes('amazon')) {
-    reply = 'From Jul to Oct 2026 Rahul was a Robotics Vision Engineer with Amazon (AI+X Global Challenge), building vision systems across camera ISP, super-resolution, and image restoration under real-world blur.';
+    reply = 'From Jul to Oct 2026 Rahul was a Computer Vision Researcher on BlendED x Amazon Robotics (AI+X Global Challenge), tackling an Amazon Robotics brief across camera ISP, super-resolution, and image restoration under real-world blur.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience', experienceId: 'career-amazon-vision' });
   } else if (text.includes('stmicro') || text.includes('st micro')) {
-    reply = 'Since Aug 2026 Rahul has been designing an AI-driven put-away recommendation system for STMicroelectronics’ Singapore warehouse, an NUS System Design Project in operations research, with capacity-aware decisions drawn from picking history, demand forecasts, and available capacity.';
+    reply = 'Since Aug 2026 Rahul has been architecting a layout-agnostic AI put-away engine to run in any STMicroelectronics warehouse worldwide, an NUS Capstone in operations research, ingesting each site’s shelf coordinates, dimensions, and operating rules so one model adapts to any floor plan.';
     references = [{ label: 'Read the experience timeline', href: '#experience' }];
     commands.push({ type: 'focusExperience', experienceId: 'career-stmicro-or' });
   } else if (text.includes('contact') || text.includes('email') || text.includes('get in touch')) {
@@ -184,10 +184,13 @@ export const localAgent = (message, reason = 'model_unavailable') => {
 };
 
 // How much of the page state reaches the model. lib/askPageState.ts orders the
-// state so that what matters most comes first; 28,000 holds the competency
+// state so that what matters most comes first; 29,000 holds the competency
 // tools and every project with its spotlight (tests/page-agent-server.test.ts
 // fails when one no longer fits). The field notes and résumés after them are cut.
-export const PAGE_STATE_CHARS = 28_000;
+// Raised from 28,000 in Nov 2026: the A*STAR record and the Abbott contract's
+// second outcome, both in the experience list ahead of the projects, pushed the
+// last project to 28,053.
+export const PAGE_STATE_CHARS = 29_000;
 
 const buildPrompt = ({ message, pageState }) => `
 You are the private assistant for Rahul Mitra's professional portfolio.

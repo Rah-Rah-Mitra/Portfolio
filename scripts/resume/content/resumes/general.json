@@ -6,6 +6,10 @@
   "marginIn": 0.5,
   "sections": [
     {
+      "type": "summary",
+      "title": "SUMMARY"
+    },
+    {
       "type": "education",
       "title": "EDUCATION",
       "entries": [
@@ -26,22 +30,16 @@
         {
           "id": "stmicro-or",
           "bullets": [
-            "putaway"
-          ]
-        },
-        {
-          "id": "amazon-vision",
-          "bullets": [
-            "isp",
-            "sr-reproduction",
-            "robustness",
-            "sr-review",
-            "deployment"
+            "layout-agnostic",
+            "ranking-pipeline",
+            "replay-eval"
           ]
         },
         {
           "id": "abbott-contract",
           "bullets": [
+            "fault-detection",
+            "decision-metrics",
             "platform",
             "setpoint",
             "harness"
@@ -49,6 +47,7 @@
         },
         {
           "id": "abbott-intern",
+          "after": "abbott-contract",
           "bullets": [
             "digital-twin",
             "pipeline",
@@ -61,13 +60,34 @@
         {
           "id": "pa",
           "bullets": [
+            "sparks",
             "churp",
             "singpass",
-            "sparks",
             "infra",
-            "cicd",
-            "survey",
-            "rules"
+            "survey"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "research",
+      "title": "RESEARCH EXPERIENCE",
+      "entries": [
+        {
+          "id": "astar-artc",
+          "date": false,
+          "bullets": [
+            "attachment"
+          ]
+        },
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "brief",
+            "sr-reproduction",
+            "robustness",
+            "sr-review",
+            "deployment"
           ]
         }
       ]
@@ -75,12 +95,12 @@
     {
       "type": "projects",
       "title": "PROJECTS",
+      "render": "cv-inline",
       "entries": [
         {
           "id": "swarmline",
           "bullets": [
-            "coordination",
-            "main"
+            "combined"
           ]
         },
         {
@@ -117,28 +137,26 @@
     },
     {
       "type": "leadership",
-      "title": "LEADERSHIP AND ACTIVITIES",
+      "title": "CO-CURRICULAR ACTIVITIES AND VOLUNTEER EXPERIENCES",
       "entries": [
+        {
+          "id": "ywh",
+          "bullets": [
+            "condensed"
+          ]
+        },
         {
           "id": "ntuc",
           "bullets": [
             "main"
           ]
-        },
-        {
-          "id": "steminc",
-          "bullets": [
-            "combined"
-          ]
-        },
-        {
-          "id": "ywh",
-          "bullets": [
-            "programs",
-            "automation",
-            "network"
-          ]
-        },
+        }
+      ]
+    },
+    {
+      "type": "national-service",
+      "title": "NATIONAL SERVICE",
+      "entries": [
         {
           "id": "navy",
           "bullets": [
@@ -154,11 +172,9 @@
         "hl-languages",
         "hl-web-cloud",
         "hl-ai-data",
-        "ai-foundations",
-        "cv-skills",
         "sim-or",
-        "statistics",
         "hl-security",
+        "theory",
         "certs-general"
       ]
     }

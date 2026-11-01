@@ -96,12 +96,29 @@ citation (Rahul's wording calls it "a published UNet super-resolution model"),
 and PSNR as the metric behind the 0.78 dB (only the robustness bullet says
 PSNR).
 
+**Superseded 2026-11** (the Nov 2026 master CV): the entry is research, not
+employment. It moved to `research.json` as *Computer Vision Researcher, BlendED x
+Amazon Robotics (AI+X Global Challenge)*, and "Amazon" never stands alone as the
+organisation. General opens it with `brief` (the Amazon Robotics brief, mentored
+by Dan Shao) in place of `isp`; the role résumés keep `isp`. `brief` carries the
+phrasing `no-mentor`, which outside general is the one to select until Dan Shao's
+consent to be named beyond the CV is confirmed (§16).
+
 ## 3. STMicroelectronics — ongoing, so no outcome yet
 
 The put-away recommendation bullet describes intent ("replacing experience-based
 slotting"). There is no measured result yet. The bullet now names **3 live
 inputs** — a count of the three the sentence already lists, not a new claim.
 Worth revisiting once the System Design Project produces a measured result.
+
+**Superseded 2026-11** (the Nov 2026 master CV): *Warehouse AI & Operations
+Research Engineer (Part-Time), STMicroelectronics (NUS Capstone)*. `putaway` and
+its "Singapore warehouse" scope are retired; the engine is layout-agnostic and
+must run in any STMicroelectronics warehouse. Three bullets replace it
+(`layout-agnostic`, `ranking-pipeline`, `replay-eval`): a 4-stage shelf-ranking
+pipeline designed and a historical-replay evaluation defined, piloting on two AMK
+warehouses. Still no measured result; revisit when the replay produces numbers.
+The title is self-chosen (the contract gives none) and awaits the supervisor.
 
 ## 4. Abbott contract role — answered in full
 
@@ -414,6 +431,14 @@ house-style pass does not read. **Reaffirmed 2026-10-02:** his master CV wrote
 "SG Defence Tech Hackathon"; asked, he kept "Defense" everywhere, so the résumé
 header reads "SG Defense Tech Hackathon".
 
+**Reversed 2026-11:** the Nov 2026 master CV and its sync spec spell it "SG
+Defence Tech Hackathon", British throughout, so the résumé header, the site's
+event, achievement and project text, and the assistant's fallback say "Defence"
+now. The organisers' own names keep their spelling (European Defense Tech Hub,
+NUS Defense Tech Venture Lab), as do the stable event id
+`singapore-defense-tech-hackathon-2026` and the highlights résumé's matching
+keyword "Defense Tech", which a posting written in US English still has to hit.
+
 **Fit (2026-10-02).** `general` follows the master CV again. The coursework line
 and `ywh.network`, which came off on 2026-09-29 (rungs 1 and 2), are back, and with
 Swarmline's second bullet it fits two pages at 9pt (down from 9.5). The Harvard
@@ -489,3 +514,37 @@ own master CV leaves them out.
 ElevenLabs (attested in OPFORGE's Swarmline pitch video, but not asked for; add it
 if Rahul wants it). Unreal Engine is named only in the Swarmline bullet; putting it
 on a skills line or a keyword row is Rahul's call.
+
+## 16. The Nov 2026 master CV sync, 2026-11-01
+
+Rahul's VMock master CV became the source of wording, synced block by block from
+`portfolio-mcp-update-spec.md`, with the CV winning on wording and dates. What it
+settled, and what it left open:
+
+- **Structure.** General now prints SUMMARY (profile.json's paragraph, CV-only),
+  EDUCATION, WORK EXPERIENCE, RESEARCH EXPERIENCE (A*STAR ARTC, BlendED x Amazon
+  Robotics), PROJECTS (one bullet each, `render: "cv-inline"`), CO-CURRICULAR
+  ACTIVITIES AND VOLUNTEER EXPERIENCES (YesWeHack's condensed bullet, NTUC),
+  NATIONAL SERVICE and SKILLS AND CERTIFICATIONS. The role résumés carry the
+  research and national-service sections too.
+- **Abbott.** The contract reads *Global Operational AI Systems & Data Engineer
+  (Part-Time), Abbott Laboratories (Contract)*, as the CV prints it, and opens on
+  two impact bullets (`fault-detection`, `decision-metrics`). The internship is
+  *Abbott Laboratories (Converted to Contract)* and sits under the contract on
+  general (`after`). NDA: "5+ plants worldwide", nothing more.
+- **People's Association.** Seven bullets became five on the CV: `infra` now
+  carries the CI/CD that was `cicd`, and `survey` the balloting rules that were
+  `rules`; both retired ids are gone from the pool.
+- **A*STAR ARTC.** Incoming, Jan 2027 to May 2027. The CV leaves the date field
+  empty (VMock cannot hold 2027) and general prints its heading undated
+  (`date: false`), since the bullet says when; the entry keeps its dates.
+- **Facts corrected in deep variants** to agree with the new defaults: churp's
+  status (live in Tengah, national rollout planned), infra's service count (10,
+  with the Rust auth gateway), BrainHack (top 25% of 400+ teams), the Navy's
+  food-waste figure (a month-long manual analysis of 6 months of data) and
+  setpoint's "global plants'".
+- **Still open** (spec §9 and §10, not pre-empted): Dan Shao's consent to be named
+  beyond the CV, the STMicro title and "Global", the ARTC designation, Abbott's
+  detail clearance, the unbacked skills, the counted-list bullets and a fault-type
+  count for `fault-detection`. `certs-core` and `certs-or` still list the Packt and
+  Intellezy courses the CV cut: the spec marks that a decision for Rahul.

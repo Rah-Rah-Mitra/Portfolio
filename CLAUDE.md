@@ -846,7 +846,7 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - `public/resume/generated/*` are **build artifacts — never hand-edit them.**
   Source of truth is `scripts/resume/content/*.json` (entry/bullet pools +
   per-role configs in `content/resumes/`). Styling lives in two interchangeable
-  modules exposing the same nine names: `scripts/resume/nus_style.py` (Arial,
+  modules exposing the same ten names: `scripts/resume/nus_style.py` (Arial,
   A4, the NUS CDE layout — **the default since 2026-11**, measured out of
   Rahul's own master CV) and `scripts/resume/harvard_style.py` (Times New Roman,
   Harvard OCS layout — still an option, `--style harvard`). `docx_base.py` holds
@@ -854,16 +854,33 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   there without explicit approval. `server/resumeStyles.mjs` is the JS mirror
   and has to agree with it.
 - Current edition: **2026-12** (the Amazon role ended Oct 2026; Rahul's Oct
-  2026 master CV wording). `generated/` keeps the current + previous edition;
-  older sets live in `public/resume/archive/`. Its eight PDFs were exported
-  through Word (`export-pdf.ps1`) on 2026-10-23. `general` sits at nus's 8.5pt
-  floor, so any line added to it must buy its room elsewhere.
+  2026 master CV wording), rebuilt in place on 2026-11-01 for his Nov 2026 VMock
+  master CV (docs/resume-detail-gaps.md §16). `generated/` keeps the current +
+  previous edition; older sets live in `public/resume/archive/`. Its eight PDFs
+  were exported with `export_pdf_libreoffice.py` on 2026-11-01 (that machine had
+  no Word; the script has a Windows path now: soffice under Program Files, fonts
+  checked in the registry), so re-export through Word (`export-pdf.ps1`) before an
+  employer sees one; ai-engineer ends about 1.6 lines above its margin, the
+  tightest. `general` sits at nus's 8.5pt floor, so any line added to it must buy
+  its room elsewhere.
+- Section types (`ENTRY_SECTION_TYPES` in `server/resumeAssemble.mjs`, which every
+  list of them reads; `build_resumes.py` loads the same pools): `education`,
+  `experience`, `research`, `projects`, `leadership`, `national-service`, each
+  `content/<type>.json`, plus `skills` and `summary` (profile.json's paragraph,
+  general only, never a role résumé). A projects section may set
+  `"render": "cv-inline"` (one bullet per project, "Role, Organization (Date):
+  text", the master CV's format); an entry selection may set `after` (group under
+  another entry: general's Abbott internship under the contract), `gpa: false`
+  and `date: false` (general's A*STAR heading, whose dates are in its bullet).
+  The JS and Python sides implement each and have to agree.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
   across all profiles), and the two-page `general` master CV, which is the
   document `rahul-mitra-master-cv.docx` is the ground truth for. Every config
-  declares its own `bodyPt` (8.5–10 in this edition) and `marginIn: 0.5` —
-  do not assume a size. The pins are what the JS auto-fit landed on in `nus`;
-  `--style harvard` reuses them best-effort and ships nothing.
+  declares its own `bodyPt` (8.5–9 in this edition) and `marginIn: 0.5` —
+  do not assume a size. The pins are what the JS auto-fit landed on in `nus`,
+  except civic at 9pt where 9.5 fits: there the merged `pa.infra` runs to four
+  lines, over the checker's three-line budget. `--style harvard` reuses them
+  best-effort and ships nothing.
 - Edition bump checklist:
   1. Edit content JSONs, then `npm run resume:lint`.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`
@@ -1122,11 +1139,17 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 
 Career history renders from `experienceRecords` in `portfolioData.ts` (shown
 in the workbench Experience window and the mobile registry). Adding a role
-requires THREE entries: a `kind: 'career'` FieldNote in
-`careerAndEducationNotes`, a record in `experienceDetailById`, and a start
-date in `experienceStartById`. `tests/portfolio-data.test.ts` asserts the
-newest organization and ordering; `tests/semantic-render.test.ts` pins
-`experienceRecords` length — update both, then `npm run snapshot`.
+requires FOUR entries: a `kind: 'career'` FieldNote in
+`careerAndEducationNotes`, a record in `experienceDetailById`, a start date in
+`experienceStartById` (or let the note's `sortDate` stand), and its
+`responsibilities` in `lib/experienceResponsibilities.ts`. That last file is
+snapshot-only: the site never renders responsibilities and `portfolioData.ts` is
+in the main bundle, so they moved out in Nov 2026 (−3,953 B); the snapshot builder
+throws on a record without them. `kind` is `professional`, `education`,
+`research` or `national-service`. `tests/portfolio-data.test.ts` asserts the
+newest organization and ordering; `tests/semantic-render.test.ts` and
+`tests/e2e/quality.spec.ts` pin `experienceRecords` length (11) — update them,
+then `npm run snapshot`.
 
 ## Bonsai-Estate submodule and estate pack
 
@@ -1227,7 +1250,7 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   Estate controller starts with `localStorage.clear()` (the viewer's settings
   are stored there).
 - `tests/e2e/quality.spec.ts` pins the workbench boot state (Home / Dossier
-  focused in front of the Estate, Selected Work closed), the 10/29 no-JS
+  focused in front of the Estate, Selected Work closed), the 11/29 no-JS
   evidence counts, and zero serious axe violations on both surfaces.
 - All public asset paths (`/images`, `/resume`, ...) must exist on disk under
   `public/` — no speculative references.
@@ -1261,7 +1284,7 @@ newest organization and ordering; `tests/semantic-render.test.ts` pins
   desk drawing set moved the desk-backdrop layer and its policy into a lazy chunk
   (−2,807 B) and spent 896 B on its gate, FX toggle, plate slot and assistant
   copy (506,380 B by the time it merged); the root's `onCaughtError` and
-  `AppErrorBoundary`'s own report spent 226 B; the sheet traverse left it at 506,694 B, and edition 2026-12's Amazon record (kept short in `portfolioData.ts` for this reason) spent 106 B, and the Abbott contract's "Global" retitle 40 B, so at 506,840 B **1,994 B are left** — anything bigger goes into the controller,
+  `AppErrorBoundary`'s own report spent 226 B; the sheet traverse left it at 506,694 B, and edition 2026-12's Amazon record (kept short in `portfolioData.ts` for this reason) spent 106 B, and the Abbott contract's "Global" retitle 40 B, to 506,840 B; the Nov 2026 master CV sync moved every experience record's responsibilities into the snapshot-only `lib/experienceResponsibilities.ts` (−3,953 B net, the A*STAR record included), so at 502,887 B **5,947 B are left** — anything bigger goes into the controller,
   engine, HUD or desk-backdrop layer chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).

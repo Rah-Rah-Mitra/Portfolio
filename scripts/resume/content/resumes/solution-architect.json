@@ -2,7 +2,7 @@
   "slug": "solution-architect",
   "subject": "Solution Architect Resume",
   "pages": 1,
-  "bodyPt": 9.5,
+  "bodyPt": 9,
   "marginIn": 0.5,
   "sections": [
     {
@@ -25,18 +25,13 @@
         {
           "id": "stmicro-or",
           "bullets": [
-            "putaway"
-          ]
-        },
-        {
-          "id": "amazon-vision",
-          "bullets": [
-            "isp"
+            "layout-agnostic"
           ]
         },
         {
           "id": "abbott-contract",
           "bullets": [
+            "fault-detection",
             "platform"
           ]
         },
@@ -52,8 +47,19 @@
           "bullets": [
             "churp",
             "singpass",
-            "cicd",
             "infra"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "research",
+      "title": "RESEARCH EXPERIENCE",
+      "entries": [
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp"
           ]
         }
       ]

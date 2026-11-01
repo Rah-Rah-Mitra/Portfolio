@@ -25,13 +25,7 @@
         {
           "id": "stmicro-or",
           "bullets": [
-            "putaway"
-          ]
-        },
-        {
-          "id": "amazon-vision",
-          "bullets": [
-            "isp"
+            "layout-agnostic"
           ]
         },
         {
@@ -45,6 +39,18 @@
           "bullets": [
             "pipeline",
             "apc"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "research",
+      "title": "RESEARCH EXPERIENCE",
+      "entries": [
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp"
           ]
         }
       ]
@@ -90,7 +96,13 @@
             "automation",
             "network"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "type": "national-service",
+      "title": "NATIONAL SERVICE",
+      "entries": [
         {
           "id": "navy",
           "bullets": [

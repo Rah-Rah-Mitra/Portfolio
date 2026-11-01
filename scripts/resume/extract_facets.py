@@ -38,7 +38,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = Path(__file__).resolve().parent / "content"
 OUT = ROOT / ".impeccable" / "resume-facets"
-SECTIONS = ("education", "experience", "projects", "leadership")
+SECTIONS = ("education", "experience", "research", "projects", "leadership", "national-service")
 
 PROMPT = """Extract factual facets from one bullet of a technical resume.
 

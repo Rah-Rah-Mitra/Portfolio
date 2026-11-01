@@ -82,7 +82,7 @@ describe('api/mcp', () => {
       subject: 'Custom Resume',
       pages: 1,
       sections: [
-        { type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'stmicro-or', bullets: ['putaway'] }] },
+        { type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'stmicro-or', bullets: ['layout-agnostic'] }] },
         { type: 'skills', title: 'SKILLS AND CERTIFICATIONS', lines: ['se-skills'] },
       ],
     };
@@ -126,12 +126,13 @@ describe('api/mcp', () => {
     const bullets = JSON.parse(projects.content[0].text).sections
       .flatMap((section: { entries: Array<{ bullets: unknown[] }> }) => section.entries.flatMap((entry) => entry.bullets));
     // The five projects the 2026-11 master CV pass left selectable, plus
-    // Swarmline's two (SG Defense Tech Hackathon team lead and finalist, Sep 2026:
-    // the team and its algorithms, then the simulation and its jammed-link result).
+    // Swarmline's three (SG Defence Tech Hackathon team lead and finalist, Sep
+    // 2026: the team and its algorithms, the simulation and its jammed-link
+    // result, and since Nov 2026 the master CV's one-line combination of both).
     // arcane and ethoslens were withheld in the VMock pass; onthespectrum,
     // agewelllah and smartexam followed once work experience carried the same
     // evidence, and the "Additional Projects" entry retired earlier.
-    expect(bullets.length).toBe(7);
+    expect(bullets.length).toBe(8);
     for (const bullet of bullets as Array<{ lead: string; lines: number; hasMetric: boolean }>) {
       expect(bullet.lead).toMatch(/^[A-Za-z][A-Za-z-]*$/);
       expect(bullet.lines).toBeGreaterThan(0);
@@ -176,9 +177,10 @@ describe('api/mcp', () => {
     // stays selectable — withholding a card is not withholding a fact.
     // navy.data joined it in the 2026-11 pass: general was its only consumer and
     // the master CV drops it. Same reading as asrjc.award — still true, still
-    // selectable, just not on a canonical résumé.
+    // selectable, just not on a canonical résumé. steminc.combined joined it with
+    // the Nov 2026 master CV, which drops the JC CCA; the site keeps the record.
     expect(bullets.filter((bullet) => bullet.usedBy.length === 0).map((bullet) => bullet.ref).sort())
-      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'asrjc.award', 'navy.data']);
+      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'asrjc.award', 'navy.data', 'steminc.combined']);
     for (const line of menu.skillLines) expect(Array.isArray(line.usedBy), line.id).toBe(true);
     expect(menu.skillLines.find((line) => line.id === 'se-skills')?.usedBy).toContain('software-engineer');
     expect(menu.skillLines.some((line) => line.usedBy.length === 0)).toBe(true);
@@ -188,7 +190,8 @@ describe('api/mcp', () => {
     const { content } = await rpc('tools/call', { name: 'check_resume', arguments: { slug: 'highlights' } });
     const report = JSON.parse(content[0].text);
     expect(report.version).toBe(1);
-    expect(report.metrics.bullets).toBe(14);
+    // 15 since the Nov 2026 master CV put Abbott's fault-detection bullet on it.
+    expect(report.metrics.bullets).toBe(15);
     // The 2026-11 pass spread the openers; "Built" is no longer the top one on
     // any résumé. What matters here is that the field is still reported.
     expect(report.metrics.topOpener.openers.length).toBeGreaterThan(0);

@@ -95,17 +95,25 @@ export interface FieldNote {
 
 export interface ExperienceRecord {
   id: string;
-  kind: 'professional' | 'education';
+  kind: 'professional' | 'education' | 'research' | 'national-service';
   role: string;
   organization: string;
   location: string;
   dateLabel: string;
   sortDate: string;
   scope: string;
-  responsibilities: string[];
   outcomes: string[];
   tags: string[];
   linkedProjectIds: string[];
+}
+
+/**
+ * A record as list_experience serves it: the site's record plus what the role
+ * involved. The site never renders responsibilities, so they stay out of the
+ * main bundle (lib/experienceResponsibilities.ts, read by the snapshot only).
+ */
+export interface SnapshotExperienceRecord extends ExperienceRecord {
+  responsibilities: string[];
 }
 
 export interface EventHighlight {

@@ -1,0 +1,73 @@
+{
+  "entries": [
+    {
+      "id": "astar-artc",
+      "organization": "A*STAR Advanced Remanufacturing & Technology Centre (ARTC)",
+      "location": "Singapore",
+      "role": "Research Intern, Digital Supply Chain Group (Incoming)",
+      "start": "2027-01",
+      "dateLabel": "Jan 2027 – May 2027",
+      "bullets": [
+        {
+          "id": "attachment",
+          "text": {
+            "default": "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies."
+          }
+        }
+      ]
+    },
+    {
+      "id": "amazon-vision",
+      "organization": "BlendED x Amazon Robotics (AI+X Global Challenge)",
+      "location": "Singapore",
+      "role": "Computer Vision Researcher",
+      "start": "2026-07",
+      "end": "2026-10",
+      "dateLabel": "Jul 2026 – Oct 2026",
+      "bullets": [
+        {
+          "id": "brief",
+          "text": {
+            "default": "Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors, mentored by Dan Shao (CTO, Zelig; former Principal Computer Vision Engineer, iRobot)."
+          },
+          "phrasings": {
+            "no-mentor": {
+              "text": "Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors.",
+              "note": "ends before the mentor clause; select it outside general until Dan Shao's consent to be named is confirmed"
+            }
+          }
+        },
+        {
+          "id": "isp",
+          "text": {
+            "default": "Built vision systems turning raw camera feeds into perception-ready frames across 3 workstreams: camera ISP, super-resolution, and image restoration under real-world blur."
+          }
+        },
+        {
+          "id": "sr-reproduction",
+          "text": {
+            "default": "Reproduced a published UNet super-resolution model in PyTorch from broken author code, recovering its undocumented evaluation protocol and training 12 models across 3 scales, 2 datasets, and 2 losses, matching reported results at 8x and landing within 0.78 dB at 2x and 4x."
+          }
+        },
+        {
+          "id": "robustness",
+          "text": {
+            "default": "Diagnosed a robustness gap where fixed-blur models lost most PSNR gains under unseen blur, then added randomised-blur training and fine-tuning to recover up to 0.7 dB across 3 real-world blur types: lens, out-of-focus, and resampling."
+          }
+        },
+        {
+          "id": "sr-review",
+          "text": {
+            "default": "Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods, organised around camera information loss and recovery through calibration, extra frames, or learned priors, comparing 4 model families on fidelity and hallucination risk."
+          }
+        },
+        {
+          "id": "deployment",
+          "text": {
+            "default": "Deployed 3 trained models as a public web app: a one-click Flask inference API on a Colab T4 GPU loading weights from a GitHub release, a secure tunnel on a reserved domain, and a hosted front end for image upload, scale selection, and download."
+          }
+        }
+      ]
+    }
+  ]
+}

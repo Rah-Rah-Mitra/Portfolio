@@ -128,14 +128,14 @@ def add_entry(doc, width, section_type, entry, role, first=False, body_pt=BODY_P
     """One bold line per entry, right-flush dates, with the name order set by
     the section:
 
-        education    Organization<tab>Dates, then the degree on its own line
-        experience   Role, Organization<tab>Dates
-        projects     Role, Organization<tab>Dates
-        leadership   Organization, Role<tab>Dates
+        education         Organization<tab>Dates, then the degree on its own line
+        national-service  Organization, Role<tab>Dates
+        everything else   Role, Organization<tab>Dates
 
-    Leadership really does flip the order in the source document. It is kept
-    because it reads better in both places -- an employer leads a job, an
-    organisation leads a volunteer post -- not because it was overlooked.
+    The Nov 2026 master CV prints its co-curricular entries Role first, where
+    the older source document flipped leadership; only national service still
+    leads with the organisation ("Republic of Singapore Navy, Naval Chef &
+    Base Support Assistant"). server/resumeStyles.mjs:nusEntryHead agrees.
     """
     if not first:
         blank(doc, body_pt)
@@ -146,7 +146,7 @@ def add_entry(doc, width, section_type, entry, role, first=False, body_pt=BODY_P
         return _entry_line(doc, width, role, None) if role else p
     if not role:
         return _entry_line(doc, width, org, date)
-    head = f"{org}, {role}" if section_type == "leadership" else f"{role}, {org}"
+    head = f"{org}, {role}" if section_type == "national-service" else f"{role}, {org}"
     return _entry_line(doc, width, head, date)
 
 
@@ -162,4 +162,11 @@ def add_bullet(doc, text, body_pt=BODY_PT):
 def add_skill_line(doc, label, items):
     p = para(doc)
     p.add_run(f"{label}: {items}")
+    return p
+
+
+def add_text(doc, text, body_pt=BODY_PT):
+    """A plain body paragraph: the master CV's summary, unlabelled like it."""
+    p = para(doc)
+    p.add_run(text)
     return p

@@ -7,8 +7,10 @@
 import profile from '../scripts/resume/content/profile.json' with { type: 'json' };
 import education from '../scripts/resume/content/education.json' with { type: 'json' };
 import experience from '../scripts/resume/content/experience.json' with { type: 'json' };
+import research from '../scripts/resume/content/research.json' with { type: 'json' };
 import projects from '../scripts/resume/content/projects.json' with { type: 'json' };
 import leadership from '../scripts/resume/content/leadership.json' with { type: 'json' };
+import nationalService from '../scripts/resume/content/national-service.json' with { type: 'json' };
 import skills from '../scripts/resume/content/skills.json' with { type: 'json' };
 import softwareEngineer from '../scripts/resume/content/resumes/software-engineer.json' with { type: 'json' };
 import solutionArchitect from '../scripts/resume/content/resumes/solution-architect.json' with { type: 'json' };
@@ -18,9 +20,12 @@ import cyberSecurity from '../scripts/resume/content/resumes/cyber-security.json
 import civicTechSolutionArchitect from '../scripts/resume/content/resumes/civic-tech-solution-architect.json' with { type: 'json' };
 import highlights from '../scripts/resume/content/resumes/highlights.json' with { type: 'json' };
 import general from '../scripts/resume/content/resumes/general.json' with { type: 'json' };
+import { ENTRY_SECTION_TYPES } from './resumeAssemble.mjs';
 
 export { profile };
-export const pools = { education, experience, projects, leadership, skills };
+// One pool per entry section type (ENTRY_SECTION_TYPES), plus skills, plus the
+// profile, which a summary section reads its paragraph from.
+export const pools = { education, experience, research, projects, leadership, 'national-service': nationalService, skills, profile };
 export const resumeConfigs = [
   softwareEngineer, solutionArchitect, aiEngineer, operationsResearchEngineer,
   cyberSecurity, civicTechSolutionArchitect, highlights, general,
@@ -37,7 +42,7 @@ export const configBySlug = (slug) => resumeConfigs.find((config) => config.slug
  * output, so the block has to hold at the menu and again at render time.
  */
 export const resumeBlocks = () => ({
-  sections: ['education', 'experience', 'projects', 'leadership'].map((type) => ({
+  sections: ENTRY_SECTION_TYPES.map((type) => ({
     type,
     entries: pools[type].entries.filter((entry) => !entry.blocked).map((entry) => ({
       id: entry.id,

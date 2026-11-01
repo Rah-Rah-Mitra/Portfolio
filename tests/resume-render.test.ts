@@ -24,7 +24,7 @@ const CONTACT_URIS = [
 
 const configs = resumeConfigs as Spec[];
 const highlights = configBySlug('highlights') as Spec;
-const entryIds = (type: 'experience' | 'projects' | 'leadership'): SpecEntry[] => (pools[type].entries as unknown as PoolEntry[])
+const entryIds = (type: 'experience' | 'research' | 'projects' | 'leadership' | 'national-service'): SpecEntry[] => (pools[type].entries as unknown as PoolEntry[])
   .filter((entry) => !entry.blocked)
   .map((entry) => ({ id: entry.id, bullets: (entry.bullets ?? []).map((bullet) => bullet.id) }));
 
@@ -138,8 +138,10 @@ describe('résumé renderer', () => {
       pages: 1,
       sections: [
         { type: 'experience', title: 'EXPERIENCE', entries: entryIds('experience') },
+        { type: 'research', title: 'RESEARCH EXPERIENCE', entries: entryIds('research') },
         { type: 'projects', title: 'PROJECTS', entries: entryIds('projects') },
         { type: 'leadership', title: 'LEADERSHIP AND ACTIVITIES', entries: entryIds('leadership') },
+        { type: 'national-service', title: 'NATIONAL SERVICE', entries: entryIds('national-service') },
       ],
     };
     const { pages, fit } = await renderResumePdf(oversized, pools, profile) as { pages: number; fit: Fit };
@@ -158,7 +160,7 @@ describe('résumé renderer', () => {
     // Content survived: nothing the caller selected was dropped to make it fit.
     const markdown = renderResumeMarkdown(oversized, pools, profile) as string;
     expect(markdown).toContain('put-away');
-    expect(markdown).toContain('Excel VBA automation workflow');
+    expect(markdown).toContain('Excel VBA reporting workflow');
   });
 
   it('swaps in deep variants without touching the standard build', async () => {
@@ -170,25 +172,27 @@ describe('résumé renderer', () => {
     expect(deep).toContain('From-To edge-list');
     expect(deep.length).toBeGreaterThan(standard.length);
     // A bullet with no deep variant still falls back to its usual text.
-    expect(deep).toContain('Coordinate weekly senior-engagement activities');
+    expect(deep).toContain('Coordinated weekly senior-engagement activities');
   });
 
-  it('holds deep detail on the master CV in two pages in harvard, and reports the nus overflow', async () => {
+  it('holds deep detail on the master CV in two pages in both styles', async () => {
     // Deep detail fitted both styles in 2026-11 (the A-Level entry dropped, the
     // skills lines narrowed to the master CV's nine, 0.5in margins). Edition
     // 2026-12 took Rahul's own Oct 2026 master CV wording, five Amazon bullets
     // where there had been two, and the default general CV itself now needs
-    // nus's 8.5pt floor, so deep detail runs to a third page in nus. Pinned
-    // both ways because this is the one spec that exercises the bottom of a
-    // ladder: harvard must keep fitting, and nus must say it does not rather
-    // than hand back a silent 3-page CV.
+    // nus's 8.5pt floor, so deep detail ran to a third page in nus. The Nov 2026
+    // master CV fits it again: its PA bullets merged seven into five, and the
+    // bullets it brought in (STMicro's, Abbott's impact pair, Amazon's brief)
+    // carry no deep variant to grow into. The nus overflow report is still pinned
+    // by the oversized spec above; this one keeps both styles honest at the
+    // bottom of their ladders.
     const general = configBySlug('general') as Spec;
     const harvard = await renderResumePdf({ ...general, detail: 'deep', style: 'harvard' }, pools, profile) as { fit: Fit; pages: number };
     expect(harvard.fit.fitted).toBe(true);
     expect(harvard.pages).toBe(2);
-    const nus = await renderResumePdf({ ...general, detail: 'deep', style: 'nus' }, pools, profile) as { fit: Fit & { overflow?: string }; pages: number };
-    expect(nus.fit.fitted).toBe(false);
-    expect(nus.fit.overflow).toMatch(/Does not fit 2 page\(s\) even at 8\.5pt/);
+    const nus = await renderResumePdf({ ...general, detail: 'deep', style: 'nus' }, pools, profile) as { fit: Fit; pages: number };
+    expect(nus.fit.fitted).toBe(true);
+    expect(nus.pages).toBe(2);
   });
 
   it('refuses a project Rahul has blocked, even when a spec names it directly', async () => {
@@ -342,5 +346,74 @@ describe('api/resume', () => {
     const badId = await GET(new Request(url(`spec=${encodeSpec(badSpec)}`)));
     expect(badId.status).toBe(400);
     expect((await badId.json()).error).toMatch(/unknown skills line: nope/);
+  });
+});
+
+describe('the master CV shapes a spec can ask for', () => {
+  // Nov 2026: general reproduces Rahul's VMock master CV, which needed a summary
+  // section, one-bullet project lines, the GPA, grouping by employer and an
+  // undated heading. Each is a selection, never text a caller supplies.
+  type Rich = { kind: string; entryId?: string; sectionType?: string; role?: string | null; dateLabel?: string; label?: string; text?: string; inline?: boolean };
+  const general = configBySlug('general') as Spec;
+  const items = assemble(general, pools) as Rich[];
+
+  it('prints the summary from profile.json, and only where a summary section selects it', () => {
+    const text = items.find((item) => item.kind === 'text');
+    expect(text?.sectionType).toBe('summary');
+    expect(text?.text).toBe((profile as { summary: string }).summary);
+    expect((assemble(highlights, pools) as Rich[]).some((item) => item.kind === 'text')).toBe(false);
+    // The schema takes the section with no text of its own.
+    expect(specSchema.safeParse({ pages: 1, sections: [{ type: 'summary', title: 'SUMMARY', text: 'mine' }] }).data)
+      .toEqual({ pages: 1, sections: [{ type: 'summary', title: 'SUMMARY' }] });
+  });
+
+  it('runs cv-inline projects as one labelled bullet, the date inside the parenthetical', () => {
+    const swarmline = items.find((item) => item.kind === 'bullet' && item.entryId === 'swarmline');
+    expect(swarmline?.label).toBe('Team Lead & Finalist, Swarmline: SG Defence Tech Hackathon (1,300+ applicants, Sep 2026)');
+    expect(items.find((item) => item.kind === 'bullet' && item.entryId === 'hailo')?.label)
+      .toBe('Personal Project, Hailo Edge AI Training and Deployment (Mar 2026)');
+    expect(items.filter((item) => item.kind === 'entry' && item.sectionType === 'projects').every((item) => item.inline)).toBe(true);
+    // Its sentence stays its own, so the checker reads the verb, not the label.
+    expect(swarmline?.text?.startsWith('Directed a 5-person team')).toBe(true);
+    const twoBullets = { ...general, sections: general.sections.map((section) => (section.type === 'projects'
+      ? { ...section, entries: [{ id: 'swarmline', bullets: ['coordination', 'main'] }] } : section)) };
+    expect(() => assemble(twoBullets, pools)).toThrow(/one bullet; swarmline selects 2/);
+  });
+
+  it('prints the GPA after the degree unless the selection drops it', () => {
+    const degree = items.find((item) => item.kind === 'entry' && item.entryId === 'nus');
+    expect(degree?.role).toBe('Bachelor of Engineering, Industrial and Systems Engineering (GPA: 4.37/5.00)');
+    const without = { ...general, sections: general.sections.map((section) => (section.type === 'education'
+      ? { ...section, entries: [{ id: 'nus', gpa: false, bullets: ['majors'] }] } : section)) };
+    expect((assemble(without, pools) as Rich[]).find((item) => item.entryId === 'nus')?.role)
+      .toBe('Bachelor of Engineering, Industrial and Systems Engineering');
+  });
+
+  it('keeps the Abbott internship under the contract it became, and only by selection', () => {
+    const order = (spec: Spec) => (assemble(spec, pools) as Rich[])
+      .filter((item) => item.kind === 'entry' && item.sectionType === 'experience').map((item) => item.entryId);
+    expect(order(general)).toEqual(['stmicro-or', 'abbott-contract', 'abbott-intern', 'pa']);
+    // Without `after`, the end-date rule puts People's Association between them.
+    const plain = { ...general, sections: general.sections.map((section) => (section.type === 'experience'
+      ? { ...section, entries: (section.entries ?? []).map(({ after: _after, ...entry }: SpecEntry & { after?: string }) => entry) } : section)) };
+    expect(order(plain)).toEqual(['stmicro-or', 'abbott-contract', 'pa', 'abbott-intern']);
+    const dangling = { ...general, sections: general.sections.map((section) => (section.type === 'experience'
+      ? { ...section, entries: (section.entries ?? []).filter((entry) => entry.id !== 'abbott-contract') } : section)) };
+    expect(() => assemble(dangling, pools)).toThrow(/placed after abbott-contract/);
+  });
+
+  it('leaves the A*STAR heading undated on general, where its bullet says when', () => {
+    expect(items.find((item) => item.kind === 'entry' && item.entryId === 'astar-artc')?.dateLabel).toBe('');
+    // The entry keeps its dates: any other selection prints them.
+    const research = { pages: 1, sections: [{ type: 'research', title: 'RESEARCH EXPERIENCE', entries: [{ id: 'astar-artc', bullets: ['attachment'] }] }] };
+    expect((assemble(research, pools) as Rich[]).find((item) => item.kind === 'entry')?.dateLabel).toBe('Jan 2027 – May 2027');
+    expect(renderResumeMarkdown(general, pools, profile)).toContain('*Research Intern, Digital Supply Chain Group (Incoming)*\n');
+  });
+
+  it('prints the research and national service sections, from a spec the schema accepts', () => {
+    const markdown = renderResumeMarkdown(general, pools, profile) as string;
+    expect(markdown).toContain('## NATIONAL SERVICE');
+    expect(markdown).toContain('## RESEARCH EXPERIENCE');
+    expect(specSchema.safeParse(general).success).toBe(true);
   });
 });

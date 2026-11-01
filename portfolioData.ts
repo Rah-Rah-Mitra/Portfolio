@@ -9,7 +9,7 @@ import { resumeAssetUrl, SITE_CONFIG } from './siteConfig';
 export const softwareEngineerData: PortfolioData = {
   name: "Rahul Mitra",
   tagline: "Systems Architect & AI Engineer | ISE × CS × Mathematics",
-  bio: "NUS Industrial Systems Engineering student (Second Major CS, Minor Math). I build intelligent systems at the intersection of agentic AI, high-performance computing, and open-source engineering, from fine-tuned 109M-parameter transformer models to async Python libraries with global PyPI adoption.",
+  bio: "NUS Industrial and Systems Engineering student (Second Major CS, Minor Math). I build intelligent systems at the intersection of agentic AI, high-performance computing, and open-source engineering, from fine-tuned 109M-parameter transformer models to async Python libraries with global PyPI adoption.",
   profileImageUrl: assets.SE_PROFILE_IMAGE,
   contactEmail: SITE_CONFIG.email,
   linkedinUrl: SITE_CONFIG.social.linkedin,
@@ -18,11 +18,11 @@ export const softwareEngineerData: PortfolioData = {
   achievements: [
     {
       id: 8,
-      title: "Finalist: Singapore Defense Tech Hackathon 2026 (Swarmline)",
+      title: "Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)",
       description: "I led our five-person team to the finals from 1,300+ applicants with Swarmline, decentralised coordination software for interceptor drones, and we presented it to Singapore's Chief Defence Scientist. I directed the team's architecture of the swarm coordination, implemented the deterministic Unreal Engine 5.8 C++ simulation with Claude Code, and built the jammed-link comparison: with the ground link jammed in a simulated search task, 30 drones confirmed all 8 walking targets in every run, where an operator-in-the-loop baseline confirmed 2.1 on average.",
       date: "2026 Sep",
-      category: "Drone Swarms & Defense Tech",
-      tags: ["Finalist", "Defense Tech", "Swarm Robotics", "C++", "Unreal Engine 5.8", "Claude Code"],
+      category: "Drone Swarms & Defence Tech",
+      tags: ["Finalist", "Defence Tech", "Swarm Robotics", "C++", "Unreal Engine 5.8", "Claude Code"],
       proofUrl: "https://lnkd.in/g9SNkSVS",
       proofLabel: "View the project demo",
     },
@@ -308,8 +308,8 @@ export const projectHighlights: ProjectHighlight[] = [
     // of 2026-10-02, which supersedes the post's "1,000+".
     id: 'swarmline',
     title: 'Swarmline',
-    category: 'Drone Swarms & Defense Tech',
-    description: 'Team lead and finalist at the Singapore Defense Tech Hackathon 2026 (1,300+ applicants): decentralised drone-swarm coordination, demonstrated in a deterministic simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
+    category: 'Drone Swarms & Defence Tech',
+    description: 'Team lead and finalist at the Singapore Defence Tech Hackathon 2026 (1,300+ applicants): decentralised drone-swarm coordination, demonstrated in a deterministic simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.',
     tags: ['C++', 'Unreal Engine 5.8', 'Swarm Robotics', 'Decentralised Coordination', 'Gossip Protocols', 'Claude Code', 'Simulation'],
     liveUrl: 'https://lnkd.in/g9SNkSVS',
     dateLabel: 'Sep 2026',
@@ -318,7 +318,7 @@ export const projectHighlights: ProjectHighlight[] = [
     linkedEventIds: ['singapore-defense-tech-hackathon-2026'],
     npcRole: 'swarm coordination guide',
     spotlight: {
-      context: "Singapore Defense Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
+      context: "Singapore Defence Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
       contribution: 'Team lead of a five-person team: chose the swarm-robotics approach and directed the team’s architecture of the swarm coordination; implemented the deterministic Unreal Engine 5.8 C++ simulation with Claude Code, directing the agents that wrote and reviewed the core swarm algorithm; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline.',
       approach: "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow dispersion, delay-tolerant gossip, cross-inhibition consensus, response-threshold task allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
       outcome: "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,300+ applicants; the team presented to Singapore's Chief Defence Scientist.",
@@ -764,18 +764,18 @@ export const allProjects: ProjectHighlight[] = Array.from(
 export const eventHighlights: EventHighlight[] = [
   {
     id: 'singapore-defense-tech-hackathon-2026',
-    title: 'Singapore Defense Tech Hackathon 2026 - Swarmline',
+    title: 'Singapore Defence Tech Hackathon 2026 - Swarmline',
     dateLabel: 'Sep 25-27, 2026',
     exactDateRange: '2026-09-25 to 2026-09-27',
     source: 'LinkedIn',
-    summary: "Finalist at the inaugural Singapore Defense Tech Hackathon (NUS Enterprise @ i3): out of 1,300+ applicants, the five-person team Rahul led reached the finals and presented Swarmline, decentralised coordination software for interceptor drones, to Singapore's Chief Defence Scientist. In a simulated search task with the ground link jammed, its 30 drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.",
-    tags: ['Finalist', 'Defense Tech', 'Swarm Robotics', 'Interceptors Challenge', 'Hackathon'],
+    summary: "Finalist at the inaugural Singapore Defence Tech Hackathon (NUS Enterprise @ i3): out of 1,300+ applicants, the five-person team Rahul led reached the finals and presented Swarmline, decentralised coordination software for interceptor drones, to Singapore's Chief Defence Scientist. In a simulated search task with the ground link jammed, its 30 drones confirmed all 8 walking targets in every run, against 2.1 on average for an operator-in-the-loop baseline.",
+    tags: ['Finalist', 'Defence Tech', 'Swarm Robotics', 'Interceptors Challenge', 'Hackathon'],
     people: ['Zulfaqar Hafez', 'Kevan Soon', 'Jeric Toh', 'Guo Anxiang'],
     // The organisers' own spellings (event poster and deck); NUSX is from Rahul's post.
     organizations: ['NUSX', 'NUS Enterprise', 'TUM Venture Labs', 'European Defense Tech Hub', 'NUS Defense Tech Venture Lab'],
     linkedProjectIds: ['swarmline'],
     linkUrl: 'https://lnkd.in/g9SNkSVS',
-    npcDialogue: 'Swarmline is the defense bench: thirty simulated drones, a jammed ground link, and a swarm that keeps sharing what it sees drone to drone until every target is confirmed.',
+    npcDialogue: 'Swarmline is the defence bench: thirty simulated drones, a jammed ground link, and a swarm that keeps sharing what it sees drone to drone until every target is confirmed.',
   },
   {
     id: 'nus-3d-cv-award',
@@ -873,7 +873,7 @@ export const eventHighlights: EventHighlight[] = [
 ];
 
 const achievementProjectLinks: Record<string, string[]> = {
-  'Finalist: Singapore Defense Tech Hackathon 2026 (Swarmline)': ['swarmline'],
+  'Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)': ['swarmline'],
   'AsyncDDGS: Open-Source PyPI Library': ['asyncddgs'],
   'Maritime Hackathon 2025: Team Lead & Model Trainer': ['maritime-deficiency-severity'],
   'SmartExam @ GovTech x NTUPC Hackathon 2025': ['smart-exam'],
@@ -928,7 +928,7 @@ const projectToFieldNote = (project: ProjectHighlight): FieldNote => ({
 });
 
 const achievementSortDates: Record<string, string> = {
-  'Finalist: Singapore Defense Tech Hackathon 2026 (Swarmline)': '2026-09-27',
+  'Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)': '2026-09-27',
   'Top Student: 3D Computer Vision @ NUS School of Computing': '2026-07-03',
   'AsyncDDGS: Open-Source PyPI Library': '2026-05-01',
   'Maritime Hackathon 2025: Team Lead & Model Trainer': '2025-06-01',
@@ -1001,31 +1001,45 @@ const eventToFieldNote = (event: EventHighlight): FieldNote => {
 const careerAndEducationNotes: FieldNote[] = [
   {
     id: 'career-stmicro-or',
-    title: 'STMicroelectronics - Operations Research (NUS System Design Project)',
+    title: 'STMicroelectronics (NUS Capstone) - Warehouse AI & Operations Research Engineer (Part-Time)',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Aug 2026-Present',
     sortDate: '2026-08-01',
     source: 'LinkedIn',
-    summary: 'Designing an AI-driven put-away recommendation system for STMicroelectronics\' Singapore warehouse, replacing experience-based slotting with capacity-aware decisions drawn from three live inputs: picking history, demand forecasts, and available capacity.',
+    summary: 'Layout-agnostic AI put-away optimisation for STMicroelectronics warehouses worldwide.',
     tags: ['STMicroelectronics', 'Operations Research', 'Warehouse Optimization', 'Demand Forecasting', 'AI'],
   },
   {
-    // Never put an internally mixed-case token (the old "BlendED") in the job
-    // title: an ATS marks the whole Job Position field as inconsistently styled.
+    // Incoming: the contract is signed and the attachment starts in Jan 2027.
+    // Drop "(Incoming)" and replace the summary with the work once it begins.
+    id: 'career-astar-artc',
+    title: 'A*STAR Advanced Remanufacturing & Technology Centre (ARTC) - Research Intern, Digital Supply Chain Group (Incoming)',
+    kind: 'career',
+    kinds: ['career'],
+    dateLabel: 'Jan 2027-May 2027',
+    sortDate: '2027-01-01',
+    source: 'Portfolio',
+    summary: "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
+    tags: ['A*STAR', 'ARTC', 'Digital Supply Chain', 'Research'],
+  },
+  {
+    // Never put an internally mixed-case token ("BlendED") in the job title: an
+    // ATS marks the whole Job Position field as inconsistently styled. It lives
+    // in the organisation, and "Amazon" never stands alone there.
     id: 'career-amazon-vision',
-    title: 'Amazon - Robotics Vision Engineer (AI+X Global Challenge)',
+    title: 'BlendED x Amazon Robotics (AI+X Global Challenge) - Computer Vision Researcher',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Jul 2026-Oct 2026',
     sortDate: '2026-07-01',
     source: 'LinkedIn',
     summary: 'Built vision systems across camera ISP, super-resolution, and image restoration under real-world blur, and deployed three trained super-resolution models as a public web app.',
-    tags: ['Amazon', 'Computer Vision', 'Robotics', 'Camera ISP', 'Image Restoration', 'Super-Resolution', 'UNet', 'PyTorch', 'PSNR', 'Flask'],
+    tags: ['Amazon Robotics', 'Computer Vision', 'Robotics', 'Camera ISP', 'Image Restoration', 'Super-Resolution', 'UNet', 'PyTorch', 'PSNR', 'Flask'],
   },
   {
     id: 'career-abbott-contract',
-    title: 'Abbott Laboratories - Global Operational AI Systems & Data Engineer (Contract)',
+    title: 'Abbott Laboratories (Contract) - Global Operational AI Systems & Data Engineer (Part-Time)',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Jun 2026-Present',
@@ -1037,7 +1051,7 @@ const careerAndEducationNotes: FieldNote[] = [
   },
   {
     id: 'career-abbott-intern',
-    title: 'Abbott Laboratories - Data Analytics & Product Management Intern',
+    title: 'Abbott Laboratories (Converted to Contract) - Data Analytics & Product Management Intern',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Jan 2026-Jun 2026',
@@ -1073,7 +1087,7 @@ const careerAndEducationNotes: FieldNote[] = [
     dateLabel: 'Sep 2025-Sep 2026',
     sortDate: '2025-09-01',
     source: 'Portfolio',
-    summary: 'Coordinated weekly senior-engagement activities, building empathy for healthcare, accessibility, and community-focused product design.',
+    summary: 'Coordinated weekly senior-engagement activities, including home visits to check health, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design.',
     tags: ['NTUC Health', 'Volunteering', 'Elderly Care', 'Community', 'Accessibility'],
   },
   {
@@ -1084,7 +1098,7 @@ const careerAndEducationNotes: FieldNote[] = [
     dateLabel: 'Aug 2023-Jul 2027',
     sortDate: '2023-08-01',
     source: 'Education',
-    summary: 'Final-year undergraduate in Industrial Systems Engineering with a Second Major in Computer Science and a Mathematics Minor.',
+    summary: 'Final-year undergraduate in Industrial and Systems Engineering with a Second Major in Computer Science and a Mathematics Minor.',
     tags: ['NUS', 'ISE', 'Computer Science', 'Mathematics', '3D Computer Vision', 'Multi-View Geometry', 'Undergraduate'],
     linkedProjectIds: ['geometry', 'information-lab', 'project-utopia'],
   },
@@ -1102,13 +1116,13 @@ const careerAndEducationNotes: FieldNote[] = [
   },
   {
     id: 'career-singapore-navy',
-    title: 'Singapore Navy - Base Support Assistant',
+    title: 'Singapore Navy - Naval Chef & Base Support Assistant',
     kind: 'career',
     kinds: ['career'],
-    dateLabel: 'Jan 2022-Jan 2023',
+    dateLabel: 'Jan 2021-Jan 2023',
     sortDate: '2023-01-01',
     source: 'Portfolio',
-    summary: 'Automated operational food-waste reporting with Excel VBA, turning a six-month manual cycle into a sub-three-minute workflow inside a security-constrained environment.',
+    summary: 'Automated operational food-waste reporting with Excel VBA, compressing a month-long manual analysis of 6 months of food-waste data into a 3-minute workflow inside a security-constrained environment.',
     tags: ['Singapore Navy', 'Excel VBA', 'Operations', 'Automation', 'Process Improvement'],
     linkedProjectIds: ['information-lab'],
   },
@@ -1333,32 +1347,32 @@ export const experienceNotes: FieldNote[] = fieldNotes.filter((note) => (
   note.kinds.includes('career') || note.kinds.includes('education')
 ));
 
+// What each role involved (`responsibilities`) is not here: the site never
+// renders it, and this file is in the main bundle, whose cap is fixed. It lives
+// in lib/experienceResponsibilities.ts, which only the MCP snapshot reads.
 const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLabel' | 'sortDate' | 'tags' | 'linkedProjectIds'>> = {
   'career-stmicro-or': {
     kind: 'professional',
-    role: 'Operations Research (NUS System Design Project), Contract',
-    organization: 'STMicroelectronics',
+    role: 'Warehouse AI & Operations Research Engineer (Part-Time)',
+    organization: 'STMicroelectronics (NUS Capstone)',
     location: 'Singapore',
-    scope: 'AI-driven put-away recommendation for semiconductor warehouse logistics.',
-    responsibilities: [
-      'Design an AI-driven put-away recommendation system for the Singapore warehouse, drawing on three live inputs: picking history, demand forecasts, and available capacity.',
-    ],
-    outcomes: ['Targets replacing experience-based slotting decisions with systematic, capacity-aware storage recommendations. The System Design Project is still running, so there is no measured result yet.'],
+    scope: 'Layout-agnostic AI put-away optimisation for STMicroelectronics warehouses worldwide.',
+    outcomes: ['Targets replacing experience-based slotting decisions with systematic, capacity-aware storage recommendations. The NUS Capstone is still running, so there is no measured result yet.'],
+  },
+  'career-astar-artc': {
+    kind: 'research',
+    role: 'Research Intern, Digital Supply Chain Group (Incoming)',
+    organization: 'A*STAR Advanced Remanufacturing & Technology Centre (ARTC)',
+    location: 'Singapore',
+    scope: "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
+    outcomes: [],
   },
   'career-amazon-vision': {
-    kind: 'professional',
-    role: 'Robotics Vision Engineer (AI+X Global Challenge)',
-    organization: 'Amazon',
+    kind: 'research',
+    role: 'Computer Vision Researcher',
+    organization: 'BlendED x Amazon Robotics (AI+X Global Challenge)',
     location: 'Singapore',
     scope: 'Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.',
-    // Kept short on purpose: this file is in the main bundle, whose cap is fixed.
-    // The full wording is amazon-vision in scripts/resume/content/experience.json.
-    responsibilities: [
-      'Reproduced a published UNet super-resolution model in PyTorch from broken author code, training 12 models across three scales, two datasets, and two losses.',
-      'Closed a robustness gap under unseen blur with randomized-blur training and fine-tuning.',
-      'Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods.',
-      'Deployed three trained models as a public web app: a Flask inference API on a Colab T4 GPU and a hosted front end.',
-    ],
     outcomes: ['Matched reported results at 8x and came within 0.78 dB at 2x and 4x; fine-tuning recovered up to 0.7 dB under real-world blur.'],
   },
   // One merged Abbott record used to cover both roles. Split to match the
@@ -1366,36 +1380,21 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
   // contract that is still running, past for the internship that ended.
   'career-abbott-contract': {
     kind: 'professional',
-    role: 'Global Operational AI Systems & Data Engineer (Contract)',
-    organization: 'Abbott Laboratories',
+    role: 'Global Operational AI Systems & Data Engineer (Part-Time)',
+    organization: 'Abbott Laboratories (Contract)',
     location: 'Singapore',
     scope: 'Offline process intelligence, multi-site historian analytics, setpoint optimization, and manufacturing decision support.',
-    responsibilities: [
-      'Assemble a five-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, bge-small ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted Gemma model.',
-      'Convert globally distributed plants’ Advanced Process Control models from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.',
-      'Build a live multi-site data layer over read-only Seeq historian pulls, mapping each site through configuration rather than forks, with Kalman smoothing, Welch PSD, change-point detection, and matrix-profile motifs in SciPy and pandas.',
-      'Design a tool loop where the model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log with no write path to plant control.',
-      'Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference.',
-      'Build MCP servers, 20+ regression tests, a headless notebook runner, and a deterministic model stand-in for GPU-free CI, with golden snapshots committed for reproducible runs.',
-    ],
     outcomes: [
       'Consolidates globally distributed plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets.',
+      'Cuts critical-failure diagnosis from days or months of manual raw-signal analysis to within an hour across 5+ plants worldwide, and supports NPI and planned-stoppage decisions for engineers and managers.',
     ],
   },
   'career-abbott-intern': {
     kind: 'professional',
     role: 'Data Analytics & Product Management Intern',
-    organization: 'Abbott Laboratories',
+    organization: 'Abbott Laboratories (Converted to Contract)',
     location: 'Singapore',
     scope: 'Production scheduling under uncertainty, changeover data quality, internal simulator operations, and regional AI enablement.',
-    responsibilities: [
-      'Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling, then compared three approaches (heuristic, MIP, and genetic algorithm) to turn production objectives and constraints into decision-ready schedules.',
-      'Validated a non-destructive, 15-stage changeover-data pipeline that exposes every intermediate state instead of mutating source data.',
-      'Productionized a team-built APC simulator for live internal users on Azure App Service with Docker packaging, access restrictions, and runtime and session hardening.',
-      'Trained regional engineering teams across Asia and Europe on repeatable AI workflows spanning seven areas: prompting, model selection, benchmarks, cost awareness, agents, validation, and safeguards.',
-      'Strengthened Excel, VBA, Python, master-data, and scheduling workflows with three safeguards: validation rules, correction tables, and reproducible intermediate stages, leaving every transformation auditable.',
-      'Documented deployment, access provisioning, and technical handover across three procedures, so internal manufacturing and engineer-training users stayed supported after transfer to owning teams.',
-    ],
     outcomes: [
       'Processed five years of previously unseen, unclean operational data with zero execution failures.',
       'Supported an actively used manufacturing and engineer-training simulator while preserving the originating team’s authorship.',
@@ -1407,15 +1406,6 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     organization: 'People’s Association',
     location: 'Singapore',
     scope: 'End-to-end civic platform delivery: admin and public frontends, backend, GIS allocation, national digital identity, and AWS deployment.',
-    responsibilities: [
-      'Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment.',
-      'Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address.',
-      'Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations.',
-      'Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager.',
-      'Engineered keyless GitHub Actions CI/CD on IAM OIDC federation across five pinned service repos, with gated Fargate migrations, mandatory RDS snapshots, and circuit-breaker auto-rollback.',
-      'Conducted field surveys of garden sites and structured physical plot records into geospatial datasets driving three platform workflows: mapping, plot allocation, and site planning.',
-      'Designed rules-based balloting workflows across four control points: eligibility checks, conflict resolution, exception handling, and administrative oversight, keeping allocation transparent and auditable.',
-    ],
     outcomes: [
       'Kept garden-plot balloting fair for 150 residents signed up at release, and left the platform production-ready for national rollout across Singapore.',
       'Won the S$20,000 Sparks Community Innovation Fund.',
@@ -1427,37 +1417,30 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     organization: 'NTUC Health Active Ageing Centre',
     location: 'Singapore',
     scope: 'Weekly senior-engagement activities at an active ageing centre.',
-    responsibilities: ['Coordinated weekly senior-engagement activities, building empathy for healthcare, accessibility, and community-focused product design.'],
     outcomes: [],
   },
   'career-yeswehack-independent-researcher': {
     kind: 'professional',
     role: 'Independent Bug Bounty Researcher',
-    organization: 'YesWeHack programs · GovTech · LTA',
+    organization: 'YesWeHack',
     location: 'Singapore / remote',
     scope: 'Responsible security research across public and private vulnerability-disclosure programs.',
-    responsibilities: [
-      'Tested web applications and APIs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and adjacent trust-boundary failures.',
-      'Built Python and Bash automation around Burp Suite and Wireshark-assisted investigation.',
-    ],
     outcomes: ['Submitted responsible disclosures across government, transport, and other public/private programs without publishing sensitive target details.'],
   },
   'career-singapore-navy': {
-    kind: 'professional',
-    role: 'Base Support Assistant',
+    kind: 'national-service',
+    role: 'Naval Chef & Base Support Assistant',
     organization: 'Republic of Singapore Navy',
     location: 'Singapore',
     scope: 'Operational reporting and process improvement inside a security-constrained environment.',
-    responsibilities: ['Mapped the food-waste reporting process and automated its calculations and reporting steps with Excel VBA.'],
-    outcomes: ['Reduced a six-month manual reporting cycle to a repeatable workflow completing in under three minutes.'],
+    outcomes: ['Reduced a month-long manual analysis of 6 months of food-waste data to a repeatable 3-minute workflow.'],
   },
   'nus-education': {
     kind: 'education',
-    role: 'BEng, Industrial Systems Engineering',
+    role: 'BEng, Industrial and Systems Engineering',
     organization: 'National University of Singapore',
     location: 'Singapore',
     scope: 'Second Major in Computer Science and Minor in Mathematics, connecting systems engineering with computing and quantitative methods.',
-    responsibilities: ['Applied optimization, simulation, software engineering, and multi-view geometry through coursework and project systems.'],
     outcomes: ['Awarded the CS4277 Certificate of Outstanding Performance as top student in a class of 24 for 3D Computer Vision.'],
   },
   'education-asrjc-stem': {
@@ -1466,7 +1449,6 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     organization: 'Anderson Serangoon Junior College',
     location: 'Singapore',
     scope: 'Astronomy outreach, autonomous robotics, competition work, and technical leadership.',
-    responsibilities: ['Led astronomy outreach, competed in Singapore’s 7th Astronomical Olympiad, and engineered an autonomous robot for the National Robotics Challenge.'],
     outcomes: ['Received the ASRJC Outstanding Contribution Award.'],
   },
 };
@@ -1480,7 +1462,7 @@ const experienceStartById: Record<string, string> = {
   'career-ntuc-active-ageing': '2025-09-01',
   'nus-education': '2023-08-01',
   'career-yeswehack-independent-researcher': '2024-05-01',
-  'career-singapore-navy': '2022-01-01',
+  'career-singapore-navy': '2021-01-01',
   'education-asrjc-stem': '2019-03-01',
 };
 
@@ -1502,7 +1484,6 @@ export const experienceRecords: ExperienceRecord[] = experienceNotes.map((note) 
       organization: note.organizations?.join(' · ') ?? 'Independent',
       location: 'Singapore',
       scope: note.summary,
-      responsibilities: [note.summary],
       outcomes: [],
     }),
   };
@@ -1515,7 +1496,7 @@ export const unifiedPortfolioData: PortfolioData & Required<Pick<PortfolioData, 
   // first, so it is the one the other surfaces read. Middle dot rather than an em
   // dash because this string reaches /api/portfolio and export_profile.
   tagline: 'Systems Architect & AI Engineer · ISE × CS × Mathematics',
-  bio: 'NUS Industrial Systems Engineering (Second Major in Computer Science, Minor in Mathematics). I build intelligent systems at the intersection of agentic AI, operations research, 3D perception, and open-source engineering, from a fine-tuned 109M-parameter transformer to async Python libraries with global PyPI adoption.',
+  bio: 'NUS Industrial and Systems Engineering (Second Major in Computer Science, Minor in Mathematics). I build intelligent systems at the intersection of agentic AI, operations research, 3D perception, and open-source engineering, from a fine-tuned 109M-parameter transformer to async Python libraries with global PyPI adoption.',
   achievements: [...softwareEngineerData.achievements, ...cybersecurityData.achievements],
   skills: [...softwareEngineerData.skills, ...cybersecurityData.skills],
   experience: experienceRecords,

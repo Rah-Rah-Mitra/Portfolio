@@ -7,7 +7,7 @@ Outputs public/resume/generated/rahul-mitra-<slug>-<edition>.docx (one per
 config in content/resumes/). --sample renders a placeholder template to
 public/resume/template/<style>-template-2026.docx instead.
 
-Two styles, both in this directory and both exposing the same nine names:
+Two styles, both in this directory and both exposing the same ten names:
 nus_style (the NUS CDE format, default since edition 2026-11) and
 harvard_style. The eight canonical resumes ship in the default style; the
 other one is an option, and the per-config bodyPt/marginIn are tuned for the
@@ -23,7 +23,17 @@ by `sort` (most recent activity) descending, `0000-00` pins an entry last.
 
 This replaced a strict `start` sort. Under that rule People's Association
 (Sep 2025 - Sep 2026) fell below the Abbott internship (Jan 2026 - Jun 2026)
-even though it finished nine months later, which reads as a gap.
+even though it finished nine months later, which reads as a gap. One exception,
+by selection: an entry carrying `after` sits directly below the entry it names
+(general groups the Abbott internship under the contract it became).
+
+Section types and their pools (server/resumeAssemble.mjs ENTRY_SECTION_TYPES is
+the same list): education, experience, research, projects, leadership and
+national-service each read content/<type>.json; skills reads skills.json, and
+summary prints profile.json's paragraph. A projects section with
+"render": "cv-inline" prints each project as one bullet, "Role, Organization
+(Date): text", the master CV's format. server/resumeAssemble.mjs mirrors all of
+this and has to agree, or the canonical PDFs and every custom build differ.
 """
 import argparse
 import json
@@ -77,6 +87,13 @@ def bullet_text(bullet, slug):
     return text.get(slug, text["default"])
 
 
+def inline_label(entry, role):
+    """"Role, Organization (Date)", the date joining a trailing parenthetical."""
+    head = f"{role}, {entry['organization']}" if role else entry["organization"]
+    date = entry["dateLabel"]
+    return f"{head[:-1]}, {date})" if head.endswith(")") else f"{head} ({date})"
+
+
 def build_resume(config, pools, profile, edition, style):
     slug = config["slug"]
     body_pt = config.get("bodyPt", style.BODY_PT)
@@ -88,6 +105,9 @@ def build_resume(config, pools, profile, edition, style):
 
     for i, section in enumerate(config["sections"]):
         style.add_section_header(doc, section["title"], first=(i == 0), body_pt=body_pt)
+        if section["type"] == "summary":
+            style.add_text(doc, profile["summary"], body_pt=body_pt)
+            continue
         if section["type"] == "skills":
             lines = {line["id"]: line for line in pools["skills"]["lines"]}
             for line_id in section["lines"]:
@@ -100,21 +120,41 @@ def build_resume(config, pools, profile, edition, style):
             blocked = pool[sel["id"]].get("blocked")
             if blocked:
                 raise SystemExit(f"{slug}: {sel['id']} is blocked from resumes - {blocked}")
-        chosen = [
-            {"entry": pool[sel["id"]], "bullets": sel.get("bullets", []),
-             "role": entry_role(pool[sel["id"]], sel)}
-            for sel in section["entries"]
-        ]
+        chosen = []
+        for sel in section["entries"]:
+            entry = pool[sel["id"]]
+            role = entry_role(entry, sel)
+            if role and entry.get("gpa") and sel.get("gpa") is not False:
+                role = f"{role} (GPA: {entry['gpa']})"
+            if sel.get("date") is False:  # dates already in its bullet
+                entry = {**entry, "dateLabel": ""}
+            chosen.append({"entry": entry, "bullets": sel.get("bullets", []),
+                           "role": role, "after": sel.get("after")})
         if section["type"] == "projects":
             chosen.sort(key=lambda c: c["entry"]["sort"], reverse=True)
         else:
             chosen.sort(key=lambda c: entry_order(c["entry"]), reverse=True)
+        for moving in [c for c in chosen if c["after"]]:
+            anchor = next((c for c in chosen if c["entry"]["id"] == moving["after"]), None)
+            if anchor is None:
+                raise SystemExit(f"{slug}: {moving['entry']['id']} is placed after "
+                                 f"{moving['after']}, which this section does not select")
+            chosen.remove(moving)
+            chosen.insert(chosen.index(anchor) + 1, moving)
+        inline = section.get("render") == "cv-inline"
 
         for position, c in enumerate(chosen):
             e = c["entry"]
+            bullets = {b["id"]: b for b in e.get("bullets", [])}
+            if inline:
+                if len(c["bullets"]) != 1:
+                    raise SystemExit(f"{slug}: cv-inline prints {e['id']} as one bullet; "
+                                     f"it selects {len(c['bullets'])}")
+                text = bullet_text(bullets[c["bullets"][0]], slug)
+                style.add_bullet(doc, f"{inline_label(e, c['role'])}: {text}", body_pt=body_pt)
+                continue
             style.add_entry(doc, width, section["type"], e, c["role"],
                             first=(position == 0), body_pt=body_pt)
-            bullets = {b["id"]: b for b in e.get("bullets", [])}
             for b_id in c["bullets"]:
                 style.add_bullet(doc, bullet_text(bullets[b_id], slug), body_pt=body_pt)
 
@@ -177,8 +217,10 @@ def main():
     pools = {
         "education": load("education.json"),
         "experience": load("experience.json"),
+        "research": load("research.json"),
         "projects": load("projects.json"),
         "leadership": load("leadership.json"),
+        "national-service": load("national-service.json"),
         "skills": load("skills.json"),
     }
     configs = sorted((CONTENT / "resumes").glob("*.json"))

@@ -1,9 +1,10 @@
-"""Export a generated edition's DOCX files to PDF with LibreOffice (no Windows).
+"""Export a generated edition's DOCX files to PDF with LibreOffice (no Word).
 
 Usage: python scripts/resume/export_pdf_libreoffice.py --edition 2026-11 [--slug general]
 
-Word (export-pdf.ps1) is the reference exporter. This is the Linux path, and it
-is only faithful under two conditions, both enforced here:
+Word (export-pdf.ps1) is the reference exporter. This is the path without it,
+on Linux or on a Windows machine with no Office (Nov 2026, the master CV sync),
+and it is only faithful under two conditions, both enforced here:
 
 1. Every font the DOCX names must be installed as itself: Arial for the nus
    style (Microsoft's core-fonts arial32.exe), Times New Roman for harvard.
@@ -23,6 +24,7 @@ Each PDF is written next to its DOCX in public/resume/generated/, as
 export-pdf.ps1 does. Run verify_resumes.py afterwards.
 """
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -72,9 +74,43 @@ def fonts_in_use(docx: Path) -> set:
     return names
 
 
+def windows_font_families():
+    """Font families Windows has installed, machine-wide and per user.
+
+    LibreOffice on Windows takes its fonts from the system rather than from
+    fontconfig, so there is no fc-match to ask: a family is real exactly when
+    the registry's Fonts key holds a value named after it ("Arial (TrueType)").
+    """
+    import winreg  # Windows only, so imported here
+    families = set()
+    roots = [(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"),
+             (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts")]
+    for root, path in roots:
+        try:
+            key = winreg.OpenKey(root, path)
+        except OSError:
+            continue
+        with key:
+            index = 0
+            while True:
+                try:
+                    value_name = winreg.EnumValue(key, index)[0]
+                except OSError:
+                    break
+                families.add(re.sub(r"\s*\(.*\)$", "", value_name).strip())
+                index += 1
+    return families
+
+
 def require_real_fonts(docs):
     """Refuse to export unless every font the documents use resolves to itself."""
     names = set().union(*(fonts_in_use(doc) for doc in docs))
+    if os.name == "nt":
+        installed = windows_font_families()
+        missing = sorted(name for name in names if name not in installed)
+        if missing:
+            sys.exit(f"{', '.join(missing)} not installed in Windows' Fonts; install the real font first")
+        return
     for name in sorted(names):
         try:
             family = subprocess.run(["fc-match", "-f", "%{family}", name],
@@ -116,6 +152,13 @@ def main():
     args = ap.parse_args()
 
     soffice = shutil.which("soffice") or shutil.which("libreoffice")
+    if not soffice and os.name == "nt":
+        # The Windows installer does not put LibreOffice on PATH.
+        for base in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")):
+            candidate = os.path.join(base or "", "LibreOffice", "program", "soffice.exe")
+            if base and os.path.exists(candidate):
+                soffice = candidate
+                break
     if not soffice:
         sys.exit("soffice not found: install LibreOffice Writer (libreoffice-writer)")
     docs = sorted(GENERATED.glob(f"rahul-mitra-*-{args.edition}.docx"))

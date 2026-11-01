@@ -13,7 +13,7 @@ type PoolBullet = { id: string; text: Record<string, string>; phrasings?: Record
 type PoolEntry = { id: string; blocked?: string; bullets?: PoolBullet[] };
 type Finding = { rule: string; category: string; remedy?: { kind: string; candidates?: Array<{ ref: string; phrasing?: string }> } };
 type Report = { counts: { errors: number; warnings: number }; findings: Finding[] };
-type Spec = { slug: string; sections: unknown[]; phrasings?: Record<string, string> };
+type Spec = { slug: string; sections: unknown[]; phrasings?: Record<string, string>; bodyPt?: number; marginIn?: number };
 
 const SECTIONS = ['education', 'experience', 'projects', 'leadership'] as const;
 
@@ -167,8 +167,8 @@ describe('the checker offers a rephrase where it used to offer nothing', () => {
   // is the config that carries one now. The subject is incidental; what these
   // pin is that a frame-repeat names a rephrase and that taking it clears.
   it('names a fix for the repeated sentence shape', () => {
-    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'civic-tech-solution-architect');
-    const report = checkSpec(config, { bodyPt: 10, marginIn: 0.7 } as never) as Report;
+    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'civic-tech-solution-architect') as Spec;
+    const report = checkSpec(config, { bodyPt: config.bodyPt, marginIn: config.marginIn } as never) as Report;
     const frame = report.findings.find((item) => item.category === 'frame-repeat');
     expect(frame?.remedy?.kind).toBe('rephrase');
     expect(frame?.remedy?.candidates?.map((row) => `${row.ref}@${row.phrasing}`))
@@ -179,7 +179,10 @@ describe('the checker offers a rephrase where it used to offer nothing', () => {
     // The acceptance test for the whole feature: every fix the checker names is
     // one an agent may apply, and applying them removes the finding.
     const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'civic-tech-solution-architect') as Spec;
-    const fit = { bodyPt: 10, marginIn: 0.7 };
+    // At the typography civic ships at. At 10pt/0.7in the merged pa.infra bullet
+    // (the CV's AWS and CI/CD line) runs to four lines, a line-budget warning no
+    // wording can clear, which would hide the property this test is about.
+    const fit = { bodyPt: config.bodyPt, marginIn: config.marginIn };
     const before = checkSpec(config, fit as never) as Report;
     const chosen: Record<string, string> = {};
     for (let round = 0; round < 6; round += 1) {

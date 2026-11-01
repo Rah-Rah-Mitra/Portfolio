@@ -2,7 +2,7 @@
   "slug": "ai-engineer",
   "subject": "AI Engineer Resume",
   "pages": 1,
-  "bodyPt": 9.5,
+  "bodyPt": 9,
   "marginIn": 0.5,
   "sections": [
     {
@@ -25,19 +25,13 @@
         {
           "id": "stmicro-or",
           "bullets": [
-            "putaway"
-          ]
-        },
-        {
-          "id": "amazon-vision",
-          "bullets": [
-            "isp",
-            "sr-reproduction"
+            "layout-agnostic"
           ]
         },
         {
           "id": "abbott-contract",
           "bullets": [
+            "fault-detection",
             "platform"
           ]
         },
@@ -52,6 +46,19 @@
           "id": "pa",
           "bullets": [
             "churp"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "research",
+      "title": "RESEARCH EXPERIENCE",
+      "entries": [
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp",
+            "sr-reproduction"
           ]
         }
       ]

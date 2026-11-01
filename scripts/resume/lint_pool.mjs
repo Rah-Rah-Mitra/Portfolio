@@ -14,10 +14,10 @@
 import { pathToFileURL } from 'node:url';
 import { pools, profile, resumeConfigs } from '../../server/resumeContent.mjs';
 import { checkSpec } from '../../server/portfolioMcp.mjs';
-import { renderResumePdf } from '../../server/resumeRender.mjs';
+import { ENTRY_SECTION_TYPES, renderResumePdf } from '../../server/resumeRender.mjs';
 import { checkPool } from '../../server/resumeCheck.mjs';
 
-const SECTION_TYPES = ['education', 'experience', 'projects', 'leadership'];
+const SECTION_TYPES = ENTRY_SECTION_TYPES;
 
 /** Every selectable block, with each depth variant as its own row. */
 export const poolEntries = () => SECTION_TYPES.flatMap((sectionType) => pools[sectionType].entries

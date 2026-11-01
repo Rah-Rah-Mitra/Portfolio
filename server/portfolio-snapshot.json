@@ -13,7 +13,8 @@
   },
   "profile": {
     "tagline": "Systems Architect & AI Engineer · ISE × CS × Mathematics",
-    "bio": "NUS Industrial Systems Engineering (Second Major in Computer Science, Minor in Mathematics). I build intelligent systems at the intersection of agentic AI, operations research, 3D perception, and open-source engineering, from a fine-tuned 109M-parameter transformer to async Python libraries with global PyPI adoption.",
+    "bio": "NUS Industrial and Systems Engineering (Second Major in Computer Science, Minor in Mathematics). I build intelligent systems at the intersection of agentic AI, operations research, 3D perception, and open-source engineering, from a fine-tuned 109M-parameter transformer to async Python libraries with global PyPI adoption.",
+    "summary": "AI and data engineer with industry experience at Abbott and STMicroelectronics, computer vision research on an Amazon Robotics brief, and a civic platform created in collaboration with multiple public sector entities, including People's Association, PA ICT (GovTech), and Tengah Community. Final-year NUS Industrial and Systems Engineering and Computer Science student.",
     "skills": [
       "Python (asyncio, FastAPI, Flask)",
       "Deep Learning & Transformers (BERT, GPT-4, RAG)",
@@ -194,6 +195,27 @@
   },
   "experience": [
     {
+      "id": "career-astar-artc",
+      "dateLabel": "Jan 2027-May 2027",
+      "sortDate": "2027-01-01",
+      "tags": [
+        "A*STAR",
+        "ARTC",
+        "Digital Supply Chain",
+        "Research"
+      ],
+      "linkedProjectIds": [],
+      "kind": "research",
+      "role": "Research Intern, Digital Supply Chain Group (Incoming)",
+      "organization": "A*STAR Advanced Remanufacturing & Technology Centre (ARTC)",
+      "location": "Singapore",
+      "scope": "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
+      "responsibilities": [
+        "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies."
+      ],
+      "outcomes": []
+    },
+    {
       "id": "career-stmicro-or",
       "dateLabel": "Aug 2026-Present",
       "sortDate": "2026-08-01",
@@ -206,15 +228,17 @@
       ],
       "linkedProjectIds": [],
       "kind": "professional",
-      "role": "Operations Research (NUS System Design Project), Contract",
-      "organization": "STMicroelectronics",
+      "role": "Warehouse AI & Operations Research Engineer (Part-Time)",
+      "organization": "STMicroelectronics (NUS Capstone)",
       "location": "Singapore",
-      "scope": "AI-driven put-away recommendation for semiconductor warehouse logistics.",
+      "scope": "Layout-agnostic AI put-away optimisation for STMicroelectronics warehouses worldwide.",
       "responsibilities": [
-        "Design an AI-driven put-away recommendation system for the Singapore warehouse, drawing on three live inputs: picking history, demand forecasts, and available capacity."
+        "Architected a layout-agnostic AI put-away engine to run in any STMicroelectronics warehouse worldwide, ingesting each site's shelf coordinates, dimensions, and operating rules so one model adapts to any floor plan.",
+        "Designed a 4-stage shelf-ranking pipeline: movement profiling from pick frequency, dwell time, and demand; filtering on packaging zone, fit, capacity, and restricted areas; Golden Region priority for fast movers; and logged rationale per decision.",
+        "Defined a historical-replay evaluation comparing 3 metrics against current allocation (travel distance per order, handling time, slow-mover Golden Region occupancy), piloting on 2 AMK warehouses: dice and finished goods."
       ],
       "outcomes": [
-        "Targets replacing experience-based slotting decisions with systematic, capacity-aware storage recommendations. The System Design Project is still running, so there is no measured result yet."
+        "Targets replacing experience-based slotting decisions with systematic, capacity-aware storage recommendations. The NUS Capstone is still running, so there is no measured result yet."
       ]
     },
     {
@@ -222,7 +246,7 @@
       "dateLabel": "Jul 2026-Oct 2026",
       "sortDate": "2026-07-01",
       "tags": [
-        "Amazon",
+        "Amazon Robotics",
         "Computer Vision",
         "Robotics",
         "Camera ISP",
@@ -234,14 +258,14 @@
         "Flask"
       ],
       "linkedProjectIds": [],
-      "kind": "professional",
-      "role": "Robotics Vision Engineer (AI+X Global Challenge)",
-      "organization": "Amazon",
+      "kind": "research",
+      "role": "Computer Vision Researcher",
+      "organization": "BlendED x Amazon Robotics (AI+X Global Challenge)",
       "location": "Singapore",
       "scope": "Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.",
       "responsibilities": [
         "Reproduced a published UNet super-resolution model in PyTorch from broken author code, training 12 models across three scales, two datasets, and two losses.",
-        "Closed a robustness gap under unseen blur with randomized-blur training and fine-tuning.",
+        "Closed a robustness gap under unseen blur with randomised-blur training and fine-tuning.",
         "Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods.",
         "Deployed three trained models as a public web app: a Flask inference API on a Colab T4 GPU and a hosted front end."
       ],
@@ -270,20 +294,23 @@
         "changeover-data-quality-pipeline"
       ],
       "kind": "professional",
-      "role": "Global Operational AI Systems & Data Engineer (Contract)",
-      "organization": "Abbott Laboratories",
+      "role": "Global Operational AI Systems & Data Engineer (Part-Time)",
+      "organization": "Abbott Laboratories (Contract)",
       "location": "Singapore",
       "scope": "Offline process intelligence, multi-site historian analytics, setpoint optimization, and manufacturing decision support.",
       "responsibilities": [
+        "Develop a chat-based spray-dryer fault-detection tool validated across 5+ plants worldwide, cutting critical-failure diagnosis from days or months of manual raw-signal analysis to within an hour, flagging inconclusive signals rather than false positives.",
+        "Deliver fast metrics for high-stakes decisions such as new product introductions (NPI) and planned stoppages, recommending optimal setpoints from an estimated response surface model and answering engineers' and managers' questions, with rollout planned on Abbott servers for 24/7 access.",
         "Assemble a five-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, bge-small ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted Gemma model.",
-        "Convert globally distributed plants’ Advanced Process Control models from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.",
+        "Convert global plants’ Advanced Process Control models from their Excel master files into a single HiGHS linear program with a tracking QP and PLC predictor, returning setpoints, binding constraints, and shadow prices at millisecond latency.",
         "Build a live multi-site data layer over read-only Seeq historian pulls, mapping each site through configuration rather than forks, with Kalman smoothing, Welch PSD, change-point detection, and matrix-profile motifs in SciPy and pandas.",
         "Design a tool loop where the model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log with no write path to plant control.",
         "Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference.",
         "Build MCP servers, 20+ regression tests, a headless notebook runner, and a deterministic model stand-in for GPU-free CI, with golden snapshots committed for reproducible runs."
       ],
       "outcomes": [
-        "Consolidates globally distributed plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets."
+        "Consolidates globally distributed plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets.",
+        "Cuts critical-failure diagnosis from days or months of manual raw-signal analysis to within an hour across 5+ plants worldwide, and supports NPI and planned-stoppage decisions for engineers and managers."
       ]
     },
     {
@@ -308,13 +335,13 @@
       ],
       "kind": "professional",
       "role": "Data Analytics & Product Management Intern",
-      "organization": "Abbott Laboratories",
+      "organization": "Abbott Laboratories (Converted to Contract)",
       "location": "Singapore",
       "scope": "Production scheduling under uncertainty, changeover data quality, internal simulator operations, and regional AI enablement.",
       "responsibilities": [
         "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling, then compared three approaches (heuristic, MIP, and genetic algorithm) to turn production objectives and constraints into decision-ready schedules.",
         "Validated a non-destructive, 15-stage changeover-data pipeline that exposes every intermediate state instead of mutating source data.",
-        "Productionized a team-built APC simulator for live internal users on Azure App Service with Docker packaging, access restrictions, and runtime and session hardening.",
+        "Deployed a team-built APC simulator to production for live internal users on Azure App Service, with Docker packaging, access restrictions, and runtime and session hardening.",
         "Trained regional engineering teams across Asia and Europe on repeatable AI workflows spanning seven areas: prompting, model selection, benchmarks, cost awareness, agents, validation, and safeguards.",
         "Strengthened Excel, VBA, Python, master-data, and scheduling workflows with three safeguards: validation rules, correction tables, and reproducible intermediate stages, leaving every transformation auditable.",
         "Documented deployment, access provisioning, and technical handover across three procedures, so internal manufacturing and engineer-training users stayed supported after transfer to owning teams."
@@ -349,11 +376,10 @@
       "location": "Singapore",
       "scope": "End-to-end civic platform delivery: admin and public frontends, backend, GIS allocation, national digital identity, and AWS deployment.",
       "responsibilities": [
-        "Delivered a digital garden-plot balloting platform across admin and public frontends, backend, GIS mapping, and deployment.",
+        "Led most software development and deployment of a digital garden-plot balloting platform across admin and public Next.js frontends, a NestJS backend, and GIS mapping, now live in Tengah with national rollout planned.",
         "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to verify identity and address.",
-        "Led deployment planning, multi-repo coordination, and stakeholder management across product, engineering, and operations.",
-        "Provisioned AWS infrastructure with Terraform across 8 services: ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, and Secrets Manager.",
-        "Engineered keyless GitHub Actions CI/CD on IAM OIDC federation across five pinned service repos, with gated Fargate migrations, mandatory RDS snapshots, and circuit-breaker auto-rollback.",
+        "Led deployment planning, multi-repo coordination, and stakeholder management across People’s Association, Tengah community partners, and PA ICT (GovTech).",
+        "Provisioned 10 AWS services with Terraform (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB behind WAFv2, Route 53, ACM, KMS, Secrets Manager, and a Rust auth gateway on Lambda and API Gateway), shipped via keyless GitHub Actions CI/CD on IAM OIDC across 5 repos with gated migrations, RDS snapshots, and auto-rollback.",
         "Conducted field surveys of garden sites and structured physical plot records into geospatial datasets driving three platform workflows: mapping, plot allocation, and site planning.",
         "Designed rules-based balloting workflows across four control points: eligibility checks, conflict resolution, exception handling, and administrative oversight, keeping allocation transparent and auditable."
       ],
@@ -380,7 +406,7 @@
       "location": "Singapore",
       "scope": "Weekly senior-engagement activities at an active ageing centre.",
       "responsibilities": [
-        "Coordinated weekly senior-engagement activities, building empathy for healthcare, accessibility, and community-focused product design."
+        "Coordinated weekly senior-engagement activities, including home visits to check health, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design."
       ],
       "outcomes": []
     },
@@ -404,7 +430,7 @@
       ],
       "kind": "professional",
       "role": "Independent Bug Bounty Researcher",
-      "organization": "YesWeHack programs · GovTech · LTA",
+      "organization": "YesWeHack",
       "location": "Singapore / remote",
       "scope": "Responsible security research across public and private vulnerability-disclosure programs.",
       "responsibilities": [
@@ -434,7 +460,7 @@
         "project-utopia"
       ],
       "kind": "education",
-      "role": "BEng, Industrial Systems Engineering",
+      "role": "BEng, Industrial and Systems Engineering",
       "organization": "National University of Singapore",
       "location": "Singapore",
       "scope": "Second Major in Computer Science and Minor in Mathematics, connecting systems engineering with computing and quantitative methods.",
@@ -447,8 +473,8 @@
     },
     {
       "id": "career-singapore-navy",
-      "dateLabel": "Jan 2022-Jan 2023",
-      "sortDate": "2022-01-01",
+      "dateLabel": "Jan 2021-Jan 2023",
+      "sortDate": "2021-01-01",
       "tags": [
         "Singapore Navy",
         "Excel VBA",
@@ -459,16 +485,16 @@
       "linkedProjectIds": [
         "information-lab"
       ],
-      "kind": "professional",
-      "role": "Base Support Assistant",
+      "kind": "national-service",
+      "role": "Naval Chef & Base Support Assistant",
       "organization": "Republic of Singapore Navy",
       "location": "Singapore",
       "scope": "Operational reporting and process improvement inside a security-constrained environment.",
       "responsibilities": [
-        "Mapped the food-waste reporting process and automated its calculations and reporting steps with Excel VBA."
+        "Compressed a month-long manual analysis of 6 months of food-waste data into a 3-minute Excel VBA reporting workflow inside a security-constrained environment."
       ],
       "outcomes": [
-        "Reduced a six-month manual reporting cycle to a repeatable workflow completing in under three minutes."
+        "Reduced a month-long manual analysis of 6 months of food-waste data to a repeatable 3-minute workflow."
       ]
     },
     {
@@ -502,8 +528,8 @@
     {
       "id": "swarmline",
       "title": "Swarmline",
-      "category": "Drone Swarms & Defense Tech",
-      "description": "Team lead and finalist at the Singapore Defense Tech Hackathon 2026 (1,300+ applicants): decentralised drone-swarm coordination, demonstrated in a deterministic simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.",
+      "category": "Drone Swarms & Defence Tech",
+      "description": "Team lead and finalist at the Singapore Defence Tech Hackathon 2026 (1,300+ applicants): decentralised drone-swarm coordination, demonstrated in a deterministic simulation. With the ground link jammed 15 seconds in, 30 drones confirmed all 8 walking targets in 10 of 10 runs, against 2.1 on average for an operator-in-the-loop baseline.",
       "tags": [
         "C++",
         "Unreal Engine 5.8",
@@ -522,7 +548,7 @@
       ],
       "npcRole": "swarm coordination guide",
       "spotlight": {
-        "context": "Singapore Defense Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
+        "context": "Singapore Defence Tech Hackathon 2026, Interceptors challenge, layer 3 (onboard autonomy and swarm deployment). The brief's premise: drones must coordinate among themselves, because the ground link is the first thing an adversary removes.",
         "contribution": "Team lead of a five-person team: chose the swarm-robotics approach and directed the team’s architecture of the swarm coordination; implemented the deterministic Unreal Engine 5.8 C++ simulation with Claude Code, directing the agents that wrote and reviewed the core swarm algorithm; designed the capture rule for moving targets; built the jammed-link comparison against an operator-in-the-loop baseline.",
         "approach": "Five local rules from Heiko Hamann's Swarm Robotics: A Formal Approach (correlated random-walk search, gradient-flow dispersion, delay-tolerant gossip, cross-inhibition consensus, response-threshold task allocation) in a fixed-timestep C++ field on Unreal Engine 5.8, where each drone sees only its own sensor, its neighbours' broadcasts and its memory. Every input is a SHA-256-pinned text record, and one seeded random stream per drone makes each headless run replay byte for byte.",
         "outcome": "With the ground link jammed 15 seconds in, 30 simulated drones confirmed all 8 walking targets in 10 of 10 runs (105 s on average). The operator-in-the-loop baseline, whose drones loiter, return and land when the link drops, confirmed 2.1 on average and had 29 of its 30 drones on the ground by 41.2 s. The cost is speed: with a perfect link, an idealised central planner finishes in 28.7 s on average. Finalist from 1,300+ applicants; the team presented to Singapore's Chief Defence Scientist."
@@ -1172,7 +1198,7 @@
       "id": "swarmline",
       "date": "2026-09",
       "title": "Swarmline",
-      "category": "Drone Swarms & Defense Tech",
+      "category": "Drone Swarms & Defence Tech",
       "stack": "C++ · Unreal Engine 5.8 · Swarm Robotics",
       "domain": "AI",
       "href": "https://lnkd.in/g9SNkSVS"

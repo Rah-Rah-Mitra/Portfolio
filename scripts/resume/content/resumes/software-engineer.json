@@ -2,7 +2,7 @@
   "slug": "software-engineer",
   "subject": "Software Engineer Resume",
   "pages": 1,
-  "bodyPt": 9,
+  "bodyPt": 8.5,
   "marginIn": 0.5,
   "sections": [
     {
@@ -25,18 +25,13 @@
         {
           "id": "stmicro-or",
           "bullets": [
-            "putaway"
-          ]
-        },
-        {
-          "id": "amazon-vision",
-          "bullets": [
-            "isp"
+            "layout-agnostic"
           ]
         },
         {
           "id": "abbott-contract",
           "bullets": [
+            "fault-detection",
             "platform"
           ]
         },
@@ -54,6 +49,18 @@
             "singpass"
           ],
           "roleVariant": "software"
+        }
+      ]
+    },
+    {
+      "type": "research",
+      "title": "RESEARCH EXPERIENCE",
+      "entries": [
+        {
+          "id": "amazon-vision",
+          "bullets": [
+            "isp"
+          ]
         }
       ]
     },
@@ -91,7 +98,13 @@
           "bullets": [
             "main"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "type": "national-service",
+      "title": "NATIONAL SERVICE",
+      "entries": [
         {
           "id": "navy",
           "bullets": [

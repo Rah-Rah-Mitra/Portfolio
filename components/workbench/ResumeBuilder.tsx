@@ -19,11 +19,12 @@ type PoolEntry = {
 type SkillLine = { id: string; label: string; items: string };
 type SpecSection =
   | { type: SectionType; title: string; entries: Array<{ id: string; bullets: string[] }> }
-  | { type: 'skills'; title: string; lines: string[] };
+  | { type: 'skills'; title: string; lines: string[] }
+  | { type: 'summary'; title: string };
 type Style = 'nus' | 'harvard';
 type Spec = { subject: string; pages: number; detail?: 'standard' | 'deep'; style?: Style; sections: SpecSection[] };
 type Config = { slug: string; subject: string; pages: number; sections: SpecSection[] };
-type SectionType = 'education' | 'experience' | 'projects' | 'leadership';
+type SectionType = 'education' | 'experience' | 'research' | 'projects' | 'leadership' | 'national-service';
 
 type Content = {
   pools: Record<SectionType | 'skills', { entries?: PoolEntry[]; lines?: SkillLine[] }>;
@@ -33,8 +34,10 @@ type Content = {
 const SECTIONS: Array<{ type: SectionType; title: string }> = [
   { type: 'education', title: 'EDUCATION' },
   { type: 'experience', title: 'EXPERIENCE' },
+  { type: 'research', title: 'RESEARCH EXPERIENCE' },
   { type: 'projects', title: 'PROJECTS' },
   { type: 'leadership', title: 'LEADERSHIP AND ACTIVITIES' },
+  { type: 'national-service', title: 'NATIONAL SERVICE' },
 ];
 const SKILLS_TITLE = 'SKILLS AND CERTIFICATIONS';
 
@@ -46,7 +49,7 @@ const picksFromConfig = (config: Config) => {
   let lines: string[] = [];
   for (const section of config.sections) {
     if (section.type === 'skills') lines = [...section.lines];
-    else for (const entry of section.entries) picks[entry.id] = [...(entry.bullets ?? [])];
+    else if ('entries' in section) for (const entry of section.entries) picks[entry.id] = [...(entry.bullets ?? [])];
   }
   return { picks, lines };
 };

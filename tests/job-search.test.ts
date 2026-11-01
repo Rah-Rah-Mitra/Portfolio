@@ -388,9 +388,9 @@ describe('build_tailored_resume', () => {
   });
 
   it('honours block_ids and rejects one that is not on the menu', async () => {
-    const ids = ['stmicro-or.putaway', 'se-skills'];
+    const ids = ['stmicro-or.layout-agnostic', 'se-skills'];
     const built = payload(await call('build_tailored_resume', { block_ids: ids }));
-    expect(built.blocks_used).toContain('stmicro-or.putaway');
+    expect(built.blocks_used).toContain('stmicro-or.layout-agnostic');
     expect(built.blocks_used).toContain('se-skills');
     expect(built.pdf_url).toMatch(/^https:\/\/rahul-mitra\.com\/api\/resume\?spec=/);
     expect((await call('build_tailored_resume', { block_ids: ['not-a-block'] })).isError).toBe(true);
@@ -441,8 +441,12 @@ describe('build_tailored_resume', () => {
       jd_text: 'Govtech delivery: Singpass Login and Myinfo, GIS mapping, accessibility, rapid prototyping.',
     }));
     expect(civic.matched.slug).toBe('civic-tech-solution-architect');
+    // "Full-stack engineer" with this stack now goes to civic-tech, 6-5: its
+    // skills line says "full-stack", and since the Nov 2026 master CV pa.churp,
+    // which civic selects, names Next.js. The same stack without the word still
+    // resolves to software-engineer.
     const fullstack = payload(await call('build_tailored_resume', {
-      jd_text: 'Full-stack engineer: TypeScript, React, Next.js, FastAPI, Docker.',
+      jd_text: 'Software engineer: TypeScript, React, Next.js, FastAPI, Docker.',
     }));
     expect(fullstack.matched.slug).toBe('software-engineer');
   });
@@ -450,11 +454,13 @@ describe('build_tailored_resume', () => {
   it('reports coverage in Rahul\'s words only, and never echoes the posting', async () => {
     const built = payload(await call('build_tailored_resume', {
       // Qzzytech and the rest are the posting's, not his: they must not come back.
-      jd_text: 'Qzzytech needs Terraform, WAFv2 and Rust for its Blorptech platform. Python too.',
+      // Wireshark, not Rust: since the Nov 2026 master CV pa.infra names its Rust
+      // auth gateway, so Rust is on this page now.
+      jd_text: 'Qzzytech needs Terraform, WAFv2 and Wireshark for its Blorptech platform. Python too.',
       block_ids: ['pa.infra', 'se-skills'],
     }));
     expect(built.coverage.covered).toEqual(expect.arrayContaining(['Terraform', 'WAFv2']));
-    expect(built.coverage.missing).toContain('Rust');   // his, attested, not on this page
+    expect(built.coverage.missing).toContain('Wireshark');   // his, attested, not on this page
     expect(built.coverage.asked).toBe(built.coverage.covered.length + built.coverage.missing.length);
     for (const term of [...built.coverage.covered, ...built.coverage.missing]) {
       expect(ATTESTED.has(term), term).toBe(true);
@@ -537,7 +543,7 @@ describe('build_tailored_resume', () => {
   });
 
   it('carries the check report the way build_resume does, plus the evidence note', async () => {
-    const built = payload(await call('build_tailored_resume', { block_ids: ['stmicro-or.putaway', 'se-skills'] }));
+    const built = payload(await call('build_tailored_resume', { block_ids: ['stmicro-or.layout-agnostic', 'se-skills'] }));
     expect(built.check.version).toBe(1);
     // build_resume reports no notes at all. The posting-facing tool asks for one
     // rule by name — R7, the bullet sitting unused on an entry already on the
@@ -560,11 +566,19 @@ describe('build_tailored_resume', () => {
   });
 
   it('explains why a résumé won, and breaks a tie on a rule instead of array order', async () => {
-    // Measured: this posting ties solution-architect and civic-tech-solution-architect
-    // at 6-6, and the GENERALIST used to win it — not on merit, but because
-    // Array.sort is stable and it sits earlier in portfolio-snapshot.json.
-    const civic = payload(await call('build_tailored_resume', {
+    // Measured: the Govtech posting tied solution-architect and civic-tech at 6-6,
+    // and the GENERALIST used to win it, not on merit but because Array.sort is
+    // stable and it sits earlier in portfolio-snapshot.json. Since the Nov 2026
+    // master CV civic wins it outright, 6-5, so it still goes where it should.
+    const govtech = payload(await call('build_tailored_resume', {
       jd_text: 'Govtech Delivery Lead. Singpass Login and Myinfo, GIS mapping, accessibility, rapid prototyping, citizen services, public sector stakeholders.',
+      dry_run: true,
+    }));
+    expect(govtech.matched.slug).toBe('civic-tech-solution-architect');
+    // The tie it pinned is this platform posting's now: both architecture résumés
+    // carry the stack, 4-4, and specificity settles it.
+    const civic = payload(await call('build_tailored_resume', {
+      jd_text: 'Platform engineer: Terraform, ECS Fargate, WAFv2 and Secrets Manager.',
       dry_run: true,
     }));
     expect(civic.matched.slug).toBe('civic-tech-solution-architect');
@@ -577,9 +591,10 @@ describe('build_tailored_resume', () => {
     expect(civic.matched.ranking[0].specificity).toBeGreaterThan(civic.matched.ranking[1].specificity);
 
     // The same accident decided this one, and it only ever came out right by luck
-    // of the ordering: 5-5, settled by the curated keyword row.
+    // of the ordering: 5-5, settled by the curated keyword row. ("Full-stack"
+    // in the posting now tips it to civic, 6-5; see the vocabulary test.)
     const fullstack = payload(await call('build_tailored_resume', {
-      jd_text: 'Full-stack engineer: TypeScript, React, Next.js, FastAPI, Docker.', dry_run: true,
+      jd_text: 'Software engineer: TypeScript, React, Next.js, FastAPI, Docker.', dry_run: true,
     }));
     expect(fullstack.matched.slug).toBe('software-engineer');
     expect(fullstack.matched.margin).toBe(0);
@@ -618,7 +633,7 @@ describe('build_tailored_resume', () => {
 
   it('says where a covered term sits, and which blocks would supply a missing one', async () => {
     const built = payload(await call('build_tailored_resume', {
-      jd_text: 'Qzzytech needs Terraform, WAFv2 and Rust for its Blorptech platform. Python too.',
+      jd_text: 'Qzzytech needs Terraform, WAFv2 and Wireshark for its Blorptech platform. Python too.',
       block_ids: ['pa.infra', 'se-skills'],
     }));
     // A keyword in a bullet is demonstrated; the same keyword only on the skills
@@ -629,12 +644,18 @@ describe('build_tailored_resume', () => {
 
     // And a missing term names the ids that carry it, because selecting an id is
     // the only move an agent has.
-    expect(built.coverage.missing).toContain('Rust');
-    expect(built.coverage.missing_blocks.Rust).toContain('cyber-skills');
-    // arcane.main was the only BULLET carrying Rust and is blocked as of the
-    // 2026-11 pass, so the skills line is now the whole answer - and the
-    // withheld entry must not be offered even though it would supply the term.
-    expect(built.coverage.missing_blocks.Rust).not.toContain('arcane.main');
+    expect(built.coverage.missing).toContain('Wireshark');
+    expect(built.coverage.missing_blocks.Wireshark).toContain('cyber-skills');
+    // Rust, asked of a page without pa.infra: arcane.main carries it but is
+    // blocked as of the 2026-11 pass, so it must not be offered even though it
+    // would supply the term. Since the Nov 2026 master CV, pa.infra's Rust auth
+    // gateway is the bullet that answers instead.
+    const rust = payload(await call('build_tailored_resume', {
+      jd_text: 'Qzzytech needs Rust for its Blorptech platform.', block_ids: ['se-skills'],
+    }));
+    expect(rust.coverage.missing).toContain('Rust');
+    expect(rust.coverage.missing_blocks.Rust).toEqual(expect.arrayContaining(['pa.infra', 'cyber-skills']));
+    expect(rust.coverage.missing_blocks.Rust).not.toContain('arcane.main');
     // Still only his words, on the new keys too.
     const reported = JSON.stringify(built.coverage);
     for (const word of ['Qzzytech', 'Blorptech']) expect(reported).not.toContain(word);
@@ -743,17 +764,21 @@ describe('export_profile', () => {
   it('cannot drift from the sources it is projected from', async () => {
     const exported = payload(await call('export_profile'));
     // cv_md comes from the résumé pools via the `general` config, NOT from
-    // snapshot.experience: the two label the same role differently on purpose
-    // (the site says "YesWeHack programs · GovTech · LTA" and "Abbott", the pool
-    // says "YesWeHack" and "Abbott Laboratories"). Assert against the source it
-    // actually has, so a real break in the projection fails here.
+    // snapshot.experience: the two can label the same role differently on purpose
+    // (the site's Abbott records say "Abbott", the pool "Abbott Laboratories").
+    // Assert against the source it actually has, so a real break in the
+    // projection fails here.
     for (const section of configBySlug('general')!.sections as SpecSection[]) {
       if (section.type === 'skills') continue;
       for (const selection of section.entries ?? []) {
         const pool = (pools as unknown as Record<string, { entries: PoolEntry[] }>)[section.type];
         const entry = pool.entries.find((item) => item.id === selection.id);
         expect(entry, selection.id).toBeTruthy();
-        expect(exported.cv_md, entry!.organization).toContain(entry!.organization);
+        // A cv-inline project prints its date inside the organisation's own
+        // parenthetical, "(1,300+ applicants, Sep 2026)", so match up to it.
+        const printed = (section as { render?: string }).render === 'cv-inline'
+          ? entry!.organization.replace(/\)$/, '') : entry!.organization;
+        expect(exported.cv_md, entry!.organization).toContain(printed);
       }
     }
     // These three are projected from the snapshot and must track it.

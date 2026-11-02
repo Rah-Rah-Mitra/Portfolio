@@ -24,7 +24,7 @@ describe('unified portfolio record', () => {
       [...experienceRecords].sort((a, b) => b.sortDate.localeCompare(a.sortDate)).map((record) => record.sortDate),
     );
     // The incoming A*STAR attachment starts in Jan 2027, so it sorts first.
-    expect(experienceRecords[0].organization).toBe('A*STAR Advanced Remanufacturing & Technology Centre (ARTC)');
+    expect(experienceRecords[0].organization).toBe('A*STAR');
     expect(experienceRecords[1].organization).toBe('STMicroelectronics (NUS Capstone)');
   });
 });

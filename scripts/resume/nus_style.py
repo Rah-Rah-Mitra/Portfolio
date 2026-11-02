@@ -7,10 +7,11 @@ section headers and one-line entries, with a blank body-size line as the only
 vertical rhythm.
 
 Every number here was measured out of rahul-mitra-master-cv.docx rather than
-chosen: 8.5pt body (w:sz 17), 9.5pt headers, 19.5pt name, 0.5" sides and
-0.667" top/bottom, a thinThickSmallGap rule at w:sz 18, bullets indented to
-780 twips. Page size is the one deliberate change -- A4, because the repo
-ships to Singapore and the rest of the pipeline is A4 already.
+chosen: 8.5pt body (w:sz 17), 9.5pt headers, 19.5pt name, 0.5" margins on
+all four sides (the 2 Nov 2026 CV; the one before had 0.667" top and bottom),
+a thinThickSmallGap rule at w:sz 18, bullets indented to 780 twips. Page size
+is the one deliberate change -- A4, because the repo ships to Singapore and
+the rest of the pipeline is A4 already.
 
 Two more deliberate departures from the source document:
   - literal "• " bullets instead of a Word numbering list, because the repo's
@@ -39,8 +40,8 @@ MIN_BODY_PT = 8.5  # the floor the fit ladder may reach in this style
 PAGE_WIDTH = Mm(210)
 PAGE_HEIGHT = Mm(297)
 MARGIN_LR = Inches(0.5)
-MARGIN_TOP = Inches(0.667)
-MARGIN_BOTTOM = Inches(0.667)
+MARGIN_TOP = Inches(0.5)
+MARGIN_BOTTOM = Inches(0.5)
 
 BULLET = "• "
 SEP = " | "  # NBSPs so the contact line never breaks at a separator

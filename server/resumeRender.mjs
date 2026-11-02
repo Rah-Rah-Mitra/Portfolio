@@ -330,14 +330,13 @@ const entries = z.array(z.object({
   bullets: z.array(id).max(10).optional(),
   variant: z.enum(['standard', 'deep']).optional(),
   roleVariant: id.optional(),
-  // Place this entry directly below another the section selects, after the date
-  // sort (general keeps the Abbott internship under the Abbott contract). It
-  // only reorders selected entries, so it is no text channel.
-  after: id.optional(),
+  // No `after`: entries of one company group by rule now (resumeAssemble.mjs
+  // groupByCompany). Zod strips the key, so a link built with it still parses
+  // and prints the same order.
   // false drops an education entry's GPA from its degree line, for space.
   gpa: z.boolean().optional(),
   // false prints the heading without its dates, for an entry whose bullet
-  // already says when (general's incoming A*STAR attachment).
+  // already says when.
   date: z.boolean().optional(),
 })).max(24);
 const entrySection = (type, titles, extra = {}) => z.object({

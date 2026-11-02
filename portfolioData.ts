@@ -1014,13 +1014,13 @@ const careerAndEducationNotes: FieldNote[] = [
     // Incoming: the contract is signed and the attachment starts in Jan 2027.
     // Drop "(Incoming)" and replace the summary with the work once it begins.
     id: 'career-astar-artc',
-    title: 'A*STAR Advanced Remanufacturing & Technology Centre (ARTC) - Research Intern, Digital Supply Chain Group (Incoming)',
+    title: 'A*STAR - Research Intern, Digital Supply Chain Group (Incoming)',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Jan 2027-May 2027',
     sortDate: '2027-01-01',
     source: 'Portfolio',
-    summary: "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
+    summary: "Selected for a 4-month research attachment in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
     tags: ['A*STAR', 'ARTC', 'Digital Supply Chain', 'Research'],
   },
   {
@@ -1362,9 +1362,9 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
   'career-astar-artc': {
     kind: 'research',
     role: 'Research Intern, Digital Supply Chain Group (Incoming)',
-    organization: 'A*STAR Advanced Remanufacturing & Technology Centre (ARTC)',
+    organization: 'A*STAR',
     location: 'Singapore',
-    scope: "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
+    scope: "Selected for a 4-month research attachment in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
     outcomes: [],
   },
   'career-amazon-vision': {

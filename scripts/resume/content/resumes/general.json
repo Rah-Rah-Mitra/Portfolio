@@ -47,7 +47,6 @@
         },
         {
           "id": "abbott-intern",
-          "after": "abbott-contract",
           "bullets": [
             "digital-twin",
             "pipeline",
@@ -75,7 +74,6 @@
       "entries": [
         {
           "id": "astar-artc",
-          "date": false,
           "bullets": [
             "attachment"
           ]

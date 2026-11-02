@@ -855,31 +855,41 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   and has to agree with it.
 - Current edition: **2026-12** (the Amazon role ended Oct 2026; Rahul's Oct
   2026 master CV wording), rebuilt in place on 2026-11-01 for his Nov 2026 VMock
-  master CV (docs/resume-detail-gaps.md §16). `generated/` keeps the current +
-  previous edition; older sets live in `public/resume/archive/`. Its eight PDFs
-  were exported with `export_pdf_libreoffice.py` on 2026-11-01 (that machine had
-  no Word; the script has a Windows path now: soffice under Program Files, fonts
-  checked in the registry), so re-export through Word (`export-pdf.ps1`) before an
-  employer sees one; ai-engineer ends about 1.6 lines above its margin, the
-  tightest. `general` sits at nus's 8.5pt floor, so any line added to it must buy
-  its room elsewhere.
+  master CV (docs/resume-detail-gaps.md §16) and again on 2026-11-02 for its
+  update (§17: company grouping, A*STAR's dated heading, 0.5" top and bottom
+  margins). `generated/` keeps the current + previous edition; older sets live in
+  `public/resume/archive/`. Its eight PDFs were exported with
+  `export_pdf_libreoffice.py` on 2026-11-02 (that machine had no Word; the script
+  has a Windows path now: soffice under Program Files, fonts checked in the
+  registry), so re-export through Word (`export-pdf.ps1`) before an employer sees
+  one; operations-research-engineer ends 5.6pt above its margin and ai-engineer
+  8.6pt, both under a line. `general` sits at nus's 8.5pt floor, the master CV's
+  own size, so any line added to it must buy its room elsewhere.
 - Section types (`ENTRY_SECTION_TYPES` in `server/resumeAssemble.mjs`, which every
   list of them reads; `build_resumes.py` loads the same pools): `education`,
   `experience`, `research`, `projects`, `leadership`, `national-service`, each
   `content/<type>.json`, plus `skills` and `summary` (profile.json's paragraph,
   general only, never a role résumé). A projects section may set
   `"render": "cv-inline"` (one bullet per project, "Role, Organization (Date):
-  text", the master CV's format); an entry selection may set `after` (group under
-  another entry: general's Abbott internship under the contract), `gpa: false`
-  and `date: false` (general's A*STAR heading, whose dates are in its bullet).
-  The JS and Python sides implement each and have to agree.
+  text", the master CV's format); an entry selection may set `gpa: false` and
+  `date: false` (an undated heading for an entry whose bullet says when; no
+  canonical résumé uses it since A*STAR's heading took its dates). The JS and
+  Python sides implement each and have to agree. `after` is retired: company
+  grouping (Ordering policy, below) does what it did, and zod strips it from an
+  old link.
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
   across all profiles), and the two-page `general` master CV, which is the
   document `rahul-mitra-master-cv.docx` is the ground truth for. Every config
   declares its own `bodyPt` (8.5–9 in this edition) and `marginIn: 0.5` —
-  do not assume a size. The pins are what the JS auto-fit landed on in `nus`,
-  except civic at 9pt where 9.5 fits: there the merged `pa.infra` runs to four
-  lines, over the checker's three-line budget. `--style harvard` reuses them
+  do not assume a size. The pins are the JS auto-fit's landing in `nus`, stepped
+  down while a selected bullet runs past the checker's three-line budget or an
+  entry heading cannot hold its date. The fit model counts pages, not heading
+  width, so `verify_resumes.py` checks the second (a date printed against its
+  heading's text). Measured 2026-11-02 at 0.5" top and bottom: civic and
+  solution-architect fit 10 and 9.5 but `pa.infra` runs to four lines there;
+  ai-engineer and cyber-security fit 9.5 but STMicro's heading overruns its
+  date; operations-research-engineer moved 8.5 → 9; general would fit two pages
+  at 9 but stays at 8.5, the master CV's own size. `--style harvard` reuses them
   best-effort and ships nothing.
 - Edition bump checklist:
   1. Edit content JSONs, then `npm run resume:lint`.
@@ -892,7 +902,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
      Windows?" note, and re-verify)
   4. `python scripts/resume/verify_resumes.py --edition <YYYY-MM>` must pass
      (page counts: `general` = 2 pages, all others = 1; contact links in DOCX
-     rels and PDF annotations; content assertions).
+     rels and PDF annotations; content assertions; no company's entries split
+     in any DOCX; no heading date printed against its text).
   5. Visual QA: render PDFs to PNG (pdftoppm) into `.impeccable/resume-qa/`
      and inspect.
   6. `git mv` the now-oldest edition from `generated/` to `archive/`.
@@ -906,7 +917,15 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   descending, then ended entries by end date descending; an entry is still
   running exactly when it has no `end` key. This replaced a strict start-date
   sort, which put People's Association (ended Sep 2026) below the Abbott
-  internship (ended Jun 2026). Never "relevance-first".
+  internship (ended Jun 2026). Never "relevance-first". One rule on top
+  (user-mandated, 2026-11-02): **entries of the same company sit together,
+  whatever their dates.** The group takes its first-sorted entry's place and
+  keeps the date order inside, so the Abbott internship always prints under the
+  Abbott contract it became, above People's Association. A company is the
+  `organization` minus trailing parentheticals ("Abbott Laboratories
+  (Contract)" = "Abbott Laboratories (Converted to Contract)"); projects are
+  never grouped. `company`/`group_by_company` in build_resumes.py and
+  `company`/`groupByCompany` in resumeAssemble.mjs are the same rule twice.
 - One-page fit trim ladder (in order): drop coursework bullet → reduce
   3-bullet entries to 2 → drop least-relevant project → then typography, which
   is the style's own ladder: `nus` holds 0.5" margins and steps the body
@@ -1285,7 +1304,7 @@ then `npm run snapshot`.
   desk drawing set moved the desk-backdrop layer and its policy into a lazy chunk
   (−2,807 B) and spent 896 B on its gate, FX toggle, plate slot and assistant
   copy (506,380 B by the time it merged); the root's `onCaughtError` and
-  `AppErrorBoundary`'s own report spent 226 B; the sheet traverse left it at 506,694 B, and edition 2026-12's Amazon record (kept short in `portfolioData.ts` for this reason) spent 106 B, and the Abbott contract's "Global" retitle 40 B, to 506,840 B; the Nov 2026 master CV sync moved every experience record's responsibilities into the snapshot-only `lib/experienceResponsibilities.ts` (−3,953 B net, the A*STAR record included), so at 502,887 B **5,947 B are left** — anything bigger goes into the controller,
+  `AppErrorBoundary`'s own report spent 226 B; the sheet traverse left it at 506,694 B, and edition 2026-12's Amazon record (kept short in `portfolioData.ts` for this reason) spent 106 B, and the Abbott contract's "Global" retitle 40 B, to 506,840 B; the Nov 2026 master CV sync moved every experience record's responsibilities into the snapshot-only `lib/experienceResponsibilities.ts` (−3,953 B net, the A*STAR record included), to 502,887 B; the 2026-11-02 CV update shortened A*STAR's record (−165 B), so at 502,722 B **6,112 B are left** — anything bigger goes into the controller,
   engine, HUD or desk-backdrop layer chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).

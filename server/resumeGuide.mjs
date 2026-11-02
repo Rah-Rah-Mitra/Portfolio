@@ -118,10 +118,11 @@ Every dated section sorts by END date: entries still running come first,
 ordered by start date descending, then ended entries by end date descending.
 Projects sort by most recent activity. This is Rahul's explicit instruction and
 the renderer applies it regardless of the order you list entries in, so do not
-try to lead with a "most relevant" role. The one exception is grouping by
-employer: an entry may set \`"after": "<id>"\` to sit directly below another
-entry of the same section (general keeps the Abbott internship under the Abbott
-contract it was converted into).
+try to lead with a "most relevant" role. One rule sits on top of the date sort,
+also Rahul's: entries of the same company stay together whatever their dates.
+The group takes the place of its most recent entry, so the Abbott internship
+always prints directly under the Abbott contract it was converted into. You do
+nothing to get this; the renderer applies it.
 
 ## Fitting one page
 

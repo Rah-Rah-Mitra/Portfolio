@@ -10,7 +10,7 @@ All resumes are generated from in-repo content in the **NUS CDE style**
 (`scripts/resume/nus_style.py`, default since edition 2026-11; Harvard is still
 selectable with `--style harvard`). Eight outputs: 6 one-page role resumes, the
 1-page `highlights` best-of, and the 2-page `general` master CV. Every config
-declares its own `bodyPt` — 8.5 to 10 in this edition — and `marginIn: 0.5`.
+declares its own `bodyPt` — 8.5 to 9 in this edition — and `marginIn: 0.5`.
 Read each config rather than assuming a size.
 
 ## Hard bans
@@ -32,6 +32,14 @@ Read each config rather than assuming a size.
   internship, which ended in June, and that reads as a gap. `entry_order` in
   build_resumes.py and `entryOrder` in server/resumeAssemble.mjs are the same
   rule twice and must agree.)
+- **Never split a company's entries.** On top of the date sort (Rahul,
+  2026-11-02): entries of the same company sit together whatever their dates,
+  in the place of the first-sorted one, so the Abbott internship always prints
+  under the Abbott contract it became, above People's Association. A company is
+  the `organization` without trailing parentheticals. It is a rule in both
+  builders (`group_by_company`, `groupByCompany`), not a per-résumé setting:
+  the old `after` key is retired. `verify_resumes.py` fails a DOCX that splits
+  one.
 - **Never invent facts** — new bullets only rephrase what the user supplied.
 
 ## Layout invariants
@@ -43,7 +51,8 @@ the room by dropping a project, not by cutting a bullet), action verb first,
 past tense except current roles; literal "• " bullets with a hanging indent
 (ATS-safe, deliberate, and the one place both styles depart from their source).
 
-`nus_style.py` (default): Arial; 0.5" sides, 0.667" top and bottom; a
+`nus_style.py` (default): Arial; 0.5" margins all round (0.667" top and
+bottom until the 2 Nov 2026 master CV); a
 right-aligned 19.5pt caps name over an 8.5pt right-aligned contact line joined
 by NBSP pipes; 9.5pt caps section headers under a full-width
 `thinThickSmallGap` rule; one bold line per entry with right-flush dates —
@@ -183,4 +192,7 @@ renderer models Word closely enough to pick the right rung — its numbers come
 from the font's own hhea table and from glyph positions measured out of Word
 output — but it is a model. Two one-pagers were a rung optimistic until the
 section-header rule's 3.75pt band was measured and put in. **Always export and
-count.**
+count.** The model also never measures a heading against its date: at 9.5pt
+STMicro's heading runs into "Aug 2026 – Present" (2026-11-02), which
+`verify_resumes.py` now fails, so a size the model offers can still be one rung
+too big.

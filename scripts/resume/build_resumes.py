@@ -23,9 +23,15 @@ by `sort` (most recent activity) descending, `0000-00` pins an entry last.
 
 This replaced a strict `start` sort. Under that rule People's Association
 (Sep 2025 - Sep 2026) fell below the Abbott internship (Jan 2026 - Jun 2026)
-even though it finished nine months later, which reads as a gap. One exception,
-by selection: an entry carrying `after` sits directly below the entry it names
-(general groups the Abbott internship under the contract it became).
+even though it finished nine months later, which reads as a gap.
+
+One rule on top of the date sort (user-mandated, 2026-11-02): entries of the
+same company sit together whatever their dates. The group takes the place of
+its first-sorted entry and keeps the date order inside it, so the Abbott
+internship prints directly under the Abbott contract it was converted into,
+above People's Association. `company` says which entries are one company. It
+replaced a per-selection `after` key that only general carried. Projects have
+no employer and are never grouped.
 
 Section types and their pools (server/resumeAssemble.mjs ENTRY_SECTION_TYPES is
 the same list): education, experience, research, projects, leadership and
@@ -37,6 +43,7 @@ this and has to agree, or the canonical PDFs and every custom build differ.
 """
 import argparse
 import json
+import re
 from pathlib import Path
 
 from docx import Document
@@ -80,6 +87,22 @@ def entry_order(entry):
     """
     end = entry.get("end")
     return (0, end) if end else (1, entry["start"])
+
+
+def company(entry):
+    """The employer an entry belongs to: its organization without trailing
+    parentheticals, so "Abbott Laboratories (Contract)" and "Abbott
+    Laboratories (Converted to Contract)" are one company.
+    server/resumeAssemble.mjs:company is the same rule."""
+    return re.sub(r"(\s*\([^()]*\))+\s*$", "", entry["organization"]).strip().lower()
+
+
+def group_by_company(chosen):
+    """Pull each company's entries up under its first, keeping their order."""
+    groups = {}
+    for c in chosen:
+        groups.setdefault(company(c["entry"]), []).append(c)
+    return [c for group in groups.values() for c in group]
 
 
 def bullet_text(bullet, slug):
@@ -128,19 +151,12 @@ def build_resume(config, pools, profile, edition, style):
                 role = f"{role} (GPA: {entry['gpa']})"
             if sel.get("date") is False:  # dates already in its bullet
                 entry = {**entry, "dateLabel": ""}
-            chosen.append({"entry": entry, "bullets": sel.get("bullets", []),
-                           "role": role, "after": sel.get("after")})
+            chosen.append({"entry": entry, "bullets": sel.get("bullets", []), "role": role})
         if section["type"] == "projects":
             chosen.sort(key=lambda c: c["entry"]["sort"], reverse=True)
         else:
             chosen.sort(key=lambda c: entry_order(c["entry"]), reverse=True)
-        for moving in [c for c in chosen if c["after"]]:
-            anchor = next((c for c in chosen if c["entry"]["id"] == moving["after"]), None)
-            if anchor is None:
-                raise SystemExit(f"{slug}: {moving['entry']['id']} is placed after "
-                                 f"{moving['after']}, which this section does not select")
-            chosen.remove(moving)
-            chosen.insert(chosen.index(anchor) + 1, moving)
+            chosen = group_by_company(chosen)
         inline = section.get("render") == "cv-inline"
 
         for position, c in enumerate(chosen):

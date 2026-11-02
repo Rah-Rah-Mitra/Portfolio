@@ -553,3 +553,33 @@ settled, and what it left open:
 - **Still open** (spec §9 and §10, not pre-empted): the STMicro title and
   "Global", the ARTC designation, Abbott's detail clearance, the unbacked skills,
   the counted-list bullets and a fault-type count for `fault-detection`.
+
+## 17. The master CV update, 2026-11-02
+
+Rahul updated the master CV a day after §16. Its text, diffed against the
+shipped general, changed in one entry; the rest of the update is layout and a
+standing rule.
+
+- **Same-company entries sit together, whatever their dates** (Rahul's rule).
+  The date sort runs first and each company's entries are then pulled up under
+  its first-sorted one, so the Abbott internship prints under the Abbott
+  contract it became, above People's Association, on every résumé. Six role
+  résumés had printed PA between the two Abbott roles; general got it right
+  only through a per-selection `after` key, now retired. A company is the
+  organization without trailing parentheticals; over today's pools that merges
+  only the two Abbott entries. `verify_resumes.py` fails a DOCX that splits one.
+- **A*STAR.** The heading is now *Research Intern, Digital Supply Chain Group
+  (Incoming), A\*STAR* with its dates (Jan 2027 – May 2027), and the bullet
+  drops "(Jan to May 2027, 2 days/week)". That settles §16's open "ARTC
+  designation": A\*STAR in the heading, ARTC named in the bullet. Rahul chose to
+  carry it onto the site and the MCP too, so the experience record, its
+  responsibilities and the snapshot say the same. "2 days/week" is no longer
+  stated anywhere; it was a fact, so restoring it is a rephrasing, not a new
+  claim.
+- **Margins.** The CV is 0.5" on all four sides (it had 0.667" top and bottom),
+  and Rahul had nus_style adopt it; the page stays A4. The extra 0.33" moved one
+  pin: operations-research-engineer 8.5 → 9pt. ai-engineer and cyber-security
+  would fit 9.5 but STMicro's heading then runs into its date (the fit model
+  does not measure headings; verify now does), and civic and solution-architect
+  are still held at 9 by `pa.infra`'s four lines. General stays at 8.5, the
+  CV's own size, though 9 would fit two pages.

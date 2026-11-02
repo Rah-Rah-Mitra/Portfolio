@@ -2,7 +2,7 @@
   "entries": [
     {
       "id": "astar-artc",
-      "organization": "A*STAR Advanced Remanufacturing & Technology Centre (ARTC)",
+      "organization": "A*STAR",
       "location": "Singapore",
       "role": "Research Intern, Digital Supply Chain Group (Incoming)",
       "start": "2027-01",
@@ -11,7 +11,7 @@
         {
           "id": "attachment",
           "text": {
-            "default": "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies."
+            "default": "Selected for a 4-month research attachment in ARTC's Digital Supply Chain Group, running alongside final-semester studies."
           }
         }
       ]

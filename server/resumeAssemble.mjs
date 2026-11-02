@@ -8,8 +8,9 @@
 // resumeRender.mjs re-exports them, so its own callers are unchanged.
 //
 // The assembly rules live here and only here (they were build_resumes.py:46-74):
-// sort policy, bullet selection order, and one-line vs two-line entries, so the
-// PDF, DOCX, Markdown and check outputs can never drift apart.
+// sort policy and company grouping, bullet selection order, and one-line vs
+// two-line entries, so the PDF, DOCX, Markdown and check outputs can never drift
+// apart.
 
 /**
  * Sort key for a dated entry, ordering by END date first: entries still running
@@ -22,6 +23,31 @@
  * have to agree or the canonical PDFs and every custom build disagree on order.
  */
 const entryOrder = (entry) => (entry.end ? `0${entry.end}` : `1${entry.start}`);
+
+/**
+ * The employer an entry belongs to: its organization without trailing
+ * parentheticals, so "Abbott Laboratories (Contract)" and "Abbott Laboratories
+ * (Converted to Contract)" are one company. build_resumes.py:company is the same
+ * rule.
+ */
+const company = (entry) => entry.organization.replace(/(\s*\([^()]*\))+\s*$/, '').trim().toLowerCase();
+
+/**
+ * Rahul's rule on top of the date sort (2026-11-02): entries of one company sit
+ * together whatever their dates. Each company's entries are pulled up under its
+ * first-sorted one, in date order, so the Abbott internship prints directly under
+ * the contract it became, above People's Association, which ended later. It
+ * replaced a per-selection `after` key that only general carried.
+ * build_resumes.py:group_by_company is the same pass.
+ */
+const groupByCompany = (chosen) => {
+  const groups = new Map();
+  for (const item of chosen) {
+    const key = company(item.entry);
+    groups.set(key, [...(groups.get(key) ?? []), item]);
+  }
+  return [...groups.values()].flat();
+};
 
 /**
  * The dated-entry section types, in the order a résumé prints them. Each type is
@@ -131,7 +157,7 @@ export const assemble = (spec, pools) => {
       continue;
     }
     const pool = new Map(pools[section.type].entries.map((entry) => [entry.id, entry]));
-    const chosen = section.entries.map((selection) => {
+    const selected = section.entries.map((selection) => {
       const entry = pool.get(selection.id);
       if (!entry) throw new Error(`unknown ${section.type} entry: ${selection.id}`);
       if (entry.blocked) throw new Error(`${selection.id} is not available for résumés: ${entry.blocked}`);
@@ -139,22 +165,14 @@ export const assemble = (spec, pools) => {
       // A degree carries its GPA unless the selection drops it for space.
       const shown = role && entry.gpa && selection.gpa !== false ? `${role} (GPA: ${entry.gpa})` : role;
       // `date: false` leaves the heading undated, for an entry whose dates are
-      // in its own bullet: general's A*STAR line, as the master CV prints it.
+      // already in its own bullet. No canonical résumé uses it since the
+      // 2026-11-02 master CV dated A*STAR's heading.
       const dateLabel = selection.date === false ? '' : entry.dateLabel;
-      return { entry, bullets: selection.bullets ?? [], variant: selection.variant, role: shown, after: selection.after, dateLabel };
-    }).sort((a, b) => (section.type === 'projects'
-      ? b.entry.sort.localeCompare(a.entry.sort)
-      : entryOrder(b.entry).localeCompare(entryOrder(a.entry))));
-    // `after` groups an entry under another of the same section after the date
-    // sort, which is the one exception to it: general keeps the Abbott
-    // internship under the Abbott contract it was converted into, though People's
-    // Association ended later. Applied in selection order, so it is stable.
-    for (const moving of chosen.filter((item) => item.after)) {
-      const anchor = chosen.find((item) => item.entry.id === moving.after);
-      if (!anchor) throw new Error(`${moving.entry.id} is placed after ${moving.after}, which this section does not select`);
-      chosen.splice(chosen.indexOf(moving), 1);
-      chosen.splice(chosen.indexOf(anchor) + 1, 0, moving);
-    }
+      return { entry, bullets: selection.bullets ?? [], variant: selection.variant, role: shown, dateLabel };
+    });
+    const chosen = section.type === 'projects'
+      ? selected.sort((a, b) => b.entry.sort.localeCompare(a.entry.sort))
+      : groupByCompany(selected.sort((a, b) => entryOrder(b.entry).localeCompare(entryOrder(a.entry))));
     const inline = section.render === 'cv-inline';
 
     for (const { entry, bullets, variant, role, dateLabel } of chosen) {

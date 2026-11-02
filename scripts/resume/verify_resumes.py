@@ -13,10 +13,12 @@ import sys
 import zipfile
 from pathlib import Path
 
+from docx import Document
 from pypdf import PdfReader
 
 import harvard_style
 import nus_style
+from build_resumes import company, load
 
 STYLES = {"nus": nus_style, "harvard": harvard_style}
 
@@ -34,6 +36,11 @@ EXPECTED_URIS = [
 REQUIRED_TEXT = ["RAHUL MITRA", "rahul-mitra.com", "STMicroelectronics", "put-away",
                  "Amazon", "super-resolution"]
 FORBIDDEN_TEXT = ["PROFILE SUMMARY", "vercel.app", "�"]
+# A heading whose date the right tab could not hold prints it against the text:
+# "(NUS Capstone)Aug 2026 - Present". The JS fit model counts pages, not heading
+# width, so ai-engineer and cyber-security landed on 9.5pt with STMicro's heading
+# overrun on 2026-11-02. A date inside running text has a space or "(" before it.
+GLUED_DATE = re.compile(r"[^\s(–-](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}")
 
 failures = []
 
@@ -54,6 +61,33 @@ def flatten(value):
     inside "put-away" or "rahul-mitra.com" would do the same thing.
     """
     return re.sub(r"\s*([-.])\s*", r"\1", re.sub(r"\s+", " ", value))
+
+
+def verify_grouping(config, docx):
+    """No company's entries are split by another entry (the 2026-11-02 rule).
+
+    Reads the order the DOCX actually prints, from its bold entry headings, so a
+    builder that sorted correctly and wrote out of order still fails here.
+    """
+    slug = config["slug"]
+    paragraphs = Document(docx).paragraphs
+    heads = [i for i, p in enumerate(paragraphs) if p.runs and p.runs[0].bold]
+    for section in config["sections"]:
+        if section["type"] in ("summary", "skills", "projects"):
+            continue
+        pool = {e["id"]: e for e in load(f"{section['type']}.json")["entries"]}
+        at = {}
+        for sel in section["entries"]:
+            org = pool[sel["id"]]["organization"]
+            spot = next((i for i in heads if org in paragraphs[i].text and i not in at.values()), None)
+            check(spot is not None, f"{slug}: no heading for {sel['id']}")
+            if spot is not None:
+                at[sel["id"]] = spot
+        printed = [company(pool[i]) for i in sorted(at, key=at.get)]
+        for name in set(printed):
+            spots = [k for k, c in enumerate(printed) if c == name]
+            check(spots == list(range(spots[0], spots[0] + len(spots))),
+                  f"{slug}: {section['type']} splits {name}'s entries")
 
 
 def verify_slug(slug, pages, edition, style):
@@ -82,6 +116,8 @@ def verify_slug(slug, pages, edition, style):
     # flattening could only ever hide one.
     for needle in FORBIDDEN_TEXT:
         check(needle not in text, f"{slug}: pdf text contains forbidden {needle!r}")
+    for glued in GLUED_DATE.finditer(text):
+        check(False, f"{slug}: a heading's date runs into its text at {text[max(0, glued.start() - 20):glued.end()]!r}")
 
     annots = set()
     for page in reader.pages:
@@ -107,6 +143,9 @@ def main():
         with open(path, encoding="utf-8") as f:
             config = json.load(f)
         verify_slug(config["slug"], config["pages"], args.edition, style)
+        docx = GENERATED / f"rahul-mitra-{config['slug']}-{args.edition}.docx"
+        if docx.exists():
+            verify_grouping(config, docx)
 
     if failures:
         print(f"FAIL ({len(failures)}):")

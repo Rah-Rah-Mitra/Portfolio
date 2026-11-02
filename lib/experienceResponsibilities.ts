@@ -9,7 +9,7 @@
 // CV's words; edit them there first (scripts/resume/content/*.json).
 export const experienceResponsibilities: Record<string, string[]> = {
   'career-astar-artc': [
-    "Selected for a 4-month research attachment (Jan to May 2027, 2 days/week) in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
+    "Selected for a 4-month research attachment in ARTC's Digital Supply Chain Group, running alongside final-semester studies.",
   ],
   'career-stmicro-or': [
     "Architected a layout-agnostic AI put-away engine to run in any STMicroelectronics warehouse worldwide, ingesting each site's shelf coordinates, dimensions, and operating rules so one model adapts to any floor plan.",

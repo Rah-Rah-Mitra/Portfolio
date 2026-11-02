@@ -353,7 +353,7 @@ describe('the master CV shapes a spec can ask for', () => {
   // Nov 2026: general reproduces Rahul's VMock master CV, which needed a summary
   // section, one-bullet project lines, the GPA, grouping by employer and an
   // undated heading. Each is a selection, never text a caller supplies.
-  type Rich = { kind: string; entryId?: string; sectionType?: string; role?: string | null; dateLabel?: string; label?: string; text?: string; inline?: boolean };
+  type Rich = { kind: string; entryId?: string; sectionType?: string; organization?: string; role?: string | null; dateLabel?: string; label?: string; text?: string; inline?: boolean };
   const general = configBySlug('general') as Spec;
   const items = assemble(general, pools) as Rich[];
 
@@ -389,25 +389,42 @@ describe('the master CV shapes a spec can ask for', () => {
       .toBe('Bachelor of Engineering, Industrial and Systems Engineering');
   });
 
-  it('keeps the Abbott internship under the contract it became, and only by selection', () => {
+  it('keeps one company\'s entries together whatever their dates, by rule', () => {
     const order = (spec: Spec) => (assemble(spec, pools) as Rich[])
       .filter((item) => item.kind === 'entry' && item.sectionType === 'experience').map((item) => item.entryId);
+    // People's Association ended (Sep 2026) after the internship (Jun 2026), so
+    // the date sort alone would print it between the two Abbott roles. The
+    // group takes the place of its first entry, the running contract.
     expect(order(general)).toEqual(['stmicro-or', 'abbott-contract', 'abbott-intern', 'pa']);
-    // Without `after`, the end-date rule puts People's Association between them.
-    const plain = { ...general, sections: general.sections.map((section) => (section.type === 'experience'
-      ? { ...section, entries: (section.entries ?? []).map(({ after: _after, ...entry }: SpecEntry & { after?: string }) => entry) } : section)) };
-    expect(order(plain)).toEqual(['stmicro-or', 'abbott-contract', 'pa', 'abbott-intern']);
-    const dangling = { ...general, sections: general.sections.map((section) => (section.type === 'experience'
-      ? { ...section, entries: (section.entries ?? []).filter((entry) => entry.id !== 'abbott-contract') } : section)) };
-    expect(() => assemble(dangling, pools)).toThrow(/placed after abbott-contract/);
+    const reversed = { ...general, sections: general.sections.map((section) => (section.type === 'experience'
+      ? { ...section, entries: [...(section.entries ?? [])].reverse() } : section)) };
+    expect(order(reversed)).toEqual(order(general));
+    // Every canonical résumé, every dated section: no company is split.
+    const company = (organization: string) => organization.replace(/(\s*\([^()]*\))+\s*$/, '').trim().toLowerCase();
+    for (const config of configs) {
+      const entries = (assemble(config, pools) as Rich[]).filter((item) => item.kind === 'entry' && item.sectionType !== 'projects');
+      for (const type of new Set(entries.map((item) => item.sectionType))) {
+        const printed = entries.filter((item) => item.sectionType === type).map((item) => company(item.organization ?? ''));
+        const split = printed.filter((name, index) => index > 0 && printed[index - 1] !== name && printed.slice(0, index - 1).includes(name));
+        expect(split, `${config.slug} ${type}`).toEqual([]);
+      }
+    }
+    // `after` is retired. A link built with it still parses (zod strips it) and
+    // prints the same order.
+    const legacy = { ...general, sections: general.sections.map((section) => (section.type === 'experience'
+      ? { ...section, entries: (section.entries ?? []).map((entry) => (entry.id === 'abbott-intern' ? { ...entry, after: 'abbott-contract' } : entry)) } : section)) };
+    const parsed = specSchema.safeParse(legacy);
+    expect(parsed.success).toBe(true);
+    expect(order(parsed.data as Spec)).toEqual(order(general));
   });
 
-  it('leaves the A*STAR heading undated on general, where its bullet says when', () => {
-    expect(items.find((item) => item.kind === 'entry' && item.entryId === 'astar-artc')?.dateLabel).toBe('');
-    // The entry keeps its dates: any other selection prints them.
-    const research = { pages: 1, sections: [{ type: 'research', title: 'RESEARCH EXPERIENCE', entries: [{ id: 'astar-artc', bullets: ['attachment'] }] }] };
-    expect((assemble(research, pools) as Rich[]).find((item) => item.kind === 'entry')?.dateLabel).toBe('Jan 2027 – May 2027');
-    expect(renderResumeMarkdown(general, pools, profile)).toContain('*Research Intern, Digital Supply Chain Group (Incoming)*\n');
+  it('dates the A*STAR heading on general, as the 2026-11-02 master CV does', () => {
+    const astar = items.find((item) => item.kind === 'entry' && item.entryId === 'astar-artc');
+    expect(astar?.organization).toBe('A*STAR');
+    expect(astar?.dateLabel).toBe('Jan 2027 – May 2027');
+    // `date: false` stays a spec option for an entry whose bullet says when.
+    const undated = { pages: 1, sections: [{ type: 'research', title: 'RESEARCH EXPERIENCE', entries: [{ id: 'astar-artc', date: false, bullets: ['attachment'] }] }] };
+    expect((assemble(undated, pools) as Rich[]).find((item) => item.kind === 'entry')?.dateLabel).toBe('');
   });
 
   it('prints the research and national service sections, from a spec the schema accepts', () => {

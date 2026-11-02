@@ -98,6 +98,12 @@ describe('the shipped documents are a function of the content pool', () => {
       // DOCX was checked paragraph by paragraph against assemble(). The six that
       // carry certs-core or certs-or moved again the same day, when Rahul took the
       // Packt and Intellezy courses off those lines as the CV had.
+      // general moved on 2026-11-02, rebuilt in place (LibreOffice again): the
+      // master CV dropped "(Jan to May 2027, 2 days/week)" from A*STAR's bullet
+      // once its heading carried the dates. The same rebuild grouped the Abbott
+      // roles on the six role résumés that had printed People's Association
+      // between them, and set 0.5in top and bottom margins on all eight; neither
+      // moves a digest, which hashes words in selection order, not layout.
       'software-engineer': 'bfd95189a334c0ce',
       'solution-architect': '6a1b13e05fd6c591',
       'ai-engineer': '52e2008e76f7bfd3',
@@ -105,7 +111,7 @@ describe('the shipped documents are a function of the content pool', () => {
       'cyber-security': 'd2bb31654c280637',
       'civic-tech-solution-architect': 'd6d9730620df57b7',
       highlights: 'f0c891e33a08acc0',
-      general: '0c893f791babf6ff',
+      general: 'd3087676bdc82ec8',
     });
   });
 

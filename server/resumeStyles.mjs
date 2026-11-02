@@ -265,8 +265,8 @@ const nus = {
   id: 'nus',
   pageW: 595.276,                 // A4, not the source document's US Letter
   pageH: 841.890,
-  marginTop: 48,                  // 0.667in
-  marginBottom: 48,
+  marginTop: 36,                  // 0.5in, the 2 Nov 2026 master CV (was 0.667in)
+  marginBottom: 36,
   marginLR: 36,                   // 0.5in
   namePt: 19.5,
   contactPt: 8.5,

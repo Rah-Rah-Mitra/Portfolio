@@ -179,8 +179,10 @@ describe('api/mcp', () => {
     // the master CV drops it. Same reading as asrjc.award — still true, still
     // selectable, just not on a canonical résumé. steminc.combined joined it with
     // the Nov 2026 master CV, which drops the JC CCA; the site keeps the record.
+    // nus.coursework-full joined it when the PA title line cost the OR résumé its
+    // last line and the trim ladder's first rung took it.
     expect(bullets.filter((bullet) => bullet.usedBy.length === 0).map((bullet) => bullet.ref).sort())
-      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'asrjc.award', 'navy.data', 'steminc.combined']);
+      .toEqual(['abbott-contract.datalayer', 'abbott-contract.hardening', 'asrjc.award', 'navy.data', 'nus.coursework-full', 'steminc.combined']);
     for (const line of menu.skillLines) expect(Array.isArray(line.usedBy), line.id).toBe(true);
     expect(menu.skillLines.find((line) => line.id === 'se-skills')?.usedBy).toContain('software-engineer');
     expect(menu.skillLines.some((line) => line.usedBy.length === 0)).toBe(true);
@@ -190,8 +192,8 @@ describe('api/mcp', () => {
     const { content } = await rpc('tools/call', { name: 'check_resume', arguments: { slug: 'highlights' } });
     const report = JSON.parse(content[0].text);
     expect(report.version).toBe(1);
-    // 15 since the Nov 2026 master CV put Abbott's fault-detection bullet on it.
-    expect(report.metrics.bullets).toBe(15);
+    // 16: PA's stack split out of pa.churp for the pro bono line.
+    expect(report.metrics.bullets).toBe(16);
     // The 2026-11 pass spread the openers; "Built" is no longer the top one on
     // any résumé. What matters here is that the field is still reported.
     expect(report.metrics.topOpener.openers.length).toBeGreaterThan(0);

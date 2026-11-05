@@ -46,9 +46,9 @@
           "id": "pa",
           "bullets": [
             "churp",
+            "stack",
             "singpass"
-          ],
-          "roleVariant": "software"
+          ]
         }
       ]
     },

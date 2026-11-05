@@ -163,8 +163,7 @@
       "organization": "People's Association",
       "location": "Singapore",
       "role": {
-        "default": "Platform & Solutions Engineer (Sparks Citizen Developer)",
-        "software": "Software Engineer (Citizen Developer)"
+        "default": "Software Engineer (Full Stack & Cloud), Pro bono"
       },
       "start": "2025-09",
       "end": "2026-09",
@@ -173,8 +172,14 @@
         {
           "id": "churp",
           "text": {
-            "default": "Led most software development and deployment of a digital garden-plot balloting platform across admin and public Next.js frontends, a NestJS backend, and GIS mapping, now live in Tengah with national rollout planned.",
-            "deep": "Led most software development and deployment of an end-to-end digital garden-plot balloting platform across admin and public Next.js frontends, a NestJS backend, and GIS-based plot allocation, coordinating stakeholders and rollout planning across product, engineering, and operations, now live in Tengah with national rollout planned."
+            "default": "Volunteered through PA's Sparks Citizen Developer programme to design, build and deploy Churp, a garden-plot balloting platform now live in Tengah with national rollout planned. Project funded by a S$20K Sparks Community Innovation Fund award."
+          }
+        },
+        {
+          "id": "stack",
+          "text": {
+            "default": "Led most software development and deployment across admin and public Next.js frontends, a NestJS backend, and GIS mapping.",
+            "deep": "Led most software development and deployment across admin and public Next.js frontends, a NestJS backend, and GIS-based plot allocation, coordinating stakeholders and rollout planning across product, engineering, and operations."
           }
         },
         {
@@ -193,7 +198,7 @@
         {
           "id": "sparks",
           "text": {
-            "default": "Won a S$20,000 Sparks Community Innovation Fund award for public good initiatives to seed a civic balloting platform, then led deployment planning, multi-repo coordination, and stakeholder management in an 11-person team across People's Association, Tengah community partners, and PA ICT (GovTech)."
+            "default": "Led deployment planning, multi-repo coordination, and stakeholder management in an 11-person team across People's Association, Tengah community partners, and PA ICT (GovTech)."
           }
         },
         {

@@ -406,7 +406,7 @@ describe('house style (P5)', () => {
     // Verified green in the editor and flagged by an earlier draft of this rule:
     // plain CamelCase brands, ALL-CAPS acronyms, ampersands and parentheses.
     expect(title('Robotics Vision Engineer')).not.toContain('mixed-case-title');
-    expect(title('Platform & Solutions Engineer (Sparks Citizen Developer)')).not.toContain('mixed-case-title');
+    expect(title('Software Engineer (Full Stack & Cloud), Pro bono')).not.toContain('mixed-case-title');
     expect(title('Operations Research (NUS System Design Project), Contract')).not.toContain('mixed-case-title');
     // The Company field applies no such rule, which is why moving it there fixed it.
     expect(title('Robotics Vision Engineer', 'Amazon (BlendED AI+X)')).not.toContain('mixed-case-title');
@@ -463,9 +463,10 @@ describe('the real corpus', () => {
     // ywh's condensed one, less cicd and rules (merged into infra and survey).
     // Most of the new ones are measured ("4-stage", "5+ plants", "3 workstreams",
     // "4-month", "13+ other programs", "S$20,000"), so coverage 0.52 -> 0.54.
-    expect(report.metrics.bullets).toBe(52);
-    expect(report.metrics.topOpener).toEqual({ openers: ['Build', 'Built'], count: 3 });
-    expect(report.metrics.metricCoverage).toBe(0.54);
+    // 53: PA's stack split out of pa.churp for the pro bono line (Nov 2026).
+    expect(report.metrics.bullets).toBe(53);
+    expect(report.metrics.topOpener).toEqual({ openers: ['Led'], count: 4 });
+    expect(report.metrics.metricCoverage).toBe(0.55);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in
@@ -524,13 +525,17 @@ describe('the real corpus', () => {
       // infra, so it holds at 15), and its "Develop" beside the internship's
       // "Developed" gives four of them a top of 2. cyber-security loses its
       // adjacent repeat: STMicro's opener is "Architected" now, not "Design".
-      'software-engineer': { bullets: 16, top: 2, codes: 'unquantified,unused-evidence' },
-      'solution-architect': { bullets: 15, top: 2, codes: 'unquantified' },
+      // Nov 2026, PA's pro bono line: pa.stack split out of pa.churp adds a bullet to
+      // three one-pagers and general, operations-research-engineer drops coursework,
+      // and "design, build" in Rahul's wording takes general over two more verb-family
+      // caps; its frame-repeat went with the old PA and Led order.
+      'software-engineer': { bullets: 17, top: 2, codes: 'unquantified,unused-evidence' },
+      'solution-architect': { bullets: 16, top: 2, codes: 'unquantified' },
       'ai-engineer': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
-      'operations-research-engineer': { bullets: 16, top: 2, codes: 'unquantified,unused-evidence' },
+      'operations-research-engineer': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
       'cyber-security': { bullets: 15, top: 1, codes: 'unquantified,unused-evidence' },
       'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
-      highlights: { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
+      highlights: { bullets: 16, top: 2, codes: 'unquantified,unused-evidence' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
       // "Built", "Build", "building" and "hackathon build" are four uses of one
       // family that R1's per-section opener tally cannot see. The master CV now
@@ -544,7 +549,7 @@ describe('the real corpus', () => {
       // The adjacent repeat and the "engineer" family cap went with the old
       // order and wording; the trailing participles of the new
       // bullets ("flagging", "recommending", "running") make a frame repeat.
-      general: { bullets: 37, top: 2, codes: 'frame-repeat,unquantified,unused-evidence,verb-family-cap' },
+      general: { bullets: 38, top: 3, codes: 'unquantified,unused-evidence,verb-family-cap,verb-family-cap,verb-family-cap' },
     });
   });
 

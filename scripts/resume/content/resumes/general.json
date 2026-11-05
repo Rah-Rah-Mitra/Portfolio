@@ -59,10 +59,11 @@
         {
           "id": "pa",
           "bullets": [
-            "sparks",
             "churp",
+            "stack",
             "singpass",
             "infra",
+            "sparks",
             "survey"
           ]
         }

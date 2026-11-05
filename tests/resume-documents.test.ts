@@ -104,14 +104,18 @@ describe('the shipped documents are a function of the content pool', () => {
       // roles on the six role résumés that had printed People's Association
       // between them, and set 0.5in top and bottom margins on all eight; neither
       // moves a digest, which hashes words in selection order, not layout.
-      'software-engineer': 'bfd95189a334c0ce',
-      'solution-architect': '6a1b13e05fd6c591',
-      'ai-engineer': '52e2008e76f7bfd3',
-      'operations-research-engineer': '8e9b7f0fff2036f1',
+      // Seven moved in Nov 2026, rebuilt in place through Word: the People's
+      // Association role took its pro bono title and programme line, its stack
+      // became pa.stack, and operations-research-engineer lost coursework-full
+      // down the trim ladder to stay on one page.
+      'software-engineer': '6c65fed0df8f36a4',
+      'solution-architect': 'bd46ef980ba754df',
+      'ai-engineer': '86c87adec2fe4abd',
+      'operations-research-engineer': 'fa8b0bd0db63dd49',
       'cyber-security': 'd2bb31654c280637',
-      'civic-tech-solution-architect': 'd6d9730620df57b7',
-      highlights: 'f0c891e33a08acc0',
-      general: 'd3087676bdc82ec8',
+      'civic-tech-solution-architect': '6922c3346f1f6967',
+      highlights: 'b6adf853fe0fb65f',
+      general: 'ac6bc02d6168589c',
     });
   });
 

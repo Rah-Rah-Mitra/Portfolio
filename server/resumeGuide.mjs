@@ -63,15 +63,12 @@ keyword is recoverable; an inaccurate one is not.
    own CV does.
 5. Choose depth. Bullets can carry a \`deep\` variant alongside the default; set
    \`detail: "deep"\` on the spec, or \`variant\` on a single entry. Deep variants
-   are longer, so they usually need \`pages: 2\`. Only 15 of the 52 selectable
+   are longer, so they usually need \`pages: 2\`. Only 15 of the 53 selectable
    bullets have one, and the rest fall back to their default silently, so do not
    treat depth as a way to change every bullet at once.
 6. Check whether the entry offers more than one job title. An entry with
    \`roleOptions\` was held under several hats, and you pick one with
-   \`roleVariant\` on that entry. People's Association is the current example:
-   \`default\` is "Platform & Solutions Engineer (Sparks Citizen Developer)",
-   his formal title, and \`software\` is "Software Engineer (Citizen
-   Developer)". Both are true, so choose the one the posting is hiring for.
+   \`roleVariant\` on that entry. Choose the one the posting is hiring for.
 7. Check whether a bullet offers more than one wording. Some carry
    \`phrasings\`: alternative sentences Rahul has approved for the same fact, one
    opening on the outcome, another on the technology. Each shows its opening

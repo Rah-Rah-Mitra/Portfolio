@@ -441,10 +441,7 @@ describe('build_tailored_resume', () => {
       jd_text: 'Govtech delivery: Singpass Login and Myinfo, GIS mapping, accessibility, rapid prototyping.',
     }));
     expect(civic.matched.slug).toBe('civic-tech-solution-architect');
-    // "Full-stack engineer" with this stack now goes to civic-tech, 6-5: its
-    // skills line says "full-stack", and since the Nov 2026 master CV pa.churp,
-    // which civic selects, names Next.js. The same stack without the word still
-    // resolves to software-engineer.
+    // This stack without the word "full-stack" resolves to software-engineer.
     const fullstack = payload(await call('build_tailored_resume', {
       jd_text: 'Software engineer: TypeScript, React, Next.js, FastAPI, Docker.',
     }));
@@ -591,14 +588,14 @@ describe('build_tailored_resume', () => {
     expect(civic.matched.ranking[0].specificity).toBeGreaterThan(civic.matched.ranking[1].specificity);
 
     // The same accident decided this one, and it only ever came out right by luck
-    // of the ordering: 5-5, settled by the curated keyword row. ("Full-stack"
-    // in the posting now tips it to civic, 6-5; see the vocabulary test.)
+    // of the ordering: then 5-5, settled by the keyword row; civic's Next.js went with
+    // pa.stack, which civic leaves out, so it is an outright 5-4 now.
     const fullstack = payload(await call('build_tailored_resume', {
       jd_text: 'Software engineer: TypeScript, React, Next.js, FastAPI, Docker.', dry_run: true,
     }));
     expect(fullstack.matched.slug).toBe('software-engineer');
-    expect(fullstack.matched.margin).toBe(0);
-    expect(fullstack.matched.decided_by).toBe('keyword-row');
+    expect(fullstack.matched.margin).toBe(1);
+    expect(fullstack.matched.decided_by).toBe('score');
 
     // An outright win says so, and the fallback is not dressed up as a decision.
     const outright = payload(await call('build_tailored_resume', {

@@ -222,7 +222,7 @@ describe('résumé renderer', () => {
       pages: 1,
       sections: [{ type: 'experience', title: 'EXPERIENCE', entries: [{ id: 'pa', bullets: ['churp'], roleVariant }] }],
     });
-    expect(renderResumeMarkdown(spec(), pools, profile) as string).toContain('Software Engineer (Full Stack & Cloud), Pro bono');
+    expect(renderResumeMarkdown(spec(), pools, profile) as string).toContain('Software Engineer (Full Stack & Cloud)');
     // A key that is not on the entry fails loudly rather than falling back.
     await expect(renderResumePdf(spec('vp-of-everything'), pools, profile)).rejects.toThrow(/unknown role option/);
   });

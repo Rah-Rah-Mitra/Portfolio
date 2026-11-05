@@ -160,10 +160,10 @@
     },
     {
       "id": "pa",
-      "organization": "People's Association",
+      "organization": "People's Association (Pro bono)",
       "location": "Singapore",
       "role": {
-        "default": "Software Engineer (Full Stack & Cloud), Pro bono"
+        "default": "Software Engineer (Full Stack & Cloud)"
       },
       "start": "2025-09",
       "end": "2026-09",

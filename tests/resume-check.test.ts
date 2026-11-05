@@ -406,7 +406,7 @@ describe('house style (P5)', () => {
     // Verified green in the editor and flagged by an earlier draft of this rule:
     // plain CamelCase brands, ALL-CAPS acronyms, ampersands and parentheses.
     expect(title('Robotics Vision Engineer')).not.toContain('mixed-case-title');
-    expect(title('Software Engineer (Full Stack & Cloud), Pro bono')).not.toContain('mixed-case-title');
+    expect(title('Software Engineer (Full Stack & Cloud)')).not.toContain('mixed-case-title');
     expect(title('Operations Research (NUS System Design Project), Contract')).not.toContain('mixed-case-title');
     // The Company field applies no such rule, which is why moving it there fixed it.
     expect(title('Robotics Vision Engineer', 'Amazon (BlendED AI+X)')).not.toContain('mixed-case-title');

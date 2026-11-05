@@ -1067,7 +1067,7 @@ const careerAndEducationNotes: FieldNote[] = [
     // experienceNotes. The Experience window is labelled "FULL RECORD - NO GAPS",
     // so a role the résumés carry had to be here too.
     id: 'career-pa-churp',
-    title: 'People\'s Association - Software Engineer (Full Stack & Cloud), Pro bono',
+    title: 'People\'s Association (Pro bono) - Software Engineer (Full Stack & Cloud)',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Sep 2025-Sep 2026',
@@ -1402,8 +1402,8 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
   },
   'career-pa-churp': {
     kind: 'professional',
-    role: 'Software Engineer (Full Stack & Cloud), Pro bono',
-    organization: 'People’s Association',
+    role: 'Software Engineer (Full Stack & Cloud)',
+    organization: 'People’s Association (Pro bono)',
     location: 'Singapore',
     scope: 'End-to-end civic platform delivery: admin and public frontends, backend, GIS allocation, national digital identity, and AWS deployment.',
     outcomes: [

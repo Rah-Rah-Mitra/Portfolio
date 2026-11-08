@@ -155,12 +155,14 @@ test.describe('field workbench — desktop', () => {
     const builder = page.getByRole('dialog', { name: 'Resume Builder' });
     await expect(builder).toBeVisible();
     // Blocks load after mount, so the picker appears without the API.
-    // Exact: "RESEARCH EXPERIENCE" is a group of its own since the Nov 2026 master CV.
-    await expect(builder.getByRole('group', { name: 'EXPERIENCE', exact: true })).toBeVisible();
+    // The master CV's headings, its SUMMARY and its inline project layout.
+    await expect(builder.getByRole('group', { name: 'WORK EXPERIENCE', exact: true })).toBeVisible();
+    await expect(builder.getByRole('group', { name: 'SUMMARY', exact: true })).toBeVisible();
+    await expect(builder.getByRole('group', { name: 'Project layout' })).toBeVisible();
     const ticks = builder.getByRole('checkbox');
     expect(await ticks.count()).toBeGreaterThan(10);
     await expect(builder.getByRole('combobox', { name: 'Start from an existing résumé' })).toBeVisible();
-    await expect(builder.getByRole('group', { name: 'Bullet detail' })).toBeVisible();
+    await expect(builder.getByRole('group', { name: 'Bullet length' })).toBeVisible();
     // The builder must not reuse the anchors the no-JS evidence count relies on.
     expect(await builder.locator('[id^="experience-"]').count()).toBe(0);
     // This is the design system's first checkbox UI — hold it to the same bar.

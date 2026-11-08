@@ -100,7 +100,8 @@ describe('lead verb lemmas', () => {
     // A real bullet whose colon happens to land inside the character window.
     // The word count is what keeps it out; without it this dropped silently
     // from the quantified denominator and the lead-verb tally.
-    expect(isLabelLine(text('amazon-vision.isp'))).toBe(false);
+    // (amazon-vision.isp's sentence, retired from the pool in Nov 2026.)
+    expect(isLabelLine('Built vision systems turning raw camera feeds into perception-ready frames across 3 workstreams: camera ISP, super-resolution, and image restoration.')).toBe(false);
   });
 });
 
@@ -472,8 +473,10 @@ describe('the real corpus', () => {
     // "20 engine tests"), so coverage 0.55 -> 0.60. pa.stack opens "Owned" now,
     // as the CV does, so "Led" falls to 3, and with the contract's present-tense
     // "Build" gone (datalayer reads "Built", in the CV's tense) "Built" is top.
-    expect(report.metrics.bullets).toBe(54);
-    expect(report.metrics.topOpener).toEqual({ openers: ['Built'], count: 3 });
+    // 53 since amazon-vision.isp was retired (Nov 2026, Upgrade 7), and with its
+    // "Built vision systems" gone "Led" (stack, sparks, maritime) is top again.
+    expect(report.metrics.bullets).toBe(53);
+    expect(report.metrics.topOpener).toEqual({ openers: ['Led'], count: 3 });
     // 0.63 with the outcome/scale classifier (Nov 2026): dB, °C and "N of M" are
     // read now, a decimal before a unit is no longer masked as a version, and
     // dryers and defects joined the population nouns, so robustness ("up to
@@ -551,22 +554,25 @@ describe('the real corpus', () => {
       // than drop evidence. Their top opener is "Built" x2, not
       // "Develop/Developed": the contract reads "Developed ADAM", in the past
       // tense, beside the internship's "Developed".
-      // R11 no-outcome-entry (Nov 2026) fires on all seven one-pagers: each
-      // carries an Abbott contract pair without an outcome (ADAM and the Seeq
-      // toolkit) while the APC verification bullet holds 83% and 0.12 °C, and
-      // Amazon's isp while sr-reproduction holds 0.78 dB.
-      'software-engineer': { bullets: 17, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
+      // The length tiers (Nov 2026): every one-pager prints at standard, with the
+      // doc's 2-line wordings and, where the fit needed them, short ones; isp is
+      // retired for sr-reproduction; ai-engineer, software-engineer and
+      // highlights carry the APC rebuild and its verification for the Seeq
+      // toolkit; cyber-security adds ADAM so guardrails is not orphaned. The
+      // build-family cap clears on four of them (isp's "Built" and platform's
+      // "Built" are gone), and top openers fall to 1 where "Developed" and
+      // "Built" no longer repeat. R11 still fires where an entry leaves its
+      // outcome unselected (the Abbott contract without the 83% verification,
+      // the internship without the zero-failure pipeline): advisory, and
+      // highlights is clear. ai-engineer and civic take a frame-repeat from the
+      // standard wordings' trailing participles.
+      'software-engineer': { bullets: 18, top: 1, codes: 'no-outcome-entry,unquantified,unused-evidence' },
       'solution-architect': { bullets: 16, top: 2, codes: 'no-outcome-entry,unquantified,verb-family-cap' },
-      'ai-engineer': { bullets: 14, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
-      // The CV of 8 Nov 18:31 rewrote nearly every bullet shorter: OR reaches the
-      // build-family cap too (Hailo's "Converted" is gone from it, Volt Pulse's
-      // "Built an autonomous loop" arrives), cyber-security's top becomes "Built"
-      // x2, and civic loses its frame-repeat (Singpass's trailing "keeping" went
-      // with the old wording) for the build cap.
-      'operations-research-engineer': { bullets: 15, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
-      'cyber-security': { bullets: 15, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence' },
-      'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
-      highlights: { bullets: 16, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
+      'ai-engineer': { bullets: 15, top: 1, codes: 'frame-repeat,no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
+      'operations-research-engineer': { bullets: 15, top: 1, codes: 'no-outcome-entry,unquantified,unused-evidence' },
+      'cyber-security': { bullets: 16, top: 1, codes: 'no-outcome-entry,unquantified,unused-evidence' },
+      'civic-tech-solution-architect': { bullets: 14, top: 1, codes: 'frame-repeat,no-outcome-entry,unquantified,unused-evidence' },
+      highlights: { bullets: 17, top: 2, codes: 'unquantified,unused-evidence' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
       // "Built", "Build", "building" and "hackathon build" are four uses of one
       // family that R1's per-section opener tally cannot see. The master CV now

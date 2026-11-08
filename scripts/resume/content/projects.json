@@ -17,6 +17,12 @@
           "id": "main",
           "text": {
             "full": "Implemented a deterministic Unreal Engine 5.8 C++ simulation with Claude Code; under a ground-link jam, 30 drones confirmed all 8 walking targets in 10 of 10 seeded runs, versus 2.1 of 8 on average for an operator-run fleet."
+          },
+          "phrasings": {
+            "no-ai-tool": {
+              "text": "Implemented a deterministic Unreal Engine 5.8 C++ simulation; under a ground-link jam, 30 drones confirmed all 8 walking targets in 10 of 10 seeded runs, versus 2.1 of 8 on average for an operator-run fleet.",
+              "note": "the same simulation and jammed-link result without naming the AI coding tool, for employers who would rather not see it"
+            }
           }
         },
         {

@@ -220,15 +220,16 @@ const toBuffer = (doc) => new Promise((resolve, reject) => {
  * One short-first step: the weakest selected bullet that has a `short` wording
  * it is not already printing, given that tier in a copy of the spec. "Weakest"
  * is the highest rank number (unranked bullets count as weakest), and among
- * equals the one furthest down the page. Returns null when no bullet can shrink.
- * Content is never dropped: the bullet stays, in fewer words.
+ * equals the one furthest down the page. A bullet whose tier the spec named
+ * itself is never touched. Returns null when no bullet can shrink. Content is
+ * never dropped: the bullet stays, in fewer words.
  */
 const shortenWeakest = (spec, pools) => {
   const items = assemble(spec, pools).filter((item) => item.kind === 'bullet');
   const candidates = items
     .map((item, order) => ({ item, order }))
     .filter(({ item }) => {
-      if (item.tierUsed === 'short') return false;
+      if (item.tierUsed === 'short' || item.tierPinned) return false;
       const bullet = pools[item.sectionType].entries.find((entry) => entry.id === item.entryId)
         .bullets.find((row) => row.id === item.bulletId);
       const short = resolveBullet(bullet, spec, 'short', item.ref);
@@ -272,14 +273,19 @@ export const renderResumePdf = async (spec, pools, profile) => {
     : [{ bodyPt: null, marginIn: null }];
 
   let current = spec;
-  const swaps = [];
+  let swaps = [];
   let last = null;
   const attempts = [];
-  for (const [index, step] of steps.entries()) {
+  for (const step of steps) {
     const bodyPt = step.bodyPt ?? spec.bodyPt ?? style.bodyPt;
     const marginLR = (step.marginIn ?? spec.marginIn) != null ? (step.marginIn ?? spec.marginIn) * 72 : style.marginLR;
+    // Each size starts from the spec as asked and takes only the swaps it needs:
+    // stepping down a size is the admission that the shorts were not enough at
+    // the larger one, and the smaller size may need fewer of them.
+    current = spec;
+    swaps = [];
     let attempt = renderOnce(current, pools, profile, bodyPt, marginLR, style);
-    if (autoFit && strategy === 'short-first' && index === 0) {
+    if (autoFit && strategy === 'short-first') {
       for (let next = shortenWeakest(current, pools); attempt.pages > maxPages && next; next = shortenWeakest(current, pools)) {
         attempt.doc.end();
         current = next.spec;
@@ -287,7 +293,7 @@ export const renderResumePdf = async (spec, pools, profile) => {
         attempt = renderOnce(current, pools, profile, bodyPt, marginLR, style);
       }
     }
-    attempts.push({ bodyPt, marginIn: marginLR / 72, pages: attempt.pages });
+    attempts.push({ bodyPt, marginIn: marginLR / 72, pages: attempt.pages, ...(swaps.length ? { swaps: swaps.length } : {}) });
     if (attempt.pages <= maxPages) {
       if (last) last.doc.end();
       draw(attempt.doc, attempt.placed, attempt.pages, marginLR, style);

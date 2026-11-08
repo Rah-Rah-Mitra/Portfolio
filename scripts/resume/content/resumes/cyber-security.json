@@ -32,6 +32,7 @@
         {
           "id": "abbott-contract",
           "bullets": [
+            "fault-detection",
             "guardrails"
           ]
         },
@@ -51,7 +52,7 @@
         {
           "id": "amazon-vision",
           "bullets": [
-            "isp"
+            "sr-reproduction"
           ]
         }
       ]

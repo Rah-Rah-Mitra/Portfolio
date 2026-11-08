@@ -33,7 +33,8 @@
           "id": "abbott-contract",
           "bullets": [
             "fault-detection",
-            "platform"
+            "setpoint",
+            "validation"
           ]
         },
         {
@@ -58,8 +59,8 @@
         {
           "id": "amazon-vision",
           "bullets": [
-            "isp",
-            "sr-reproduction"
+            "sr-reproduction",
+            "robustness"
           ]
         }
       ]

@@ -132,13 +132,20 @@ describe('the shipped documents are a function of the content pool', () => {
       // tier, Abbott's, Amazon's, STMicro's and PA's bullets took the CV's order
       // on general, the Theory line left general, and hl-web-cloud took the
       // CV's shorter AWS list. Every DOCX holds each selected sentence verbatim.
-      'software-engineer': 'b06b52e41bd0f32b',
-      'solution-architect': '652f9fedb16eeefb',
-      'ai-engineer': '34e30e12decb4ac8',
-      'operations-research-engineer': 'fd5142732aa10e02',
-      'cyber-security': '4382166a404fe049',
-      'civic-tech-solution-architect': '69594384bfac4993',
-      highlights: 'e2582682cb1754f0',
+      // The seven one-pagers moved again with the length tiers, rebuilt in place
+      // (LibreOffice): each prints at standard (the doc's 2-line wordings for
+      // the bullets whose CV sentence runs past 2 lines at 10pt), with the short
+      // wordings software-engineer and highlights record per bullet; isp is
+      // retired for sr-reproduction; the APC rebuild and its verification take
+      // the Seeq toolkit's place on three; cyber-security adds ADAM. general,
+      // printed at full, did not move. Every DOCX holds each selected sentence.
+      'software-engineer': '76fc6de2283b310b',
+      'solution-architect': 'aba783a09e7636ee',
+      'ai-engineer': 'd19d734fc8d9dbfd',
+      'operations-research-engineer': '9fd2210f3ca8ad8b',
+      'cyber-security': '0e1dbf4659b84519',
+      'civic-tech-solution-architect': '1892d5c4c796daa0',
+      highlights: '01704a999c628ac0',
       general: '7a9bee35e064583d',
     });
   });

@@ -159,7 +159,8 @@ describe('api/mcp', () => {
 
     // Choosing by keyword and being judged by keyword (R7) use one computation,
     // so a bullet's `terms` are the same terms the checker scores it on.
-    expect(byRef.get('amazon-vision.isp')?.terms).toEqual(expect.arrayContaining(['super-resolution']));
+    // amazon-vision.isp carried this until it was retired (Nov 2026); the brief names the same workstreams.
+    expect(byRef.get('amazon-vision.brief')?.terms).toEqual(expect.arrayContaining(['super-resolution']));
     expect(byRef.get('nus.majors')?.terms).toEqual([]);   // names no technology, and says so
     for (const bullet of bullets) expect(Array.isArray(bullet.terms), bullet.ref).toBe(true);
     // An alternative wording is a different sentence, so it names its own.
@@ -193,7 +194,8 @@ describe('api/mcp', () => {
     const report = JSON.parse(content[0].text);
     expect(report.version).toBe(2);
     // 16: PA's stack split out of pa.churp for the pro bono line.
-    expect(report.metrics.bullets).toBe(16);
+    // 17 since Nov 2026: the APC rebuild and its verification replaced the Seeq toolkit.
+    expect(report.metrics.bullets).toBe(17);
     // The 2026-11 pass spread the openers; "Built" is no longer the top one on
     // any résumé. What matters here is that the field is still reported.
     expect(report.metrics.topOpener.openers.length).toBeGreaterThan(0);

@@ -10,19 +10,25 @@
       "bullets": [
         {
           "id": "layout-agnostic",
+          "rank": 1,
           "text": {
+            "short": "Architected a layout-agnostic AI put-away engine that adapts to any STMicroelectronics warehouse floor plan.",
             "full": "Architected a layout-agnostic AI put-away engine reading each site's shelf coordinates, dimensions, and operating rules, so one model fits any STMicroelectronics warehouse without per-site rework."
           }
         },
         {
           "id": "replay-eval",
+          "rank": 2,
           "text": {
+            "standard": "Defined a historical-replay evaluation against current allocation on travel distance, handling time and slow-mover Golden Region occupancy, piloting on 2 AMK warehouses.",
             "full": "Defined a historical-replay evaluation comparing 3 metrics against current allocation (travel distance per order, handling time, and slow-mover Golden Region occupancy), piloting on 2 AMK warehouses: dice and finished goods."
           }
         },
         {
           "id": "ranking-pipeline",
+          "rank": 3,
           "text": {
+            "standard": "Formulated a 4-stage shelf-ranking pipeline: movement profiling, zone and capacity filtering, Golden Region priority for fast movers, and logged rationale for every decision.",
             "full": "Formulated a 4-stage shelf-ranking pipeline: movement profiling from pick frequency, dwell time, and demand; filtering on packaging zone, fit, capacity, and restricted areas; Golden Region priority for fast movers; and logged rationale per decision."
           }
         }
@@ -38,47 +44,73 @@
       "bullets": [
         {
           "id": "fault-detection",
+          "rank": 1,
           "text": {
+            "short": "Developed ADAM, an offline LLM assistant giving engineers at 4 global sites self-serve process answers.",
+            "standard": "Developed ADAM, an offline tool-calling LLM assistant (Gemma 4 E4B on llama.cpp) for 6 spray dryers across 4 global sites, letting engineers self-serve answers that previously needed APC specialists.",
             "full": "Developed ADAM, an offline tool-calling LLM assistant (Gemma 4 E4B on llama.cpp) for 6 spray dryers across 4 global sites, giving engineers self-serve answers to decisions previously requiring process-control specialists."
           }
         },
         {
           "id": "setpoint",
+          "rank": 2,
           "text": {
+            "short": "Rebuilt 4 sites' Excel APC models as LP/QP optimisers returning setpoints in milliseconds.",
             "full": "Rebuilt 4 sites' Excel-based Advanced Process Control (APC) models as 7 steady-state gain models solved by HiGHS LPs and SLSQP QPs, returning setpoints, binding constraints, and shadow prices in milliseconds.",
             "deep": "Converted 4 sites' vendor Advanced Process Control steady-state models from their Excel master files into 7 steady-state gain models solved as HiGHS linear programs (scipy.optimize.linprog) and SLSQP tracking QPs with a PLC predictor, returning setpoints, binding constraints, shadow prices, and trust-region warnings in milliseconds across 5 modes with no commercial solver license, back-tested against the production system's own historical targets."
           }
         },
         {
           "id": "validation",
+          "rank": 3,
           "text": {
+            "short": "Matched live APC setpoints on move direction in 83% of cases and temperature within 0.12 °C.",
             "full": "Verified the APC replica against live plant setpoints, matching move direction in 83% of cases and temperatures within 0.12 °C over 24 readings."
-          }
+          },
+          "requires": [
+            "setpoint"
+          ]
         },
         {
           "id": "platform",
+          "rank": 4,
           "text": {
+            "standard": "Built a Seeq signal-analytics toolkit (Kalman smoothing, spectral and lag analysis, change points, matrix profiles) and a 5-stage offline handbook RAG pipeline (OCR, ONNX embeddings, Chroma, LangChain).",
             "full": "Implemented a Seeq signal-analytics toolkit (Kalman smoothing, spectral and lag analysis, change-point detection, matrix profiles) and a 5-stage offline handbook RAG pipeline (OCR, ONNX embeddings, Chroma, LangChain).",
             "deep": "Built a Seeq signal-analytics toolkit (Kalman smoothing, Welch spectra, lag and coherence, PELT change points via ruptures, matrix-profile motifs and discords via STUMPY, an 18-feature fingerprint) and a 5-stage offline handbook RAG pipeline: GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain retrieval over Gemma 4 E4B served through llama.cpp GGUF."
           }
         },
         {
           "id": "guardrails",
+          "rank": 5,
           "text": {
             "full": "Enforced Seeq plant-state and 30-minute steadiness checks before each optimiser solve, and kept LLM narration free of computed numbers through schema-constrained tool calls verified against solver results."
-          }
+          },
+          "requires": [
+            "setpoint",
+            "fault-detection"
+          ]
         },
         {
           "id": "relaxation",
+          "rank": 6,
           "text": {
             "full": "Replaced a reference simulator's bisection search with minimum lexicographic constraint relaxation via LPs, fixing 2 QP defects."
-          }
+          },
+          "requires": [
+            "setpoint"
+          ]
         },
         {
           "id": "harness",
+          "rank": 7,
           "text": {
             "full": "Proved production modules identical to research notebooks via exact-equality parity tests, plus 20 engine tests and GPU-free CI."
-          }
+          },
+          "requires": [
+            "setpoint",
+            "fault-detection"
+          ]
         },
         {
           "id": "ai-systems",
@@ -118,13 +150,16 @@
       "bullets": [
         {
           "id": "digital-twin",
+          "rank": 1,
           "text": {
+            "short": "Engineered a SimPy digital twin and CP-SAT scheduler for hybrid flow-shop production.",
             "full": "Engineered a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling, comparing 3 approaches (heuristic, MIP, genetic algorithm) to produce decision-ready schedules.",
             "deep": "Developed a SimPy discrete-event digital twin and OR-Tools CP-SAT solver for hybrid flow-shop scheduling over interval and precedence constraints, then compared 3 approaches (heuristic, MIP, and genetic algorithm) against heuristic baselines and researched robust optimization for operational uncertainty."
           }
         },
         {
           "id": "pipeline",
+          "rank": 2,
           "text": {
             "full": "Validated a 15-stage changeover-data pipeline on 5 years of unseen raw data, with zero failures across operator and machine anomalies.",
             "deep": "Validated a non-destructive, 15-stage changeover-data pipeline over operational matrices that encoded meaning in values, labels, colours, merged regions, and blanks, using controlled staging sheets, repair passes, From-To edge-list conversion, correction tables, audit outputs, and explicit exception handling to expose every intermediate state instead of mutating source data, against 5 years of unseen raw data with zero execution failures."
@@ -132,6 +167,7 @@
         },
         {
           "id": "apc",
+          "rank": 3,
           "text": {
             "full": "Deployed a team-built APC simulator to live internal users on Azure App Service, with Docker, access restrictions, and session hardening.",
             "solution-architect": "Owned cloud deployment and production support for a team-built APC simulator used in manufacturing and engineer training, with Docker packaging, Azure App Service hosting, and documented handover.",
@@ -140,18 +176,21 @@
         },
         {
           "id": "upskilling",
+          "rank": 4,
           "text": {
             "full": "Trained regional engineering teams across Asia and Europe on repeatable AI workflows spanning 7 areas: prompting, model selection, benchmarks, cost awareness, agents, validation, and safeguards."
           }
         },
         {
           "id": "safeguards",
+          "rank": 5,
           "text": {
             "full": "Strengthened Excel, VBA, Python, master-data, and scheduling workflows with 3 safeguards: validation rules, correction tables, and reproducible intermediate stages, leaving every transformation auditable."
           }
         },
         {
           "id": "handover",
+          "rank": 6,
           "text": {
             "full": "Documented deployment, access provisioning, and technical handover across 3 procedures, so internal manufacturing and engineer-training users stayed supported after transfer to owning teams."
           }
@@ -171,12 +210,15 @@
       "bullets": [
         {
           "id": "churp",
+          "rank": 1,
           "text": {
+            "short": "Built and deployed Churp, a civic balloting platform live in Tengah and slated for national rollout.",
             "full": "Designed, built, and deployed Churp, a resident-driven garden-plot balloting platform now live in Tengah and slated for national rollout, seeded by a S$20K Sparks Community Innovation Fund award."
           }
         },
         {
           "id": "singpass",
+          "rank": 2,
           "text": {
             "full": "Integrated Singpass Login and Myinfo (OIDC) to verify residents' identity and address, keeping balloting fair for 150 sign-ups at release.",
             "deep": "Integrated Singpass Login (OIDC) to secure resident sign-in and Myinfo to retrieve verified identity and registered address under resident consent, automating eligibility checks so garden-plot balloting stayed fair for 150 residents signed up at release."
@@ -184,13 +226,16 @@
         },
         {
           "id": "infra",
+          "rank": 3,
           "text": {
+            "standard": "Provisioned 10 AWS services with Terraform (ECS Fargate, Multi-AZ RDS with PostGIS, WAFv2, Lambda, KMS), shipped via keyless GitHub Actions CI/CD across 5 repos with gated migrations and auto-rollback.",
             "full": "Provisioned 10 AWS services with Terraform (ECS Fargate, Multi-AZ RDS with PostGIS, WAFv2, Lambda, KMS), deployed through keyless GitHub Actions CI/CD across 5 repos with gated migrations and auto-rollback.",
             "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure across 10 services (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, Secrets Manager, and a Rust auth gateway on Lambda and API Gateway), with cloud security controls applied environment-wide alongside multi-repo coordination and rollout planning."
           }
         },
         {
           "id": "stack",
+          "rank": 4,
           "text": {
             "full": "Owned most software development and deployment across admin and public Next.js frontends, a NestJS backend, and GIS mapping.",
             "deep": "Owned most software development and deployment across admin and public Next.js frontends, a NestJS backend, and GIS-based plot allocation, coordinating stakeholders and rollout planning across product, engineering, and operations."
@@ -198,12 +243,15 @@
         },
         {
           "id": "survey",
+          "rank": 5,
           "text": {
+            "standard": "Surveyed garden sites into geospatial datasets and designed rules-based balloting across 4 control points (eligibility, conflicts, exceptions, admin oversight), keeping allocation auditable.",
             "full": "Surveyed garden sites into geospatial datasets for mapping and plot allocation, and designed rules-based balloting across 4 control points (eligibility, conflict resolution, exceptions, admin oversight), keeping allocation auditable."
           }
         },
         {
           "id": "sparks",
+          "rank": 6,
           "text": {
             "full": "Led deployment planning, multi-repo coordination, and stakeholder management in an 11-person team across People's Association, Tengah community partners, and PA ICT (GovTech)."
           }

@@ -3,7 +3,7 @@
   "subject": "Software Engineer Resume",
   "pages": 1,
   "detail": "standard",
-  "bodyPt": 8.5,
+  "bodyPt": 9,
   "marginIn": 0.5,
   "sections": [
     {
@@ -33,7 +33,14 @@
           "id": "abbott-contract",
           "bullets": [
             "fault-detection",
-            "platform"
+            {
+              "id": "setpoint",
+              "tier": "short"
+            },
+            {
+              "id": "validation",
+              "tier": "short"
+            }
           ]
         },
         {
@@ -60,7 +67,10 @@
         {
           "id": "amazon-vision",
           "bullets": [
-            "isp"
+            {
+              "id": "sr-reproduction",
+              "tier": "standard"
+            }
           ]
         }
       ]

@@ -263,6 +263,9 @@ export const assemble = (spec, pools) => {
           variant: tier,
           tier,
           tierUsed,
+          // A tier the selection named for this one bullet, which auto-fit leaves
+          // alone: the caller asked for exactly this wording.
+          ...(bulletTier ? { tierPinned: true } : {}),
           ...(bullet.rank != null ? { rank: bullet.rank } : {}),
           ...(bullet.requires ? { requires: bullet.requires } : {}),
           ...(phrasing ? { phrasing } : {}),

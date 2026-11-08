@@ -27,6 +27,7 @@
       "bullets": [
         {
           "id": "brief",
+          "rank": 1,
           "text": {
             "full": "Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors, mentored by Zelig CTO Dan Shao (ex-iRobot)."
           },
@@ -39,32 +40,37 @@
         },
         {
           "id": "sr-reproduction",
+          "rank": 2,
           "text": {
+            "short": "Reproduced a published super-resolution model from broken author code, matching reported results at 8x.",
+            "standard": "Reproduced a published UNet super-resolution model in PyTorch from broken author code, training 12 models; matched reported results at 8x and came within 0.78 dB at 2x and 4x.",
             "full": "Reproduced a published UNet super-resolution model in PyTorch from broken author code, recovering its undocumented evaluation protocol and training 12 models, matching reported results at 8x and landing within 0.78 dB at 2x and 4x."
           }
         },
         {
           "id": "robustness",
+          "rank": 3,
           "text": {
+            "standard": "Diagnosed a robustness gap in super-resolution models under unseen blur and added randomised-blur training, recovering up to 0.7 dB PSNR across lens, out-of-focus and resampling blur.",
             "full": "Diagnosed a robustness gap where fixed-blur super-resolution models lost most PSNR gains under unseen blur, then added randomised-blur training and fine-tuning, recovering up to 0.7 dB across lens, out-of-focus, and resampling blur."
-          }
+          },
+          "requires": [
+            "sr-reproduction"
+          ]
         },
         {
           "id": "deployment",
+          "rank": 4,
           "text": {
             "full": "Launched 3 trained models as a public web app via a Flask inference API on a Colab T4 GPU behind a secure tunnel on a reserved domain."
           }
         },
         {
           "id": "sr-review",
+          "rank": 5,
           "text": {
+            "standard": "Authored and presented a super-resolution literature review across multi-image, video and single-image methods, comparing 4 model families on fidelity and hallucination risk.",
             "full": "Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods, organised around camera information loss and recovery, comparing 4 model families on fidelity and hallucination risk."
-          }
-        },
-        {
-          "id": "isp",
-          "text": {
-            "full": "Built vision systems turning raw camera feeds into perception-ready frames across 3 workstreams: camera ISP, super-resolution, and image restoration under real-world blur."
           }
         }
       ]

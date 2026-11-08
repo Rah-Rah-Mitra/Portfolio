@@ -30,7 +30,7 @@ type ToolResult = { content: Array<{ text: string }>; isError?: boolean };
 // The résumé content JSONs import with very precise literal types (one union
 // member per config). These tests walk them structurally, so one loose shape is
 // cheaper than fighting the union at every access.
-type SpecSection = { type: string; entries?: Array<{ id: string; bullets?: string[] }>; lines?: string[] };
+type SpecSection = { type: string; entries?: Array<{ id: string; bullets?: Array<string | { id: string; tier?: string }> }>; lines?: string[] };
 type PoolEntry = { id: string; organization: string };
 
 /**
@@ -710,7 +710,7 @@ describe('build_tailored_resume', () => {
     const ids: string[] = [];
     for (const section of configBySlug('cyber-security')!.sections as SpecSection[]) {
       if (section.type === 'skills') ids.push(...(section.lines ?? []));
-      else for (const entry of section.entries ?? []) for (const bullet of entry.bullets ?? []) ids.push(`${entry.id}.${bullet}`);
+      else for (const entry of section.entries ?? []) for (const bullet of entry.bullets ?? []) ids.push(`${entry.id}.${typeof bullet === 'string' ? bullet : (bullet as { id: string }).id}`);
     }
     const args = { block_ids: ids, pages: 1, detail: 'deep' };
     const dry = payload(await call('build_tailored_resume', { ...args, dry_run: true }));
@@ -721,8 +721,11 @@ describe('build_tailored_resume', () => {
     expect(dry.check.metrics.maxBulletLines).toBeNull();
     expect(lineBudget(dry.check)).toHaveLength(0);
 
-    // The real build measured, so it says so and the rule is free to fire.
-    expect(built.check.metrics.typography).toEqual({ bodyPt: 8.5, marginIn: 0.5 });
+    // The real build measured, so it says so and the rule is free to fire. 9pt
+    // since Nov 2026: a one-page build fits short-first, giving three bullets
+    // their short wording before it steps the type (it reached 8.5 before).
+    expect(built.check.metrics.typography).toEqual({ bodyPt: 9, marginIn: 0.5 });
+    expect(built.fit.swaps.length).toBeGreaterThan(0);
     expect(built.check.metrics.maxBulletLines).toBe(4);
 
     // Everything that does not depend on measurement survives the dry run —

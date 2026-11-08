@@ -7,10 +7,10 @@ import { z } from 'zod';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
 import { configBySlug, pools, profile, resumeBlocks, resumeConfigs } from './resumeContent.mjs';
 import {
-  ENTRY_SECTION_TYPES, TIERS, assemble, bulletLine, decodeSpec, encodeSpec, measureBulletLines, referenceLines,
+  ENTRY_SECTION_TYPES, TIERS, TIER_BUDGETS, assemble, bulletLine, decodeSpec, encodeSpec, measureBulletLines, referenceLines,
   renderResume, renderResumeMarkdown, requestedTier, resolveBullet, specSchema, tierFallbacks,
 } from './resumeRender.mjs';
-import { checkResume, firstWord, framesIn, leadLemma, metricsIn, termsIn } from './resumeCheck.mjs';
+import { checkResume, firstWord, framesIn, leadLemma, metricClasses, metricsIn, termsIn } from './resumeCheck.mjs';
 import { RESUME_GUIDE } from './resumeGuide.mjs';
 
 export { resumeConfigs };
@@ -158,7 +158,11 @@ export const checkSpec = (spec, fit = null) => {
   // Measured as printed: a cv-inline bullet carries its entry's label on its
   // first line, and leaving it out would undercount every project by a line.
   const lines = fit ? measureBulletLines(bullets.map(bulletLine), typography) : [];
-  return checkResume(bullets.map((bullet, index) => ({ ...bullet, ...(fit ? { lines: lines[index] } : {}) })), {
+  // Each sentence at the reference layout too, whatever this build fitted at:
+  // a tier's budget is defined there (R9), so it needs no fit to be judged.
+  const atReference = referenceLines(bullets.map((bullet) => bullet.text));
+  return checkResume(bullets.map((bullet, index) => ({ ...bullet, referenceLines: atReference[index], ...(fit ? { lines: lines[index] } : {}) })), {
+    tierBudgets: TIER_BUDGETS,
     candidates: swapCandidates(spec, bullets.map((bullet) => bullet.ref)),
     rephrasings: rephrasingsFor(spec, bullets, typography),
     skillTerms,
@@ -293,7 +297,10 @@ export const decoratedBlocks = ({ tier } = {}) => {
   items.forEach(({ bullet, ref }, index) => {
     bullet.lead = firstWord(texts[index]).replace(/[^A-Za-z-]+$/, '');
     bullet.lines = lines[index];
-    bullet.hasMetric = metricsIn(texts[index]).metrics.length > 0;
+    // Outcome (a result against a baseline or target) and scale (a size or a
+    // count) apart; hasMetric stays as either, for callers that read it.
+    bullet.metric = metricClasses(texts[index]);
+    bullet.hasMetric = bullet.metric.outcome || bullet.metric.scale;
     bullet.terms = termsIn(texts[index], skillTerms);
     bullet.usedBy = used.get(ref) ?? [];
     const counts = Object.fromEntries(tierKeys[index].map((key) => [key, tierCounts[cursor++]]));
@@ -320,6 +327,7 @@ export const decoratedBlocks = ({ tier } = {}) => {
           note: item.note,
           lead: firstWord(item.text).replace(/[^A-Za-z-]+$/, ''),
           lines: measured[index],
+          metric: metricClasses(item.text),
           hasMetric: metricsIn(item.text).metrics.length > 0,
           // An alternative wording carries its own sentence, so it names its own
           // technologies: a wording can be the one that says "Terraform" out loud

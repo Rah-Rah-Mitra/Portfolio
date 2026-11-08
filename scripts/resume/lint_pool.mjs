@@ -14,7 +14,7 @@
 import { pathToFileURL } from 'node:url';
 import { pools, profile, resumeConfigs } from '../../server/resumeContent.mjs';
 import { checkSpec } from '../../server/portfolioMcp.mjs';
-import { ENTRY_SECTION_TYPES, renderResumePdf } from '../../server/resumeRender.mjs';
+import { ENTRY_SECTION_TYPES, referenceLines, renderResumePdf } from '../../server/resumeRender.mjs';
 import { checkPool } from '../../server/resumeCheck.mjs';
 
 const SECTION_TYPES = ENTRY_SECTION_TYPES;
@@ -30,8 +30,11 @@ export const poolEntries = () => SECTION_TYPES.flatMap((sectionType) => pools[se
     // wording it can print is checked, not just the default one.
     organization: entry.organization,
     role: typeof entry.role === 'object' ? Object.values(entry.role).join(' ') : entry.role,
+    // The full sentence also carries its line count at the reference layout, so
+    // P4 can name the bullets a standard build would print over 2 lines.
     bullets: (entry.bullets ?? []).flatMap((bullet) => Object.entries(bullet.text)
-      .map(([variant, text]) => ({ ref: `${entry.id}.${bullet.id}`, variant, text }))),
+      .map(([variant, text]) => ({ ref: `${entry.id}.${bullet.id}`, variant, text,
+        ...(variant === 'full' ? { lines: referenceLines([text])[0] } : {}) }))),
   })));
 
 /**

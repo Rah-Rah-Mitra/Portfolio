@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  CHECK_VERSION, LEXICON, checkPool, checkResume, framesIn, hedgesIn,
+  CHECK_VERSION, LEXICON, checkPool, checkResume, framesIn, hedgesIn, metricClasses, unattestedTokens,
   isLabelLine, isOngoing, isWinAnsi, leadLemma, metricsIn,
 } from '../server/resumeCheck.mjs';
 import { checkSpec, decoratedBlocks } from '../server/portfolioMcp.mjs';
@@ -58,7 +58,7 @@ describe('checker module boundary', () => {
   it('freezes its lexicon', () => {
     expect(Object.isFrozen(LEXICON)).toBe(true);
     expect(Object.isFrozen(LEXICON.hedges)).toBe(true);
-    expect(CHECK_VERSION).toBe(1);
+    expect(CHECK_VERSION).toBe(2);
   });
 });
 
@@ -474,7 +474,11 @@ describe('the real corpus', () => {
     // "Build" gone (datalayer reads "Built", in the CV's tense) "Built" is top.
     expect(report.metrics.bullets).toBe(54);
     expect(report.metrics.topOpener).toEqual({ openers: ['Built'], count: 3 });
-    expect(report.metrics.metricCoverage).toBe(0.6);
+    // 0.63 with the outcome/scale classifier (Nov 2026): dB, °C and "N of M" are
+    // read now, a decimal before a unit is no longer masked as a version, and
+    // dryers and defects joined the population nouns, so robustness ("up to
+    // 0.7 dB") and relaxation ("2 QP defects") count.
+    expect(report.metrics.metricCoverage).toBe(0.63);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in
@@ -547,18 +551,22 @@ describe('the real corpus', () => {
       // than drop evidence. Their top opener is "Built" x2, not
       // "Develop/Developed": the contract reads "Developed ADAM", in the past
       // tense, beside the internship's "Developed".
-      'software-engineer': { bullets: 17, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
-      'solution-architect': { bullets: 16, top: 2, codes: 'unquantified,verb-family-cap' },
-      'ai-engineer': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
+      // R11 no-outcome-entry (Nov 2026) fires on all seven one-pagers: each
+      // carries an Abbott contract pair without an outcome (ADAM and the Seeq
+      // toolkit) while the APC verification bullet holds 83% and 0.12 °C, and
+      // Amazon's isp while sr-reproduction holds 0.78 dB.
+      'software-engineer': { bullets: 17, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
+      'solution-architect': { bullets: 16, top: 2, codes: 'no-outcome-entry,unquantified,verb-family-cap' },
+      'ai-engineer': { bullets: 14, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
       // The CV of 8 Nov 18:31 rewrote nearly every bullet shorter: OR reaches the
       // build-family cap too (Hailo's "Converted" is gone from it, Volt Pulse's
       // "Built an autonomous loop" arrives), cyber-security's top becomes "Built"
       // x2, and civic loses its frame-repeat (Singpass's trailing "keeping" went
       // with the old wording) for the build cap.
-      'operations-research-engineer': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
-      'cyber-security': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
-      'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
-      highlights: { bullets: 16, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
+      'operations-research-engineer': { bullets: 15, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
+      'cyber-security': { bullets: 15, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence' },
+      'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
+      highlights: { bullets: 16, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
       // "Built", "Build", "building" and "hackathon build" are four uses of one
       // family that R1's per-section opener tally cannot see. The master CV now
@@ -591,5 +599,82 @@ describe('the real corpus', () => {
 
   it('keeps the render path free of the checker', () => {
     expect(readFileSync('server/resumeRender.mjs', 'utf8')).not.toContain('resumeCheck');
+  });
+});
+
+describe('outcome and scale numbers (Nov 2026, Upgrade 6)', () => {
+  // The spec's own examples. An outcome is a result held against a baseline or
+  // target; a scale is a size or a count.
+  it.each([
+    'matching move direction in 83% of cases',
+    'temperatures within 0.12 °C over 24 readings',
+    '30 drones confirmed all 8 targets in 10 of 10 runs, versus an average 2.1 of 8',
+    'with zero failures across operator and machine anomalies over 5 years',
+    'recovering up to 0.7 dB across lens blur',
+    'landing within 0.78 dB at 2x and 4x',
+    'Top 8 Finalist of 50+ teams',
+  ])('reads an outcome in "%s"', (text) => {
+    expect(metricClasses(text).outcome).toBe(true);
+  });
+
+  it.each([
+    'for 6 spray dryers across 4 global sites',
+    'for 150 sign-ups at release',
+    'training 12 models',
+    'a 5-stage offline handbook RAG pipeline',
+    'fixing 2 QP defects',
+  ])('reads a scale and no outcome in "%s"', (text) => {
+    expect(metricClasses(text)).toEqual({ outcome: false, scale: true });
+  });
+
+  it('still refuses a version number', () => {
+    expect(metricClasses('with Gemini 2.0 Flash in Unreal Engine 5.8 C++')).toEqual({ outcome: false, scale: false });
+  });
+
+  it('carries the split on the block menu, with hasMetric as either', () => {
+    type Row = { id: string; metric: { outcome: boolean; scale: boolean }; hasMetric: boolean };
+    const blocks = decoratedBlocks() as { sections: Array<{ type: string; entries: Array<{ id: string; bullets: Row[] }> }> };
+    const rows = new Map(blocks.sections.flatMap((section) => section.entries.flatMap((entry) => entry.bullets.map((row) => [`${entry.id}.${row.id}`, row] as const))));
+    for (const row of rows.values()) expect(row.hasMetric).toBe(row.metric.outcome || row.metric.scale);
+    expect(rows.get('abbott-contract.validation')?.metric).toEqual({ outcome: true, scale: false });
+    expect(rows.get('amazon-vision.robustness')?.metric.outcome).toBe(true);
+    expect(rows.get('abbott-contract.relaxation')?.metric).toEqual({ outcome: false, scale: true });
+    expect(rows.get('abbott-contract.platform')?.metric).toEqual({ outcome: false, scale: true });
+  });
+});
+
+describe('the tier rules (Nov 2026)', () => {
+  const row = (ref: string, text: string, extra: Record<string, unknown> = {}) => bullet(ref, text, extra);
+
+  it('R9 names a stored tier text over its budget, and nothing within it', () => {
+    const report = checkResume([
+      row('a.one', 'Built a planner.', { tierUsed: 'standard', referenceLines: 3 }),
+      row('a.two', 'Built a scheduler.', { tierUsed: 'short', referenceLines: 1 }),
+      row('a.three', 'Built a gateway.', { tierUsed: 'full', referenceLines: 4 }),
+    ], { tierBudgets: { short: 1, standard: 2 } }) as Report;
+    const finding = report.findings.find((item) => item.category === 'tier-over-budget');
+    expect(finding?.occurrences).toEqual([{ ref: 'a.one', tier: 'standard', lines: 3, budget: 2 }]);
+  });
+
+  it('R10 names a bullet selected without the bullet it builds on', () => {
+    const lone = checkResume([row('a.validation', 'Verified the replica.', { requires: ['setpoint'] })]) as Report;
+    const finding = lone.findings.find((item) => item.category === 'orphaned-bullet');
+    expect(finding?.remedy).toMatchObject({ kind: 'add', candidates: [{ ref: 'a.setpoint' }] });
+    const paired = checkResume([row('a.setpoint', 'Rebuilt the models.'), row('a.validation', 'Verified the replica.', { requires: ['setpoint'] })]) as Report;
+    expect(paired.findings.some((item) => item.category === 'orphaned-bullet')).toBe(false);
+  });
+
+  it('R11 names an entry that leaves its outcome unselected, and only where one exists', () => {
+    const candidates = [{ ref: 'a.validation', entryId: 'a', sectionType: 'experience', text: 'Matched 83% of live setpoints.' }];
+    const report = checkResume([row('a.platform', 'Built a toolkit with a 5-stage pipeline.')], { candidates: candidates as never }) as Report;
+    const finding = report.findings.find((item) => item.category === 'no-outcome-entry');
+    expect(finding?.occurrences).toEqual([{ ref: 'a', instead: ['a.validation'] }]);
+    const without = checkResume([row('a.platform', 'Built a toolkit with a 5-stage pipeline.')]) as Report;
+    expect(without.findings.some((item) => item.category === 'no-outcome-entry')).toBe(false);
+  });
+
+  it('names the claims a shorter wording would add, never the ones it drops', () => {
+    expect(unattestedTokens("Rebuilt 4 sites' APC models as LP optimisers.", ["Rebuilt 4 sites' Advanced Process Control (APC) models as 7 gain models."])).toEqual(['lp']);
+    expect(unattestedTokens("Rebuilt 9 sites' models on Gurobi.", ["Rebuilt 4 sites' models on HiGHS."])).toEqual(['9', 'gurobi']);
   });
 });

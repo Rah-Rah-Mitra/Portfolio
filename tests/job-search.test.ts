@@ -541,7 +541,7 @@ describe('build_tailored_resume', () => {
 
   it('carries the check report the way build_resume does, plus the evidence note', async () => {
     const built = payload(await call('build_tailored_resume', { block_ids: ['stmicro-or.layout-agnostic', 'se-skills'] }));
-    expect(built.check.version).toBe(1);
+    expect(built.check.version).toBe(2);
     // build_resume reports no notes at all. The posting-facing tool asks for one
     // rule by name — R7, the bullet sitting unused on an entry already on the
     // page that names more of his technologies than the one selected — and for
@@ -686,7 +686,7 @@ describe('build_tailored_resume', () => {
     expect(dry.pages).toBeNull();     // only a render measures fit
     expect(dry.fit).toBeNull();
     // Everything an agent iterates on is still here.
-    expect(dry.check.version).toBe(1);
+    expect(dry.check.version).toBe(2);
     expect(dry.matched.slug).toBeTruthy();
     expect(dry.coverage.covered).toContain('Terraform');
     expect(dry.blocks_used).toContain('pa.infra');

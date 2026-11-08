@@ -19,7 +19,10 @@
 // that moves them shows up as a failing assertion rather than a quietly
 // different report.
 
-export const CHECK_VERSION = 1;
+// 2 since Nov 2026: metric spans carry an outcome/scale class, rows a `metric`
+// object, and R9 tier-over-budget, R10 orphaned-bullet and R11 no-outcome-entry
+// joined the rules.
+export const CHECK_VERSION = 2;
 
 // Tuning, all measured against the real corpus (see tests/resume-check.test.ts).
 const LEAD_REPEAT_MIN = 3;      // bullets in one section sharing a lead lemma
@@ -123,36 +126,47 @@ const HEDGES = [
 const NON_METRIC = [
   /\b(?:19|20)\d{2}\b/g,                                    // 2023, 2024
   /\b[A-Z][A-Za-z]*\d{2,}(?:\/\d+)*\b/g,                    // CS4277, GBBP12/13
-  /\b\d+(?:\.\d+)+\b/g,                                     // 2.0
+  // 2.0, but not a decimal that a unit or a ratio follows: "0.7 dB", "0.12 °C",
+  // "83.5%" and "2.1 of 8" are measurements (Nov 2026; they were masked before).
+  /\b\d+(?:\.\d+)+\b(?!\s?(?:dB|°C|%|of\s+\d))/g,
   /\b\d\s?[Dd]\b(?![a-z])/g,                                // 3D
   /\b(?:GPT|Veo|Gemini|Gemma|Llama|Mistral|BERT|Route|Layer|OSI|OAuth|RTX|CUDA|ASPIRE|IPv|HTTP|Hailo)[- ]?\d+[A-Za-z]?\b/g,
   /\b\d+(?:st|nd|rd|th)\b/g,                                // 7th Singapore Astronomical Olympiad
 ];
 
-// What does count. Each pattern names a magnitude, a unit, or a population.
+// What does count. Each pattern names a magnitude, a unit, or a population, and
+// each has a class (portfolio-mcp-upgrades.md Upgrade 6): an `outcome` is a
+// result held against a baseline or target (83%, within 0.12 °C, 10 of 10 runs
+// versus 2.1 of 8, zero failures, up to 0.7 dB, top 8), a `scale` is a size or a
+// count (6 dryers, 4 sites, 150 residents, 12 models, 5-stage). Only the
+// measurement units of a result are outcomes on their own; a count stays a
+// scale whatever it counts.
 const METRIC = [
-  { kind: 'percent', re: /\b\d[\d,.]*\s?%/g },
-  { kind: 'currency', re: /(?:S\$|US\$|\$|€|£)\s?\d[\d,.]*/g },
-  { kind: 'plus', re: /\b\d[\d,.]*\+/g },
-  { kind: 'multiplier', re: /\b\d+(?:\.\d+)?\s?[xX]\b/g },
+  { kind: 'percent', cls: 'outcome', re: /\b\d[\d,.]*\s?%/g },
+  { kind: 'measure', cls: 'outcome', re: /\b\d+(?:\.\d+)?\s?(?:dB|°C)\b/g },
+  { kind: 'ratio', cls: 'outcome', re: /\b\d+(?:\.\d+)?\s+of\s+\d[\d,]*\+?/g },
+  { kind: 'zero', cls: 'outcome', re: /\bzero\s+(?:[a-z]+\s+)?failures?\b/gi },
+  { kind: 'currency', cls: 'scale', re: /(?:S\$|US\$|\$|€|£)\s?\d[\d,.]*/g },
+  { kind: 'plus', cls: 'scale', re: /\b\d[\d,.]*\+/g },
+  { kind: 'multiplier', cls: 'scale', re: /\b\d+(?:\.\d+)?\s?[xX]\b/g },
   // "4 times" is the same measurement as "4x" written the way a screener can
   // read it (a digit glued to a letter scores as unquantified), so the checker
   // has to see both or it contradicts its own glued-digit rule.
-  { kind: 'multiplier', re: /\b\d+(?:\.\d+)?\s?times\b/gi },
-  { kind: 'magnitude', re: /\b\d+(?:\.\d+)?[KMB]\b/g },
-  { kind: 'rate', re: /\b\d+(?:\.\d+)?\s?(?:W|kW|mW|TOPS|FPS|GB|MB|TB|GHz|MHz)\b/g },
-  { kind: 'unit', re: /\b\d+-(?:stage|hour|day|week|month|year|person|team|node|step|fold|page|minute|second)\b/gi },
-  { kind: 'duration', re: /\b(?:sub-)?\d+\s?(?:ms|sec|seconds?|minutes?|hours?|days?|weeks?|months?|years?)\b/g },
-  { kind: 'bound', re: /\bsub-(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)-(?:minute|second|hour|day|ms)\b/gi },
-  { kind: 'word-count', re: /\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|zero)[- ](?:month|week|day|year|hour|plant|plants|site|sites|team|teams|model|models|failure|failures|line|lines|stage|stages)\b/gi },
+  { kind: 'multiplier', cls: 'scale', re: /\b\d+(?:\.\d+)?\s?times\b/gi },
+  { kind: 'magnitude', cls: 'scale', re: /\b\d+(?:\.\d+)?[KMB]\b/g },
+  { kind: 'rate', cls: 'scale', re: /\b\d+(?:\.\d+)?\s?(?:W|kW|mW|TOPS|FPS|GB|MB|TB|GHz|MHz)\b/g },
+  { kind: 'unit', cls: 'scale', re: /\b\d+-(?:stage|hour|day|week|month|year|person|team|node|step|fold|page|minute|second)\b/gi },
+  { kind: 'duration', cls: 'scale', re: /\b(?:sub-)?\d+\s?(?:ms|sec|seconds?|minutes?|hours?|days?|weeks?|months?|years?)\b/g },
+  { kind: 'bound', cls: 'outcome', re: /\bsub-(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)-(?:minute|second|hour|day|ms)\b/gi },
+  { kind: 'word-count', cls: 'scale', re: /\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)[- ](?:month|week|day|year|hour|plant|plants|site|sites|team|teams|model|models|line|lines|stage|stages)\b/gi },
   // One optional adjective between the count and the noun: "3 live inputs" and
   // "3 imaging workstreams" are counts of things the same sentence then lists.
   // Drones, targets, trials and runs came with swarmline.main ("30 drones
   // confirmed all 8 walking targets in 10 of 10 seeded runs"), which read as
-  // unmeasured without them; no other bullet in the pool changes class.
-  { kind: 'population', re: /\b\d[\d,]*\s+(?:[a-z]+\s+)?(?:teams?|students?|candidates?|programs?|users?|sites?|models?|services?|plants?|tests?|assertions?|residents?|inputs?|approaches|workstreams?|drones?|targets?|trials?|runs?|sign-ups?)\b/gi },
-  { kind: 'of-n', re: /\b(?:class|cohort|field|group)\s+of\s+\d+/gi },
-  { kind: 'rank', re: /\btop\s+(?:\d+|quartile|quarter|half)\b/gi },
+  // unmeasured without them; dryers and defects with the Nov 2026 master CV.
+  { kind: 'population', cls: 'scale', re: /\b\d[\d,]*\s+(?:[a-z]+\s+)?(?:teams?|students?|candidates?|programs?|users?|sites?|models?|services?|plants?|tests?|assertions?|residents?|inputs?|approaches|workstreams?|drones?|targets?|trials?|runs?|sign-ups?|dryers?|defects?)\b/gi },
+  { kind: 'of-n', cls: 'scale', re: /\b(?:class|cohort|field|group)\s+of\s+\d+/gi },
+  { kind: 'rank', cls: 'outcome', re: /\btop\s+(?:\d+|quartile|quarter|half)\b/gi },
 ];
 
 export const LEXICON = Object.freeze({
@@ -230,10 +244,10 @@ export const metricsIn = (text) => {
     });
   }
   const spans = [];
-  for (const { kind, re } of METRIC) {
+  for (const { kind, cls, re } of METRIC) {
     for (const match of masked.matchAll(new RegExp(re.source, re.flags))) {
       const surface = source.slice(match.index, match.index + match[0].length).replace(/[,.;:]+$/, '');
-      if (surface) spans.push({ kind, surface, start: match.index, end: match.index + surface.length });
+      if (surface) spans.push({ kind, cls, surface, start: match.index, end: match.index + surface.length });
     }
   }
   // De-overlap by span: longest match wins at any given start.
@@ -241,6 +255,12 @@ export const metricsIn = (text) => {
   const metrics = [];
   for (const span of spans) if (!metrics.length || span.start >= metrics[metrics.length - 1].end) metrics.push(span);
   return { metrics, suppressed: suppressed.sort((a, b) => a.start - b.start) };
+};
+
+/** Whether a bullet carries an outcome number, a scale number, or both. */
+export const metricClasses = (text) => {
+  const { metrics } = metricsIn(text);
+  return { outcome: metrics.some((span) => span.cls === 'outcome'), scale: metrics.some((span) => span.cls === 'scale') };
 };
 
 /**
@@ -354,6 +374,21 @@ const claimTokens = (text) => (String(text ?? '')
   .split(/\s+/).slice(1).join(' ')                 // drop the lead verb, which is what a phrasing is FOR
   .match(/\b(?:[A-Z][A-Za-z0-9+.#-]*|[0-9][\w.,%+-]*)\b/g) ?? [])
   .map((token) => token.toLowerCase().replace(/[.,;:]+$/, ''));
+
+/**
+ * The capitalised and numeric tokens of a tier text (after its lead verb) that no
+ * approved text of its entry names: the "no new claims" half of the tier guard.
+ * A shorter wording drops detail; it may not add any. Measured against the whole
+ * entry, so a standard that names "APC" where its own full sentence says
+ * "process-control" still passes when the entry's APC bullet attests it.
+ */
+export const unattestedTokens = (text, attestedTexts) => {
+  // "LP" and "LPs" are one claim: a shorter wording often drops a plural.
+  const stem = (token) => (token.length > 2 ? token.replace(/s$/, '') : token);
+  const attested = new Set(attestedTexts.flatMap((value) => String(value ?? '')
+    .match(/\b(?:[A-Z][A-Za-z0-9+.#-]*|[0-9][\w.,%+-]*)\b/g) ?? []).map((token) => stem(token.toLowerCase().replace(/[.,;:]+$/, ''))));
+  return claimTokens(text).filter((token) => !attested.has(stem(token)));
+};
 
 const multiset = (values) => {
   const counts = new Map();
@@ -491,7 +526,7 @@ const bySection = (rows) => {
 const round = (value) => Math.round(value * 100) / 100;
 
 const SEVERITY_ORDER = { error: 0, warn: 1, note: 2 };
-const RULE_ORDER = { R1: 0, R2: 1, R3: 2, R4: 3, R5: 4, R6: 5, R7: 6, R8: 7, P1: 8, P2: 9, P3: 10, P4: 11, P5: 12 };
+const RULE_ORDER = { R1: 0, R2: 1, R3: 2, R4: 3, R5: 4, R6: 5, R7: 6, R8: 7, R9: 8, R10: 9, R11: 10, P1: 11, P2: 12, P3: 13, P4: 14, P5: 15 };
 
 /**
  * Sort findings into a total order that does not depend on input order, cap them
@@ -531,6 +566,10 @@ const summarise = (rows, findings, counts) => {
     'duplicate-label-line': () => 'two label lines are selected on one entry',
     'unrenderable-glyph': () => 'a character will not render in the PDF fonts',
     'unused-evidence': () => `${where.count} bullet(s) you selected have a richer alternative on the same entry`,
+    'verb-family-cap': () => `the "${where.family}" word family appears in ${where.count} bullets`,
+    'tier-over-budget': () => `${where.count} bullet(s) run past their tier's line budget`,
+    'orphaned-bullet': () => `${where.count} bullet(s) are selected without the bullet they build on`,
+    'no-outcome-entry': () => `${where.count} entr(ies) show no outcome though one is available`,
   }[worst.category];
   parts.push(phrase ? phrase() : `worst finding is ${worst.category}`);
   const free = actionable.flatMap((item) => item.remedy.candidates ?? []).slice(0, 2);
@@ -601,6 +640,7 @@ const annotate = (bullet) => {
     lemma: label ? null : leadLemma(firstWord(bullet.text)),
     surface: leadSurface(bullet.text),
     metrics,
+    metric: { outcome: metrics.some((span) => span.cls === 'outcome'), scale: metrics.some((span) => span.cls === 'scale') },
     suppressed,
     hedges: hedgesIn(bullet.text),
     frames: framesIn(bullet.text),
@@ -620,7 +660,7 @@ const annotate = (bullet) => {
  * that document by the one-pager ceiling made R6 — the only rule that emits
  * `error` — fail the gate on the very document it is copied from.
  */
-export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillTerms = [], maxLines = 3, maxBullets = 4, typography = null, maxFindings = 12 } = {}) => {
+export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillTerms = [], maxLines = 3, maxBullets = 4, typography = null, maxFindings = 12, tierBudgets = {} } = {}) => {
   const rows = bullets.map(annotate);
   // Alternative wordings Rahul has already approved for the bullets on this page,
   // keyed by ref. These are what turn a finding that could only be reported into
@@ -892,6 +932,50 @@ export const checkResume = (bullets, { candidates = [], rephrasings = {}, skillT
         : { kind: 'none', note: 'No alternative wording on these entries avoids this word family. Accept it rather than dropping a bullet: a repeated verb costs less than missing evidence.' }));
   }
 
+  // R9 tier-over-budget: a stored short or standard wording that runs past its
+  // tier's line budget at the reference layout. The pool guard refuses one at
+  // commit time, so this fires only on text that slipped past it. The caller
+  // measures (`referenceLines`) and passes the budgets, so this file still
+  // imports nothing.
+  const overBudget = rows.filter((row) => tierBudgets[row.tierUsed] && typeof row.referenceLines === 'number'
+    && row.referenceLines > tierBudgets[row.tierUsed]);
+  if (overBudget.length) {
+    findings.push(finding('R9', 'warn', 'tier-over-budget', { count: overBudget.length },
+      overBudget.map((row) => ({ ref: row.ref, tier: row.tierUsed, lines: row.referenceLines, budget: tierBudgets[row.tierUsed] })).sort(byRef),
+      { kind: 'pool-edit', note: 'This wording is stored as a shorter tier than it measures. Choose another tier for it; only Rahul can reword it.' }));
+  }
+
+  // R10 orphaned-bullet: a bullet that builds on another of its entry's bullets
+  // (`requires`, any one of them) selected without it. "The replica" means
+  // nothing to a reader who never saw the APC rebuild. Advisory: the remedy adds
+  // the prerequisite, it never drops the bullet.
+  const selectedRefs = new Set(rows.map((row) => row.ref));
+  const orphans = rows.filter((row) => row.requires?.length
+    && !row.requires.some((id) => selectedRefs.has(`${row.entryId}.${id}`)));
+  if (orphans.length) {
+    findings.push(finding('R10', 'warn', 'orphaned-bullet', { count: orphans.length },
+      orphans.map((row) => ({ ref: row.ref, requires: row.requires.map((id) => `${row.entryId}.${id}`) })).sort(byRef),
+      { kind: 'add', candidates: [...new Set(orphans.flatMap((row) => row.requires.map((id) => `${row.entryId}.${id}`)))].sort().map((ref) => ({ ref })),
+        note: 'These read as a continuation of a bullet that is not on the page. Add one of the bullets each names.' }));
+  }
+
+  // R11 no-outcome-entry: an experience or research entry whose selected bullets
+  // carry no outcome number while another of its bullets does. Only where the
+  // entry offers one: an entry with no outcome anywhere (a design-stage role)
+  // has nothing to swap in, and saying so would be noise.
+  const outcomeless = [];
+  for (const [entryId, list] of perEntry) {
+    if (!['experience', 'research'].includes(list[0].sectionType)) continue;
+    if (list.some((row) => row.metric.outcome)) continue;
+    const offered = candidates.filter((item) => item.entryId === entryId && !selectedRefs.has(item.ref) && metricClasses(item.text).outcome);
+    if (offered.length) outcomeless.push({ ref: entryId, instead: offered.map((item) => item.ref).sort() });
+  }
+  if (outcomeless.length) {
+    findings.push(finding('R11', 'warn', 'no-outcome-entry', { count: outcomeless.length }, outcomeless.sort(byRef),
+      { kind: 'swap', candidates: outcomeless.flatMap((row) => row.instead).slice(0, MAX_CANDIDATES).map((ref) => ({ ref })),
+        note: 'Nothing selected on these entries says what changed as a result. Each names a bullet of its own that does.' }));
+  }
+
   return report(rows, findings, typography, maxFindings);
 };
 
@@ -989,7 +1073,17 @@ export const checkPool = (entries, { today = '2026-10' } = {}) => {
     findings.push(finding('P4', 'note', 'deep-coverage',
       { withDeep: withDeep.size, of: defaults.length },
       missing.map((row) => ({ ref: row.ref })).sort(byRef),
-      { kind: 'pool-edit', note: 'Asking for detail "deep" falls back to the default on these, with no warning at build time.' }));
+      { kind: 'pool-edit', note: 'Asking for detail "deep" falls back to the full wording on these.' }));
+  }
+  // The bullets a one-pager cannot print at 2 lines: a full sentence over the
+  // standard budget with no standard wording (lines measured by the caller at
+  // the reference layout). These are what tierFallbacks will name at build time.
+  const withStandard = new Set(texts.filter((row) => row.variant === 'standard').map((row) => row.ref));
+  const needStandard = defaults.filter((row) => typeof row.lines === 'number' && row.lines > 2 && !withStandard.has(row.ref));
+  if (needStandard.length) {
+    findings.push(finding('P4', 'note', 'standard-coverage', { count: needStandard.length, of: defaults.length },
+      needStandard.map((row) => ({ ref: row.ref, lines: row.lines })).sort(byRef),
+      { kind: 'pool-edit', note: 'These run past 2 lines with no standard wording, so a standard build prints them in full. Only Rahul can write one.' }));
   }
 
   // P5 house style: what an ATS-style screener penalises that reads perfectly

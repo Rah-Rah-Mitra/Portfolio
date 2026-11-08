@@ -191,7 +191,7 @@ describe('api/mcp', () => {
   it('checks a ready-made résumé and refuses to be handed text', async () => {
     const { content } = await rpc('tools/call', { name: 'check_resume', arguments: { slug: 'highlights' } });
     const report = JSON.parse(content[0].text);
-    expect(report.version).toBe(1);
+    expect(report.version).toBe(2);
     // 16: PA's stack split out of pa.churp for the pro bono line.
     expect(report.metrics.bullets).toBe(16);
     // The 2026-11 pass spread the openers; "Built" is no longer the top one on
@@ -211,7 +211,7 @@ describe('api/mcp', () => {
     const spec = configBySlug('software-engineer');
     const result = await rpc('tools/call', { name: 'build_resume', arguments: { spec } });
     const built = JSON.parse(result.content[0].text);
-    expect(built.check.version).toBe(1);
+    expect(built.check.version).toBe(2);
     expect(built.check.gate).toBe('pass');
     // build_resume carries errors and warnings only; check_resume carries the notes too.
     expect(built.check.findings.every((item: { severity: string }) => item.severity !== 'note')).toBe(true);

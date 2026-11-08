@@ -22,17 +22,20 @@ keyword is recoverable; an inaccurate one is not.
 ## How to tailor
 
 1. \`get_resume_guide\` (this), then \`list_resume_blocks\` for the menu. Each
-   bullet there carries its opening verb, its rendered line cost, whether it
-   holds a measurement, the technologies it actually names (\`terms\`) and which
-   ready-made résumés select it (\`usedBy\`, empty where none do), so you can
-   aim the selection and spread the verbs and the evidence as you pick rather
-   than being told afterwards that you did not.
+   bullet there carries its length tiers and their line costs, its opening
+   verb, whether it holds a measurement (\`metric.outcome\`: a result against a
+   baseline or target; \`metric.scale\`: a size or count), its \`rank\` on its
+   entry (1 = strongest), the bullets it reads best beside (\`requires\`), the
+   technologies it actually names (\`terms\`) and which ready-made résumés select
+   it (\`usedBy\`, empty where none do), so you can aim the selection and spread
+   the verbs and the evidence as you pick rather than being told afterwards
+   that you did not. Pass \`tier\` (e.g. \`"standard"\`) to get one sentence per
+   bullet at that length instead of every variant.
 
    **The menu is larger than any ready-made résumé.** Some of the strongest
    material sits on only one of them, or on none: the People's Association AWS
-   deployment bullet (\`pa.infra\`: Terraform over ECS Fargate, Multi-AZ RDS
-   Postgres with PostGIS, ALB and WAFv2, Route 53, ACM, KMS and Secrets Manager)
-   is one such. Read the menu; never treat a ready-made résumé
+   deployment bullet (\`pa.infra\`: 10 AWS services with Terraform, keyless CI/CD
+   across 5 repos) is one such. Read the menu; never treat a ready-made résumé
    as the full inventory. It is also not everything he has built: material he
    has asked to keep off résumés is withheld from the menu and refused by the
    builder, so if you know of a project and cannot find it, that is deliberate.
@@ -61,11 +64,30 @@ keyword is recoverable; an inaccurate one is not.
    for more and the ceiling rises to eight: the master CV carries seven on the
    Abbott contract and six on the Abbott internship and People's Association,
    because Rahul's own CV does.
-5. Choose depth. Bullets can carry a \`deep\` variant alongside the default; set
-   \`detail: "deep"\` on the spec, or \`variant\` on a single entry. Deep variants
-   are longer, so they usually need \`pages: 2\`. Only 15 of the 54 selectable
-   bullets have one, and the rest fall back to their default silently, so do not
-   treat depth as a way to change every bullet at once.
+5. Choose a tier. Every bullet can be written at four lengths, each one a
+   wording Rahul approved:
+
+   | tier | length | for |
+   |---|---|---|
+   | \`short\` | 1 line | a one-pager that is tight on space |
+   | \`standard\` | at most 2 lines | the default, and every role résumé |
+   | \`full\` | no limit | the master CV's own sentence; only \`general\` uses it |
+   | \`deep\` | no limit | the long form, for two-page builds |
+
+   (Lines are measured at nus 10pt with 0.5in margins.) Set \`detail\` on the
+   spec, \`variant\` on an entry, or give one bullet its own tier with
+   \`{"id": "platform", "tier": "short"}\` in its entry's \`bullets\`. Not every
+   bullet has every tier: a missing one falls back (short to standard to full,
+   deep to full), and a full sentence already within 2 lines simply is the
+   standard. Any fallback that leaves a bullet over the tier's budget is listed
+   in the build's \`tierFallbacks\`, so you can see which shorter wordings do not
+   exist yet; you may never write one yourself.
+
+   Instead of listing bullets, \`{"id": "abbott-contract", "top": 3}\` selects
+   the entry's three best-ranked bullets in rank order. A listed selection
+   keeps the order you wrote. Some bullets build on another (\`requires\`, e.g.
+   the APC verification on the APC rebuild): the check reports one selected
+   without its prerequisite as \`orphaned-bullet\`.
 6. Check whether the entry offers more than one job title. An entry with
    \`roleOptions\` was held under several hats, and you pick one with
    \`roleVariant\` on that entry. Choose the one the posting is hiring for.
@@ -123,11 +145,17 @@ nothing to get this; the renderer applies it.
 
 ## Fitting one page
 
-\`autoFit\` walks that style's sanctioned ladder for you. \`nus\` holds its 0.5in
-margins and steps the body 10.5 / 10 / 9.5 / 9 / 8.5pt; \`harvard\` steps 10.5 to
-10pt and then margins 0.7 / 0.6 / 0.5in. Neither ever drops content you chose,
-and neither goes below its own floor — 8.5pt is the size the two-page master CV
-needs, and 10pt is as low as \`harvard\` goes.
+\`autoFit\` makes room for you, and never drops content you chose. On a one-page
+spec it first shortens: \`fitStrategy: "short-first"\` (the default for one page)
+swaps the weakest selected bullets (highest \`rank\` number first) to their
+\`short\` wording one at a time, and only then walks the style's type ladder.
+Every swap is listed in \`fit.swaps\`, and the response's \`spec\` is the spec as
+built, tiers included, so building it again gives the same document. Set
+\`fitStrategy: "typography"\` to keep every bullet at the tier you asked for and
+step the type only. The ladder: \`nus\` holds its 0.5in margins and steps the
+body 10.5 / 10 / 9.5 / 9 / 8.5pt; \`harvard\` steps 10.5 to 10pt and then margins
+0.7 / 0.6 / 0.5in. Neither goes below its own floor — 8.5pt is the size the
+two-page master CV needs, and 10pt is as low as \`harvard\` goes.
 
 If it still overflows you get an overflow report instead of a silent trim.
 Remove something and rebuild. Rough costs: a project entry is about three
@@ -169,7 +197,8 @@ the company you are aiming at.
     { "type": "experience", "title": "WORK EXPERIENCE",
       "entries": [
         { "id": "stmicro-or", "bullets": ["layout-agnostic"] },
-        { "id": "abbott-intern", "bullets": ["pipeline", "apc"], "variant": "deep" }
+        { "id": "abbott-contract", "bullets": ["fault-detection", { "id": "setpoint", "tier": "short" }] },
+        { "id": "abbott-intern", "top": 2 }
       ] },
     { "type": "projects", "title": "PROJECTS",
       "entries": [{ "id": "voltpulse", "bullets": ["main"] }] },
@@ -181,8 +210,8 @@ the company you are aiming at.
 }
 \`\`\`
 
-\`bodyPt\`, \`marginIn\` and \`autoFit\` exist but you rarely want them; let
-auto-fit decide.
+\`bodyPt\`, \`marginIn\`, \`autoFit\` and \`fitStrategy\` exist but you rarely want
+them; let auto-fit decide. Note \`detail\` defaults to \`standard\` when absent.
 
 ## Checking what you built
 

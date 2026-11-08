@@ -105,9 +105,38 @@ def group_by_company(chosen):
     return [c for group in groups.values() for c in group]
 
 
-def bullet_text(bullet, slug):
+# Length tiers (server/resumeAssemble.mjs TIERS and TIER_CHAIN, which this has to
+# match): a missing tier falls back towards `full`, and at the full step a
+# per-resume override (text[slug]) beats text["full"].
+DEFAULT_TIER = "standard"
+TIER_CHAIN = {"short": ["short", "standard", "full"], "standard": ["standard", "full"],
+              "full": ["full"], "deep": ["deep", "full"]}
+
+
+def bullet_text(bullet, slug, tier=DEFAULT_TIER):
     text = bullet["text"]
-    return text.get(slug, text["full"])
+    for key in TIER_CHAIN[tier]:
+        if key == "full":
+            return text.get(slug, text["full"])
+        if key in text:
+            return text[key]
+    return text["full"]
+
+
+def by_rank(bullets):
+    """Strongest first: rank 1 is the strongest; unranked follow in pool order."""
+    order = {id(b): i for i, b in enumerate(bullets)}
+    return sorted(bullets, key=lambda b: (b.get("rank", float("inf")), order[id(b)]))
+
+
+def selected_bullets(selection, entry):
+    """[(id, tier or None)]: plain ids, {"id", "tier"} objects, or top: N."""
+    if selection.get("top") is not None:
+        if selection.get("bullets"):
+            raise SystemExit(f"{entry['id']} selects both bullets and top")
+        return [(b["id"], None) for b in by_rank(entry.get("bullets", []))[:selection["top"]]]
+    return [(b, None) if isinstance(b, str) else (b["id"], b.get("tier"))
+            for b in selection.get("bullets", [])]
 
 
 def inline_label(entry, role):
@@ -119,6 +148,7 @@ def inline_label(entry, role):
 
 def build_resume(config, pools, profile, edition, style):
     slug = config["slug"]
+    detail = config.get("detail", DEFAULT_TIER)
     body_pt = config.get("bodyPt", style.BODY_PT)
     doc = Document()
     width = style.setup_document(doc, body_pt=body_pt, margin_in=config.get("marginIn"))
@@ -151,7 +181,8 @@ def build_resume(config, pools, profile, edition, style):
                 role = f"{role} (GPA: {entry['gpa']})"
             if sel.get("date") is False:  # dates already in its bullet
                 entry = {**entry, "dateLabel": ""}
-            chosen.append({"entry": entry, "bullets": sel.get("bullets", []), "role": role})
+            chosen.append({"entry": entry, "bullets": selected_bullets(sel, entry), "role": role,
+                           "variant": sel.get("variant")})
         if section["type"] == "projects":
             chosen.sort(key=lambda c: c["entry"]["sort"], reverse=True)
         else:
@@ -166,13 +197,15 @@ def build_resume(config, pools, profile, edition, style):
                 if len(c["bullets"]) != 1:
                     raise SystemExit(f"{slug}: cv-inline prints {e['id']} as one bullet; "
                                      f"it selects {len(c['bullets'])}")
-                text = bullet_text(bullets[c["bullets"][0]], slug)
+                b_id, b_tier = c["bullets"][0]
+                text = bullet_text(bullets[b_id], slug, b_tier or c["variant"] or detail)
                 style.add_bullet(doc, f"{inline_label(e, c['role'])}: {text}", body_pt=body_pt)
                 continue
             style.add_entry(doc, width, section["type"], e, c["role"],
                             first=(position == 0), body_pt=body_pt)
-            for b_id in c["bullets"]:
-                style.add_bullet(doc, bullet_text(bullets[b_id], slug), body_pt=body_pt)
+            for b_id, b_tier in c["bullets"]:
+                style.add_bullet(doc, bullet_text(bullets[b_id], slug, b_tier or c["variant"] or detail),
+                                 body_pt=body_pt)
 
     props = doc.core_properties
     props.author = profile["name"].title()

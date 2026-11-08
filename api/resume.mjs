@@ -49,7 +49,8 @@ const build = async (rawSpec, format, download) => {
       // cross-origin caller, which is every caller this endpoint has.
       'Access-Control-Expose-Headers': 'X-Resume-Pages, X-Resume-Fit',
       'X-Resume-Pages': String(result.pages),
-      'X-Resume-Fit': `${result.fit.bodyPt}pt/${result.fit.marginIn}in${result.fit.fitted ? '' : ' OVERFLOW'}`,
+      // How many bullets a short-first fit gave their short wording, if any.
+      'X-Resume-Fit': `${result.fit.bodyPt}pt/${result.fit.marginIn}in${result.fit.swaps?.length ? ` ${result.fit.swaps.length} SHORT` : ''}${result.fit.fitted ? '' : ' OVERFLOW'}`,
     },
   });
 };

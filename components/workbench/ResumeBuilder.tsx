@@ -11,24 +11,31 @@ import { track } from '../../lib/analytics';
 // Ids here are prefixed `rb-` because the e2e suite counts `experience-*`
 // anchors across the whole document.
 
-type PoolBullet = { id: string; text: Record<string, string> };
+type PoolBullet = { id: string; text: Record<string, string>; rank?: number };
 type PoolEntry = {
   id: string; organization: string; role?: string | Record<string, string>; location?: string;
   dateLabel: string; start?: string; sort?: string; blocked?: string; bullets?: PoolBullet[];
 };
 type SkillLine = { id: string; label: string; items: string };
+type ConfigBullet = string | { id: string; tier?: Tier };
 type SpecSection =
-  | { type: SectionType; title: string; entries: Array<{ id: string; bullets: string[] }> }
+  | { type: SectionType; title: string; entries: Array<{ id: string; bullets?: ConfigBullet[] }> }
   | { type: 'skills'; title: string; lines: string[] }
   | { type: 'summary'; title: string };
 type Style = 'nus' | 'harvard';
-type Spec = { subject: string; pages: number; detail?: 'standard' | 'deep'; style?: Style; sections: SpecSection[] };
-type Config = { slug: string; subject: string; pages: number; sections: SpecSection[] };
+// The four length tiers (server/resumeAssemble.mjs TIERS).
+type Tier = 'short' | 'standard' | 'full' | 'deep';
+const TIER_OPTIONS: Tier[] = ['short', 'standard', 'full', 'deep'];
+type Spec = { subject: string; pages: number; detail?: Tier; style?: Style; sections: SpecSection[] };
+type Config = { slug: string; subject: string; pages: number; detail?: Tier; sections: SpecSection[] };
+type Resolve = (bullet: PoolBullet, spec: { slug?: string }, tier: Tier, ref: string) => { text: string; tierUsed: Tier };
 type SectionType = 'education' | 'experience' | 'research' | 'projects' | 'leadership' | 'national-service';
 
 type Content = {
   pools: Record<SectionType | 'skills', { entries?: PoolEntry[]; lines?: SkillLine[] }>;
   configs: Config[];
+  // The assembler's own tier rule, so the picker shows the sentence a build prints.
+  resolve: Resolve;
 };
 
 const SECTIONS: Array<{ type: SectionType; title: string }> = [
@@ -49,12 +56,14 @@ const picksFromConfig = (config: Config) => {
   let lines: string[] = [];
   for (const section of config.sections) {
     if (section.type === 'skills') lines = [...section.lines];
-    else if ('entries' in section) for (const entry of section.entries) picks[entry.id] = [...(entry.bullets ?? [])];
+    // A preset may give one bullet a tier of its own; the builder applies one
+    // tier to every bullet, so only the ids carry over.
+    else if ('entries' in section) for (const entry of section.entries) picks[entry.id] = (entry.bullets ?? []).map((item) => (typeof item === 'string' ? item : item.id));
   }
   return { picks, lines };
 };
 
-const buildSpec = (content: Content, picks: Picks, lines: string[], detail: 'standard' | 'deep', pages: number, style: Style): Spec => {
+const buildSpec = (content: Content, picks: Picks, lines: string[], detail: Tier, pages: number, style: Style): Spec => {
   const sections: SpecSection[] = [];
   for (const { type, title } of SECTIONS) {
     const entries = (content.pools[type].entries ?? [])
@@ -70,7 +79,7 @@ export const ResumeBuilder: React.FC = () => {
   const [content, setContent] = React.useState<Content | null>(null);
   const [picks, setPicks] = React.useState<Picks>({});
   const [lines, setLines] = React.useState<string[]>([]);
-  const [detail, setDetail] = React.useState<'standard' | 'deep'>('standard');
+  const [detail, setDetail] = React.useState<Tier>('standard');
   const [pages, setPages] = React.useState(1);
   const [style, setStyle] = React.useState<Style>('nus');
   const [preview, setPreview] = React.useState<string | null>(null);
@@ -83,16 +92,17 @@ export const ResumeBuilder: React.FC = () => {
   // only JSON, so the same module feeds the browser and the serverless build.
   React.useEffect(() => {
     let cancelled = false;
-    import('../../server/resumeContent.mjs').then((module) => {
+    Promise.all([import('../../server/resumeContent.mjs'), import('../../server/resumeAssemble.mjs')]).then(([module, assembler]) => {
       if (cancelled) return;
       // The pools come from JSON, so TS infers literal shapes; name them once here.
-      const loaded = { pools: module.pools, configs: module.resumeConfigs } as unknown as Content;
+      const loaded = { pools: module.pools, configs: module.resumeConfigs, resolve: assembler.resolveBullet } as unknown as Content;
       setContent(loaded);
       const start = loaded.configs.find((config) => config.slug === 'highlights') ?? loaded.configs[0];
       const initial = picksFromConfig(start);
       setPicks(initial.picks);
       setLines(initial.lines);
       setPages(start.pages);
+      setDetail(start.detail ?? 'standard');
     }).catch(() => setError('Could not load the evidence record.'));
     return () => { cancelled = true; };
   }, []);
@@ -198,6 +208,7 @@ export const ResumeBuilder: React.FC = () => {
               setPicks(next.picks);
               setLines(next.lines);
               setPages(config.pages);
+              setDetail(config.detail ?? 'standard');
               track('resume_builder_preset_applied', { preset: config.slug });
             }}
             defaultValue="highlights"
@@ -209,10 +220,10 @@ export const ResumeBuilder: React.FC = () => {
           </select>
         </label>
 
-        <div className="wb-domainseg" role="group" aria-label="Bullet detail">
-          {(['standard', 'deep'] as const).map((mode) => (
+        <div className="wb-domainseg" role="group" aria-label="Bullet length">
+          {TIER_OPTIONS.map((mode) => (
             <button key={mode} type="button" data-active={detail === mode || undefined} onClick={() => setDetail(mode)}>
-              {mode === 'standard' ? 'STANDARD' : 'DEEP'}
+              {mode.toUpperCase()}
             </button>
           ))}
         </div>
@@ -259,7 +270,7 @@ export const ResumeBuilder: React.FC = () => {
                           checked={chosen.includes(bullet.id)}
                           onChange={() => toggleBullet(entry, bullet.id)}
                         />
-                        <span>{(detail === 'deep' && bullet.text.deep) || bullet.text.full}</span>
+                        <span>{content.resolve(bullet, {}, detail, `${entry.id}.${bullet.id}`).text}</span>
                       </label>
                     ))}
                   </div>

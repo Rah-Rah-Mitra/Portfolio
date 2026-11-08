@@ -55,6 +55,10 @@ export const resumeBlocks = () => ({
       bullets: (entry.bullets ?? []).map((bullet) => ({
         id: bullet.id,
         variants: Object.fromEntries(Object.entries(bullet.text)),
+        // Strength within its entry (1 = strongest) and the bullets it reads
+        // best beside; both absent where a bullet has none.
+        ...(bullet.rank != null ? { rank: bullet.rank } : {}),
+        ...(bullet.requires ? { requires: bullet.requires } : {}),
         // The sibling map of approved alternative wordings, carried rather than
         // dropped. It was dropped here, so everything downstream of the menu —
         // the builder window, specFromBlockIds, blockIndex's validation — had no

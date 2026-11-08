@@ -18,7 +18,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
 import { blocksByTerm, buildResume, checkSpec, listResumes, reportedFindings, resumeMarkdown, skillTerms } from './portfolioMcp.mjs';
 import { configBySlug, pools, resumeBlocks } from './resumeContent.mjs';
-import { ENTRY_SECTION_TYPES, assemble, specSchema } from './resumeRender.mjs';
+import { ENTRY_SECTION_TYPES, TIERS, assemble, selectedBullets, specSchema, tierFallbacks } from './resumeRender.mjs';
 
 // Compact, not pretty-printed, for the same reason portfolioMcp.mjs gives:
 // every payload here is read by a model through a tool result.
@@ -847,9 +847,14 @@ const jdHashOf = ({ jd_text, jd_url }) => (jd_url
   ? sha16(normalizeJdUrl(jd_url))
   : jd_text ? sha16(jd_text.replace(/\s+/g, ' ').trim().toLowerCase()) : '');
 
+// Through selectedBullets, so a per-bullet tier object or a `top: N` selection
+// names the same block ids a list of strings would.
 const idsOfSpec = (spec) => spec.sections.flatMap((section) => (section.type === 'skills'
   ? section.lines
-  : (section.entries ?? []).flatMap((entry) => [entry.id, ...(entry.bullets ?? []).map((bullet) => `${entry.id}.${bullet}`)])));
+  : (section.entries ?? []).flatMap((entry) => {
+    const poolEntry = pools[section.type]?.entries.find((item) => item.id === entry.id) ?? { id: entry.id, bullets: [] };
+    return [entry.id, ...selectedBullets(entry, poolEntry).map((bullet) => `${entry.id}.${bullet.id}`)];
+  })));
 
 // Key order is not part of a spec's meaning, and the two paths here build one in
 // different orders — specSchema.parse() returns schema order, the ready-made path
@@ -905,19 +910,28 @@ export const buildTailoredResume = async ({ jd_text, jd_url, block_ids, pages, p
   // without the render: no pdfkit pass, no URL minted, so the expensive half is
   // paid once when the selection is settled rather than on every iteration.
   // Every key stays present so the shape never varies between the two.
-  const markdown = resumeMarkdown(spec);
-  const analysis = {
-    blocks_used: idsOfSpec(spec),
-    jd_hash,
-    // { slug, score, keywords, margin, decided_by, ranking } or null;
-    // keywords ⊆ Rahul's attested vocabulary.
-    matched,
-    // Which of his own terms the posting asked for, which of those this document
-    // carries and where, and which blocks would supply the rest. Never present
-    // without a jd_text to ask against, and the key stays there either way.
-    coverage: jd_text ? coverageOf(jd_text, markdown, assemble(spec, pools)) : null,
-    resume_version: resumeVersion(spec),
-    markdown,
+  // `spec` is what was asked for; `document` is what it renders as. They differ
+  // only where a one-page build's short-first fit gave bullets their short
+  // wording, so the coverage and markdown describe the document as built, while
+  // resume_version stays a function of the selection, the same on a dry run.
+  const analyse = (document) => {
+    const markdown = resumeMarkdown(document);
+    const items = assemble(document, pools);
+    return {
+      blocks_used: idsOfSpec(spec),
+      jd_hash,
+      // { slug, score, keywords, margin, decided_by, ranking } or null;
+      // keywords ⊆ Rahul's attested vocabulary.
+      matched,
+      // Which of his own terms the posting asked for, which of those this document
+      // carries and where, and which blocks would supply the rest. Never present
+      // without a jd_text to ask against, and the key stays there either way.
+      coverage: jd_text ? coverageOf(jd_text, markdown, items) : null,
+      // The bullets that asked for a shorter tier than exists, over its budget.
+      tierFallbacks: tierFallbacks(items),
+      resume_version: resumeVersion(spec),
+      markdown,
+    };
   };
   if (dry_run) {
     return {
@@ -934,10 +948,11 @@ export const buildTailoredResume = async ({ jd_text, jd_url, block_ids, pages, p
       pages: null,
       fit: null,
       check: reportedFindings(checkSpec(spec), POSTING_NOTES),
-      ...analysis,
+      ...analyse(spec),
     };
   }
   const built = await buildResume(spec, { keepNotes: POSTING_NOTES });   // the ONLY render path
+  const analysis = analyse(built.spec);
   return {
     dry_run: false,
     pdf_url: built.pdfUrl,
@@ -1014,7 +1029,7 @@ export const registerJobSearchTools = (server) => {
         z.string().regex(/^[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$/),
         z.string().regex(/^[a-z][a-z0-9-]{1,28}$/),
       ).optional(),
-      detail: z.enum(['standard', 'deep']).optional(),
+      detail: z.enum(TIERS).optional(),
     }),
   }, guard(buildTailoredResume, false));
 

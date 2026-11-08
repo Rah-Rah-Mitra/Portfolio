@@ -10,28 +10,36 @@ import { ENTRY_SECTION_TYPES } from '../server/resumeAssemble.mjs';
 // Nothing in this test suite can rebuild them, so the risk is a content edit
 // that silently makes those files stale.
 //
-// build_resumes.py resolves exactly one way (line 42-44):
-//
-//     def bullet_text(bullet, slug):
-//         text = bullet["text"]
-//         return text.get(slug, text["full"])
+// build_resumes.py resolves one way (bullet_text): the tier a bullet asks for
+// (its own, else its entry's `variant`, else the config's `detail`, else
+// "standard") down the chain short -> standard -> full, deep -> full, with a
+// per-résumé override (text[slug]) beating text["full"] at the full step.
 //
 // This file mirrors that rule and pins its output. Anything a future change adds
 // to a bullet is safe for the shipped documents if and only if these digests do
-// not move: a phrasing stored outside `text`, or a `deep` variant, cannot reach
-// Word, while a new key named after a résumé slug silently would.
+// not move: a phrasing stored outside `text` cannot reach Word, a tier text only
+// reaches the résumés whose tier asks for it, and a new key named after a résumé
+// slug silently would.
 
 type PoolBullet = { id: string; text: Record<string, string> };
 type PoolEntry = { id: string; bullets?: PoolBullet[] };
 type SkillLine = { id: string; label: string; items: string };
-type Section = { type: string; entries?: Array<{ id: string; bullets?: string[] }>; lines?: string[] };
-type Config = { slug: string; pages: number; sections: Section[]; phrasings?: unknown };
+type Selection = { id: string; bullets?: Array<string | { id: string; tier?: string }>; variant?: string };
+type Section = { type: string; entries?: Selection[]; lines?: string[] };
+type Config = { slug: string; pages: number; detail?: string; sections: Section[]; phrasings?: unknown };
 
 const configs = resumeConfigs as Config[];
 const SLUGS = configs.map((config) => config.slug);
 
-/** build_resumes.py's resolution, mirrored. Slug override, else the default. */
-const shippedText = (bullet: PoolBullet, slug: string) => bullet.text[slug] ?? bullet.text.full;
+/** build_resumes.py's resolution, mirrored: the tier chain, then slug override, then full. */
+const CHAIN: Record<string, string[]> = { short: ['short', 'standard', 'full'], standard: ['standard', 'full'], full: ['full'], deep: ['deep', 'full'] };
+const shippedText = (bullet: PoolBullet, slug: string, tier = 'standard') => {
+  for (const key of CHAIN[tier]) {
+    if (key === 'full') return bullet.text[slug] ?? bullet.text.full;
+    if (bullet.text[key]) return bullet.text[key];
+  }
+  return bullet.text.full;
+};
 
 const documentDigest = (config: Config) => {
   const lines: string[] = [];
@@ -55,10 +63,11 @@ const documentDigest = (config: Config) => {
     const pool = new Map((pools[section.type as 'experience'].entries as unknown as PoolEntry[]).map((entry) => [entry.id, entry]));
     for (const selection of section.entries ?? []) {
       const byId = new Map((pool.get(selection.id)?.bullets ?? []).map((bullet) => [bullet.id, bullet]));
-      for (const id of selection.bullets ?? []) {
+      for (const item of selection.bullets ?? []) {
+        const { id, tier } = typeof item === 'string' ? { id: item, tier: undefined } : item;
         const bullet = byId.get(id);
         expect(bullet, `${config.slug} selects ${selection.id}.${id}`).toBeTruthy();
-        lines.push(shippedText(bullet as PoolBullet, config.slug));
+        lines.push(shippedText(bullet as PoolBullet, config.slug, tier ?? selection.variant ?? config.detail ?? 'standard'));
       }
     }
   }

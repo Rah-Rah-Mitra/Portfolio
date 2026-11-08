@@ -6,7 +6,10 @@
 import { z } from 'zod';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
 import { configBySlug, pools, profile, resumeBlocks, resumeConfigs } from './resumeContent.mjs';
-import { ENTRY_SECTION_TYPES, assemble, bulletLine, decodeSpec, encodeSpec, measureBulletLines, renderResume, renderResumeMarkdown, specSchema } from './resumeRender.mjs';
+import {
+  ENTRY_SECTION_TYPES, TIERS, assemble, bulletLine, decodeSpec, encodeSpec, measureBulletLines, referenceLines,
+  renderResume, renderResumeMarkdown, requestedTier, resolveBullet, specSchema, tierFallbacks,
+} from './resumeRender.mjs';
 import { checkResume, firstWord, framesIn, leadLemma, metricsIn, termsIn } from './resumeCheck.mjs';
 import { RESUME_GUIDE } from './resumeGuide.mjs';
 
@@ -58,7 +61,10 @@ export const swapCandidates = (spec, chosen) => {
       const entry = pools[section.type].entries.find((item) => item.id === selection.id);
       for (const bullet of entry?.bullets ?? []) {
         const ref = `${entry.id}.${bullet.id}`;
-        if (!taken.has(ref)) candidates.push({ ref, entryId: entry.id, sectionType: section.type, text: bullet.text.full });
+        // At the tier this entry asks for, so a swap is judged on the sentence it
+        // would actually print.
+        const { text } = resolveBullet(bullet, { slug: spec.slug }, requestedTier(spec, selection.variant), ref);
+        if (!taken.has(ref)) candidates.push({ ref, entryId: entry.id, sectionType: section.type, text });
       }
     }
   }
@@ -185,12 +191,20 @@ export const reportedFindings = (full, keepNotes = []) => ({
  */
 export const buildResume = async (spec, { keepNotes = [] } = {}) => {
   const result = await renderResume(spec, pools, profile);
-  const encoded = encodeSpec(spec);
-  const full = checkSpec(spec, result.fit);
+  // The spec as built: auto-fit may have given bullets a shorter tier
+  // (fitStrategy short-first), and every output below has to describe the
+  // document the PDF is, links included.
+  const built = result.spec ?? spec;
+  const encoded = encodeSpec(built);
+  const full = checkSpec(built, result.fit);
   return {
     pages: result.pages,
     fit: result.fit,
     check: reportedFindings(full, keepNotes),
+    tierFallbacks: tierFallbacks(assemble(built, pools)),
+    // The spec as built, per-bullet tiers included: building it again gives
+    // this document exactly.
+    spec: built,
     pdfUrl: abs(`/api/resume?spec=${encoded}`),
     docxUrl: abs(`/api/resume?format=docx&spec=${encoded}`),
     markdown: result.markdown,
@@ -251,38 +265,56 @@ const selectedBy = () => {
  * Derived here rather than in resumeContent.mjs because line measurement needs
  * pdfkit, and the builder window imports that module in the browser.
  */
-export const decoratedBlocks = () => {
+export const decoratedBlocks = ({ tier } = {}) => {
   const blocks = resumeBlocks();
   const used = selectedBy();
-  // One traversal carrying the ref with the bullet: a second parallel walk for
-  // the ids would be a second thing to keep in the same order.
-  const items = blocks.sections.flatMap((section) => section.entries
-    .flatMap((entry) => entry.bullets.map((bullet) => ({ bullet, ref: `${entry.id}.${bullet.id}` }))));
-  const texts = items.map(({ bullet }) => defaultText(bullet));
-  const lines = measureBulletLines(texts);
-  items.forEach(({ bullet, ref }, index) => {
-    bullet.lead = firstWord(texts[index]).replace(/[^A-Za-z-]+$/, '');
-    bullet.lines = lines[index];
-    bullet.hasMetric = metricsIn(texts[index]).metrics.length > 0;
-    bullet.terms = termsIn(texts[index], skillTerms);
-    bullet.usedBy = used.get(ref) ?? [];
-  });
-  for (const line of blocks.skillLines) line.usedBy = used.get(line.id) ?? [];
-  // Alternative wordings, with the same derived fields, so an agent can see that
-  // a bullet opening "Built" also has one opening "Turned" before it picks.
   const pool = new Map();
   for (const type of ENTRY_SECTION_TYPES) {
     for (const entry of pools[type].entries) {
       for (const bullet of entry.bullets ?? []) pool.set(`${entry.id}.${bullet.id}`, bullet);
     }
   }
+  // One traversal carrying the ref with the bullet: a second parallel walk for
+  // the ids would be a second thing to keep in the same order.
+  const items = blocks.sections.flatMap((section) => section.entries
+    .flatMap((entry) => entry.bullets.map((bullet) => ({ bullet, ref: `${entry.id}.${bullet.id}` }))));
+  // With a tier, each bullet is the one sentence that tier prints (falling back
+  // as a build would), which is all an agent tailoring at that length needs;
+  // without one, every stored tier and its line cost.
+  const resolved = items.map(({ bullet, ref }) => (tier
+    ? resolveBullet(pool.get(ref), {}, tier, ref)
+    : { text: defaultText(bullet), tierUsed: 'full' }));
+  const texts = resolved.map((row) => row.text);
+  const lines = referenceLines(texts);
+  const tierKeys = items.map(({ bullet }) => TIERS.filter((key) => bullet.variants[key]));
+  const tierTexts = tierKeys.flatMap((keys, index) => keys.map((key) => items[index].bullet.variants[key]));
+  const tierCounts = referenceLines(tierTexts);
+  let cursor = 0;
+  items.forEach(({ bullet, ref }, index) => {
+    bullet.lead = firstWord(texts[index]).replace(/[^A-Za-z-]+$/, '');
+    bullet.lines = lines[index];
+    bullet.hasMetric = metricsIn(texts[index]).metrics.length > 0;
+    bullet.terms = termsIn(texts[index], skillTerms);
+    bullet.usedBy = used.get(ref) ?? [];
+    const counts = Object.fromEntries(tierKeys[index].map((key) => [key, tierCounts[cursor++]]));
+    if (tier) {
+      bullet.text = texts[index];
+      bullet.tier = resolved[index].tierUsed;
+      delete bullet.variants;
+    } else {
+      bullet.tierLines = counts;
+    }
+  });
+  for (const line of blocks.skillLines) line.usedBy = used.get(line.id) ?? [];
+  // Alternative wordings, with the same derived fields, so an agent can see that
+  // a bullet opening "Built" also has one opening "Turned" before it picks.
   for (const section of blocks.sections) {
     for (const entry of section.entries) {
       for (const bullet of entry.bullets) {
         const source = pool.get(`${entry.id}.${bullet.id}`);
         const phrasings = Object.entries(source?.phrasings ?? {});
         if (!phrasings.length) continue;
-        const measured = measureBulletLines(phrasings.map(([, item]) => item.text));
+        const measured = referenceLines(phrasings.map(([, item]) => item.text));
         bullet.phrasings = Object.fromEntries(phrasings.map(([id, item], index) => [id, {
           text: item.text,
           note: item.note,
@@ -392,10 +424,13 @@ export const registerPortfolioTools = (server) => {
 
   server.registerTool('list_resume_blocks', {
     title: 'Résumé building blocks',
-    description: 'Every entry, bullet (with its depth variants) and skills line you may select, plus the ready-made résumés you can start from. These ids are the only content build_resume accepts. Each bullet also carries its opening verb, its rendered line cost, whether it holds a measurement, `terms` (the technologies from Rahul\'s own skills lines that this wording actually names, lowercased) and `usedBy` (the canonical résumés that select it — an empty list means no canonical résumé does, which is a fact about the block, not a missing field). Alternative wordings carry their own verb, line cost, measurement flag and terms. Select by `terms` to answer a posting in Rahul\'s words, and read `usedBy` to tell a broadly useful bullet from one only a single role résumé wants. Optionally filter to one section type to keep the response small.',
-    inputSchema: z.object({ section: z.enum([...ENTRY_SECTION_TYPES, 'skills']).optional() }),
-  }, async ({ section }) => {
-    const blocks = decoratedBlocks();
+    description: 'Every entry, bullet and skills line you may select, plus the ready-made résumés you can start from. These ids are the only content build_resume accepts. Each bullet carries its length tiers (`variants`: short = 1 line, standard ≤ 2 lines, full = the master CV sentence, deep = the long form; only some bullets have each) with `tierLines` (lines per tier at the reference layout, nus 10pt), its opening verb, line cost, whether it holds a measurement (`metric: {outcome, scale}`, with `hasMetric` = either), `rank` (1 = strongest on its entry), `requires` (bullets it reads best beside), `terms` (the technologies from Rahul\'s own skills lines that this wording names, lowercased) and `usedBy` (the canonical résumés that select it; empty is a fact, not a missing field). Pass `tier` to get the one sentence each bullet prints at that tier instead of every variant — the smallest menu for tailoring at one length. Alternative wordings carry their own verb, line cost, measurement and terms. Optionally filter to one section type.',
+    inputSchema: z.object({
+      section: z.enum([...ENTRY_SECTION_TYPES, 'skills']).optional(),
+      tier: z.enum(TIERS).optional(),
+    }),
+  }, async ({ section, tier }) => {
+    const blocks = decoratedBlocks({ tier });
     if (!section) return text(blocks);
     if (section === 'skills') return text({ skillLines: blocks.skillLines });
     return text({ sections: blocks.sections.filter((item) => item.type === section) });
@@ -426,9 +461,10 @@ export const registerPortfolioTools = (server) => {
       return { ...text('Pass exactly one of slug or encodedSpec.'), isError: true };
     }
     try {
-      const spec = slug ? configBySlug(slug) : specSchema.parse(decodeSpec(encodedSpec));
-      const { fit } = await renderResume(spec, pools, profile);
-      return text(checkSpec(spec, fit));
+      const requested = slug ? configBySlug(slug) : specSchema.parse(decodeSpec(encodedSpec));
+      const { fit, spec: built } = await renderResume(requested, pools, profile);
+      const spec = built ?? requested;
+      return text({ ...checkSpec(spec, fit), tierFallbacks: tierFallbacks(assemble(spec, pools)) });
     } catch (error) {
       return { ...text(error instanceof Error ? error.message : 'Could not check that résumé'), isError: true };
     }

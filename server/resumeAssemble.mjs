@@ -72,8 +72,52 @@ const inlineLabel = (entry, role) => {
 /** The text a bullet prints: its sentence, behind its inline label when it has one. */
 export const bulletLine = (item) => (item.label ? `${item.label}: ${item.text}` : item.text);
 
-// text[variant] ?? text[slug] ?? text.full, mirroring build_resumes.py bullet_text
-// with the reserved depth keys layered on top.
+/**
+ * The four length tiers a bullet can be written at (portfolio-mcp-upgrades.md,
+ * Nov 2026). `full` is the master CV's own sentence and what `general` prints;
+ * `standard` (at most 2 lines) and `short` (1 line) are approved shorter wordings
+ * for one-pagers; `deep` is the long form for two-page custom builds. Budgets are
+ * lines at the reference layout (resumeRender.mjs REFERENCE_LAYOUT: nus, 10pt,
+ * 0.5in); `full` and `deep` have none.
+ */
+export const TIERS = ['short', 'standard', 'full', 'deep'];
+export const TIER_BUDGETS = { short: 1, standard: 2 };
+/** What a spec gets when it names no tier: the role résumés' tier. */
+export const DEFAULT_TIER = 'standard';
+// A missing tier falls back towards `full`, never to a different length class:
+// a short that does not exist is answered by the standard, then the full.
+const TIER_CHAIN = { short: ['short', 'standard', 'full'], standard: ['standard', 'full'], full: ['full'], deep: ['deep', 'full'] };
+
+/**
+ * An entry's bullets strongest first: `rank` 1 is the strongest, and bullets
+ * without a rank follow the ranked ones in pool order.
+ */
+export const byRank = (bullets) => bullets
+  .map((bullet, index) => [bullet, index])
+  .sort(([a, i], [b, j]) => ((a.rank ?? Infinity) - (b.rank ?? Infinity)) || i - j)
+  .map(([bullet]) => bullet);
+
+/**
+ * A selection's bullets as `{id, tier?}`: plain ids, per-bullet tier objects
+ * (`{"id": "platform", "tier": "short"}`), or `top: N`, the N best-ranked bullets
+ * in rank order. An explicit list keeps the order it was written in.
+ */
+export const selectedBullets = (selection, entry) => {
+  if (selection.top != null) {
+    if (selection.bullets?.length) throw new Error(`${entry.id} selects both bullets and top; choose one`);
+    return byRank(entry.bullets ?? []).slice(0, selection.top).map((bullet) => ({ id: bullet.id }));
+  }
+  return (selection.bullets ?? []).map((item) => (typeof item === 'string'
+    ? { id: item }
+    : { id: item.id, ...(item.tier ? { tier: item.tier } : {}) }));
+};
+
+/** The tier asked of one bullet: its own, else its entry's, else the spec's. */
+export const requestedTier = (spec, entryVariant, bulletTier) => bulletTier ?? entryVariant ?? spec.detail ?? DEFAULT_TIER;
+
+// text[tier] down the fallback chain, with text[slug] (the per-résumé overrides
+// the Python builder reads) beating text.full at the full step, mirroring
+// build_resumes.py bullet_text.
 export const resolveRole = (entry, selection) => {
   const role = entry.role;
   if (role == null || typeof role === 'string') return role ?? null;
@@ -91,18 +135,20 @@ export const resolveRole = (entry, selection) => {
  * Three axes, resolved in this order:
  *   phrasing  a lateral alternative wording of the same fact, chosen per bullet
  *             through spec.phrasings. Wins outright: it is the most specific
- *             instruction the caller gave, and falling through to a depth
- *             variant would silently undo the choice they made.
- *   depth     text.deep, chosen per entry or per spec. Only 15 of the 54
- *             selectable bullets carry one and the rest fall back to their
- *             default; that fallback is deliberate and documented in the guide.
- *   targeting text[slug], the per-résumé overrides the Python builder reads.
+ *             instruction the caller gave. A phrasing may carry its own
+ *             `tiers: {short, standard}` texts, used when that tier is asked
+ *             for, and may declare which tier its main text is (`tier`).
+ *   length    the tier asked for (requestedTier), down TIER_CHAIN. A missing
+ *             tier is a fallback the caller is told about: `tierUsed` differs
+ *             from `tier`, and resumeRender.mjs tierFallbacks reports the ones
+ *             that land over the asked tier's line budget.
+ *   targeting text[slug], the per-résumé overrides, at the full step.
  *
  * An unknown phrasing id throws rather than falling back, because a phrasing is
  * the caller naming one specific sentence: quietly rendering a different one is
  * the failure mode this whole design exists to prevent.
  */
-export const resolveBulletText = (bullet, spec, entryVariant, ref) => {
+export const resolveBullet = (bullet, spec, tier, ref) => {
   const phrasingId = spec.phrasings?.[ref];
   if (phrasingId) {
     // Own-property again: "constructor" matches the phrasing-id pattern, and an
@@ -115,13 +161,21 @@ export const resolveBulletText = (bullet, spec, entryVariant, ref) => {
         ? `choose one of ${available.join(', ')}`
         : 'this bullet has only one wording'}`);
     }
-    return chosen.text;
+    const own = TIER_BUDGETS[tier] ? chosen.tiers?.[tier] : undefined;
+    return own ? { text: own, tierUsed: tier } : { text: chosen.text, tierUsed: chosen.tier ?? 'full' };
   }
-  const variant = entryVariant ?? spec.detail;
   const text = bullet.text;
-  if (variant && variant !== 'standard' && text[variant]) return text[variant];
-  return text[spec.slug] ?? text.full;
+  for (const key of TIER_CHAIN[tier] ?? TIER_CHAIN.full) {
+    if (key === 'full') return { text: text[spec.slug] ?? text.full, tierUsed: 'full' };
+    if (text[key]) return { text: text[key], tierUsed: key };
+  }
+  return { text: text.full, tierUsed: 'full' };
 };
+
+/** The sentence alone, for callers that do not need to know which tier it is. */
+export const resolveBulletText = (bullet, spec, entryVariant, ref, bulletTier) => (
+  resolveBullet(bullet, spec, requestedTier(spec, entryVariant, bulletTier), ref).text
+);
 
 /**
  * Resolve a spec against the content pools into a flat, ordered item list.
@@ -168,7 +222,7 @@ export const assemble = (spec, pools) => {
       // already in its own bullet. No canonical résumé uses it since the
       // 2026-11-02 master CV dated A*STAR's heading.
       const dateLabel = selection.date === false ? '' : entry.dateLabel;
-      return { entry, bullets: selection.bullets ?? [], variant: selection.variant, role: shown, dateLabel };
+      return { entry, bullets: selectedBullets(selection, entry), variant: selection.variant, role: shown, dateLabel };
     });
     const chosen = section.type === 'projects'
       ? selected.sort((a, b) => b.entry.sort.localeCompare(a.entry.sort))
@@ -190,22 +244,30 @@ export const assemble = (spec, pools) => {
         ...(inline ? { inline: true } : {}),
       });
       const byId = new Map((entry.bullets ?? []).map((bullet) => [bullet.id, bullet]));
-      for (const id of bullets) {
+      for (const { id, tier: bulletTier } of bullets) {
         const bullet = byId.get(id);
         if (!bullet) throw new Error(`unknown bullet ${id} on ${entry.id}`);
         const ref = `${entry.id}.${id}`;
         const phrasing = spec.phrasings?.[ref] ?? null;
         used.add(ref);
+        const tier = requestedTier(spec, variant, bulletTier);
+        const { text, tierUsed } = resolveBullet(bullet, spec, tier, ref);
         items.push({
           kind: 'bullet',
           ref,
           entryId: entry.id,
           bulletId: id,
           sectionType: section.type,
-          variant: variant ?? spec.detail ?? 'standard',
+          // `variant` is the tier asked for (the name the checker's reports have
+          // always used); `tierUsed` is the one that printed.
+          variant: tier,
+          tier,
+          tierUsed,
+          ...(bullet.rank != null ? { rank: bullet.rank } : {}),
+          ...(bullet.requires ? { requires: bullet.requires } : {}),
           ...(phrasing ? { phrasing } : {}),
           ...(inline ? { label: inlineLabel(entry, role) } : {}),
-          text: resolveBulletText(bullet, spec, variant, ref),
+          text,
         });
       }
     }

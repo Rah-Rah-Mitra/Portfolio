@@ -24,13 +24,19 @@
 // Imports only packages and JSON. Vercel compiles api/ per file as native ESM
 // with no bundling.
 import PDFDocument from 'pdfkit';
-import { ENTRY_SECTION_TYPES, assemble, bulletLine, resolveBulletText, resolveRole } from './resumeAssemble.mjs';
+import {
+  DEFAULT_TIER, ENTRY_SECTION_TYPES, TIERS, TIER_BUDGETS, assemble, bulletLine, byRank, requestedTier, resolveBullet,
+  resolveBulletText, resolveRole, selectedBullets,
+} from './resumeAssemble.mjs';
 import { DEFAULT_STYLE, STYLES, block, measure, styleFor, wrapRuns } from './resumeStyles.mjs';
 
 // Spec resolution lives in resumeAssemble.mjs so the checker and the builder
 // window can reach it without loading pdfkit. Re-exported here because this is
 // the path every existing caller imports it from.
-export { ENTRY_SECTION_TYPES, assemble, bulletLine, resolveBulletText, resolveRole };
+export {
+  DEFAULT_TIER, ENTRY_SECTION_TYPES, TIERS, TIER_BUDGETS, assemble, bulletLine, byRank, requestedTier, resolveBullet,
+  resolveBulletText, resolveRole, selectedBullets,
+};
 export { DEFAULT_STYLE, STYLES, styleFor };
 
 /** Body size of the default style, for callers that want the plain default. */
@@ -146,6 +152,32 @@ export const measureBulletLines = (texts, { bodyPt, marginIn, style: styleName }
   return counts;
 };
 
+/**
+ * The one typography every tier budget is measured at (Rahul, 8 Nov 2026): the
+ * nus style at 10pt with its 0.5in margins, the size the one-pagers are meant to
+ * ship at. A `short` is 1 line here and a `standard` at most 2
+ * (resumeAssemble.mjs TIER_BUDGETS), whatever size a build lands on.
+ */
+export const REFERENCE_LAYOUT = Object.freeze({ style: 'nus', bodyPt: 10, marginIn: 0.5 });
+
+/** Lines at the reference layout, for budgets and the block menu. */
+export const referenceLines = (texts) => measureBulletLines(texts, REFERENCE_LAYOUT);
+
+/**
+ * The bullets that asked for a shorter tier than they could get: a `short` or
+ * `standard` that does not exist, answered by a text over that tier's budget.
+ * A full sentence already within 2 lines answers `standard` without a copy of
+ * itself, so it is not listed; what is listed is exactly the wordings still
+ * missing. `deep` has no budget, so a missing deep never appears here.
+ */
+export const tierFallbacks = (items) => {
+  const rows = items.filter((item) => item.kind === 'bullet' && item.tierUsed !== item.tier && TIER_BUDGETS[item.tier]);
+  const lines = referenceLines(rows.map((item) => item.text));
+  return rows
+    .map((item, index) => ({ block: item.ref, requested: item.tier, used: item.tierUsed, lines: lines[index] }))
+    .filter((row, index) => lines[index] > TIER_BUDGETS[rows[index].tier]);
+};
+
 const renderOnce = (spec, pools, profile, bodyPt, marginLR, style) => {
   const doc = new PDFDocument({
     size: [style.pageW, style.pageH],
@@ -184,27 +216,86 @@ const toBuffer = (doc) => new Promise((resolve, reject) => {
  * drops content; if nothing fits, `fit.overflow` describes by how much so the
  * caller can decide what to remove.
  */
+/**
+ * One short-first step: the weakest selected bullet that has a `short` wording
+ * it is not already printing, given that tier in a copy of the spec. "Weakest"
+ * is the highest rank number (unranked bullets count as weakest), and among
+ * equals the one furthest down the page. Returns null when no bullet can shrink.
+ * Content is never dropped: the bullet stays, in fewer words.
+ */
+const shortenWeakest = (spec, pools) => {
+  const items = assemble(spec, pools).filter((item) => item.kind === 'bullet');
+  const candidates = items
+    .map((item, order) => ({ item, order }))
+    .filter(({ item }) => {
+      if (item.tierUsed === 'short') return false;
+      const bullet = pools[item.sectionType].entries.find((entry) => entry.id === item.entryId)
+        .bullets.find((row) => row.id === item.bulletId);
+      const short = resolveBullet(bullet, spec, 'short', item.ref);
+      return short.tierUsed === 'short' && short.text !== item.text;
+    })
+    .sort((a, b) => ((b.item.rank ?? Infinity) - (a.item.rank ?? Infinity)) || b.order - a.order);
+  if (!candidates.length) return null;
+  const { item } = candidates[0];
+  const next = structuredClone(spec);
+  const section = next.sections.find((row) => row.type === item.sectionType && row.entries?.some((entry) => entry.id === item.entryId));
+  const selection = section.entries.find((entry) => entry.id === item.entryId);
+  const poolEntry = pools[item.sectionType].entries.find((entry) => entry.id === item.entryId);
+  selection.bullets = selectedBullets(selection, poolEntry).map((row) => (row.id === item.bulletId
+    ? { id: row.id, tier: 'short' }
+    : row.tier ? row : row.id));
+  delete selection.top;
+  return { spec: next, swap: { block: item.ref, from: item.tier, to: 'short' } };
+};
+
+/**
+ * Render a résumé spec to PDF.
+ *
+ * Auto-fit walks that style's own typography ladder (nus: body 10.5 down to
+ * 8.5pt at its fixed 0.5in margins; harvard: body 10.5 -> 10, then margins 0.7
+ * -> 0.6 -> 0.5) and stops at the first setting that fits maxPages. With
+ * `fitStrategy: "short-first"` (the default for a one-page spec) it first swaps
+ * the weakest bullets to their `short` wording, one at a time, at the spec's own
+ * typography, and walks the ladder only if that is not enough: a slightly
+ * shorter bullet reads better than a smaller body. Every swap is listed in
+ * `fit.swaps`, and the spec as built comes back as `spec`, so the DOCX, the
+ * Markdown, the check and the links describe the same document. It never drops
+ * content; if nothing fits, `fit.overflow` says by how much.
+ */
 export const renderResumePdf = async (spec, pools, profile) => {
   const style = styleFor(spec.style);
   const maxPages = spec.pages ?? 1;
   const autoFit = spec.autoFit !== false;
+  const strategy = spec.fitStrategy ?? (maxPages === 1 ? 'short-first' : 'typography');
   const steps = autoFit
     ? style.fitLadder
     : [{ bodyPt: null, marginIn: null }];
 
+  let current = spec;
+  const swaps = [];
   let last = null;
   const attempts = [];
-  for (const step of steps) {
+  for (const [index, step] of steps.entries()) {
     const bodyPt = step.bodyPt ?? spec.bodyPt ?? style.bodyPt;
     const marginLR = (step.marginIn ?? spec.marginIn) != null ? (step.marginIn ?? spec.marginIn) * 72 : style.marginLR;
-    const attempt = renderOnce(spec, pools, profile, bodyPt, marginLR, style);
+    let attempt = renderOnce(current, pools, profile, bodyPt, marginLR, style);
+    if (autoFit && strategy === 'short-first' && index === 0) {
+      for (let next = shortenWeakest(current, pools); attempt.pages > maxPages && next; next = shortenWeakest(current, pools)) {
+        attempt.doc.end();
+        current = next.spec;
+        swaps.push(next.swap);
+        attempt = renderOnce(current, pools, profile, bodyPt, marginLR, style);
+      }
+    }
     attempts.push({ bodyPt, marginIn: marginLR / 72, pages: attempt.pages });
     if (attempt.pages <= maxPages) {
+      if (last) last.doc.end();
       draw(attempt.doc, attempt.placed, attempt.pages, marginLR, style);
       return {
         pdf: await toBuffer(attempt.doc),
         pages: attempt.pages,
-        fit: { style: style.id, bodyPt, marginIn: marginLR / 72, maxPages, fitted: true, attempts },
+        spec: current,
+        fit: { style: style.id, bodyPt, marginIn: marginLR / 72, maxPages, fitted: true, strategy, swaps, attempts },
       };
     }
     if (last) last.doc.end();
@@ -215,12 +306,15 @@ export const renderResumePdf = async (spec, pools, profile) => {
   return {
     pdf: await toBuffer(last.doc),
     pages: last.pages,
+    spec: current,
     fit: {
       style: style.id,
       bodyPt: last.bodyPt,
       marginIn: last.marginLR / 72,
       maxPages,
       fitted: false,
+      strategy,
+      swaps,
       attempts,
       overflow: `Does not fit ${maxPages} page(s) even at ${last.bodyPt}pt with ${last.marginLR / 72}in margins; it runs to ${last.pages}. Remove content and rebuild: a project entry costs about 3 lines, a bullet about 2.`,
     },
@@ -297,10 +391,10 @@ export const renderResumeMarkdown = (spec, pools, profile) => {
 };
 
 /** Render every format from one spec. The PDF pass decides the typography. */
-export const renderResume = async (spec, pools, profile) => {
-  const { pdf, pages, fit } = await renderResumePdf(spec, pools, profile);
+export const renderResume = async (requested, pools, profile) => {
+  const { pdf, pages, fit, spec } = await renderResumePdf(requested, pools, profile);
   const docx = await renderResumeDocx(spec, pools, profile, { bodyPt: fit.bodyPt, marginIn: fit.marginIn, style: fit.style });
-  return { pdf, docx, markdown: renderResumeMarkdown(spec, pools, profile), pages, fit };
+  return { pdf, docx, markdown: renderResumeMarkdown(spec, pools, profile), pages, fit, spec };
 };
 
 // ── Spec encoding + validation ────────────────────────────────────────────
@@ -310,12 +404,11 @@ export const renderResume = async (spec, pools, profile) => {
 import { deflateSync, inflateSync } from 'node:zlib';
 import { z } from 'zod';
 
-// "short" was accepted here and advertised in the guide, but no bullet in the
-// content pools has ever carried a short key, so resolveBulletText fell through
-// to the default and an agent asking for it got identical output with no warning
-// and then an overflow report. Narrowed to what exists: asking for a variant that
-// is not there should be a loud rejection, not a silent no-op.
+// The four length tiers (resumeAssemble.mjs TIERS). "short" was once accepted
+// here with no bullet carrying it, a silent no-op; since Nov 2026 a missing tier
+// is a reported fallback (tierFallbacks), never a quiet one.
 const id = z.string().min(1).max(60);
+const tier = z.enum(TIERS);
 
 // A section heading is prose, and unlike everything else on a spec it is PRINTED:
 // full width, in the document, on a file served from rahul-mitra.com under
@@ -329,8 +422,12 @@ const id = z.string().min(1).max(60);
 // than one shared list, so no heading can land on the wrong kind of section.
 const entries = z.array(z.object({
   id,
-  bullets: z.array(id).max(10).optional(),
-  variant: z.enum(['standard', 'deep']).optional(),
+  // A bullet id, or `{id, tier}` to give one bullet a tier of its own.
+  bullets: z.array(z.union([id, z.object({ id, tier }).strict()])).max(10).optional(),
+  // The N best-ranked bullets of the entry, in rank order, instead of a list.
+  top: z.number().int().min(1).max(10).optional(),
+  // This entry's tier, over the spec's `detail`.
+  variant: tier.optional(),
   roleVariant: id.optional(),
   // No `after`: entries of one company group by rule now (resumeAssemble.mjs
   // groupByCompany). Zod strips the key, so a link built with it still parses
@@ -340,6 +437,8 @@ const entries = z.array(z.object({
   // false prints the heading without its dates, for an entry whose bullet
   // already says when.
   date: z.boolean().optional(),
+}).refine((entry) => !(entry.top != null && entry.bullets?.length), {
+  message: 'an entry selects either bullets or top, not both',
 })).max(24);
 const entrySection = (type, titles, extra = {}) => z.object({
   type: z.literal(type),
@@ -388,8 +487,15 @@ export const specSchema = z.object({
   // floor is the style's fit ladder, and this bound only has to admit both.
   bodyPt: z.number().min(8.5).max(12).optional(),
   marginIn: z.number().min(0.5).max(1).optional(),
-  detail: z.enum(['standard', 'deep']).optional(),
+  // The tier every bullet asks for unless its entry or itself says otherwise;
+  // `standard` when absent (resumeAssemble.mjs DEFAULT_TIER).
+  detail: tier.optional(),
   autoFit: z.boolean().optional(),
+  // How auto-fit makes room: `typography` steps the type size only;
+  // `short-first` first swaps the weakest bullets to their `short` wording, one
+  // at a time, and steps the type only if that is not enough. A one-page spec
+  // defaults to short-first, anything longer to typography.
+  fitStrategy: z.enum(['typography', 'short-first']).optional(),
   // Closed, like every other printed choice on a spec: a style decides the
   // geometry of a document served under Rahul's name, and there are two.
   style: z.enum(['nus', 'harvard']).optional(),

@@ -46,13 +46,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Coordinated weekly senior-engagement activities, including home visits to check health, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design."
-          },
-          "phrasings": {
-            "activities-first": {
-              "text": "Coordinated weekly senior-engagement activities for healthcare, accessibility, and community-focused product design.",
-              "note": "drops the trailing participle; shorter, and says what the activities serve"
-            }
+            "default": "Coordinated weekly senior-engagement activities, including home visits to check on residents' wellbeing, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design."
           }
         }
       ]

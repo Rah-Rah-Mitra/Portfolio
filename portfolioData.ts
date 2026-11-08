@@ -833,7 +833,7 @@ export const eventHighlights: EventHighlight[] = [
     dateLabel: 'Jan 2026 - Present',
     exactDateRange: '2026-01-01 to Present',
     source: 'LinkedIn',
-    summary: 'Built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data with zero execution failures. Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use through Docker and Azure App Service, and trained regional engineering teams across Asia and Europe on repeatable AI workflows. Now builds an air-gapped process-intelligence platform for globally distributed spray-drying plants (GPU document parsing, ONNX embeddings, a Chroma vector store, and a locally hosted quantized Gemma model), alongside a Seeq-backed multi-site data layer and a HiGHS setpoint optimizer that converts those plants’ Advanced Process Control models into one linear program.',
+    summary: 'Built a SimPy and CP-SAT hybrid flow-shop digital twin, researched robust optimization, and engineered a 15-stage changeover-data pipeline that processed five years of unseen, unclean data with zero execution failures. Productionized and operated a team-built APC simulator for live internal manufacturing and engineer-training use through Docker and Azure App Service, and trained regional engineering teams across Asia and Europe on repeatable AI workflows. Now builds an air-gapped process-intelligence platform for globally distributed spray-drying plants (GPU document parsing, ONNX embeddings, a Chroma vector store, and a locally hosted quantized Gemma model), alongside a Seeq-backed multi-site data layer and a setpoint engine that converts 4 sites’ Advanced Process Control models into 7 steady-state gain models solved by HiGHS and SLSQP.',
     tags: ['Air-Gapped RAG', 'PyTorch', 'ONNX', 'Chroma', 'LangChain', 'llama.cpp', 'Seeq', 'HiGHS', 'SciPy', 'STUMPY', 'Data Quality', 'CP-SAT', 'Robust Optimization', 'Cloud Operations', 'AI Upskilling'],
     organizations: ['Abbott'],
     linkedProjectIds: ['hybrid-flow-shop-digital-twin', 'changeover-data-quality-pipeline', 'azure-apc-web-simulator'],
@@ -1039,14 +1039,14 @@ const careerAndEducationNotes: FieldNote[] = [
   },
   {
     id: 'career-abbott-contract',
-    title: 'Abbott Laboratories (Contract) - Global Operational AI Systems & Data Engineer (Part-Time)',
+    title: 'Abbott Laboratories (Contract) - Global Data Engineer (Operational AI Systems), Part-Time',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Jun 2026-Present',
     sortDate: '2026-06-01',
     source: 'LinkedIn',
-    summary: 'Assembling a five-stage offline process-intelligence platform for globally distributed spray-drying plants, converting their Advanced Process Control models into one HiGHS linear program, and building the multi-site data layer and test harness underneath both.',
-    tags: ['Abbott', 'Offline RAG', 'PyTorch', 'ONNX', 'Chroma', 'LangChain', 'Seeq', 'HiGHS', 'SciPy', 'STUMPY', 'Manufacturing AI'],
+    summary: 'Built ADAM, an offline tool-calling assistant on a locally hosted Gemma 4 E4B model answering spray-dryer setpoint, process, and signal questions for 6 dryers across 4 global sites, over 7 steady-state gain models solved as HiGHS linear programs and SLSQP tracking QPs.',
+    tags: ['Abbott', 'Gemma', 'Offline RAG', 'PyTorch', 'ONNX', 'Chroma', 'LangChain', 'Seeq', 'HiGHS', 'SLSQP', 'SciPy', 'STUMPY', 'Manufacturing AI'],
     linkedProjectIds: ['changeover-data-quality-pipeline'],
   },
   {
@@ -1087,7 +1087,7 @@ const careerAndEducationNotes: FieldNote[] = [
     dateLabel: 'Sep 2025-Sep 2026',
     sortDate: '2025-09-01',
     source: 'Portfolio',
-    summary: 'Coordinated weekly senior-engagement activities, including home visits to check health, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design.',
+    summary: 'Coordinated weekly senior-engagement activities, including home visits to check on residents\' wellbeing, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design.',
     tags: ['NTUC Health', 'Volunteering', 'Elderly Care', 'Community', 'Accessibility'],
   },
   {
@@ -1376,17 +1376,17 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     outcomes: ['Matched reported results at 8x and came within 0.78 dB at 2x and 4x; fine-tuning recovered up to 0.7 dB under real-world blur.'],
   },
   // One merged Abbott record used to cover both roles. Split to match the
-  // documents, and the tense is now consistent within each: present for the
-  // contract that is still running, past for the internship that ended.
+  // documents. Both read in the past tense since the 8 Nov 2026 master CV, which
+  // writes the running contract's finished work that way too.
   'career-abbott-contract': {
     kind: 'professional',
-    role: 'Global Operational AI Systems & Data Engineer (Part-Time)',
+    role: 'Global Data Engineer (Operational AI Systems), Part-Time',
     organization: 'Abbott Laboratories (Contract)',
     location: 'Singapore',
     scope: 'Offline process intelligence, multi-site historian analytics, setpoint optimization, and manufacturing decision support.',
     outcomes: [
       'Consolidates globally distributed plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets.',
-      'Cuts critical-failure diagnosis from days or months of manual raw-signal analysis to within an hour across 5+ plants worldwide, and supports NPI and planned-stoppage decisions for engineers and managers.',
+      'Matched live APC move direction in 83% of cases and temperature setpoints within 0.12 °C over 24 readings; rollout to Abbott servers is scheduled.',
     ],
   },
   'career-abbott-intern': {

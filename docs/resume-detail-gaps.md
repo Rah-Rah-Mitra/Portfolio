@@ -531,7 +531,8 @@ settled, and what it left open:
   (Part-Time), Abbott Laboratories (Contract)*, as the CV prints it, and opens on
   two impact bullets (`fault-detection`, `decision-metrics`). The internship is
   *Abbott Laboratories (Converted to Contract)* and sits under the contract on
-  general (`after`). NDA: "5+ plants worldwide", nothing more.
+  general (`after`). NDA: "5+ plants worldwide", nothing more. *(Superseded
+  2026-11-08, §18: the title, the bullets and the plant count all changed.)*
 - **People's Association.** Seven bullets became five on the CV: `infra` now
   carries the CI/CD that was `cicd`, and `survey` the balloting rules that were
   `rules`; both retired ids are gone from the pool.
@@ -583,3 +584,71 @@ standing rule.
   does not measure headings; verify now does), and civic and solution-architect
   are still held at 9 by `pa.infra`'s four lines. General stays at 8.5, the
   CV's own size, though 9 would fit two pages.
+
+## 18. The master CV update, 2026-11-08
+
+Rahul updated the master CV again (VMock copy, US Letter, 8.5pt). Diffed against
+the shipped general, it rewrote two entries, the summary and two skills lines;
+education, BlendED, the projects, the bug bounty, national service and the other
+skills lines are word for word what shipped. Rebuilt in place as edition 2026-12,
+through LibreOffice again (no Word on this machine).
+
+- **Abbott contract.** The title is *Global Data Engineer (Operational AI
+  Systems), Part-Time*, and five present-tense bullets became the CV's seven, in
+  the past tense: ADAM (an offline tool-calling assistant on Gemma 4 E4B, 6
+  dryers across 4 global sites), the APC conversion (7 steady-state gain models
+  as HiGHS LPs and SLSQP tracking QPs, 5 modes), lexicographic constraint
+  relaxation, validation against live APC setpoints (83% move direction, 0.12 °C
+  over 24 readings), Seeq qualification with schema-constrained tool calls, the
+  Seeq toolkit with the handbook RAG pipeline, and parity tests. Each landed on
+  the id it descends from, so selections and builder links still resolve:
+  `fault-detection` is ADAM, `setpoint`, `guardrails`, `platform` and `harness`
+  carry their successors, and `relaxation` and `validation` are new.
+- **Retired everywhere, at Rahul's choice:** the fault-detection framing and its
+  "within an hour" diagnosis, "5+ plants worldwide", NPI and planned-stoppage
+  metrics, the response surface model and "24/7". `decision-metrics` is gone from
+  the pool (a builder link naming it now fails, as `cicd` and `rules` did), and
+  the site's contract record says the CV's numbers instead. The CV now names the
+  site and dryer counts itself, so they replace §16's NDA line.
+- **Off the CV, kept:** `ai-systems`, `supply-chain`, `datalayer` and
+  `hardening` are still true, so they stay selectable, now in the past tense so
+  the entry reads in one. `setpoint`'s and `platform`'s deep variants were edited
+  to the new structure using only facts already attested in the old deep
+  variants (scipy linprog, the PLC predictor, trust-region warnings, marker,
+  chonkie, bge-small, fastembed, ruptures, STUMPY); `platform`'s `build-first`
+  phrasing went with the sentence it restated.
+- **People's Association.** The title, *Software Engineer (Full Stack & Cloud),
+  People's Association (Pro bono)*, one title everywhere, landed on 2026-11-05
+  with the ids this sync keeps (`churp`, the new `stack`, and `sparks` holding the
+  coordination sentence). The CV words two of them afresh, and the pool now takes
+  them: `churp` is "Recruited into PA's Sparks Citizens Developer network as a
+  community innovator in recognition of prior public-good initiatives, then
+  designed, built, and deployed Churp, … seeded by a S$20K Sparks Community
+  Innovation Fund award" (it read "Volunteered through PA's Sparks Citizen
+  Developer programme … Project funded by a S$20K …"), and `stack` opens
+  "Owned most" for "Led most". The site's PA summary keeps the 5 Nov wording,
+  which the CV does not contradict. "Citizens Developer" is the CV's spelling.
+- **NTUC** reads "check on residents' wellbeing" for "check health"; its
+  `activities-first` phrasing said "healthcare", which the CV stepped back from,
+  so it was dropped.
+- **Skills.** The AI/ML line adds schema-constrained tool calling, local LLM
+  serving (llama.cpp, Gemma) and Seeq time-series analysis; the Sim/OR line says
+  HiGHS linear programming and SLSQP quadratic programming (HiGHS never solved
+  the QPs), plus constraint relaxation and shadow prices. `or-skills` and
+  `gen-or` carried the same HiGHS claim and were corrected with it.
+- **A\*STAR** stays *Jan 2027 – May 2027* with no parenthetical. The CV now dates
+  it "Jan 2026 – May 2026" and puts "(Jan to May 2027, 2 days/week)" back in the
+  bullet; that is the VMock workaround (it cannot hold a 2027 date), not a fact.
+- **Expected start date** (Rahul, the same day): every résumé prints a bold
+  *Expected Start Date: July 2027* at the top. In nus it closes the contact line,
+  which has the room because the portfolio and GitHub links now print as
+  "Portfolio" and "GitHub" (488pt of the 523pt line at 8.5pt; the URLs are
+  unchanged and still live). Harvard's 9.5pt Times line has no room, so there it
+  is a centered line of its own. Custom builds and `get_resume`'s Markdown carry
+  it too, and `get_profile` reports it as `availability`.
+- **Fit.** Every résumé keeps its size; operations-research-engineer stays at
+  9pt without the coursework line the 5 Nov change trimmed. Under LibreOffice it
+  ends 3.7pt above its margin and software-engineer 7.9pt, both within a line, so
+  re-export both through Word before an employer sees them. General still holds
+  two pages at 8.5pt, but its deep build now runs to three in nus, which the
+  renderer reports rather than hides.

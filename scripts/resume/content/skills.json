@@ -28,7 +28,7 @@
     {
       "id": "sim-or",
       "label": "Simulation and Operations Research",
-      "items": "SimPy, OR-Tools CP-SAT, HiGHS linear and quadratic programming, discrete-event simulation, hybrid flow-shop scheduling"
+      "items": "SimPy, OR-Tools CP-SAT, HiGHS linear programming, SLSQP quadratic programming, constraint relaxation, sensitivity analysis (shadow prices), discrete-event simulation, hybrid flow-shop scheduling"
     },
     {
       "id": "statistics",
@@ -43,7 +43,7 @@
     {
       "id": "or-skills",
       "label": "Technical",
-      "items": "CP-SAT, HiGHS linear and quadratic programming, SciPy, hybrid flow-shop scheduling, SimPy, digital-twin simulation, robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, AI tools (Claude Code, ChatGPT, Codex, Gemini, ComfyUI), Python, Excel VBA"
+      "items": "CP-SAT, HiGHS linear programming, SLSQP quadratic programming, SciPy, hybrid flow-shop scheduling, SimPy, digital-twin simulation, robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, AI tools (Claude Code, ChatGPT, Codex, Gemini, ComfyUI), Python, Excel VBA"
     },
     {
       "id": "cyber-skills",
@@ -73,7 +73,7 @@
     {
       "id": "gen-or",
       "label": "Operations Research",
-      "items": "CP-SAT, HiGHS linear and quadratic programming, SciPy, hybrid flow-shop scheduling, SimPy, digital-twin simulation, signal processing (Kalman, Welch PSD, change-point, matrix profile), robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, mathematical modeling"
+      "items": "CP-SAT, HiGHS linear programming, SLSQP quadratic programming, SciPy, hybrid flow-shop scheduling, SimPy, digital-twin simulation, signal processing (Kalman, Welch PSD, change-point, matrix profile), robust optimization, graph optimization, network flow, Dijkstra/SSSP/APSP, decision analytics, statistics, mathematical modeling"
     },
     {
       "id": "gen-cloud",
@@ -133,7 +133,7 @@
     {
       "id": "hl-ai-data",
       "label": "AI and Machine Learning",
-      "items": "RAG, AI agents, vector search, LangChain, PyTorch, ONNX, Chroma, BERT/transformer fine-tuning, model evaluation, deep RL (PPO, A2C, DDPG, DQN), GPU training (CUDA) on ASPIRE 2A HPC"
+      "items": "RAG, AI agents, schema-constrained tool calling, local LLM serving (llama.cpp, Gemma), vector search, LangChain, PyTorch, ONNX, Chroma, BERT/transformer fine-tuning, model evaluation, deep RL (PPO, A2C, DDPG, DQN), GPU training (CUDA) on ASPIRE 2A HPC, Seeq time-series analysis (Kalman filtering, spectral analysis, change-point detection, matrix profile)"
     },
     {
       "id": "hl-security",

@@ -279,7 +279,9 @@ export const renderResumeDocx = async (spec, pools, profile, { bodyPt, marginIn,
 // résumé vocabulary jobSearch.mjs scores a posting against is computed from
 // this output — so switching styles must not move a match score.
 export const renderResumeMarkdown = (spec, pools, profile) => {
-  const out = [`# ${profile.name}`, profile.contact.map((item) => (item.url ? `[${item.text}](${item.url})` : item.text)).join(' · ')];
+  const contact = profile.contact.map((item) => (item.url ? `[${item.text}](${item.url})` : item.text));
+  if (profile.availability) contact.push(`**${profile.availability}**`);
+  const out = [`# ${profile.name}`, contact.join(' · ')];
   for (const item of assemble(spec, pools)) {
     if (item.kind === 'section') out.push('', `## ${item.title}`);
     else if (item.kind === 'skill') out.push(`- **${item.label}:** ${item.items}`);

@@ -86,8 +86,14 @@ def add_name(doc, name):
     return p
 
 
-def add_contact_line(doc, items):
-    """items: [{text, url?}] joined by SEP, right-flush under the name."""
+def add_contact_line(doc, items, availability=None):
+    """items: [{text, url?}] joined by SEP, right-flush under the name.
+
+    availability (profile.json, e.g. "Expected Start Date: July 2027") closes
+    the same line in bold. It fits because the portfolio and GitHub links print
+    as "Portfolio" and "GitHub" (Rahul, 8 Nov 2026): 488pt of the 523pt line at
+    8.5pt, so the header keeps its height and no résumé re-fits for it.
+    """
     p = para(doc)
     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     for i, item in enumerate(items):
@@ -99,6 +105,12 @@ def add_contact_line(doc, items):
         else:
             run = p.add_run(item["text"])
             run.font.size = Pt(CONTACT_PT)
+    if availability:
+        run = p.add_run(SEP)
+        run.font.size = Pt(CONTACT_PT)
+        run = p.add_run(availability)
+        run.bold = True
+        run.font.size = Pt(CONTACT_PT)
     return p
 
 

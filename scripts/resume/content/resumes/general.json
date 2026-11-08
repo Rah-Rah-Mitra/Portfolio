@@ -39,9 +39,11 @@
           "id": "abbott-contract",
           "bullets": [
             "fault-detection",
-            "decision-metrics",
-            "platform",
             "setpoint",
+            "relaxation",
+            "validation",
+            "guardrails",
+            "platform",
             "harness"
           ]
         },

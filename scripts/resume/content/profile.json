@@ -4,8 +4,9 @@
     { "text": "+65 8515 5413", "url": "tel:+6585155413" },
     { "text": "mitrarahul2002@gmail.com", "url": "mailto:mitrarahul2002@gmail.com" },
     { "text": "linkedin.com/in/rahulmitra-dev", "url": "https://www.linkedin.com/in/rahulmitra-dev" },
-    { "text": "rahul-mitra.com", "url": "https://rahul-mitra.com/" },
-    { "text": "github.com/Rah-Rah-Mitra", "url": "https://github.com/Rah-Rah-Mitra" }
+    { "text": "Portfolio", "url": "https://rahul-mitra.com/" },
+    { "text": "GitHub", "url": "https://github.com/Rah-Rah-Mitra" }
   ],
-  "summary": "AI and data engineer with industry experience at Abbott and STMicroelectronics, computer vision research on an Amazon Robotics brief, and a civic platform created in collaboration with multiple public sector entities, including People's Association, PA ICT (GovTech), and Tengah Community. Final-year NUS Industrial and Systems Engineering and Computer Science student."
+  "availability": "Expected Start Date: July 2027",
+  "summary": "Data and AI engineer building optimisation, LLM, and data systems for manufacturing, with experience at Abbott, an STMicroelectronics warehouse AI capstone, Amazon Robotics computer vision research, and Churp, a civic platform built with People's Association and PA ICT (GovTech). Final-year NUS Industrial and Systems Engineering and Computer Science student."
 }

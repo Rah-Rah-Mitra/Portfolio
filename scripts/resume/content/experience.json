@@ -11,7 +11,7 @@
         {
           "id": "layout-agnostic",
           "text": {
-            "default": "Architected a layout-agnostic AI put-away engine to run in any STMicroelectronics warehouse worldwide, ingesting each site's shelf coordinates, dimensions, and operating rules so one model adapts to any floor plan."
+            "default": "Architected a layout-agnostic AI put-away engine ingesting each site's shelf coordinates, dimensions, and operating rules, letting one model adapt to any STMicroelectronics warehouse floor plan without per-site rework."
           }
         },
         {
@@ -32,77 +32,77 @@
       "id": "abbott-contract",
       "organization": "Abbott Laboratories (Contract)",
       "location": "Singapore",
-      "role": "Global Operational AI Systems & Data Engineer (Part-Time)",
+      "role": "Global Data Engineer (Operational AI Systems), Part-Time",
       "start": "2026-06",
       "dateLabel": "Jun 2026 – Present",
       "bullets": [
         {
           "id": "fault-detection",
           "text": {
-            "default": "Develop a chat-based spray-dryer fault-detection tool validated across 5+ plants worldwide, cutting critical-failure diagnosis from days or months of manual raw-signal analysis to within an hour, flagging inconclusive signals rather than false positives."
-          }
-        },
-        {
-          "id": "decision-metrics",
-          "text": {
-            "default": "Deliver fast metrics for high-stakes decisions such as new product introductions (NPI) and planned stoppages, recommending optimal setpoints from an estimated response surface model and answering engineers' and managers' questions, with rollout planned on Abbott servers for 24/7 access."
-          }
-        },
-        {
-          "id": "ai-systems",
-          "text": {
-            "default": "Deliver AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation."
-          }
-        },
-        {
-          "id": "supply-chain",
-          "text": {
-            "default": "Strengthen monitoring and process structure across healthcare supply chains with AI, protecting product availability for vulnerable patient groups."
-          }
-        },
-        {
-          "id": "platform",
-          "text": {
-            "default": "Assemble a 5-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted Gemma model.",
-            "deep": "Assemble a 5-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain over a locally hosted Gemma 4 E4B served through llama.cpp GGUF."
-          },
-          "phrasings": {
-            "build-first": {
-              "text": "Build a 5-stage offline process-intelligence platform for globally distributed spray-drying plants: GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain over a locally hosted Gemma model.",
-              "note": "leads on building the platform rather than on assembling the stack"
-            }
+            "default": "Developed ADAM, an offline tool-calling assistant on a locally hosted Gemma 4 E4B model (llama.cpp) answering spray-dryer setpoint, process, and signal questions for 6 dryers across 4 global sites, giving engineers self-serve answers to decisions previously requiring APC specialists, with rollout to Abbott servers scheduled."
           }
         },
         {
           "id": "setpoint",
           "text": {
-            "default": "Convert global plants' Advanced Process Control models from Excel master files into a single HiGHS linear program returning setpoints, binding constraints, and shadow prices at millisecond latency.",
-            "deep": "Convert global plants' site-specific vendor Advanced Process Control steady-state models from their Excel master files into a single HiGHS linear program (scipy.optimize.linprog) with a tracking QP and PLC predictor covering every site, returning setpoints, binding constraints, shadow prices, and trust-region warnings at millisecond latency with no commercial solver license, back-tested against the production system's own historical targets."
+            "default": "Converted 4 sites' Advanced Process Control master files from Excel into 7 steady-state gain models solved as HiGHS linear programs and SLSQP tracking QPs, returning setpoints, binding constraints, and shadow prices in milliseconds across 5 modes: APC replica, single-setpoint push, CV targeting, what-if limit reports, and operator what-ifs.",
+            "deep": "Converted 4 sites' vendor Advanced Process Control steady-state models from their Excel master files into 7 steady-state gain models solved as HiGHS linear programs (scipy.optimize.linprog) and SLSQP tracking QPs with a PLC predictor, returning setpoints, binding constraints, shadow prices, and trust-region warnings in milliseconds across 5 modes with no commercial solver license, back-tested against the production system's own historical targets."
           }
         },
         {
-          "id": "datalayer",
+          "id": "relaxation",
           "text": {
-            "default": "Build a live multi-site data layer over read-only Seeq historian pulls, with per-site mapping driven by configuration rather than forks and automated operating-window qualification excluding downtime.",
-            "deep": "Build a live multi-site data layer over read-only Seeq (SPy) historian pulls, mapping each site through configuration rather than forks (status predicates, production thresholds, time zones, tag mapping, unit overrides), with automated operating-window qualification excluding downtime, then Kalman smoothing, Welch PSD, lag and coherence, change-point detection (ruptures), and matrix-profile motifs (STUMPY) in SciPy and pandas."
+            "default": "Implemented minimum lexicographic constraint relaxation with one LP per candidate, replacing a reference simulator's bisection search, and fixed 2 defects in its quadratic program: a tolerance-band penalty applied to measured rather than predicted values, and an out-of-bounds start point."
+          }
+        },
+        {
+          "id": "validation",
+          "text": {
+            "default": "Validated replica outputs against live APC setpoints, matching move direction in 83% of cases and temperature setpoints within 0.12 °C over 24 readings, after tracing a tag-mapping bug pairing one dryer with a second dryer's Seeq tags."
           }
         },
         {
           "id": "guardrails",
           "text": {
-            "default": "Design a tool loop where a model emits schema-constrained JSON and the solver computes every number, gated by an automated numeric-fidelity check and a per-call audit log with no write path to plant control."
+            "default": "Qualified each operating point from read-only Seeq pulls via plant-state classification and 30-minute steadiness checks before any solve, and kept LLM output free of computed numbers through JSON-schema-constrained tool calls and automatic checks of each narration against solver results."
+          }
+        },
+        {
+          "id": "platform",
+          "text": {
+            "default": "Built a Seeq signal-analytics toolkit (Kalman smoothing, Welch spectra, lag and coherence, PELT change points, matrix-profile motifs and discords, an 18-feature fingerprint) and a 5-stage offline handbook RAG pipeline: GPU OCR and layout parsing, recursive chunking, ONNX embeddings, a Chroma vector store, and LangChain retrieval.",
+            "deep": "Built a Seeq signal-analytics toolkit (Kalman smoothing, Welch spectra, lag and coherence, PELT change points via ruptures, matrix-profile motifs and discords via STUMPY, an 18-feature fingerprint) and a 5-stage offline handbook RAG pipeline: GPU OCR and layout parsing (marker, PyTorch/CUDA), recursive chunking (chonkie), bge-small ONNX embeddings (fastembed), a Chroma vector store with top-k similarity ranking, and LangChain retrieval over Gemma 4 E4B served through llama.cpp GGUF."
           }
         },
         {
           "id": "harness",
           "text": {
-            "default": "Build MCP servers, 20+ regression tests, a headless notebook runner, and a deterministic model stand-in for GPU-free CI, with golden snapshots committed for reproducible runs."
+            "default": "Proved production modules identical to research notebooks with exact-equality parity tests, alongside 20 engine tests, HTTP contract tests, a headless notebook runner, and a deterministic model stand-in for GPU-free CI."
+          }
+        },
+        {
+          "id": "ai-systems",
+          "text": {
+            "default": "Delivered AI-enabled systems and data workflows for process improvement, manufacturing analytics, operational decision support, and supply-chain automation."
+          }
+        },
+        {
+          "id": "supply-chain",
+          "text": {
+            "default": "Strengthened monitoring and process structure across healthcare supply chains with AI, protecting product availability for vulnerable patient groups."
+          }
+        },
+        {
+          "id": "datalayer",
+          "text": {
+            "default": "Built a live multi-site data layer over read-only Seeq historian pulls, with per-site mapping driven by configuration rather than forks and automated operating-window qualification excluding downtime.",
+            "deep": "Built a live multi-site data layer over read-only Seeq (SPy) historian pulls, mapping each site through configuration rather than forks (status predicates, production thresholds, time zones, tag mapping, unit overrides), with automated operating-window qualification excluding downtime, then Kalman smoothing, Welch PSD, lag and coherence, change-point detection (ruptures), and matrix-profile motifs (STUMPY) in SciPy and pandas."
           }
         },
         {
           "id": "hardening",
           "text": {
-            "default": "Harden global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference."
+            "default": "Hardened global deployment with lock-pinned CUDA and CPU builds, OS trust-store integration for enterprise TLS-inspecting proxies, and an auditable decision register for every deviation from the vendor reference."
           }
         }
       ]
@@ -172,14 +172,14 @@
         {
           "id": "churp",
           "text": {
-            "default": "Volunteered through PA's Sparks Citizen Developer programme to design, build and deploy Churp, a garden-plot balloting platform now live in Tengah with national rollout planned. Project funded by a S$20K Sparks Community Innovation Fund award."
+            "default": "Recruited into PA's Sparks Citizens Developer network as a community innovator in recognition of prior public-good initiatives, then designed, built, and deployed Churp, a resident-driven garden-plot balloting platform now live in Tengah and slated for national rollout, seeded by a S$20K Sparks Community Innovation Fund award."
           }
         },
         {
           "id": "stack",
           "text": {
-            "default": "Led most software development and deployment across admin and public Next.js frontends, a NestJS backend, and GIS mapping.",
-            "deep": "Led most software development and deployment across admin and public Next.js frontends, a NestJS backend, and GIS-based plot allocation, coordinating stakeholders and rollout planning across product, engineering, and operations."
+            "default": "Owned most software development and deployment across admin and public Next.js frontends, a NestJS backend, and GIS mapping.",
+            "deep": "Owned most software development and deployment across admin and public Next.js frontends, a NestJS backend, and GIS-based plot allocation, coordinating stakeholders and rollout planning across product, engineering, and operations."
           }
         },
         {
@@ -196,16 +196,16 @@
           }
         },
         {
-          "id": "sparks",
-          "text": {
-            "default": "Led deployment planning, multi-repo coordination, and stakeholder management in an 11-person team across People's Association, Tengah community partners, and PA ICT (GovTech)."
-          }
-        },
-        {
           "id": "infra",
           "text": {
             "default": "Provisioned 10 AWS services with Terraform (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB behind WAFv2, Route 53, ACM, KMS, Secrets Manager, and a Rust auth gateway on Lambda and API Gateway), shipped via keyless GitHub Actions CI/CD on IAM OIDC across 5 repos with gated migrations, RDS snapshots, and auto-rollback.",
             "deep": "Owned cloud deployment for the balloting platform: Terraform-provisioned AWS infrastructure across 10 services (ECS Fargate, Multi-AZ RDS Postgres with PostGIS, ALB fronted by WAFv2, Route 53, ACM, KMS, Secrets Manager, and a Rust auth gateway on Lambda and API Gateway), with cloud security controls applied environment-wide alongside multi-repo coordination and rollout planning."
+          }
+        },
+        {
+          "id": "sparks",
+          "text": {
+            "default": "Led deployment planning, multi-repo coordination, and stakeholder management in an 11-person team across People's Association, Tengah community partners, and PA ICT (GovTech)."
           }
         },
         {

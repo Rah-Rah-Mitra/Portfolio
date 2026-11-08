@@ -111,7 +111,10 @@ describe('résumé renderer', () => {
 
   it('keeps the text the résumé verifier requires', () => {
     const markdown = renderResumeMarkdown(highlights, pools, profile) as string;
-    for (const needle of ['RAHUL MITRA', 'rahul-mitra.com', 'STMicroelectronics', 'put-away', 'Amazon', 'super-resolution']) {
+    // The portfolio and GitHub links print as "Portfolio" and "GitHub" since
+    // 8 Nov 2026, so their URLs are pinned as link annotations above; the bold
+    // start date that took their room on the contact line is pinned here.
+    for (const needle of ['RAHUL MITRA', '**Expected Start Date: July 2027**', 'STMicroelectronics', 'put-away', 'Amazon', 'super-resolution']) {
       expect(markdown).toContain(needle);
     }
     expect(markdown).not.toContain('PROFILE SUMMARY');
@@ -175,7 +178,7 @@ describe('résumé renderer', () => {
     expect(deep).toContain('Coordinated weekly senior-engagement activities');
   });
 
-  it('holds deep detail on the master CV in two pages in both styles', async () => {
+  it('holds deep detail on the master CV in two pages in harvard, and reports the nus overflow', async () => {
     // Deep detail fitted both styles in 2026-11 (the A-Level entry dropped, the
     // skills lines narrowed to the master CV's nine, 0.5in margins). Edition
     // 2026-12 took Rahul's own Oct 2026 master CV wording, five Amazon bullets
@@ -183,16 +186,19 @@ describe('résumé renderer', () => {
     // nus's 8.5pt floor, so deep detail ran to a third page in nus. The Nov 2026
     // master CV fits it again: its PA bullets merged seven into five, and the
     // bullets it brought in (STMicro's, Abbott's impact pair, Amazon's brief)
-    // carry no deep variant to grow into. The nus overflow report is still pinned
-    // by the oversized spec above; this one keeps both styles honest at the
-    // bottom of their ladders.
+    // carry no deep variant to grow into. The 8 Nov 2026 master CV runs it to a
+    // third page in nus again: the Abbott contract went from five bullets to
+    // seven, three lines each at 8.5pt, and setpoint's and platform's deep
+    // variants grew with their defaults. Pinned both ways, as in edition
+    // 2026-12: harvard must keep fitting, and nus must say it does not rather
+    // than hand back a silent 3-page CV.
     const general = configBySlug('general') as Spec;
     const harvard = await renderResumePdf({ ...general, detail: 'deep', style: 'harvard' }, pools, profile) as { fit: Fit; pages: number };
     expect(harvard.fit.fitted).toBe(true);
     expect(harvard.pages).toBe(2);
-    const nus = await renderResumePdf({ ...general, detail: 'deep', style: 'nus' }, pools, profile) as { fit: Fit; pages: number };
-    expect(nus.fit.fitted).toBe(true);
-    expect(nus.pages).toBe(2);
+    const nus = await renderResumePdf({ ...general, detail: 'deep', style: 'nus' }, pools, profile) as { fit: Fit & { overflow?: string }; pages: number };
+    expect(nus.fit.fitted).toBe(false);
+    expect(nus.fit.overflow).toMatch(/Does not fit 2 page\(s\) even at 8\.5pt/);
   });
 
   it('refuses a project Rahul has blocked, even when a spec names it directly', async () => {

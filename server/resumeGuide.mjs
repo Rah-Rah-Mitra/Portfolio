@@ -54,16 +54,16 @@ keyword is recoverable; an inaccurate one is not.
    \`swarmline.combined\` is both in one sentence, the master CV's own line.
 4. Three bullets per entry is typical, and on a one-page spec four is the
    ceiling — the checker reports a fifth as a structural error. When an entry
-   genuinely earns a fourth (People's Association carries platform, Singpass,
-   AWS deployment with its CI/CD, and the site survey with the balloting rules
-   on the civic résumé), pay for it by dropping a weaker project rather than
-   by cutting one of the four. A two-page spec has room for more and the
-   ceiling rises to eight: the master CV carries six on the Abbott internship
-   and five on the Abbott contract and People's Association, because Rahul's
-   own CV does.
+   genuinely earns a fourth (People's Association carries Churp with its award,
+   Singpass, AWS deployment with its CI/CD, and the site survey with the
+   balloting rules on the civic résumé), pay for it by dropping a weaker
+   project rather than by cutting one of the four. A two-page spec has room
+   for more and the ceiling rises to eight: the master CV carries seven on the
+   Abbott contract and six on the Abbott internship and People's Association,
+   because Rahul's own CV does.
 5. Choose depth. Bullets can carry a \`deep\` variant alongside the default; set
    \`detail: "deep"\` on the spec, or \`variant\` on a single entry. Deep variants
-   are longer, so they usually need \`pages: 2\`. Only 15 of the 53 selectable
+   are longer, so they usually need \`pages: 2\`. Only 15 of the 54 selectable
    bullets have one, and the rest fall back to their default silently, so do not
    treat depth as a way to change every bullet at once.
 6. Check whether the entry offers more than one job title. An entry with

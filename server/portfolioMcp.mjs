@@ -342,7 +342,7 @@ const text = (value) => ({ content: [{ type: 'text', text: typeof value === 'str
 export const registerPortfolioTools = (server) => {
   server.registerTool('get_profile', {
     title: 'Profile',
-    description: 'Who Rahul Mitra is: bio, the master CV\'s summary paragraph (`summary`, CV-only: no role résumé prints it), location, links, headline stats, competency clusters, skills, and the current résumé edition.',
+    description: 'Who Rahul Mitra is: bio, the master CV\'s summary paragraph (`summary`, CV-only: no role résumé prints it), the expected start date every résumé prints (`availability`), location, links, headline stats, competency clusters, skills, and the current résumé edition.',
     inputSchema: z.object({}),
   }, async () => text(getProfile()));
 

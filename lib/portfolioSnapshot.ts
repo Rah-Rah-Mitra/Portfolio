@@ -38,6 +38,8 @@ export const buildPortfolioSnapshot = () => ({
     // The master CV's summary, from the résumé profile so the CV and the MCP
     // read one paragraph. CV-only: no role résumé prints it.
     summary: resumeProfile.summary,
+    // The line every résumé prints in bold at the top (Rahul, 8 Nov 2026).
+    availability: resumeProfile.availability,
     skills: unifiedPortfolioData.skills.map((skill) => skill.name), // icon (ReactNode) dropped
     competencies: coreCompetencies.map(({ id, title, summary, tools, proof }) => ({ id, title, summary, tools, proof })),
     stats: dossierStats.map(({ value, label }) => ({ value, label })),

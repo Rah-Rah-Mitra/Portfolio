@@ -108,14 +108,24 @@ describe('the shipped documents are a function of the content pool', () => {
       // Association role took its pro bono title and programme line, its stack
       // became pa.stack, and operations-research-engineer lost coursework-full
       // down the trim ladder to stay on one page.
-      'software-engineer': '6c65fed0df8f36a4',
-      'solution-architect': 'bd46ef980ba754df',
-      'ai-engineer': '86c87adec2fe4abd',
-      'operations-research-engineer': 'fa8b0bd0db63dd49',
-      'cyber-security': 'd2bb31654c280637',
-      'civic-tech-solution-architect': '6922c3346f1f6967',
-      highlights: 'b6adf853fe0fb65f',
-      general: 'ac6bc02d6168589c',
+      // All eight moved for the 8 Nov 2026 master CV, rebuilt in place as
+      // edition 2026-12 (LibreOffice: no Word on that machine): STMicro's
+      // reworded first bullet is on every one; the Abbott contract's seven new
+      // bullets (general) and the ADAM, platform, setpoint and guardrails
+      // rewrites (the one-pagers); civic's two off-CV contract bullets in the
+      // past tense; PA's churp and stack in the CV's words ("Recruited into…",
+      // "Owned most…"); NTUC's "residents' wellbeing"; general's summary and the
+      // hl-ai-data, sim-or and or-skills lines. Every DOCX was checked to hold
+      // each selected sentence verbatim. The bold expected start date and the
+      // "Portfolio"/"GitHub" link labels are header, which this does not hash.
+      'software-engineer': 'c89ec434ac3c3a1c',
+      'solution-architect': '646e1cb1497c568a',
+      'ai-engineer': 'dad12a9b97ac11a4',
+      'operations-research-engineer': '0ab31256ba4a96c6',
+      'cyber-security': '3727d58e6454a6f3',
+      'civic-tech-solution-architect': 'f9c27e77ab425a87',
+      highlights: 'f1f999c34ca6be3c',
+      general: 'a0ca556d7262cd79',
     });
   });
 

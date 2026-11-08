@@ -72,9 +72,14 @@ def add_name(doc, name):
     return p
 
 
-def add_contact_line(doc, items):
-    """items: [{text, url?}] joined by SEP; url items become hyperlinks."""
-    p = para(doc, space_after=4)
+def add_contact_line(doc, items, availability=None):
+    """items: [{text, url?}] joined by SEP; url items become hyperlinks.
+
+    availability (profile.json) prints in bold on its own centered line below:
+    this style's 9.5pt Times line runs 13pt past a 0.7in content width with it
+    inline, where nus_style's 8.5pt Arial line has room to close with it.
+    """
+    p = para(doc, space_after=0 if availability else 4)
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for i, item in enumerate(items):
         if i:
@@ -85,6 +90,12 @@ def add_contact_line(doc, items):
         else:
             run = p.add_run(item["text"])
             run.font.size = Pt(CONTACT_PT)
+    if availability:
+        line = para(doc, space_after=4)
+        line.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = line.add_run(availability)
+        run.bold = True
+        run.font.size = Pt(CONTACT_PT)
     return p
 
 

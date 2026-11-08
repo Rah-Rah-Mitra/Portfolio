@@ -124,7 +124,7 @@ def build_resume(config, pools, profile, edition, style):
     width = style.setup_document(doc, body_pt=body_pt, margin_in=config.get("marginIn"))
 
     style.add_name(doc, profile["name"])
-    style.add_contact_line(doc, profile["contact"])
+    style.add_contact_line(doc, profile["contact"], profile.get("availability"))
 
     for i, section in enumerate(config["sections"]):
         style.add_section_header(doc, section["title"], first=(i == 0), body_pt=body_pt)

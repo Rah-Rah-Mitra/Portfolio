@@ -108,8 +108,13 @@ const harvard = {
     });
     blocks.push(block(
       [contactRuns.map((run) => ({ ...run, width: measure(doc, run.text, run.font, run.size) }))],
-      { size: this.contactPt, spaceAfter: 4, align: 'center' },
+      { size: this.contactPt, spaceAfter: profile.availability ? 0 : 4, align: 'center' },
     ));
+    // Its own centered line, as harvard_style.py prints it: inline, this
+    // style's 9.5pt Times contact line runs past a 0.7in content width.
+    if (profile.availability) {
+      blocks.push(block(one(doc, profile.availability, this.bold, this.contactPt), { size: this.contactPt, spaceAfter: 4, align: 'center' }));
+    }
 
     items.forEach((item, index) => {
       if (item.kind === 'section') {
@@ -188,7 +193,14 @@ const harvard = {
       const inner = new TextRun({ text: item.text, size: this.contactPt * 2, font, color: '000000' });
       contact.push(item.url ? new ExternalHyperlink({ link: item.url, children: [inner] }) : inner);
     });
-    children.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { ...single, before: 0, after: 4 * TWIP }, children: contact }));
+    children.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { ...single, before: 0, after: (profile.availability ? 0 : 4) * TWIP }, children: contact }));
+    if (profile.availability) {
+      children.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { ...single, before: 0, after: 4 * TWIP },
+        children: [new TextRun({ text: profile.availability, bold: true, size: this.contactPt * 2, font })],
+      }));
+    }
 
     items.forEach((item, index) => {
       if (item.kind === 'section') {
@@ -321,6 +333,11 @@ const nus = {
       if (index) contactRuns.push({ text: this.sep, font: this.regular, size: this.contactPt });
       contactRuns.push({ text: item.text, font: this.regular, size: this.contactPt, link: item.url });
     });
+    // The bold start date closes the same line, as nus_style.py prints it.
+    if (profile.availability) {
+      contactRuns.push({ text: this.sep, font: this.regular, size: this.contactPt });
+      contactRuns.push({ text: profile.availability, font: this.bold, size: this.contactPt });
+    }
     blocks.push(block(
       [contactRuns.map((run) => ({ ...run, width: measure(doc, run.text, run.font, run.size) }))],
       { size: this.contactPt, align: 'right' },
@@ -403,6 +420,10 @@ const nus = {
       const inner = new TextRun({ text: item.text, size: this.contactPt * 2, font, color: '000000' });
       contact.push(item.url ? new ExternalHyperlink({ link: item.url, children: [inner] }) : inner);
     });
+    if (profile.availability) {
+      contact.push(new TextRun({ text: this.sep, size: this.contactPt * 2, font }));
+      contact.push(new TextRun({ text: profile.availability, bold: true, size: this.contactPt * 2, font }));
+    }
     children.push(new Paragraph({ ...plain, alignment: AlignmentType.RIGHT, children: contact }));
 
     // 0.5417in text column, glyph hanging to its left by its own width. 0.628

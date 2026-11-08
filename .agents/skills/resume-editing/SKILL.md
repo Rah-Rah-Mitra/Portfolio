@@ -45,11 +45,17 @@ Read each config rather than assuming a size.
 ## Layout invariants
 
 Shared by both styles: A4; one contact line (5 items, 5 live hyperlinks
-including `tel:` — must stay on ONE line); 1–3 bullets per entry and 4 where the
-material earns it (People's Association on the two architecture résumés — buy
-the room by dropping a project, not by cutting a bullet), action verb first,
-past tense except current roles; literal "• " bullets with a hanging indent
-(ATS-safe, deliberate, and the one place both styles depart from their source).
+including `tel:` — must stay on ONE line; since 8 Nov 2026 the portfolio and
+GitHub links print as "Portfolio" and "GitHub", which is what makes room for
+profile.json's `availability`, "Expected Start Date: July 2027", in bold: `nus`
+closes the contact line with it, 488pt of 523pt at 8.5pt, while `harvard`'s
+9.5pt Times line has no room and gives it a centered line of its own); 1–3
+bullets per entry and 4 where the material earns it (People's Association on
+the two architecture résumés — buy the room by dropping a project, not by
+cutting a bullet), action verb first, in the master CV's tense (past for
+finished work, which since Nov 2026 includes the running STMicro and Abbott
+contract roles); literal "• " bullets with a hanging indent (ATS-safe,
+deliberate, and the one place both styles depart from their source).
 
 `nus_style.py` (default): Arial; 0.5" margins all round (0.667" top and
 bottom until the 2 Nov 2026 master CV); a

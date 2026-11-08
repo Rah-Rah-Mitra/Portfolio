@@ -33,7 +33,10 @@ EXPECTED_URIS = [
     "https://github.com/Rah-Rah-Mitra",
     "https://rahul-mitra.com/",
 ]
-REQUIRED_TEXT = ["RAHUL MITRA", "rahul-mitra.com", "STMicroelectronics", "put-away",
+# The contact line shows the portfolio and GitHub links as "Portfolio" and
+# "GitHub" since 8 Nov 2026, so their URLs are pinned in EXPECTED_URIS only; the
+# bold start date that took their room is pinned here.
+REQUIRED_TEXT = ["RAHUL MITRA", "Expected Start Date: July 2027", "STMicroelectronics", "put-away",
                  "Amazon", "super-resolution"]
 FORBIDDEN_TEXT = ["PROFILE SUMMARY", "vercel.app", "�"]
 # A heading whose date the right tab could not hold prints it against the text:
@@ -58,7 +61,7 @@ def flatten(value):
     "super -resolution" on seven of the eight documents. The word is really on
     the page - it is the extractor that inserts the gap - so comparing flattened
     text keeps the assertion about content instead of about kerning. A line wrap
-    inside "put-away" or "rahul-mitra.com" would do the same thing.
+    inside "put-away" would do the same thing.
     """
     return re.sub(r"\s*([-.])\s*", r"\1", re.sub(r"\s+", " ", value))
 

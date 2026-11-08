@@ -464,9 +464,15 @@ describe('the real corpus', () => {
     // Most of the new ones are measured ("4-stage", "5+ plants", "3 workstreams",
     // "4-month", "13+ other programs", "S$20,000"), so coverage 0.52 -> 0.54.
     // 53: PA's stack split out of pa.churp for the pro bono line (Nov 2026).
-    expect(report.metrics.bullets).toBe(53);
-    expect(report.metrics.topOpener).toEqual({ openers: ['Led'], count: 4 });
-    expect(report.metrics.metricCoverage).toBe(0.55);
+    // 54 with the 8 Nov 2026 master CV: the Abbott contract trades
+    // decision-metrics for relaxation and validation (7 CV bullets, all measured
+    // but relaxation: "4 sites", "6 dryers", "83%", "30-minute", "18-feature",
+    // "20 engine tests"), so coverage 0.55 -> 0.60. pa.stack opens "Owned" now,
+    // as the CV does, so "Led" falls to 3, and with the contract's present-tense
+    // "Build" gone (datalayer reads "Built", in the CV's tense) "Built" is top.
+    expect(report.metrics.bullets).toBe(54);
+    expect(report.metrics.topOpener).toEqual({ openers: ['Built'], count: 3 });
+    expect(report.metrics.metricCoverage).toBe(0.6);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in
@@ -480,8 +486,11 @@ describe('the real corpus', () => {
     // "Assessed"), STMicro's design milestones (Architected, Designed, Defined:
     // finished stages of work in a running role), and the incoming A*STAR
     // attachment, whose one bullet says Rahul was "Selected", which he was.
+    // The Abbott contract joined them with the 8 Nov 2026 master CV, which writes
+    // its finished work in the past tense ("Developed ADAM", "Converted"); the
+    // four bullets off the CV were put in the same tense so the entry reads in one.
     const tense = report.findings.filter((item) => item.category === 'tense-vs-dates');
-    expect(tense.map((item) => item.where.entryId).sort()).toEqual(['astar-artc', 'stmicro-or', 'ywh']);
+    expect(tense.map((item) => item.where.entryId).sort()).toEqual(['abbott-contract', 'astar-artc', 'stmicro-or', 'ywh']);
     expect(report.counts.errors).toBe(0);
   });
 
@@ -529,13 +538,20 @@ describe('the real corpus', () => {
       // three one-pagers and general, operations-research-engineer drops coursework,
       // and "design, build" in Rahul's wording takes general over two more verb-family
       // caps; its frame-repeat went with the old PA and Led order.
-      'software-engineer': { bullets: 17, top: 2, codes: 'unquantified,unused-evidence' },
-      'solution-architect': { bullets: 16, top: 2, codes: 'unquantified' },
-      'ai-engineer': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence' },
+      // 8 Nov 2026 master CV: pa.churp reads "designed, built, and deployed
+      // Churp" and the Abbott platform bullet opens "Built", so with Amazon's
+      // "Built" and NTUC's "building" four résumés reach the build family's cap
+      // of 3 (R8). Rahul's own wording, and the lint says to accept it rather
+      // than drop evidence. Their top opener is "Built" x2, not
+      // "Develop/Developed": the contract reads "Developed ADAM", in the past
+      // tense, beside the internship's "Developed".
+      'software-engineer': { bullets: 17, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
+      'solution-architect': { bullets: 16, top: 2, codes: 'unquantified,verb-family-cap' },
+      'ai-engineer': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
       'operations-research-engineer': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
       'cyber-security': { bullets: 15, top: 1, codes: 'unquantified,unused-evidence' },
       'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
-      highlights: { bullets: 16, top: 2, codes: 'unquantified,unused-evidence' },
+      highlights: { bullets: 16, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
       // "Built", "Build", "building" and "hackathon build" are four uses of one
       // family that R1's per-section opener tally cannot see. The master CV now
@@ -549,7 +565,11 @@ describe('the real corpus', () => {
       // The adjacent repeat and the "engineer" family cap went with the old
       // order and wording; the trailing participles of the new
       // bullets ("flagging", "recommending", "running") make a frame repeat.
-      general: { bullets: 38, top: 3, codes: 'unquantified,unused-evidence,verb-family-cap,verb-family-cap,verb-family-cap' },
+      // The 8 Nov 2026 master CV: 40 (Abbott contract 5 -> 7). pa.stack's
+      // "Owned" takes general's top from "Led" x3 to 2, and the contract's new
+      // trailing participles ("giving", "replacing", "matching") bring a frame
+      // repeat back. The three family caps hold (build, train, design).
+      general: { bullets: 40, top: 2, codes: 'frame-repeat,unquantified,unused-evidence,verb-family-cap,verb-family-cap,verb-family-cap' },
     });
   });
 

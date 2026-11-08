@@ -573,9 +573,12 @@ describe('build_tailored_resume', () => {
     }));
     expect(govtech.matched.slug).toBe('civic-tech-solution-architect');
     // The tie it pinned is this platform posting's now: both architecture résumés
-    // carry the stack, 4-4, and specificity settles it.
+    // carry the stack, 4-4, and specificity settles it. It named Secrets Manager
+    // until the 8 Nov 2026 master CV shortened pa.infra's service list, which
+    // left only solution-architect's skills line naming it (an outright 4-3);
+    // KMS is on both.
     const civic = payload(await call('build_tailored_resume', {
-      jd_text: 'Platform engineer: Terraform, ECS Fargate, WAFv2 and Secrets Manager.',
+      jd_text: 'Platform engineer: Terraform, ECS Fargate, WAFv2 and KMS.',
       dry_run: true,
     }));
     expect(civic.matched.slug).toBe('civic-tech-solution-architect');
@@ -645,13 +648,15 @@ describe('build_tailored_resume', () => {
     expect(built.coverage.missing_blocks.Wireshark).toContain('cyber-skills');
     // Rust, asked of a page without pa.infra: arcane.main carries it but is
     // blocked as of the 2026-11 pass, so it must not be offered even though it
-    // would supply the term. Since the Nov 2026 master CV, pa.infra's Rust auth
-    // gateway is the bullet that answers instead.
+    // would supply the term. pa.infra answered from the Nov 2026 master CV until
+    // the 8 Nov one dropped its Rust auth gateway (it survives in pa.infra's deep
+    // text, which this index does not read), so the skills line answers alone.
     const rust = payload(await call('build_tailored_resume', {
       jd_text: 'Qzzytech needs Rust for its Blorptech platform.', block_ids: ['se-skills'],
     }));
     expect(rust.coverage.missing).toContain('Rust');
-    expect(rust.coverage.missing_blocks.Rust).toEqual(expect.arrayContaining(['pa.infra', 'cyber-skills']));
+    expect(rust.coverage.missing_blocks.Rust).toContain('cyber-skills');
+    expect(rust.coverage.missing_blocks.Rust).not.toContain('pa.infra');
     expect(rust.coverage.missing_blocks.Rust).not.toContain('arcane.main');
     // Still only his words, on the new keys too.
     const reported = JSON.stringify(built.coverage);

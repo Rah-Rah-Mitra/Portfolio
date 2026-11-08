@@ -24,7 +24,7 @@
         {
           "id": "coursework",
           "text": {
-            "full": "Relevant coursework: Software Engineering, Data Structures and Algorithms, Artificial Intelligence, 3D Computer Vision, Operations Research, Simulation, Statistics, Linear Algebra.",
+            "full": "Relevant coursework: Software Engineering, Data Structures and Algorithms, Artificial Intelligence, 3D Computer Vision, Computer Graphics, Operations Research, Simulation, Statistics, Linear Algebra.",
             "ai-engineer": "Relevant coursework: Artificial Intelligence, 3D Computer Vision, Software Engineering, Simulation, Statistics, Operations Research, Linear Algebra, Probability."
           }
         },

@@ -150,7 +150,7 @@ const METRIC = [
   // Drones, targets, trials and runs came with swarmline.main ("30 drones
   // confirmed all 8 walking targets in 10 of 10 seeded runs"), which read as
   // unmeasured without them; no other bullet in the pool changes class.
-  { kind: 'population', re: /\b\d[\d,]*\s+(?:[a-z]+\s+)?(?:teams?|students?|candidates?|programs?|users?|sites?|models?|services?|plants?|tests?|assertions?|residents?|inputs?|approaches|workstreams?|drones?|targets?|trials?|runs?)\b/gi },
+  { kind: 'population', re: /\b\d[\d,]*\s+(?:[a-z]+\s+)?(?:teams?|students?|candidates?|programs?|users?|sites?|models?|services?|plants?|tests?|assertions?|residents?|inputs?|approaches|workstreams?|drones?|targets?|trials?|runs?|sign-ups?)\b/gi },
   { kind: 'of-n', re: /\b(?:class|cohort|field|group)\s+of\s+\d+/gi },
   { kind: 'rank', re: /\btop\s+(?:\d+|quartile|quarter|half)\b/gi },
 ];

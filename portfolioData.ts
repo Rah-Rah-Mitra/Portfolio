@@ -1039,7 +1039,7 @@ const careerAndEducationNotes: FieldNote[] = [
   },
   {
     id: 'career-abbott-contract',
-    title: 'Abbott Laboratories (Contract) - Global Data Engineer (Operational AI Systems), Part-Time',
+    title: 'Abbott Laboratories (Contract) - Global Operational AI Systems & Data Engineer (Part-Time)',
     kind: 'career',
     kinds: ['career'],
     dateLabel: 'Jun 2026-Present',
@@ -1380,13 +1380,13 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
   // writes the running contract's finished work that way too.
   'career-abbott-contract': {
     kind: 'professional',
-    role: 'Global Data Engineer (Operational AI Systems), Part-Time',
+    role: 'Global Operational AI Systems & Data Engineer (Part-Time)',
     organization: 'Abbott Laboratories (Contract)',
     location: 'Singapore',
     scope: 'Offline process intelligence, multi-site historian analytics, setpoint optimization, and manufacturing decision support.',
     outcomes: [
       'Consolidates globally distributed plants’ Advanced Process Control models into one solver-backed engine with no commercial licence, back-tested against the production system’s own historical targets.',
-      'Matched live APC move direction in 83% of cases and temperature setpoints within 0.12 °C over 24 readings; rollout to Abbott servers is scheduled.',
+      'Matched live APC move direction in 83% of cases and temperature setpoints within 0.12 °C over 24 readings.',
     ],
   },
   'career-abbott-intern': {

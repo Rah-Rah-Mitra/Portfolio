@@ -118,14 +118,19 @@ describe('the shipped documents are a function of the content pool', () => {
       // hl-ai-data, sim-or and or-skills lines. Every DOCX was checked to hold
       // each selected sentence verbatim. The bold expected start date and the
       // "Portfolio"/"GitHub" link labels are header, which this does not hash.
-      'software-engineer': 'c89ec434ac3c3a1c',
-      'solution-architect': '646e1cb1497c568a',
-      'ai-engineer': 'dad12a9b97ac11a4',
-      'operations-research-engineer': '0ab31256ba4a96c6',
-      'cyber-security': '3727d58e6454a6f3',
-      'civic-tech-solution-architect': 'f9c27e77ab425a87',
-      highlights: 'f1f999c34ca6be3c',
-      general: 'a0ca556d7262cd79',
+      // All eight moved again for the master CV of 8 Nov 18:31, rebuilt in place
+      // (LibreOffice): its shorter wording of 27 bullets became their full
+      // tier, Abbott's, Amazon's, STMicro's and PA's bullets took the CV's order
+      // on general, the Theory line left general, and hl-web-cloud took the
+      // CV's shorter AWS list. Every DOCX holds each selected sentence verbatim.
+      'software-engineer': 'b06b52e41bd0f32b',
+      'solution-architect': '652f9fedb16eeefb',
+      'ai-engineer': '34e30e12decb4ac8',
+      'operations-research-engineer': 'fd5142732aa10e02',
+      'cyber-security': '4382166a404fe049',
+      'civic-tech-solution-architect': '69594384bfac4993',
+      highlights: 'e2582682cb1754f0',
+      general: '7a9bee35e064583d',
     });
   });
 

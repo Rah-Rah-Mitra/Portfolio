@@ -12,7 +12,7 @@
         {
           "id": "vba",
           "text": {
-            "full": "Compressed a month-long manual analysis of 6 months of food-waste data into a 3-minute Excel VBA reporting workflow inside a security-constrained environment.",
+            "full": "Compressed a month-long manual analysis of 6 months of food-waste data into a 3-minute Excel VBA report in a restricted environment.",
             "deep": "Mapped the food-waste reporting process end to end, then automated its calculations and reporting steps with an Excel VBA workflow that compressed a month-long manual analysis of 6 months of food-waste data into a repeatable 3-minute process inside a security-constrained environment."
           }
         },

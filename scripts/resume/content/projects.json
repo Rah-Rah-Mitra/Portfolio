@@ -22,7 +22,7 @@
         {
           "id": "combined",
           "text": {
-            "full": "Directed a 5-person team building decentralised drone-swarm coordination in a deterministic Unreal Engine 5.8 C++ simulation; under a ground-link jam, 30 drones confirmed all 8 walking targets in 10 of 10 seeded runs, versus 2.1 of 8 on average for an operator-run fleet."
+            "full": "Directed a 5-person team building decentralised drone-swarm coordination in a deterministic Unreal Engine 5.8 C++ simulation; under a ground-link jam, 30 drones confirmed all 8 targets in 10 of 10 runs, versus an average 2.1 of 8 for an operator-run fleet."
           }
         }
       ]
@@ -159,14 +159,8 @@
         {
           "id": "main",
           "text": {
-            "full": "Integrated SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning into an autonomous loop managing electricity and utility savings across multiple HDB households at once.",
+            "full": "Built an autonomous loop managing electricity and utility savings across multiple HDB households at once on SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning.",
             "deep": "Integrated SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing into an autonomous loop managing electricity and utility savings across multiple HDB households at once, placing top 8 of 50+ teams at SMU Hack For Cities 2026."
-          },
-          "phrasings": {
-            "loop-first": {
-              "text": "Built an autonomous loop managing electricity and utility savings across multiple HDB households at once on SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning.",
-              "note": "leads on the loop rather than on the retrieval stack"
-            }
           }
         }
       ]
@@ -289,14 +283,8 @@
         {
           "id": "main",
           "text": {
-            "full": "Trained YOLO26 through transfer learning and reshaped its architecture with the Hailo Dataflow Compiler, running document detection on a Hailo-8L rated 13 TOPS at 1.5 W to speed up large-batch scanning.",
+            "full": "Converted YOLO26 through transfer learning and the Hailo Dataflow Compiler for document detection on a Hailo-8L rated 13 TOPS at 1.5 W to speed up large-batch scanning.",
             "deep": "Trained YOLO26 through transfer learning and reshaped its architecture with the Hailo Dataflow Compiler, then deployed OCR and object-detection models to a Hailo-8L rated 13 TOPS at 1.5 W, building the training and experimentation workflows around on-device inference so large-batch document scanning runs at the edge."
-          },
-          "phrasings": {
-            "target-first": {
-              "text": "Converted YOLO26 through transfer learning and the Hailo Dataflow Compiler for document detection on a Hailo-8L rated 13 TOPS at 1.5 W to speed up large-batch scanning.",
-              "note": "leads on the conversion to the target part; no trailing participle"
-            }
           }
         }
       ]

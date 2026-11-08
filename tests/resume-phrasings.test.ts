@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { attestPhrasing } from '../server/resumeCheck.mjs';
-import { assemble, measureBulletLines, resolveBulletText, specSchema } from '../server/resumeRender.mjs';
-import { checkSpec, decoratedBlocks, resumeConfigs } from '../server/portfolioMcp.mjs';
+import { attestPhrasing, checkResume } from '../server/resumeCheck.mjs';
+import { assemble, ENTRY_SECTION_TYPES, measureBulletLines, resolveBulletText, specSchema } from '../server/resumeRender.mjs';
+import { decoratedBlocks } from '../server/portfolioMcp.mjs';
 import { pools, resumeBlocks } from '../server/resumeContent.mjs';
 import ownershipTable from '../scripts/resume/content/ownership.json';
 
@@ -13,9 +13,10 @@ type PoolBullet = { id: string; text: Record<string, string>; phrasings?: Record
 type PoolEntry = { id: string; blocked?: string; bullets?: PoolBullet[] };
 type Finding = { rule: string; category: string; remedy?: { kind: string; candidates?: Array<{ ref: string; phrasing?: string }> } };
 type Report = { counts: { errors: number; warnings: number }; findings: Finding[] };
-type Spec = { slug: string; sections: unknown[]; phrasings?: Record<string, string>; bodyPt?: number; marginIn?: number };
 
-const SECTIONS = ['education', 'experience', 'projects', 'leadership'] as const;
+// Every entry section, research and national service included: the list was
+// four long until Nov 2026, so amazon-vision.brief@no-mentor was never attested.
+const SECTIONS = ENTRY_SECTION_TYPES as unknown as Array<'experience'>;
 
 /** Every committed phrasing, with the bullet it belongs to. */
 const committed = () => {
@@ -60,7 +61,10 @@ describe('the attestation guard', () => {
   const rows = committed();
 
   it('has phrasings to check', () => {
-    expect(rows.length).toBeGreaterThan(5);
+    // 8 until the 8 Nov 2026 master CV, whose shorter sentences retired three
+    // (pa.singpass@fairness-first, voltpulse.main@loop-first and
+    // hailo.main@target-first: the last two are the CV's own wording now).
+    expect(rows.length).toBeGreaterThanOrEqual(5);
   });
 
   // The gate. A phrasing can only enter the pools through a commit, so this is
@@ -161,38 +165,35 @@ describe('phrasing selection', () => {
 });
 
 describe('the checker offers a rephrase where it used to offer nothing', () => {
-  // These two rode on software-engineer until the 2026-11 master CV pass, which
-  // dropped OnTheSpectrum from it and took its trailing-participle bullet with it,
-  // leaving that résumé with no frame-repeat to fix. civic-tech-solution-architect
-  // is the config that carries one now. The subject is incidental; what these
-  // pin is that a frame-repeat names a rephrase and that taking it clears.
+  // These rode on a canonical résumé until the 8 Nov 2026 master CV: civic's
+  // frame-repeat was cleared by pa.singpass@fairness-first, which no longer
+  // attests against the CV's shorter Singpass sentence and was dropped. No
+  // canonical résumé carries a rephrasable finding now, so the property is pinned
+  // on rows built for it: a frame-repeat names the wording that breaks it, and
+  // taking that wording clears the finding.
+  const row = (ref: string, text: string) => ({
+    ref, entryId: ref.split('.')[0], bulletId: ref.split('.')[1], sectionType: 'experience', variant: 'full', text,
+  });
+  const rows = [
+    row('a.one', 'Built a planner, keeping every route auditable.'),
+    row('a.two', 'Wrote a scheduler, leaving every change reproducible.'),
+    row('b.one', 'Designed a ranking, letting one model fit every site.'),
+    row('b.two', 'Shipped a gateway, giving residents one sign-in.'),
+    row('c.one', 'Validated a pipeline, matching every reading.'),
+    row('c.two', 'Trained a team on safeguards.'),
+  ];
+  const plain = { id: 'plain', text: 'Built a planner with auditable routes.', lead: 'Built', lemma: 'build', frames: [], lines: 1, hasMetric: false };
+
   it('names a fix for the repeated sentence shape', () => {
-    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'civic-tech-solution-architect') as Spec;
-    const report = checkSpec(config, { bodyPt: config.bodyPt, marginIn: config.marginIn } as never) as Report;
+    const report = checkResume(rows, { rephrasings: { 'a.one': [plain] } }) as Report;
     const frame = report.findings.find((item) => item.category === 'frame-repeat');
     expect(frame?.remedy?.kind).toBe('rephrase');
-    expect(frame?.remedy?.candidates?.map((row) => `${row.ref}@${row.phrasing}`))
-      .toContain('pa.singpass@fairness-first');
+    expect(frame?.remedy?.candidates?.map((item) => `${item.ref}@${item.phrasing}`)).toEqual(['a.one@plain']);
   });
 
   it('clears the findings when the offered wordings are taken', () => {
-    // The acceptance test for the whole feature: every fix the checker names is
-    // one an agent may apply, and applying them removes the finding.
-    const config = (resumeConfigs as unknown as Spec[]).find((item) => item.slug === 'civic-tech-solution-architect') as Spec;
-    // At the typography civic ships at. At 10pt/0.7in the merged pa.infra bullet
-    // (the CV's AWS and CI/CD line) runs to four lines, a line-budget warning no
-    // wording can clear, which would hide the property this test is about.
-    const fit = { bodyPt: config.bodyPt, marginIn: config.marginIn };
-    const before = checkSpec(config, fit as never) as Report;
-    const chosen: Record<string, string> = {};
-    for (let round = 0; round < 6; round += 1) {
-      const report = checkSpec({ ...config, phrasings: chosen }, fit as never) as Report;
-      const offered = report.findings.flatMap((item) => (item.remedy?.kind === 'rephrase' ? item.remedy.candidates ?? [] : []));
-      const fresh = offered.filter((row) => !chosen[row.ref]);
-      if (!fresh.length) break;
-      for (const row of fresh) chosen[row.ref] ??= row.phrasing as string;
-    }
-    const after = checkSpec({ ...config, phrasings: chosen }, fit as never) as Report;
+    const before = checkResume(rows, { rephrasings: { 'a.one': [plain] } }) as Report;
+    const after = checkResume(rows.map((item) => (item.ref === 'a.one' ? { ...item, text: plain.text } : item))) as Report;
     expect(before.counts.warnings).toBe(1);
     expect(after.counts.warnings).toBe(0);
     expect(after.counts.errors).toBe(0);

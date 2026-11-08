@@ -133,7 +133,9 @@ describe('metric classifier', () => {
 
   it('names the digits it rejected, so nobody answers a low count by inventing one', () => {
     expect(metricsIn(text('agewelllah.main')).suppressed.map((item) => item.surface)).toContain('GPT-4');
-    expect(metricsIn(text('pa.infra')).suppressed.map((item) => item.surface)).toContain('Route 53');
+    // pa.infra named Route 53 until the 8 Nov 2026 master CV shortened its service
+    // list; the product-number guard is pinned on a sentence of its own.
+    expect(metricsIn('Fronted it with Route 53 and ACM.').suppressed.map((item) => item.surface)).toContain('Route 53');
     expect(metricsIn(text('steminc.combined')).suppressed.map((item) => item.surface)).toContain('7th');
   });
 
@@ -548,9 +550,14 @@ describe('the real corpus', () => {
       'software-engineer': { bullets: 17, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
       'solution-architect': { bullets: 16, top: 2, codes: 'unquantified,verb-family-cap' },
       'ai-engineer': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
-      'operations-research-engineer': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
-      'cyber-security': { bullets: 15, top: 1, codes: 'unquantified,unused-evidence' },
-      'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'frame-repeat,unquantified,unused-evidence' },
+      // The CV of 8 Nov 18:31 rewrote nearly every bullet shorter: OR reaches the
+      // build-family cap too (Hailo's "Converted" is gone from it, Volt Pulse's
+      // "Built an autonomous loop" arrives), cyber-security's top becomes "Built"
+      // x2, and civic loses its frame-repeat (Singpass's trailing "keeping" went
+      // with the old wording) for the build cap.
+      'operations-research-engineer': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
+      'cyber-security': { bullets: 15, top: 2, codes: 'unquantified,unused-evidence' },
+      'civic-tech-solution-architect': { bullets: 14, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
       highlights: { bullets: 16, top: 2, codes: 'unquantified,unused-evidence,verb-family-cap' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
       // "Built", "Build", "building" and "hackathon build" are four uses of one
@@ -569,7 +576,9 @@ describe('the real corpus', () => {
       // "Owned" takes general's top from "Led" x3 to 2, and the contract's new
       // trailing participles ("giving", "replacing", "matching") bring a frame
       // repeat back. The three family caps hold (build, train, design).
-      general: { bullets: 40, top: 2, codes: 'frame-repeat,unquantified,unused-evidence,verb-family-cap,verb-family-cap,verb-family-cap' },
+      // 18:31: the shorter wording drops one family cap and the unused-evidence
+      // note, and "Led" (stack, sparks, maritime) is the top opener again.
+      general: { bullets: 40, top: 2, codes: 'frame-repeat,unquantified,verb-family-cap,verb-family-cap' },
     });
   });
 

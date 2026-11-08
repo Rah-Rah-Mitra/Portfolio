@@ -107,7 +107,7 @@ def group_by_company(chosen):
 
 def bullet_text(bullet, slug):
     text = bullet["text"]
-    return text.get(slug, text["default"])
+    return text.get(slug, text["full"])
 
 
 def inline_label(entry, role):

@@ -12,26 +12,26 @@
         {
           "id": "majors",
           "text": {
-            "default": "Pursuing a Second Major in Computer Science and a Minor in Mathematics."
+            "full": "Pursuing a Second Major in Computer Science and a Minor in Mathematics."
           }
         },
         {
           "id": "award",
           "text": {
-            "default": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277): top student in a class of 24, NUS School of Computing."
+            "full": "Awarded Certificate of Outstanding Performance in 3D Computer Vision (CS4277): top student in a class of 24, NUS School of Computing."
           }
         },
         {
           "id": "coursework",
           "text": {
-            "default": "Relevant coursework: Software Engineering, Data Structures and Algorithms, Artificial Intelligence, 3D Computer Vision, Operations Research, Simulation, Statistics, Linear Algebra.",
+            "full": "Relevant coursework: Software Engineering, Data Structures and Algorithms, Artificial Intelligence, 3D Computer Vision, Operations Research, Simulation, Statistics, Linear Algebra.",
             "ai-engineer": "Relevant coursework: Artificial Intelligence, 3D Computer Vision, Software Engineering, Simulation, Statistics, Operations Research, Linear Algebra, Probability."
           }
         },
         {
           "id": "coursework-full",
           "text": {
-            "default": "Relevant coursework: Simulation, Stochastic Processes, Statistics for Engineering Applications, Operations Research, Artificial Intelligence, Computer Graphics, 3D Computer Vision, Software Engineering, Data Structures and Algorithms."
+            "full": "Relevant coursework: Simulation, Stochastic Processes, Statistics for Engineering Applications, Operations Research, Artificial Intelligence, Computer Graphics, 3D Computer Vision, Software Engineering, Data Structures and Algorithms."
           }
         }
       ]
@@ -48,7 +48,7 @@
         {
           "id": "award",
           "text": {
-            "default": "Awarded the ASRJC Outstanding Contribution Award for astronomy outreach and robotics leadership."
+            "full": "Awarded the ASRJC Outstanding Contribution Award for astronomy outreach and robotics leadership."
           }
         }
       ]

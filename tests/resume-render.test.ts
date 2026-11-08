@@ -292,7 +292,7 @@ describe('résumé spec', () => {
     // Depth variants travel with the bullet so an agent can pick a register.
     const apc = blocks.sections.flatMap((section) => section.entries)
       .flatMap((entry) => entry.bullets ?? []).find((bullet) => bullet.id === 'apc');
-    expect(Object.keys(apc?.variants ?? {})).toContain('default');
+    expect(Object.keys(apc?.variants ?? {})).toContain('full');
   });
 });
 

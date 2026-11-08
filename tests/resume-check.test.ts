@@ -41,7 +41,7 @@ const text = (ref: string) => {
   for (const type of ENTRY_SECTION_TYPES as Array<keyof typeof pools>) {
     const entry = ((pools[type] as { entries?: unknown }).entries as PoolEntry[] | undefined)?.find((item) => item.id === entryId);
     const found = entry?.bullets?.find((item) => item.id === bulletId);
-    if (found) return found.text.default;
+    if (found) return found.text.full;
   }
   throw new Error(`no such bullet: ${ref}`);
 };
@@ -354,7 +354,7 @@ describe('evidence already on the page', () => {
 describe('house style (P5)', () => {
   const poolOf = (text: string, extra: Record<string, unknown> = {}) => checkPool([{
     entryId: 'e', sectionType: 'experience', dateLabel: 'Jan 2020 - Jan 2021',
-    bullets: [{ ref: 'e.one', variant: 'default', text }], ...extra,
+    bullets: [{ ref: 'e.one', variant: 'full', text }], ...extra,
   }]) as Report;
   const categories = (report: Report) => report.findings.filter((item) => item.rule === 'P5')
     .map((item) => item.category);

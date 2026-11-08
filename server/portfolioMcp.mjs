@@ -58,7 +58,7 @@ export const swapCandidates = (spec, chosen) => {
       const entry = pools[section.type].entries.find((item) => item.id === selection.id);
       for (const bullet of entry?.bullets ?? []) {
         const ref = `${entry.id}.${bullet.id}`;
-        if (!taken.has(ref)) candidates.push({ ref, entryId: entry.id, sectionType: section.type, text: bullet.text.default });
+        if (!taken.has(ref)) candidates.push({ ref, entryId: entry.id, sectionType: section.type, text: bullet.text.full });
       }
     }
   }
@@ -206,7 +206,7 @@ export const portfolioExport = () => ({
 });
 
 /** What a block id renders as by default — the sentence the menu is measured on. */
-const defaultText = (bullet) => bullet.variants.default ?? Object.values(bullet.variants)[0] ?? '';
+const defaultText = (bullet) => bullet.variants.full ?? Object.values(bullet.variants)[0] ?? '';
 
 /**
  * Which of the eight canonical résumés select each bullet and each skills line.

@@ -14,7 +14,7 @@ import { ENTRY_SECTION_TYPES } from '../server/resumeAssemble.mjs';
 //
 //     def bullet_text(bullet, slug):
 //         text = bullet["text"]
-//         return text.get(slug, text["default"])
+//         return text.get(slug, text["full"])
 //
 // This file mirrors that rule and pins its output. Anything a future change adds
 // to a bullet is safe for the shipped documents if and only if these digests do
@@ -31,7 +31,7 @@ const configs = resumeConfigs as Config[];
 const SLUGS = configs.map((config) => config.slug);
 
 /** build_resumes.py's resolution, mirrored. Slug override, else the default. */
-const shippedText = (bullet: PoolBullet, slug: string) => bullet.text[slug] ?? bullet.text.default;
+const shippedText = (bullet: PoolBullet, slug: string) => bullet.text[slug] ?? bullet.text.full;
 
 const documentDigest = (config: Config) => {
   const lines: string[] = [];
@@ -158,7 +158,7 @@ describe('the shipped documents are a function of the content pool', () => {
   // The property that lets phrasings ship without touching Word: they live outside
   // `text`, and no canonical config selects one. Selecting one from a config would
   // change word/document.xml and reopen the full edition rebuild, so the right way
-  // to adopt a winning phrasing is to promote it into text.default at the next
+  // to adopt a winning phrasing is to promote it into text.full at the next
   // edition bump, not to select it here.
   it('keeps every canonical résumé free of phrasing selections', () => {
     for (const config of configs) expect(config.phrasings, config.slug).toBeUndefined();
@@ -179,9 +179,11 @@ describe('the shipped documents are a function of the content pool', () => {
     expect(leaked).toEqual([]);
   });
 
-  it('reserves the depth keys, so no résumé slug can ever be named "deep"', () => {
-    expect(SLUGS).not.toContain('deep');
-    expect(SLUGS).not.toContain('default');
+  // The tier keys share bullet.text with the per-résumé overrides, so a slug named
+  // after a tier would silently become one (Nov 2026: default became full, and
+  // short and standard joined deep).
+  it('reserves the tier keys, so no résumé slug can ever be named after a tier', () => {
+    for (const tier of ['short', 'standard', 'full', 'deep', 'default']) expect(SLUGS).not.toContain(tier);
   });
 });
 
@@ -202,7 +204,7 @@ describe('the master CV house rules hold across the pool', () => {
   });
 
   it('carries none of the wording the master CV retired', () => {
-    const defaults = entries.flatMap((entry) => (entry.bullets ?? []).map((bullet) => `${entry.id}.${bullet.id}: ${bullet.text.default}`));
+    const defaults = entries.flatMap((entry) => (entry.bullets ?? []).map((bullet) => `${entry.id}.${bullet.id}: ${bullet.text.full}`));
     expect(defaults.filter((text) => /Singapore warehouse|against 2\.1/.test(text))).toEqual([]);
     // "Amazon" alone reads as employment; the research entry is BlendED x Amazon Robotics.
     expect(entries.filter((entry) => entry.organization.trim() === 'Amazon').map((entry) => entry.id)).toEqual([]);

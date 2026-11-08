@@ -48,7 +48,7 @@ for (let bodyPt = 8.5; bodyPt <= 12; bodyPt += 0.5) {
 }
 
 const lineGridFor = (phrasing: Phrasing, bullet: PoolBullet) => {
-  const base = bullet.text[phrasing.basis ?? 'default'];
+  const base = bullet.text[phrasing.basis ?? 'full'];
   return GRID.map((point) => ({
     ...point,
     phrasing: measureBulletLines([phrasing.text], point)[0],
@@ -74,7 +74,7 @@ describe('the attestation guard', () => {
   });
 
   it('rejects an invented fact', () => {
-    const bullet = { text: { default: 'Built a pipeline with Gemini 2.0 Flash.' } };
+    const bullet = { text: { full: 'Built a pipeline with Gemini 2.0 Flash.' } };
     const problems = attestPhrasing({ text: 'Shipped a pipeline with Gemini 2.0 Flash and PyTorch.', note: 'x' }, bullet, { ownership });
     expect(problems.map((item) => item.code)).toContain('G1-unattested');
     expect(problems[0].detail).toContain('pytorch');
@@ -85,24 +85,24 @@ describe('the attestation guard', () => {
     // suppressed span rather than a metric, so only G3 sees it go.
     const bullet = (pools.projects.entries as unknown as PoolEntry[])
       .find((entry) => entry.id === 'waaah')?.bullets?.[0] as PoolBullet;
-    const dropped = { text: bullet.text.default.replace('3D ', ''), note: 'x' };
+    const dropped = { text: bullet.text.full.replace('3D ', ''), note: 'x' };
     expect(attestPhrasing(dropped, bullet, { ownership }).map((item) => item.code)).toContain('G3-entities');
   });
 
   it('rejects a phrasing that quietly changes what is claimed', () => {
-    const bullet = { text: { default: 'Built an AI research engine scoring brand ethics.' } };
+    const bullet = { text: { full: 'Built an AI research engine scoring brand ethics.' } };
     const problems = attestPhrasing({ text: 'Assessed an AI research engine scoring brand ethics.', note: 'x' }, bullet, { ownership });
     expect(problems.map((item) => item.code)).toContain('G7-ownership');
   });
 
   it('requires an unknown opening verb to be ranked deliberately', () => {
-    const bullet = { text: { default: 'Built a thing.' } };
+    const bullet = { text: { full: 'Built a thing.' } };
     expect(attestPhrasing({ text: 'Frobnicated a thing.', note: 'x' }, bullet, { ownership })
       .map((item) => item.code)).toContain('G7-unranked');
   });
 
   it('rejects a phrasing that buys nothing', () => {
-    const bullet = { text: { default: 'Built a thing for people.' } };
+    const bullet = { text: { full: 'Built a thing for people.' } };
     expect(attestPhrasing({ text: 'Built a thing for people.', note: 'x' }, bullet, { ownership })
       .map((item) => item.code)).toContain('G6-redundant');
   });
@@ -117,7 +117,7 @@ describe('the attestation guard', () => {
 });
 
 describe('phrasing selection', () => {
-  const bullet = { id: 'main', text: { default: 'Built a thing.', deep: 'Built a thing, at length.' },
+  const bullet = { id: 'main', text: { full: 'Built a thing.', deep: 'Built a thing, at length.' },
     phrasings: { 'turn-first': { text: 'Turned a thing.' } } };
 
   it('lets a phrasing win over depth, because it is the more specific instruction', () => {
@@ -129,7 +129,7 @@ describe('phrasing selection', () => {
   it('throws on an unknown phrasing instead of rendering a different sentence', () => {
     expect(() => resolveBulletText(bullet, { phrasings: { 'x.main': 'nope' } }, undefined, 'x.main'))
       .toThrow(/unknown phrasing "nope".*choose one of turn-first/);
-    expect(() => resolveBulletText({ id: 'm', text: { default: 'a' } }, { phrasings: { 'y.m': 'nope' } }, undefined, 'y.m'))
+    expect(() => resolveBulletText({ id: 'm', text: { full: 'a' } }, { phrasings: { 'y.m': 'nope' } }, undefined, 'y.m'))
       .toThrow(/only one wording/);
   });
 

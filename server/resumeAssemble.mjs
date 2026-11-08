@@ -72,7 +72,7 @@ const inlineLabel = (entry, role) => {
 /** The text a bullet prints: its sentence, behind its inline label when it has one. */
 export const bulletLine = (item) => (item.label ? `${item.label}: ${item.text}` : item.text);
 
-// text[variant] ?? text[slug] ?? text.default, mirroring build_resumes.py:33-35
+// text[variant] ?? text[slug] ?? text.full, mirroring build_resumes.py bullet_text
 // with the reserved depth keys layered on top.
 export const resolveRole = (entry, selection) => {
   const role = entry.role;
@@ -120,7 +120,7 @@ export const resolveBulletText = (bullet, spec, entryVariant, ref) => {
   const variant = entryVariant ?? spec.detail;
   const text = bullet.text;
   if (variant && variant !== 'standard' && text[variant]) return text[variant];
-  return text[spec.slug] ?? text.default;
+  return text[spec.slug] ?? text.full;
 };
 
 /**

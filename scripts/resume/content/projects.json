@@ -10,19 +10,19 @@
         {
           "id": "coordination",
           "text": {
-            "default": "Directed a 5-person team to architect decentralised drone-swarm coordination on correlated random-walk search, gradient-flow dispersion, delay-tolerant gossip, cross-inhibition consensus, and response-threshold task allocation."
+            "full": "Directed a 5-person team to architect decentralised drone-swarm coordination on correlated random-walk search, gradient-flow dispersion, delay-tolerant gossip, cross-inhibition consensus, and response-threshold task allocation."
           }
         },
         {
           "id": "main",
           "text": {
-            "default": "Implemented a deterministic Unreal Engine 5.8 C++ simulation with Claude Code; under a ground-link jam, 30 drones confirmed all 8 walking targets in 10 of 10 seeded runs, versus 2.1 of 8 on average for an operator-run fleet."
+            "full": "Implemented a deterministic Unreal Engine 5.8 C++ simulation with Claude Code; under a ground-link jam, 30 drones confirmed all 8 walking targets in 10 of 10 seeded runs, versus 2.1 of 8 on average for an operator-run fleet."
           }
         },
         {
           "id": "combined",
           "text": {
-            "default": "Directed a 5-person team building decentralised drone-swarm coordination in a deterministic Unreal Engine 5.8 C++ simulation; under a ground-link jam, 30 drones confirmed all 8 walking targets in 10 of 10 seeded runs, versus 2.1 of 8 on average for an operator-run fleet."
+            "full": "Directed a 5-person team building decentralised drone-swarm coordination in a deterministic Unreal Engine 5.8 C++ simulation; under a ground-link jam, 30 drones confirmed all 8 walking targets in 10 of 10 seeded runs, versus 2.1 of 8 on average for an operator-run fleet."
           }
         }
       ]
@@ -36,7 +36,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Authored and maintain an asyncio-first, aiohttp-based DuckDuckGo client on PyPI with pytest CI/CD, adopted across AI tooling, Discord bots, and search projects.",
+            "full": "Authored and maintain an asyncio-first, aiohttp-based DuckDuckGo client on PyPI with pytest CI/CD, adopted across AI tooling, Discord bots, and search projects.",
             "deep": "Authored and maintain an asyncio-first, aiohttp-based DuckDuckGo client on PyPI achieving sub-100ms query responses by working with Python's event loop rather than against the GIL, maintained with pytest CI/CD on GitHub Actions and referenced by starred AI projects including SearchGPT and Auto-Photoshop-StableDiffusion-Plugin as well as Discord bot frameworks."
           }
         }
@@ -52,7 +52,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Built an AI-assisted portfolio in React, TypeScript, Three.js, and Matter.js with profile switching, searchable field notes, analytics, and a 3D project world."
+            "full": "Built an AI-assisted portfolio in React, TypeScript, Three.js, and Matter.js with profile switching, searchable field notes, analytics, and a 3D project world."
           }
         }
       ],
@@ -67,7 +67,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Modeled hybrid flow-shop scheduling as a SimPy digital twin with explicit objectives and constraints, using CP-SAT, simulation, and deployment-oriented Python tooling.",
+            "full": "Modeled hybrid flow-shop scheduling as a SimPy digital twin with explicit objectives and constraints, using CP-SAT, simulation, and deployment-oriented Python tooling.",
             "deep": "Modeled hybrid flow-shop scheduling as a SimPy discrete-event digital twin paired with an OR-Tools CP-SAT solver over interval and precedence constraints, compared against heuristic baselines, and researched robust optimization for operational uncertainty."
           }
         }
@@ -84,7 +84,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Created a game of AI-driven infinite levels in a 7-hour hackathon build, wiring Codex and Blender MCP into a local-first Blender-to-Three.js pipeline for GLB assets, previews, and playable-world QA.",
+            "full": "Created a game of AI-driven infinite levels in a 7-hour hackathon build, wiring Codex and Blender MCP into a local-first Blender-to-Three.js pipeline for GLB assets, previews, and playable-world QA.",
             "deep": "Created a game of AI-driven infinite levels in a 7-hour hackathon build at AI Engineer Hackathon 2026, wiring Codex and Blender MCP into a local-first Blender-to-Three.js asset pipeline that generates GLB assets, metadata, previews, playable-world QA, and Remotion video workflows."
           },
           "phrasings": {
@@ -106,7 +106,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Built Rust-forward security and red-team tooling (Arcane, Arcane-PP, Arcane-GLM, Arcane-OCR) for automation, OCR, and adversarial workflows."
+            "full": "Built Rust-forward security and red-team tooling (Arcane, Arcane-PP, Arcane-GLM, Arcane-OCR) for automation, OCR, and adversarial workflows."
           }
         }
       ],
@@ -121,7 +121,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Built a real-time global intelligence dashboard for AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking with geospatial visualization."
+            "full": "Built a real-time global intelligence dashboard for AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking with geospatial visualization."
           }
         }
       ],
@@ -137,7 +137,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Turned MediaPipe 3D hand landmarks into generated comic strips in a 24-hour sprint with Gemini 2.0 Flash, Veo 3, and Konva.js canvas tooling.",
+            "full": "Turned MediaPipe 3D hand landmarks into generated comic strips in a 24-hour sprint with Gemini 2.0 Flash, Veo 3, and Konva.js canvas tooling.",
             "deep": "Turned MediaPipe 3D hand landmarks into generated comic strips in a 24-hour sprint, routing them through Gemini 2.0 Flash for panel generation, Veo 3 for generated video, and Konva.js canvas tooling for composition, exercising several generative models end to end in one interactive gesture-to-comic pipeline."
           },
           "phrasings": {
@@ -159,7 +159,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Integrated SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning into an autonomous loop managing electricity and utility savings across multiple HDB households at once.",
+            "full": "Integrated SEALION embeddings, Supabase vector search, RRF routing, and scheduler-agent planning into an autonomous loop managing electricity and utility savings across multiple HDB households at once.",
             "deep": "Integrated SEALION embeddings, Supabase vector search, reciprocal-rank fusion for multilingual retrieval, and scheduler-agent planning for recommendation routing into an autonomous loop managing electricity and utility savings across multiple HDB households at once, placing top 8 of 50+ teams at SMU Hack For Cities 2026."
           },
           "phrasings": {
@@ -181,7 +181,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Led model training for a maritime-inspection NLP system, fine-tuning a 109M-parameter BERT with DNN layers and gradient clipping on the ASPIRE 2A supercomputer.",
+            "full": "Led model training for a maritime-inspection NLP system, fine-tuning a 109M-parameter BERT with DNN layers and gradient clipping on the ASPIRE 2A supercomputer.",
             "deep": "Led a multidisciplinary team and owned model training for a maritime deficiency-severity forecasting system, fine-tuning a 109M-parameter BERT with DNN layers on the ASPIRE 2A supercomputer, applying gradient clipping to prevent catastrophic forgetting and hyperparameter optimization over engineered inspection-log features."
           }
         }
@@ -197,7 +197,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Developed an elderly-care triage chatbot on OpenAI GPT-4, InterSystems IRIS Vector Search, and Flask, with OAuth2-secured patient profiles and PDPA-aware design.",
+            "full": "Developed an elderly-care triage chatbot on OpenAI GPT-4, InterSystems IRIS Vector Search, and Flask, with OAuth2-secured patient profiles and PDPA-aware design.",
             "deep": "Served as primary AI/ML engineer on an elderly-care triage system, deploying a RAG architecture over OpenAI GPT-4 and InterSystems IRIS Vector Search with cosine-similarity semantic retrieval, a Flask backend, OAuth2-secured patient profiles, and PDPA-aware design."
           },
           "phrasings": {
@@ -220,7 +220,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Streamlined exam practice into a multi-agent RAG pipeline turning students' own notes into adaptive-difficulty papers, replacing hundreds of dollars of past-year paper purchases.",
+            "full": "Streamlined exam practice into a multi-agent RAG pipeline turning students' own notes into adaptive-difficulty papers, replacing hundreds of dollars of past-year paper purchases.",
             "deep": "Streamlined exam practice into a multi-agent autonomous exam-generation system with a RAG pipeline and Next.js frontend, automating source ingestion, question generation, and education workflows so students' own notes become adaptive-difficulty papers, replacing hundreds of dollars of past-year paper purchases."
           },
           "phrasings": {
@@ -242,7 +242,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Built an AI research engine scoring brand ethics and sustainability using FastAPI, Python, and LangChain with automated evidence retrieval."
+            "full": "Built an AI research engine scoring brand ethics and sustainability using FastAPI, Python, and LangChain with automated evidence retrieval."
           }
         }
       ],
@@ -258,7 +258,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure, ranking top 25% of 400+ teams.",
+            "full": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure, ranking top 25% of 400+ teams.",
             "deep": "Solved web, crypto, reverse-engineering, and systems-security challenges under time pressure at DSTA BrainHack 2025, ranking top 25% of 400+ teams."
           }
         }
@@ -273,7 +273,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Built LP, network-flow, and nonlinear programming models, including a Jupyter SSSP/APSP (Dijkstra) graph optimization for engineering decision support."
+            "full": "Built LP, network-flow, and nonlinear programming models, including a Jupyter SSSP/APSP (Dijkstra) graph optimization for engineering decision support."
           }
         }
       ],
@@ -289,7 +289,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Trained YOLO26 through transfer learning and reshaped its architecture with the Hailo Dataflow Compiler, running document detection on a Hailo-8L rated 13 TOPS at 1.5 W to speed up large-batch scanning.",
+            "full": "Trained YOLO26 through transfer learning and reshaped its architecture with the Hailo Dataflow Compiler, running document detection on a Hailo-8L rated 13 TOPS at 1.5 W to speed up large-batch scanning.",
             "deep": "Trained YOLO26 through transfer learning and reshaped its architecture with the Hailo Dataflow Compiler, then deployed OCR and object-detection models to a Hailo-8L rated 13 TOPS at 1.5 W, building the training and experimentation workflows around on-device inference so large-batch document scanning runs at the edge."
           },
           "phrasings": {

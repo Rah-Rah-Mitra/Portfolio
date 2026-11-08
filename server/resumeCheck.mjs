@@ -379,7 +379,7 @@ export const attestPhrasing = (phrasing, bullet, { lineGrid = [], ownership = nu
   // "deep" exists so a bullet can carry a tighter form of its own long variant,
   // which is otherwise unwritable: such a phrasing is longer than the default by
   // construction and the fit rule would reject it for the wrong reason.
-  const basisKey = phrasing?.basis ?? 'default';
+  const basisKey = phrasing?.basis ?? 'full';
   const base = bullet.text[basisKey];
   const push = (code, detail) => problems.push({ code, detail });
 
@@ -915,7 +915,7 @@ export const checkPool = (entries, { today = '2026-10' } = {}) => {
   const texts = entries.flatMap((entry) => entry.bullets.map((bullet) => ({
     ...bullet, sectionType: entry.sectionType, entryId: entry.entryId,
   })));
-  const defaults = texts.filter((row) => row.variant === 'default');
+  const defaults = texts.filter((row) => row.variant === 'full');
 
   // P1 lead concentration per section type. The single most useful number the
   // checker produces: it names where a rewrite pass would actually move things.
@@ -962,7 +962,7 @@ export const checkPool = (entries, { today = '2026-10' } = {}) => {
   for (const entry of entries) {
     if (entry.sectionType === 'education') continue;
     if (!isOngoing(entry.dateLabel, today)) continue;
-    const past = entry.bullets.filter((bullet) => bullet.variant === 'default'
+    const past = entry.bullets.filter((bullet) => bullet.variant === 'full'
       && !isLabelLine(bullet.text)
       && /^[A-Z][a-z]+ed\b/.test(bullet.text.trim()));
     if (past.length) {
@@ -977,7 +977,7 @@ export const checkPool = (entries, { today = '2026-10' } = {}) => {
   // coverage behind detail "deep", which silently falls back to the default on
   // every bullet with no deep key.
   const shallow = texts.filter((row) => row.variant === 'deep' && texts.some((other) => other.ref === row.ref
-    && other.variant === 'default' && row.text.length <= other.text.length));
+    && other.variant === 'full' && row.text.length <= other.text.length));
   if (shallow.length) {
     findings.push(finding('P4', 'note', 'variant-not-deeper', {},
       shallow.map((row) => ({ ref: row.ref })).sort(byRef),

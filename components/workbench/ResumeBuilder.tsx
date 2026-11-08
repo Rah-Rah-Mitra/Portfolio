@@ -259,7 +259,7 @@ export const ResumeBuilder: React.FC = () => {
                           checked={chosen.includes(bullet.id)}
                           onChange={() => toggleBullet(entry, bullet.id)}
                         />
-                        <span>{(detail === 'deep' && bullet.text.deep) || bullet.text.default}</span>
+                        <span>{(detail === 'deep' && bullet.text.deep) || bullet.text.full}</span>
                       </label>
                     ))}
                   </div>

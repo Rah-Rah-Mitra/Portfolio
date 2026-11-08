@@ -11,25 +11,25 @@
         {
           "id": "programs",
           "text": {
-            "default": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and access-control weaknesses."
+            "full": "Assessed GovTech GBBP12/13, the Land Transport Authority, and 13+ other programs for SSRF, CSRF, SQL/NoSQL injection, authentication bypass, and access-control weaknesses."
           }
         },
         {
           "id": "automation",
           "text": {
-            "default": "Automated endpoint discovery, payload delivery, and evidence collection for responsible-disclosure reports with Burp Suite, Wireshark, Python, Bash, and custom fuzzing scripts."
+            "full": "Automated endpoint discovery, payload delivery, and evidence collection for responsible-disclosure reports with Burp Suite, Wireshark, Python, Bash, and custom fuzzing scripts."
           }
         },
         {
           "id": "network",
           "text": {
-            "default": "Applied Burp Suite for MitM HTTP interception and Wireshark for OSI Layer 3-4 deep packet inspection and TLS handshake analysis."
+            "full": "Applied Burp Suite for MitM HTTP interception and Wireshark for OSI Layer 3-4 deep packet inspection and TLS handshake analysis."
           }
         },
         {
           "id": "condensed",
           "text": {
-            "default": "Assessed GovTech GBBP12/13, Land Transport Authority, and 13+ other programs for SSRF, CSRF, injection, and access-control flaws, automating recon and disclosure evidence with Burp Suite and Python fuzzing scripts."
+            "full": "Assessed GovTech GBBP12/13, Land Transport Authority, and 13+ other programs for SSRF, CSRF, injection, and access-control flaws, automating recon and disclosure evidence with Burp Suite and Python fuzzing scripts."
           }
         }
       ]
@@ -46,7 +46,7 @@
         {
           "id": "main",
           "text": {
-            "default": "Coordinated weekly senior-engagement activities, including home visits to check on residents' wellbeing, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design."
+            "full": "Coordinated weekly senior-engagement activities, including home visits to check on residents' wellbeing, hear life stories, and help with everyday tasks, building empathy for accessible, community-focused product design."
           }
         }
       ]
@@ -63,7 +63,7 @@
         {
           "id": "combined",
           "text": {
-            "default": "Led astronomy outreach, competed in Singapore's 7th Astronomical Olympiad, and engineered an autonomous robot for the National Robotics Challenge."
+            "full": "Led astronomy outreach, competed in Singapore's 7th Astronomical Olympiad, and engineered an autonomous robot for the National Robotics Challenge."
           }
         }
       ]

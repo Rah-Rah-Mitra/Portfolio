@@ -74,7 +74,7 @@ const reviewPhrasings = () => {
       if (entry.blocked) continue;
       for (const bullet of entry.bullets ?? []) {
         for (const [id, phrasing] of Object.entries(bullet.phrasings ?? {})) {
-          const basis = phrasing.basis ?? 'default';
+          const basis = phrasing.basis ?? 'full';
           console.log(`\n${entry.id}.${bullet.id} @${id}   scripts/resume/content/${sectionType}.json`);
           console.log(`  ${phrasing.note}${phrasing.basis ? `   [measured against text.${basis}]` : ''}`);
           console.log(`  was: ${bullet.text[basis]}`);
@@ -95,7 +95,7 @@ const main = async () => {
     + `top "${pool.metrics.topOpener?.openers.join('/')}" on ${pool.metrics.topOpener?.count} `
     + `(${Math.round(pool.metrics.leadConcentration * 100)}%), ${Math.round(pool.metrics.metricCoverage * 100)}% carry a measurement`);
   const withAlternatives = poolEntries().flatMap((entry) => entry.bullets)
-    .filter((bullet) => bullet.variant === 'default').length;
+    .filter((bullet) => bullet.variant === 'full').length;
   const alternatives = SECTION_TYPES.flatMap((type) => pools[type].entries
     .filter((entry) => !entry.blocked)
     .flatMap((entry) => (entry.bullets ?? []).map((bullet) => Object.keys(bullet.phrasings ?? {}).length)));

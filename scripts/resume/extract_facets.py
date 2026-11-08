@@ -99,7 +99,7 @@ def bullets():
             if entry.get("blocked"):
                 continue
             for bullet in entry.get("bullets", []):
-                rows.append((f"{entry['id']}.{bullet['id']}", bullet["text"]["default"]))
+                rows.append((f"{entry['id']}.{bullet['id']}", bullet["text"]["full"]))
     return rows
 
 

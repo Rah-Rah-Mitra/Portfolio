@@ -652,3 +652,59 @@ through LibreOffice again (no Word on this machine).
   re-export both through Word before an employer sees them. General still holds
   two pages at 8.5pt, but its deep build now runs to three in nus, which the
   renderer reports rather than hides.
+
+## 19. Length tiers, and the master CV of 8 Nov 18:31
+
+Rahul sent three files that evening: `portfolio-mcp-upgrades.md` (eight upgrades
+and five acceptance checks), `master-cv-improvements.md` (standard and short
+drafts, bullet order, dependencies) and a master CV that applies most of those
+drafts. Decided with him:
+
+- **The CV's sentences are `full`**, the tier `general` prints, because general
+  has to print the master CV. The old long wording is **retired** everywhere
+  (pool, site, MCP), not kept as `deep`, despite the improvements doc's "nothing
+  is thrown away": the 5 APC modes, the tag-mapping bug, the two QP defects
+  named, "rollout to Abbott servers scheduled", "Recruited into PA's Sparks
+  Citizens Developer network...", the SR model's 3 scales / 2 datasets / 2
+  losses, and the Theory skills line. Existing `deep` texts stay. Three phrasings
+  stopped attesting against the shorter sentences and went:
+  `pa.singpass@fairness-first`, `voltpulse.main@loop-first`,
+  `hailo.main@target-first` (the last two are the CV's own wording now).
+- **Budgets at nus 10pt, 0.5in**: `short` 1 line, `standard` 2. At 10pt, 15 of
+  the CV's 37 sentences run past 2 lines; the doc's drafts cover 9 of them as
+  `standard`, and 7 bullets get a `short`. Each draft opens with the CV's newer
+  lead verb where the CV changed one (Rahul's choice), except `platform`'s
+  standard, which keeps the doc's "Built": with "Implemented" it measures 3
+  lines. The ADAM standard says "APC specialists" where the CV's full sentence
+  says "process-control specialists"; the entry's APC bullet attests it.
+- **Still missing a 2-line wording**: `swarmline.main`, `swarmline.coordination`
+  and `ntuc.main`. `tierFallbacks` names them on every résumé that selects one,
+  and a test pins that list. (The plan named five; `voltpulse.main` and
+  `maritime.main` had been measured with their project labels attached and fit
+  on their own.)
+- **Ranks** follow the doc's bullet order on Abbott (both roles), PA, STMicro and
+  Amazon; **requires** follow Upgrade 5.
+- **`amazon-vision.isp` is retired** from the pool (Rahul's choice: vaguer than the
+  CV's research bullets and claiming more than they support); its résumés take
+  `sr-reproduction`. ai-engineer, software-engineer and highlights trade the Seeq
+  toolkit for the APC rebuild and its verification; cyber-security adds ADAM so
+  `guardrails` is not orphaned. `swarmline.main` gains a `no-ai-tool` phrasing.
+- **A*STAR** keeps its sentence and 2027 dates; the CV's "Jan to May 2027 (2
+  days/week)" sentence is the VMock workaround again.
+- **The Abbott role** stays "Global Operational AI Systems & Data Engineer
+  (Part-Time)" at Rahul's request; the CV prints "Global Data Engineer
+  (Operational AI Systems), Part-Time".
+
+**Acceptance checks.** (1) Holds: renaming `default` to `full` left all eight
+DOCX files' `word/document.xml` byte-identical. (2) Not met, for a reason outside
+the tiers: entry headings cap every one-pager at 9pt (STMicro's runs into its date
+at 9.5pt, both Abbott headings at 10pt), so all seven print `standard` at 9pt,
+software-engineer and highlights up from 8.5. Reaching 10pt needs shorter titles
+or a style change. (3) Holds: no `tier-over-budget` or `orphaned-bullet` on any
+slug. (4) Holds where it can: highlights carries an outcome on every experience
+and research entry that has one to give (STMicro, at design stage, has none
+anywhere); `sr-reproduction` is pinned at standard there because its short drops
+the 0.78 dB. (5) Not met until Rahul supplies the three standard wordings above.
+R11 `no-outcome-entry` still warns on six one-pagers (the Abbott contract without
+its 83% verification, or the internship without its zero-failure pipeline):
+advisory, and a selection choice for Rahul.

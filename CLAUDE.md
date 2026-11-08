@@ -857,11 +857,16 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   2026 master CV wording), rebuilt in place on 2026-11-01 for his Nov 2026 VMock
   master CV (docs/resume-detail-gaps.md §16), again on 2026-11-02 for its
   update (§17: company grouping, A*STAR's dated heading, 0.5" top and bottom
-  margins) and again on 2026-11-08 for the next (§18: the Abbott contract and
+  margins), again on 2026-11-08 for the next (§18: the Abbott contract and
   People's Association rewritten, the old ADAM claims retired, and a bold
   "Expected Start Date: July 2027" closing the contact line, whose portfolio and
   GitHub links now print as "Portfolio" and "GitHub"; profile.json
-  `availability`, printed by both builders, harvard on its own line).
+  `availability`, printed by both builders, harvard on its own line), and again
+  that evening for the CV of 8 Nov 18:31 and the length tiers (§19: the CV's
+  shorter sentences became `full`, the old long wording retired, the one-pagers
+  print `standard` at 9pt, `amazon-vision.isp` retired). The Abbott role stays
+  "Global Operational AI Systems & Data Engineer (Part-Time)" at Rahul's request,
+  whatever the VMock CV prints.
   `generated/` keeps the current + previous edition; older sets live in
   `public/resume/archive/`. Its eight PDFs were exported with
   `export_pdf_libreoffice.py` on 2026-11-08 (that machine had no Word; the script
@@ -869,8 +874,8 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   registry; run the Python steps through `uv run --no-project --with python-docx
   --with pypdf` where those are not installed), so re-export through Word
   (`export-pdf.ps1`) before an employer sees one; under LibreOffice
-  operations-research-engineer ends 3.7pt above its margin and software-engineer
-  7.9pt, both within a line. `general` sits at nus's 8.5pt floor, the
+  software-engineer ends 3.7pt above its margin and highlights 8pt, both within
+  a line. `general` sits at nus's 8.5pt floor, the
   master CV's own size, so any line added to it must buy its room elsewhere.
 - Section types (`ENTRY_SECTION_TYPES` in `server/resumeAssemble.mjs`, which every
   list of them reads; `build_resumes.py` loads the same pools): `education`,
@@ -887,17 +892,16 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
 - Eight outputs: six role-targeted one-pagers, `highlights` (one-page best-of
   across all profiles), and the two-page `general` master CV, which is the
   document `rahul-mitra-master-cv.docx` is the ground truth for. Every config
-  declares its own `bodyPt` (8.5–9 in this edition) and `marginIn: 0.5` —
+  declares its own `bodyPt` (9 on the one-pagers, 8.5 on general) and `marginIn: 0.5` —
   do not assume a size. The pins are the JS auto-fit's landing in `nus`, stepped
   down while a selected bullet runs past the checker's three-line budget or an
   entry heading cannot hold its date. The fit model counts pages, not heading
   width, so `verify_resumes.py` checks the second (a date printed against its
-  heading's text). Measured 2026-11-08: civic fits 10 but `pa.infra` runs to
-  four lines there; cyber-security fits 9.5 but STMicro's heading overruns its
-  date; ai-engineer, solution-architect and operations-research-engineer (which
-  dropped coursework-full down the trim ladder on 2026-11-05) land at 9;
-  software-engineer and highlights sit at the 8.5 floor; general fits two pages
-  only at 8.5, the master CV's own size. `--style harvard` reuses them
+  heading's text). Since the length tiers (2026-11-08) every one-pager prints
+  `standard` at 9pt, the most the entry headings allow (above); the JS
+  short-first fit picked the short wordings software-engineer and highlights
+  record per bullet. general stays at 8.5, the master CV's own size, though 9
+  fits two pages. `--style harvard` reuses them
   best-effort and ships nothing.
 - Edition bump checklist:
   1. Edit content JSONs, then `npm run resume:lint`.
@@ -1002,6 +1006,33 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   recombination, modality or implicature: it is a filter in front of review, not a
   substitute for it. `basis: "deep"` measures a phrasing against the deep wording
   instead, which is how a bullet carries a tighter form of its own long variant.
+- **Length tiers** (Nov 2026, `portfolio-mcp-upgrades.md` and
+  `master-cv-improvements.md`; docs/resume-detail-gaps.md §19). A bullet's `text`
+  holds `short` (1 line), `standard` (≤ 2 lines), `full` (the master CV's own
+  sentence; was `default`) and `deep`, budgets measured at one reference layout,
+  nus 10pt 0.5in (`REFERENCE_LAYOUT`, `referenceLines` in resumeRender.mjs). A
+  missing tier falls back towards full (short → standard → full, deep → full) and
+  a slug override answers at the full step; `resumeAssemble.mjs resolveBullet`,
+  `build_resumes.py bullet_text` and the documents test's mirror are the same rule
+  three times and must agree. `detail` (default `standard`), an entry's `variant`
+  and a per-bullet `{id, tier}` choose; `{id, top: N}` takes an entry's N
+  best-ranked bullets (`rank`, 1 = strongest); `requires` names the bullets one
+  reads best beside. `tierFallbacks` on every build lists fallbacks that leave a
+  bullet over the asked budget (a full sentence already within 2 lines IS the
+  standard, so nothing is duplicated); today exactly `swarmline.main`,
+  `swarmline.coordination` and `ntuc.main`, pinned in
+  `tests/resume-tier-content.test.ts`, which also guards every stored tier text
+  (budget, and no claim its entry's full/deep texts do not make,
+  `unattestedTokens`). `fitStrategy: "short-first"` (default for one page) swaps
+  the weakest bullets to their short wording, the fewest needed at each size,
+  before stepping the type, never touching a bullet whose tier the spec named;
+  `fit.swaps` and the built `spec` come back so DOCX, Markdown, check and links
+  match. Canonical configs: `general` at `full`, the seven one-pagers at
+  `standard`, 9pt, with the fit's short swaps written per bullet (Python runs no
+  fit). **Entry headings cap the one-pagers at 9pt**: STMicro's heading runs into
+  its date at 9.5pt and both Abbott headings at 10pt, which the JS fit model does
+  not measure and verify_resumes.py fails; the spec's 10pt target needs shorter
+  titles or a style change, which only Rahul can approve.
 - **Résumé checker.** `server/resumeCheck.mjs` is a deterministic, rule-based
   linter. It **imports nothing** — a test enforces that, because
   `resumeRender.mjs` pulls in pdfkit (12 MB) and `ResumeBuilder.tsx` loads résumé
@@ -1023,11 +1054,20 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   that one rule by name (`keepNotes` on `buildResume`, `POSTING_NOTES` in
   `jobSearch.mjs`), because comparing the evidence on the page with evidence
   sitting unused on the same entries is exactly the question a posting puts.
-  `list_resume_blocks` carries `lead`, `lines`, `hasMetric`, `terms` (the same
-  `termsIn` computation R7 scores a bullet on, so choosing by keyword and being
-  judged by keyword use one measure) and `usedBy` (which canonical résumés select
-  it — **empty is a fact, not a gap**: four bullets sit on no config, and a test
-  pins that set) per bullet, plus the first four on each alternative wording and
+  Metric spans carry a class (Nov 2026, CHECK_VERSION 2): an **outcome** is a
+  result against a baseline or target (percent, dB/°C, "N of M", zero failures,
+  top-N), a **scale** is a size or count; `metric: {outcome, scale}` rides on
+  rows and on the menu, `hasMetric` is either. Three warns came with the length
+  tiers: R9 `tier-over-budget` (a stored short/standard over its budget), R10
+  `orphaned-bullet` (selected without any bullet its `requires` names) and R11
+  `no-outcome-entry` (an experience/research entry printing no outcome while
+  another of its bullets has one; silent where none does, e.g. STMicro).
+  `list_resume_blocks` carries `lead`, `lines`, `metric`/`hasMetric`, `terms` (the
+  same `termsIn` computation R7 scores a bullet on, so choosing by keyword and
+  being judged by keyword use one measure), `tierLines`, `rank`, `requires` and
+  `usedBy` (which canonical résumés select it — **empty is a fact, not a gap**:
+  six bullets sit on no config, and a test pins that set) per bullet, and a
+  `tier` argument returns one sentence per bullet; plus the first four on each alternative wording and
   `usedBy` on each skills line, so an agent can spread verbs and evidence while
   choosing. `blocksByTerm()` is that index inverted — which selectable ids carry a
   term — built from `resumeBlocks()`, so a `blocked` entry is never named even when
@@ -1312,7 +1352,7 @@ then `npm run snapshot`.
   desk drawing set moved the desk-backdrop layer and its policy into a lazy chunk
   (−2,807 B) and spent 896 B on its gate, FX toggle, plate slot and assistant
   copy (506,380 B by the time it merged); the root's `onCaughtError` and
-  `AppErrorBoundary`'s own report spent 226 B; the sheet traverse left it at 506,694 B, and edition 2026-12's Amazon record (kept short in `portfolioData.ts` for this reason) spent 106 B, and the Abbott contract's "Global" retitle 40 B, to 506,840 B; the Nov 2026 master CV sync moved every experience record's responsibilities into the snapshot-only `lib/experienceResponsibilities.ts` (−3,953 B net, the A*STAR record included), to 502,887 B; the 2026-11-02 CV update shortened A*STAR's record (−165 B), to 502,722 B; the 2026-11-05 PA retitle and the 2026-11-08 CV sync's Abbott wording together came to +17 B, so at 502,739 B **6,095 B are left** — anything bigger goes into the controller,
+  `AppErrorBoundary`'s own report spent 226 B; the sheet traverse left it at 506,694 B, and edition 2026-12's Amazon record (kept short in `portfolioData.ts` for this reason) spent 106 B, and the Abbott contract's "Global" retitle 40 B, to 506,840 B; the Nov 2026 master CV sync moved every experience record's responsibilities into the snapshot-only `lib/experienceResponsibilities.ts` (−3,953 B net, the A*STAR record included), to 502,887 B; the 2026-11-02 CV update shortened A*STAR's record (−165 B), to 502,722 B; the 2026-11-05 PA retitle and the 2026-11-08 CV sync's Abbott wording together came to +17 B, to 502,739 B; the length tiers (the builder window's four tiers and lazy resolver, and the 18:31 CV's site text) +310 B, so at 503,049 B **5,785 B are left** — anything bigger goes into the controller,
   engine, HUD or desk-backdrop layer chunk. The
   same step also checks the Estate catalogue's URLs are in `dist/` (and that a
   dev catalogue never builds on Vercel/CI).

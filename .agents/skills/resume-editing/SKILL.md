@@ -10,7 +10,7 @@ All resumes are generated from in-repo content in the **NUS CDE style**
 (`scripts/resume/nus_style.py`, default since edition 2026-11; Harvard is still
 selectable with `--style harvard`). Eight outputs: 6 one-page role resumes, the
 1-page `highlights` best-of, and the 2-page `general` master CV. Every config
-declares its own `bodyPt` — 8.5 to 9 in this edition — and `marginIn: 0.5`.
+declares its own `bodyPt` — 9 on the one-pagers, 8.5 on general — its `detail` (length tier) and `marginIn: 0.5`.
 Read each config rather than assuming a size.
 
 ## Hard bans
@@ -186,12 +186,25 @@ sentence can pass every rule and still be wrong. Read them.
 
 ## Fit
 
-Overflow trim ladder, in order: drop coursework bullet → reduce 3-bullet
+Length tiers come first (Nov 2026). Every bullet can carry `short` (1 line),
+`standard` (≤ 2 lines), `full` (the master CV's sentence) and `deep`, budgets
+measured at nus 10pt 0.5in. The one-pagers print `standard` (`detail` in each
+config) and `general` prints `full`. A one-pager that overflows takes the
+JS short-first fit's choices: the weakest bullets' `short` wordings, written into
+its config per bullet as `{"id": ..., "tier": "short"}` because the Python
+builder runs no fit, and a bullet pinned at a tier is left alone (highlights pins
+`sr-reproduction` at standard to keep its 0.78 dB outcome). Tier texts are
+Rahul's approved wordings only: `tests/resume-tier-content.test.ts` refuses one
+over budget or naming a claim its entry does not make. Bullets still lacking a
+2-line wording are named by `tierFallbacks` and P4 `standard-coverage`.
+
+Then the overflow trim ladder, in order: drop coursework bullet → reduce 3-bullet
 entries to 2 → drop least-relevant project → then typography, which belongs to
 the style. `nus` holds its 0.5" margins and steps the body 10.5/10/9.5/9/**8.5pt**
-(8.5 is what the two-page master CV needs, and `software-engineer` lands there
-too); `harvard` steps 10.5→10pt and then margins 0.7→0.6→0.5". Never below the
-style's own floor.
+(8.5 is what the two-page master CV needs); `harvard` steps 10.5→10pt and then
+margins 0.7→0.6→0.5". Never below the style's own floor. **The one-pagers cannot
+go above 9pt** while their entry headings stay as they are: STMicro's runs into
+its date at 9.5pt and both Abbott headings at 10pt.
 
 Fit truth is the pypdf page count of the exported PDF, never an estimate. The JS
 renderer models Word closely enough to pick the right rung — its numbers come

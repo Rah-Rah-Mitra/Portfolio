@@ -44,6 +44,13 @@ FORBIDDEN_TEXT = ["PROFILE SUMMARY", "vercel.app", "�"]
 # width, so ai-engineer and cyber-security landed on 9.5pt with STMicro's heading
 # overrun on 2026-11-02. A date inside running text has a space or "(" before it.
 GLUED_DATE = re.compile(r"[^\s(–-](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}")
+# The other way Word fails a heading: when the text leaves too little room, it
+# wraps at the tab and breaks the date itself across two lines, "... (NUS
+# Capstone) Aug" over "2026 – Present" or "Jun 2026 –" over "Present". The
+# builder's DOCX did exactly that at 10.5pt (2026-11-13). A month at a line end
+# followed by a year, or a range dash at a line end, is never running text here.
+MONTH = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
+SPLIT_DATE = re.compile(rf"(?:\b{MONTH}[ \t]*\n[ \t]*\d{{4}}|\b{MONTH} \d{{4}} –[ \t]*\n[ \t]*(?:Present|{MONTH})\b)")
 
 failures = []
 
@@ -121,6 +128,8 @@ def verify_slug(slug, pages, edition, style):
         check(needle not in text, f"{slug}: pdf text contains forbidden {needle!r}")
     for glued in GLUED_DATE.finditer(text):
         check(False, f"{slug}: a heading's date runs into its text at {text[max(0, glued.start() - 20):glued.end()]!r}")
+    for split in SPLIT_DATE.finditer(text):
+        check(False, f"{slug}: a heading's date breaks across lines at {text[max(0, split.start() - 20):split.end()]!r}")
 
     annots = set()
     for page in reader.pages:

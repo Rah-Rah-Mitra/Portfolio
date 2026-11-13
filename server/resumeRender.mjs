@@ -28,7 +28,7 @@ import {
   DEFAULT_TIER, ENTRY_SECTION_TYPES, TIERS, TIER_BUDGETS, assemble, bulletLine, byRank, requestedTier, resolveBullet,
   resolveBulletText, resolveRole, selectedBullets,
 } from './resumeAssemble.mjs';
-import { DEFAULT_STYLE, STYLES, block, measure, styleFor, wrapRuns } from './resumeStyles.mjs';
+import { DEFAULT_STYLE, STYLES, headingLayout, measure, nusDatedHeading, styleFor, useFont } from './resumeStyles.mjs';
 
 // Spec resolution lives in resumeAssemble.mjs so the checker and the builder
 // window can reach it without loading pdfkit. Re-exported here because this is
@@ -42,45 +42,83 @@ export { DEFAULT_STYLE, STYLES, styleFor };
 /** Body size of the default style, for callers that want the plain default. */
 export const BODY_PT = STYLES[DEFAULT_STYLE].bodyPt;
 
-// Assign every block a page and a y, keeping keep-with-next groups intact so an
-// entry header never orphans at a page break.
+// Assign every block a page and a y, the way Word paginates these documents.
+// Neither builder sets widow control, so Word may break a paragraph between any
+// two of its lines; keep-with-next only forbids a break BETWEEN a paragraph and
+// the next. So a chain of keep-with-next paragraphs (section header -> entry
+// line(s) -> first bullet) has to start on a page with room for
+// everything up to and including the first line of its last paragraph, and that
+// last paragraph may then run over onto the next page. Moving whole paragraphs
+// instead, as this once did, opened the next page early wherever a page ended
+// inside a bullet (Word filled it), which word_parity.mjs found on 3-page builds.
+// A paragraph split this way comes back as two placed pieces, the second marked
+// `continued` (all its lines hang, it has no right-flush column).
 const flow = (blocks, marginLR, style) => {
   const { pageH: PAGE_H, marginTop: MARGIN_TOP, marginBottom: MARGIN_BOTTOM, lineRatio: LINE_RATIO } = style;
   const top = PAGE_H - MARGIN_TOP;
   const bottom = MARGIN_BOTTOM;
+  const lineHeight = (item) => item.size * LINE_RATIO;
   const placed = [];
   let page = 0;
   let cursor = top;
   let previousAfter = 0;
+  const newPage = () => {
+    page += 1;
+    cursor = top;
+  };
 
   let index = 0;
   while (index < blocks.length) {
-    // Collect the atomic group: this block plus everything chained to it by
-    // keepWithNext (header -> entry line 1 -> entry line 2 -> first bullet).
     let end = index;
     while (blocks[end].keepWithNext && end + 1 < blocks.length) end += 1;
-    const group = blocks.slice(index, end + 1);
+    const chain = blocks.slice(index, end + 1);
+    const gapBefore = (position) => (position === 0
+      ? Math.max(previousAfter, chain[0].spaceBefore)
+      : Math.max(chain[position - 1].spaceAfter, chain[position].spaceBefore));
 
-    let height = 0;
-    group.forEach((item, position) => {
-      const gap = position === 0 ? Math.max(previousAfter, item.spaceBefore) : Math.max(group[position - 1].spaceAfter, item.spaceBefore);
-      height += gap + item.lines.length * item.size * LINE_RATIO;
+    // What has to share a page: every paragraph of the chain but the last, and
+    // the last one's first line.
+    let together = 0;
+    chain.forEach((item, position) => {
+      together += gapBefore(position) + (position < chain.length - 1 ? item.lines.length : 1) * lineHeight(item);
     });
-
-    if (cursor - height < bottom && cursor < top) {
-      page += 1;
-      cursor = top;
+    if (cursor - together < bottom - 1e-6 && cursor < top) {
+      newPage();
       previousAfter = 0;
     }
 
-    group.forEach((item, position) => {
-      const gap = position === 0 ? Math.max(previousAfter, item.spaceBefore) : Math.max(group[position - 1].spaceAfter, item.spaceBefore);
-      cursor -= gap;
-      const boxTop = cursor;
-      placed.push({ ...item, page, boxTop, marginLR });
-      cursor -= item.lines.length * item.size * LINE_RATIO;
+    chain.forEach((item, position) => {
+      cursor -= gapBefore(position);
+      if (position < chain.length - 1) {
+        placed.push({ ...item, page, boxTop: cursor, marginLR, paragraph: index + position });
+        cursor -= item.lines.length * lineHeight(item);
+        return;
+      }
+      for (let from = 0; from < item.lines.length;) {
+        const room = Math.floor((cursor - bottom) / lineHeight(item) + 1e-6);
+        // A line taller than what is left of a fresh page still goes on it.
+        const take = Math.min(item.lines.length - from, cursor >= top ? Math.max(room, 1) : Math.max(room, 0));
+        if (take === 0) {
+          newPage();
+          continue;
+        }
+        const last = from + take >= item.lines.length;
+        placed.push({
+          ...item,
+          lines: item.lines.slice(from, from + take),
+          continued: from > 0,
+          rule: item.rule && last,
+          page,
+          boxTop: cursor,
+          marginLR,
+          paragraph: index + position,
+        });
+        cursor -= take * lineHeight(item);
+        from += take;
+        if (!last) newPage();
+      }
     });
-    previousAfter = group[group.length - 1].spaceAfter;
+    previousAfter = chain[chain.length - 1].spaceAfter;
     index = end + 1;
   }
   return { placed, pages: page + 1 };
@@ -99,33 +137,37 @@ const draw = (doc, placed, pages, marginLR, style) => {
     item.lines.forEach((line, lineIndex) => {
       const lineTop = item.boxTop - lineIndex * item.size * LINE_RATIO;
       const baseline = lineTop - item.size * ASCENT_RATIO;
-      const lineWidth = line.reduce((total, run) => total + run.width, 0);
-      let x = marginLR + item.indent + (lineIndex > 0 ? item.hanging : 0);
+      // Kerning is off (useFont), so a run draws exactly the width it measured.
+      const widths = line.map((run) => run.width);
+      const lineWidth = widths.reduce((total, width) => total + width, 0);
+      const firstLine = lineIndex === 0 && !item.continued;
+      let x = marginLR + item.indent + (firstLine ? 0 : item.hanging);
       if (item.align === 'center') x = marginLR + (contentWidth - lineWidth) / 2;
       if (item.align === 'right') x = marginLR + contentWidth - lineWidth;
 
       // pdfkit anchors a run at the font ascender, so place by explicit
       // baseline instead and keep our own line-box maths authoritative.
       const y = PAGE_H - baseline;
-      for (const run of line) {
-        doc.font(run.font).fontSize(run.size).fillColor('#000000');
+      line.forEach((run, runIndex) => {
+        useFont(doc, run.font, run.size).fillColor('#000000');
         doc.text(run.text, x, y, { lineBreak: false, baseline: 'alphabetic', ...(run.tracking ? { characterSpacing: run.tracking } : {}) });
         // Links are black and unmarked in both styles, but they must still be
         // real annotations; verify_resumes.py checks for them.
-        if (run.link) doc.link(x, y - run.size * ASCENT_RATIO, run.width, run.size * LINE_RATIO, run.link);
-        x += run.width;
-      }
+        if (run.link) doc.link(x, y - run.size * ASCENT_RATIO, widths[runIndex], run.size * LINE_RATIO, run.link);
+        x += widths[runIndex];
+      });
 
       // Right-flush column at the content edge (the Word right tab stop).
-      if (lineIndex === 0 && item.rightRun) {
+      // headingLayout has already left it the room, so nothing is drawn over it.
+      if (firstLine && item.rightRun) {
         const width = measure(doc, item.rightRun.text, item.rightRun.font, item.rightRun.size);
-        doc.font(item.rightRun.font).fontSize(item.rightRun.size).fillColor('#000000');
+        doc.fillColor('#000000');
         doc.text(item.rightRun.text, marginLR + contentWidth - width, y, { lineBreak: false, baseline: 'alphabetic' });
       }
     });
 
     if (item.rule) {
-      const ruleY = PAGE_H - (item.boxTop - item.lines.length * item.size * LINE_RATIO) + 1;
+      const ruleY = PAGE_H - (item.boxTop - item.lines.length * item.size * LINE_RATIO) + (style.ruleGap ?? 0);
       style.drawRule(doc, marginLR, ruleY, contentWidth);
     }
   }
@@ -153,29 +195,94 @@ export const measureBulletLines = (texts, { bodyPt, marginIn, style: styleName }
 };
 
 /**
- * The one typography every tier budget is measured at (Rahul, 8 Nov 2026): the
- * nus style at 10pt with its 0.5in margins, the size the one-pagers are meant to
+ * The typography every tier budget is measured at (Rahul, 8 Nov 2026): the nus
+ * style at 10pt with its 0.5in margins, the size the one-pagers are meant to
  * ship at. A `short` is 1 line here and a `standard` at most 2
- * (resumeAssemble.mjs TIER_BUDGETS), whatever size a build lands on.
+ * (resumeAssemble.mjs TIER_BUDGETS), whatever size a build lands on — except
+ * for an entry that can never print at 10pt (referenceBodyPt).
  */
 export const REFERENCE_LAYOUT = Object.freeze({ style: 'nus', bodyPt: 10, marginIn: 0.5 });
 
-/** Lines at the reference layout, for budgets and the block menu. */
-export const referenceLines = (texts) => measureBulletLines(texts, REFERENCE_LAYOUT);
+const referenceSizes = new Map();
+/**
+ * The size an entry's bullets are budgeted at: 10pt, or the largest nus rung
+ * below it at which the entry's heading holds its dates on one line, since an
+ * auto-fitted build never prints that entry any larger (renderResumePdf skips a
+ * rung whose headings wrap). STMicro's heading needs 9pt and both Abbott
+ * headings 9.5pt; everything else is 10pt.
+ *
+ * Why (Rahul, 13 Nov 2026: "ensure the sizing does not cause the overflow"):
+ * measured as Word measures (unkerned, hyphen breaks), stmicro-or's 1-line
+ * `short` is 0.9pt too long at 10pt, and Word does wrap it there. But no build
+ * that prints it can be at 10pt, and at the 9pt its heading allows it is one
+ * line. Budgeting it at a size it can never print would fail a wording that
+ * never overflows. The guarantee stays exact: a stored tier is within its budget
+ * in every auto-fitted build.
+ *
+ * `entry` is anything with sectionType, organization, role (a string, or a
+ * role-variant map whose `default` is used) and dateLabel — a pool entry with its
+ * section type, or an assembled entry item.
+ */
+export const referenceBodyPt = (entry) => {
+  const role = entry.role && typeof entry.role === 'object' ? entry.role.default : entry.role;
+  const text = nusDatedHeading({ ...entry, role });
+  const date = entry.dateLabel || null;
+  const key = `${text}\u0000${date}`;
+  if (referenceSizes.has(key)) return referenceSizes.get(key);
+  const style = STYLES.nus;
+  const rungs = style.fitLadder.map((step) => step.bodyPt ?? style.bodyPt)
+    .filter((pt) => pt <= REFERENCE_LAYOUT.bodyPt).sort((a, b) => b - a);
+  const doc = new PDFDocument({ size: [style.pageW, style.pageH], autoFirstPage: false });
+  const contentWidth = style.pageW - REFERENCE_LAYOUT.marginIn * 72 * 2;
+  const size = rungs.find((pt) => !headingLayout(doc, { text, font: style.bold, size: pt, right: date, contentWidth }).wrapped)
+    ?? rungs[rungs.length - 1];
+  doc.end();
+  referenceSizes.set(key, size);
+  return size;
+};
+
+/**
+ * Lines at the reference layout, for budgets and the block menu. `entries`, in
+ * step with `texts`, budgets each text at its own entry's reference size; a text
+ * without one is measured at 10pt.
+ */
+export const referenceLines = (texts, entries = []) => {
+  const sizes = texts.map((_, index) => (entries[index] ? referenceBodyPt(entries[index]) : REFERENCE_LAYOUT.bodyPt));
+  const out = new Array(texts.length);
+  for (const bodyPt of new Set(sizes)) {
+    const at = sizes.flatMap((size, index) => (size === bodyPt ? [index] : []));
+    measureBulletLines(at.map((index) => texts[index]), { ...REFERENCE_LAYOUT, bodyPt })
+      .forEach((count, k) => { out[at[k]] = count; });
+  }
+  return out;
+};
+
+/** The pool entry behind a bullet ref or item, with its section type, for referenceLines. */
+export const referenceEntry = (pools, sectionType, entryId) => {
+  const entry = pools[sectionType]?.entries.find((row) => row.id === entryId);
+  return entry ? { ...entry, sectionType } : null;
+};
 
 /**
  * The bullets that asked for a shorter tier than they could get: a `short` or
  * `standard` that does not exist, answered by a text over that tier's budget.
  * A full sentence already within 2 lines answers `standard` without a copy of
  * itself, so it is not listed; what is listed is exactly the wordings still
- * missing. `deep` has no budget, so a missing deep never appears here.
+ * missing. `deep` has no budget, so a missing deep never appears here. Each is
+ * measured at its entry's reference size, read off the entry line that precedes
+ * it in `items`.
  */
 export const tierFallbacks = (items) => {
-  const rows = items.filter((item) => item.kind === 'bullet' && item.tierUsed !== item.tier && TIER_BUDGETS[item.tier]);
-  const lines = referenceLines(rows.map((item) => item.text));
+  let entry = null;
+  const rows = [];
+  for (const item of items) {
+    if (item.kind === 'entry') entry = item;
+    else if (item.kind === 'bullet' && item.tierUsed !== item.tier && TIER_BUDGETS[item.tier]) rows.push({ item, entry });
+  }
+  const lines = referenceLines(rows.map((row) => row.item.text), rows.map((row) => row.entry));
   return rows
-    .map((item, index) => ({ block: item.ref, requested: item.tier, used: item.tierUsed, lines: lines[index] }))
-    .filter((row, index) => lines[index] > TIER_BUDGETS[rows[index].tier]);
+    .map(({ item }, index) => ({ block: item.ref, requested: item.tier, used: item.tierUsed, lines: lines[index] }))
+    .filter((row, index) => lines[index] > TIER_BUDGETS[rows[index].item.tier]);
 };
 
 const renderOnce = (spec, pools, profile, bodyPt, marginLR, style) => {
@@ -194,7 +301,31 @@ const renderOnce = (spec, pools, profile, bodyPt, marginLR, style) => {
   const items = assemble(spec, pools);
   const blocks = style.buildBlocks({ doc, items, profile, bodyPt, contentWidth });
   const { placed, pages } = flow(blocks, marginLR, style);
-  return { doc, placed, pages, marginLR, bodyPt };
+  // Headings that could not hold their right-flush column on one line at this
+  // size (headingLayout): laid out cleanly, but the ladder prefers a size
+  // without any.
+  const wrappedHeadings = blocks.filter((item) => item.wrapped).map((item) => item.heading);
+  return { doc, placed, pages, marginLR, bodyPt, wrappedHeadings };
+};
+
+/**
+ * The rungs a fit may try: the spec's own typography first, then the style's
+ * ladder, but only the rungs that give more room — smaller type, narrower
+ * margins. A spec at 9pt that did not fit used to try 10pt next.
+ */
+const fitSteps = (spec, style) => {
+  const resolve = (step) => ({
+    bodyPt: step.bodyPt ?? spec.bodyPt ?? style.bodyPt,
+    marginIn: step.marginIn ?? spec.marginIn ?? style.marginLR / 72,
+  });
+  const [start, ...rest] = style.fitLadder.map(resolve);
+  const seen = new Set([`${start.bodyPt}/${start.marginIn}`]);
+  return [start, ...rest.filter((step) => {
+    const key = `${step.bodyPt}/${step.marginIn}`;
+    if (step.bodyPt > start.bodyPt || step.marginIn > start.marginIn || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  })];
 };
 
 const titleCase = (name) => name.replace(/\w\S*/g, (word) => word[0].toUpperCase() + word.slice(1).toLowerCase());
@@ -262,69 +393,108 @@ const shortenWeakest = (spec, pools) => {
  * `fit.swaps`, and the spec as built comes back as `spec`, so the DOCX, the
  * Markdown, the check and the links describe the same document. It never drops
  * content; if nothing fits, `fit.overflow` says by how much.
+ *
+ * A rung also has to hold every entry heading on one line with its dates
+ * (headingLayout). Counting pages alone, the fit landed the one-pagers at
+ * 10–10.5pt, where STMicro's and both Abbott headings ran into their dates —
+ * drawn over them in the PDF, split across two lines in Word. A rung whose
+ * headings wrap is skipped without trying shorts, which cannot shorten a
+ * heading. Only when even the last rung cannot hold one does the fit settle for
+ * a wrapped heading — date on line 1, text continued underneath, nothing drawn
+ * over anything — and `fit.wrappedHeadings` names it. With autoFit off the
+ * spec's own size is kept, wrapped or not.
  */
 export const renderResumePdf = async (spec, pools, profile) => {
   const style = styleFor(spec.style);
   const maxPages = spec.pages ?? 1;
   const autoFit = spec.autoFit !== false;
   const strategy = spec.fitStrategy ?? (maxPages === 1 ? 'short-first' : 'typography');
-  const steps = autoFit
-    ? style.fitLadder
-    : [{ bodyPt: null, marginIn: null }];
-
-  let current = spec;
-  let swaps = [];
-  let last = null;
+  const steps = autoFit ? fitSteps(spec, style) : fitSteps(spec, style).slice(0, 1);
   const attempts = [];
-  for (const step of steps) {
-    const bodyPt = step.bodyPt ?? spec.bodyPt ?? style.bodyPt;
-    const marginLR = (step.marginIn ?? spec.marginIn) != null ? (step.marginIn ?? spec.marginIn) * 72 : style.marginLR;
-    // Each size starts from the spec as asked and takes only the swaps it needs:
-    // stepping down a size is the admission that the shorts were not enough at
-    // the larger one, and the smaller size may need fewer of them.
-    current = spec;
-    swaps = [];
-    let attempt = renderOnce(current, pools, profile, bodyPt, marginLR, style);
-    if (autoFit && strategy === 'short-first') {
-      for (let next = shortenWeakest(current, pools); attempt.pages > maxPages && next; next = shortenWeakest(current, pools)) {
-        attempt.doc.end();
-        current = next.spec;
-        swaps.push(next.swap);
-        attempt = renderOnce(current, pools, profile, bodyPt, marginLR, style);
-      }
-    }
-    attempts.push({ bodyPt, marginIn: marginLR / 72, pages: attempt.pages, ...(swaps.length ? { swaps: swaps.length } : {}) });
-    if (attempt.pages <= maxPages) {
-      if (last) last.doc.end();
-      draw(attempt.doc, attempt.placed, attempt.pages, marginLR, style);
-      return {
-        pdf: await toBuffer(attempt.doc),
-        pages: attempt.pages,
-        spec: current,
-        fit: { style: style.id, bodyPt, marginIn: marginLR / 72, maxPages, fitted: true, strategy, swaps, attempts },
-      };
-    }
-    if (last) last.doc.end();
-    last = attempt;
-  }
+  let last = null;
 
-  draw(last.doc, last.placed, last.pages, last.marginLR, style);
-  return {
-    pdf: await toBuffer(last.doc),
-    pages: last.pages,
-    spec: current,
-    fit: {
-      style: style.id,
-      bodyPt: last.bodyPt,
-      marginIn: last.marginLR / 72,
-      maxPages,
-      fitted: false,
-      strategy,
-      swaps,
-      attempts,
-      overflow: `Does not fit ${maxPages} page(s) even at ${last.bodyPt}pt with ${last.marginLR / 72}in margins; it runs to ${last.pages}. Remove content and rebuild: a project entry costs about 3 lines, a bullet about 2.`,
-    },
+  // One walk down the ladder. `cleanHeadings` skips the rungs where a heading
+  // would wrap; the second walk, only needed when the last rung had one, takes
+  // them as they are.
+  let lastSkipped = false;
+  const walk = (cleanHeadings) => {
+    for (const step of steps) {
+      const { bodyPt } = step;
+      const marginLR = step.marginIn * 72;
+      // Each size starts from the spec as asked and takes only the swaps it
+      // needs: stepping down a size is the admission that the shorts were not
+      // enough at the larger one, and the smaller size may need fewer of them.
+      let current = spec;
+      const swaps = [];
+      let attempt = renderOnce(current, pools, profile, bodyPt, marginLR, style);
+      lastSkipped = cleanHeadings && attempt.wrappedHeadings.length > 0;
+      if (lastSkipped) {
+        attempts.push({ bodyPt, marginIn: step.marginIn, pages: attempt.pages, wrappedHeadings: attempt.wrappedHeadings.length });
+        attempt.doc.end();
+        continue;
+      }
+      if (autoFit && strategy === 'short-first') {
+        for (let next = shortenWeakest(current, pools); attempt.pages > maxPages && next; next = shortenWeakest(current, pools)) {
+          attempt.doc.end();
+          current = next.spec;
+          swaps.push(next.swap);
+          attempt = renderOnce(current, pools, profile, bodyPt, marginLR, style);
+        }
+      }
+      attempts.push({
+        bodyPt, marginIn: step.marginIn, pages: attempt.pages,
+        ...(swaps.length ? { swaps: swaps.length } : {}),
+        ...(attempt.wrappedHeadings.length ? { wrappedHeadings: attempt.wrappedHeadings.length } : {}),
+      });
+      if (last) last.attempt.doc.end();
+      last = { attempt, current, swaps };
+      if (attempt.pages <= maxPages) return last;
+    }
+    return null;
   };
+
+  // Room only grows down the ladder, so a heading that wraps on the last rung
+  // wraps on every rung: then nothing was tried in earnest, and the second walk
+  // fits the pages with the wrap laid out cleanly.
+  const hit = walk(autoFit) ?? (lastSkipped ? walk(false) : null);
+
+  const { attempt, current, swaps } = hit ?? last;
+  const marginIn = attempt.marginLR / 72;
+  draw(attempt.doc, attempt.placed, attempt.pages, attempt.marginLR, style);
+  const fit = {
+    style: style.id, bodyPt: attempt.bodyPt, marginIn, maxPages, fitted: Boolean(hit), strategy, swaps, attempts,
+    wrappedHeadings: attempt.wrappedHeadings,
+  };
+  if (!hit) {
+    fit.overflow = `Does not fit ${maxPages} page(s) even at ${attempt.bodyPt}pt with ${marginIn}in margins; it runs to ${attempt.pages}. Remove content and rebuild: a project entry costs about 3 lines, a bullet about 2.`;
+  }
+  return { pdf: await toBuffer(attempt.doc), pages: attempt.pages, spec: current, fit };
+};
+
+/**
+ * The builder's own layout of a spec at one typography, a row per Word
+ * paragraph (every block is one): the lines it takes and the page it starts on.
+ * scripts/resume/word_parity.mjs holds this against Word's layout of the DOCX
+ * the builder wrote for the same spec, which is how "the PDF and the DOCX are
+ * the same document" is checked rather than assumed.
+ */
+export const layoutResume = (spec, pools, profile, { bodyPt, marginIn, style: styleName } = {}) => {
+  const style = styleFor(styleName ?? spec.style);
+  const attempt = renderOnce(spec, pools, profile, bodyPt ?? spec.bodyPt ?? style.bodyPt,
+    (marginIn ?? spec.marginIn ?? style.marginLR / 72) * 72, style);
+  attempt.doc.end();
+  // A paragraph split over a page break is one paragraph to Word: its lines
+  // summed, on the page it starts.
+  const paragraphs = [];
+  for (const item of attempt.placed) {
+    const text = item.lines.map((line) => line.map((run) => run.text).join('')).join(' ').trim();
+    const row = paragraphs[item.paragraph];
+    if (row) {
+      row.lines += item.lines.length;
+      row.text = `${row.text} ${text}`;
+    } else paragraphs[item.paragraph] = { lines: item.lines.length, page: item.page + 1, text };
+  }
+  return { pages: attempt.pages, paragraphs };
 };
 
 // ── DOCX ──────────────────────────────────────────────────────────────────
@@ -340,13 +510,18 @@ export const renderResumeDocx = async (spec, pools, profile, { bodyPt, marginIn,
   const style = styleFor(styleName ?? spec.style);
   const size = Math.round((bodyPt ?? style.bodyPt) * 2);          // half-points
   const marginTwips = Math.round((marginIn ?? style.marginLR / 72) * 1440);
+  // A measuring document, so a heading that cannot hold its date is split
+  // where the PDF split it (headingLayout) rather than where Word would.
+  const doc = new PDFDocument({ size: [style.pageW, style.pageH], autoFirstPage: false });
   const children = style.docxChildren({
     docx,
+    doc,
     items: assemble(spec, pools),
     profile,
     bodyPt: bodyPt ?? style.bodyPt,
     contentTwips: A4_W_TWIP - marginTwips * 2,
   });
+  doc.end();
 
   const subject = spec.subject ?? 'Resume';
   const single = { line: 240, lineRule: 'auto' };
@@ -388,8 +563,10 @@ export const renderResumeMarkdown = (spec, pools, profile) => {
     else if (item.kind === 'text') out.push('', item.text);
     else if (item.kind === 'entry') {
       if (item.inline) continue; // its label leads its one bullet instead
+      // No project carries a location, which printed "**Org**,  · *Role*".
+      const where = item.location ? `, ${item.location}` : '';
       out.push('', item.role
-        ? `**${item.organization}**, ${item.location} · *${item.role}*${item.dateLabel ? ` (${item.dateLabel})` : ''}`
+        ? `**${item.organization}**${where} · *${item.role}*${item.dateLabel ? ` (${item.dateLabel})` : ''}`
         : `**${item.organization}**${item.dateLabel ? ` (${item.dateLabel})` : ''}`);
     } else out.push(`- ${bulletLine(item)}`);
   }

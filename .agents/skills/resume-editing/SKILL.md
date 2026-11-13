@@ -91,14 +91,16 @@ Reference templates: `public/resume/template/{nus,harvard}-template-2026.docx`
 documents live beside them: `NUS Resume - Y3-Y4.docx`, `NUS Guidelines.pdf`,
 two CDE examples and the action-verb list.
 
-After verifying, render PDFs to PNG (pdftoppm, 130 dpi) into
-`.impeccable/resume-qa/` and LOOK at every page: dates flush right at one x,
+After verifying, render PDFs to PNG (pdftoppm at 130 dpi; where poppler is not
+installed, `uv run --no-project --with pypdfium2` and `page.render(scale=...)`)
+into `.impeccable/resume-qa/` and LOOK at every page: dates flush right at one x,
 no orphaned entry headers, page counts 1 for every one-pager (incl.
 `highlights`) and 2 for general.
 
 **No Windows?** Export with `python scripts/resume/export_pdf_libreoffice.py
 --edition <YYYY-MM>`, never a bare `soffice --convert-to pdf` (nor
-`export-pdf.ps1 -UseLibreOffice`, which is one). For the nus style, LibreOffice
+`soffice` by any other wrapper; `export-pdf.ps1 -UseLibreOffice` now runs this
+script). For the nus style, LibreOffice
 matches Word once two things are fixed, and the script enforces both (Harvard
 output has not been measured against Word this way):
 
@@ -125,15 +127,22 @@ Headless `soffice` also needs the `libreoffice-writer` package, not just the
 core, or every DOCX fails with "source file could not be loaded". Word remains
 the reference: re-run `export-pdf.ps1` on Windows when one is available, and
 before an employer sees any document that lands within a line of its page end.
+Edition 2026-12 was exported this way on 2026-11-08 and re-exported through
+Word on 2026-11-13.
 
 Full edition-bump checklist (archiving, siteConfig, pageAgent): see
 [CLAUDE.md](../../../CLAUDE.md).
 
 ## On-demand builds (agents and the builder window)
 
-Custom résumés are rendered by `server/resumeRender.mjs` (pdfkit, Standard-14
-Times) through `api/resume.mjs` and the `build_resume` MCP tool — the Python +
-Word pipeline above still owns the eight canonical editions. The instructions
+Custom résumés are rendered by `server/resumeRender.mjs` and
+`server/resumeStyles.mjs` (pdfkit, Standard-14 Helvetica for nus, Times for
+harvard) through `api/resume.mjs` and the `build_resume` MCP tool — the Python +
+Word pipeline above still owns the eight canonical editions. The builder lays
+out exactly as Word does (measured unkerned, breaks after hyphens, pages split
+between lines, headings never over their dates); on Windows with Word,
+`npm run resume:word-parity` opens its DOCX for 19 specs in Word and compares
+every paragraph's lines and page. Run it after changing either file. The instructions
 agents receive live in `server/resumeGuide.mjs`; that file is the single source,
 so change it there rather than restating the rules. Its load-bearing rule:
 callers select block ids and can never supply bullet text, because these
@@ -188,7 +197,9 @@ sentence can pass every rule and still be wrong. Read them.
 
 Length tiers come first (Nov 2026). Every bullet can carry `short` (1 line),
 `standard` (≤ 2 lines), `full` (the master CV's sentence) and `deep`, budgets
-measured at nus 10pt 0.5in. The one-pagers print `standard` (`detail` in each
+measured at nus 10pt 0.5in, or at the largest size an entry's heading holds its
+dates at (STMicro 9pt, both Abbott entries 9.5pt: no build prints them larger;
+`referenceBodyPt`). The one-pagers print `standard` (`detail` in each
 config) and `general` prints `full`. A one-pager that overflows takes the
 JS short-first fit's choices: the weakest bullets' `short` wordings, written into
 its config per bullet as `{"id": ..., "tier": "short"}` because the Python
@@ -204,14 +215,14 @@ the style. `nus` holds its 0.5" margins and steps the body 10.5/10/9.5/9/**8.5pt
 (8.5 is what the two-page master CV needs); `harvard` steps 10.5→10pt and then
 margins 0.7→0.6→0.5". Never below the style's own floor. **The one-pagers cannot
 go above 9pt** while their entry headings stay as they are: STMicro's runs into
-its date at 9.5pt and both Abbott headings at 10pt.
+its date at 9.5pt and both Abbott headings at 10pt (Rahul kept 9pt, 2026-11-13).
 
 Fit truth is the pypdf page count of the exported PDF, never an estimate. The JS
 renderer models Word closely enough to pick the right rung — its numbers come
 from the font's own hhea table and from glyph positions measured out of Word
 output — but it is a model. Two one-pagers were a rung optimistic until the
 section-header rule's 3.75pt band was measured and put in. **Always export and
-count.** The model also never measures a heading against its date: at 9.5pt
-STMicro's heading runs into "Aug 2026 – Present" (2026-11-02), which
-`verify_resumes.py` now fails, so a size the model offers can still be one rung
-too big.
+count.** Since 2026-11-13 the model measures each heading against its date and
+skips a rung where one would wrap (at 9.5pt STMicro's heading runs into "Aug
+2026 – Present"), and `verify_resumes.py` fails a heading date glued to its text
+or split across two lines.

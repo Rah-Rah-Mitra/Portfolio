@@ -34,7 +34,7 @@ export const poolEntries = () => SECTION_TYPES.flatMap((sectionType) => pools[se
     // P4 can name the bullets a standard build would print over 2 lines.
     bullets: (entry.bullets ?? []).flatMap((bullet) => Object.entries(bullet.text)
       .map(([variant, text]) => ({ ref: `${entry.id}.${bullet.id}`, variant, text,
-        ...(variant === 'full' ? { lines: referenceLines([text])[0] } : {}) }))),
+        ...(variant === 'full' ? { lines: referenceLines([text], [{ ...entry, sectionType }])[0] } : {}) }))),
   })));
 
 /**

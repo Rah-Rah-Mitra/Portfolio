@@ -155,7 +155,11 @@ built, tiers included, so building it again gives the same document. Set
 step the type only. The ladder: \`nus\` holds its 0.5in margins and steps the
 body 10.5 / 10 / 9.5 / 9 / 8.5pt; \`harvard\` steps 10.5 to 10pt and then margins
 0.7 / 0.6 / 0.5in. Neither goes below its own floor — 8.5pt is the size the
-two-page master CV needs, and 10pt is as low as \`harvard\` goes.
+two-page master CV needs, and 10pt is as low as \`harvard\` goes. A size is
+taken only if every entry heading holds its dates on one line, so a spec with
+the STMicroelectronics entry lands at 9pt or below; if even the floor cannot
+hold one, the heading wraps under itself with its dates kept on the first line,
+and \`fit.wrappedHeadings\` names it.
 
 If it still overflows you get an overflow report instead of a silent trim.
 Remove something and rebuild. Rough costs: a project entry is about three

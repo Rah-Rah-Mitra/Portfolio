@@ -868,15 +868,13 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   "Global Operational AI Systems & Data Engineer (Part-Time)" at Rahul's request,
   whatever the VMock CV prints.
   `generated/` keeps the current + previous edition; older sets live in
-  `public/resume/archive/`. Its eight PDFs were exported with
-  `export_pdf_libreoffice.py` on 2026-11-08 (that machine had no Word; the script
-  has a Windows path now: soffice under Program Files, fonts checked in the
-  registry; run the Python steps through `uv run --no-project --with python-docx
-  --with pypdf` where those are not installed), so re-export through Word
-  (`export-pdf.ps1`) before an employer sees one; under LibreOffice
-  software-engineer ends 3.7pt above its margin and highlights 8pt, both within
-  a line. `general` sits at nus's 8.5pt floor, the
-  master CV's own size, so any line added to it must buy its room elsewhere.
+  `public/resume/archive/`. Its eight PDFs were re-exported through Word
+  (`export-pdf.ps1`) on 2026-11-13, replacing the LibreOffice export of 11-08
+  (that machine had no Word); PDF Producer reads "Microsoft Word for Microsoft
+  365". Run the Python steps through `uv run --no-project --with python-docx
+  --with pypdf` where those are not installed. `general` sits at nus's 8.5pt
+  floor, the master CV's own size, so any line added to it must buy its room
+  elsewhere.
 - Section types (`ENTRY_SECTION_TYPES` in `server/resumeAssemble.mjs`, which every
   list of them reads; `build_resumes.py` loads the same pools): `education`,
   `experience`, `research`, `projects`, `leadership`, `national-service`, each
@@ -907,11 +905,10 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   1. Edit content JSONs, then `npm run resume:lint`.
   2. `python scripts/resume/build_resumes.py --edition <YYYY-MM>`
   3. `powershell -File scripts/resume/export-pdf.ps1 -Edition <YYYY-MM>`
-     (MS Word COM; the `-UseLibreOffice` fallback shifts pagination and
-     inverts the NUS section rule. No Windows: `python
-     scripts/resume/export_pdf_libreoffice.py --edition <YYYY-MM>`, which
-     requires the real fonts and corrects the rule; see the skill's "No
-     Windows?" note, and re-verify)
+     (MS Word COM; prints each document's page count. `-UseLibreOffice` hands
+     over to `export_pdf_libreoffice.py`, which requires the real fonts and
+     corrects the rule; with no Windows run that script directly, see the
+     skill's "No Windows?" note, and re-verify)
   4. `python scripts/resume/verify_resumes.py --edition <YYYY-MM>` must pass
      (page counts: `general` = 2 pages, all others = 1; contact links in DOCX
      rels and PDF annotations; content assertions; no company's entries split
@@ -963,12 +960,34 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   also needs an import added to `resumeConfigs` in `server/resumeContent.mjs`.
 - **Résumé builder.** `api/resume.mjs` renders a résumé on demand from a spec in
   the URL (`?spec=<base64url deflated JSON>&format=pdf|docx|md`, POST for long
-  specs) — stateless, no storage. `server/resumeRender.mjs` is a JS port of
-  `harvard_style.py` using pdfkit's Standard-14 Times fonts; its layout
-  constants were calibrated from the Word output (line advance 1.152x size,
-  baseline 0.93x, Word takes the MAX of adjacent paragraph spacing). It measures
-  before drawing, so page counts are exact. Auto-fit walks the typography ladder
-  only and never drops selected content. **The eight canonical résumés stay
+  specs) — stateless, no storage. `server/resumeRender.mjs` (page flow, fit) and
+  `server/resumeStyles.mjs` (the two styles) are a JS port of `nus_style.py`
+  and `harvard_style.py` on pdfkit's Standard-14 fonts (Helvetica for nus,
+  metrically Arial; Times for harvard); its layout constants were calibrated
+  from the Word output (line advance 1.152x size, Word takes the MAX of adjacent
+  paragraph spacing). **It lays out exactly as Word does** (2026-11-13), and
+  `npm run resume:word-parity` (Windows with Word only, not in `npm test`)
+  proves it: the builder's DOCX for 19 specs opened in Word, per paragraph line
+  count and start page, 1,460 lines identical. What that took, each pinned in
+  `tests/resume-word-layout.test.ts`: widths measured unkerned (Word does not
+  kern; pdfkit's kerned widths kept words Word wraps); a line break after a
+  hyphen between letters or digits; a paragraph may split across pages (no
+  widow control is set, so Word breaks between any two lines; keep-with-next
+  only forbids a break between paragraphs); blank lines not kept with the next
+  (Word leaves one at a page foot); the nus rule at its band, no harvard 1pt
+  gap, 1.44pt past each margin. Re-run it after touching either file and before
+  re-pinning a line count. Harvard is not in its matrix: its overflowing general
+  build drifts by part of a line over a page (it ships nothing). **Entry
+  headings never run into their dates**: `headingLayout` wraps a heading
+  before its right-flush column when the column plus a space would not fit
+  beside it (the DOCX gets the same split, with a real `<w:tab/>` and a
+  `<w:br/>`), and the fit ladder skips any rung where a heading wraps, so
+  auto-fit lands the one-pagers at 9pt like the canonical ones (it was
+  10–10.5pt, STMicro's and both Abbott headings drawn over their dates and the
+  DOCX at 2 pages in Word); only when even the floor cannot hold a heading, or
+  autoFit is off, is a wrap printed, and `fit.wrappedHeadings` names it. A
+  spec's own `bodyPt` starts the ladder and it only steps down. Auto-fit never
+  drops selected content. **The eight canonical résumés stay
   Word-built** (python-docx, then a Word or corrected-LibreOffice PDF export) —
   this renderer serves custom builds. Shared content lives in
   `server/resumeContent.mjs`; a new résumé config needs an import added there.
@@ -1018,7 +1037,14 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   `master-cv-improvements.md`; docs/resume-detail-gaps.md §19). A bullet's `text`
   holds `short` (1 line), `standard` (≤ 2 lines), `full` (the master CV's own
   sentence; was `default`) and `deep`, budgets measured at one reference layout,
-  nus 10pt 0.5in (`REFERENCE_LAYOUT`, `referenceLines` in resumeRender.mjs). A
+  nus 10pt 0.5in (`REFERENCE_LAYOUT`, `referenceLines` in resumeRender.mjs),
+  except that an entry is budgeted at the largest rung its heading holds its
+  dates at (`referenceBodyPt`: STMicro 9pt, both Abbott entries 9.5pt), since
+  auto-fit never prints it larger — Rahul, 2026-11-13, "ensure the sizing does
+  not cause the overflow": measured as Word measures, stmicro-or's 1-line short
+  is 0.9pt over at 10pt but one line at the 9pt every build prints it at. Every
+  caller passes the entry (tierFallbacks, the MCP check, block menu and
+  phrasings, lint_pool, the tier test). A
   missing tier falls back towards full (short → standard → full, deep → full) and
   a slug override answers at the full step; `resumeAssemble.mjs resolveBullet`,
   `build_resumes.py bullet_text` and the documents test's mirror are the same rule
@@ -1038,9 +1064,11 @@ annotation text uses `--color-neutral-700` — pinned by axe scans in
   match. Canonical configs: `general` at `full`, the seven one-pagers at
   `standard`, 9pt, with the fit's short swaps written per bullet (Python runs no
   fit). **Entry headings cap the one-pagers at 9pt**: STMicro's heading runs into
-  its date at 9.5pt and both Abbott headings at 10pt, which the JS fit model does
-  not measure and verify_resumes.py fails; the spec's 10pt target needs shorter
-  titles or a style change, which only Rahul can approve.
+  its date at 9.5pt and both Abbott headings at 10pt (confirmed in Word on
+  2026-11-13); the builder's fit now measures that, and verify_resumes.py fails
+  a date glued to its text (`GLUED_DATE`) or split across lines
+  (`SPLIT_DATE`). The spec's 10pt target needs shorter titles or a style
+  change, which only Rahul can approve; on 2026-11-13 he kept 9pt.
 - **Résumé checker.** `server/resumeCheck.mjs` is a deterministic, rule-based
   linter. It **imports nothing** — a test enforces that, because
   `resumeRender.mjs` pulls in pdfkit (12 MB) and `ResumeBuilder.tsx` loads résumé

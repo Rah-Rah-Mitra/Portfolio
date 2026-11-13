@@ -11,10 +11,11 @@ import { pools, resumeConfigs } from '../server/resumeContent.mjs';
 
 type Phrasing = { text: string; tier?: string; tiers?: Record<string, string> };
 type Bullet = { id: string; text: Record<string, string>; rank?: number; requires?: string[]; phrasings?: Record<string, Phrasing> };
-type Entry = { id: string; blocked?: string; bullets?: Bullet[] };
+type Entry = { id: string; sectionType: string; blocked?: string; bullets?: Bullet[] };
 type Spec = { slug: string; pages: number; detail?: string; sections: unknown[] };
 
-const entries = () => ENTRY_SECTION_TYPES.flatMap((type: string) => (pools[type as 'experience'].entries as unknown as Entry[]));
+const entries = () => ENTRY_SECTION_TYPES.flatMap((type: string) => (pools[type as 'experience'].entries as unknown as Entry[])
+  .map((entry) => ({ ...entry, sectionType: type })));
 const tierTexts = () => entries().flatMap((entry) => (entry.bullets ?? []).flatMap((bullet) => [
   ...(['short', 'standard'] as const).filter((tier) => bullet.text[tier]).map((tier) => ({ entry, bullet, tier, text: bullet.text[tier], ref: `${entry.id}.${bullet.id}@${tier}` })),
   ...Object.entries(bullet.phrasings ?? {}).flatMap(([id, phrasing]) => [
@@ -32,8 +33,10 @@ describe('the tier guard', () => {
     expect(rows.filter((row) => row.tier === 'short')).toHaveLength(7);
   });
 
+  // At each entry's reference size (referenceBodyPt): 10pt, or 9pt for STMicro
+  // and 9.5pt for the Abbott entries, whose headings never print larger.
   it('holds every stored short to 1 line and standard to 2, at the reference layout', () => {
-    const lines = referenceLines(rows.map((row) => row.text));
+    const lines = referenceLines(rows.map((row) => row.text), rows.map((row) => row.entry));
     const over = rows.filter((row, index) => lines[index] > TIER_BUDGETS[row.tier as 'short']).map((row) => row.ref);
     expect(over).toEqual([]);
   });

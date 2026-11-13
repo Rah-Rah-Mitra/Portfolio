@@ -708,3 +708,64 @@ the 0.78 dB. (5) Not met until Rahul supplies the three standard wordings above.
 R11 `no-outcome-entry` still warns on six one-pagers (the Abbott contract without
 its 83% verification, or the internship without its zero-failure pipeline):
 advisory, and a selection choice for Rahul.
+
+## 20. Word on the build machine, and the builder laid out as Word lays out, 2026-11-13
+
+Microsoft Word was installed on the build machine. Two things followed.
+
+**The canonical PDFs.** Edition 2026-12's eight PDFs, exported through
+LibreOffice on 11-08 (that machine had no Word), were re-exported in place
+through Word (`export-pdf.ps1`). The DOCX files, content and URLs are unchanged.
+Word gives the same page counts (seven at 1, general at 2), draws the section
+rule natively, and `verify_resumes.py` passes. `export-pdf.ps1` now prints each
+document's page count, and its `-UseLibreOffice` switch runs
+`export_pdf_libreoffice.py` instead of a bare `soffice`, which drew the rule
+upside down. `verify_resumes.py` gained `SPLIT_DATE`: a heading date broken
+across two lines, Word's other failure beside the glued date `GLUED_DATE`
+catches.
+
+**The builder.** A tailored link Rahul shared showed the custom builder
+(`api/resume`) printing STMicro's and both Abbott headings over their dates. The
+cause: its fit counted pages only and landed at 10.5pt. Of the eight canonical
+configs, auto-fitted, seven collided the same way: civic at 10.5pt; ai-engineer,
+solution-architect and OR at 10pt; software-engineer, cyber-security and
+highlights at 9.5pt. In Word, that link's DOCX ran to 2 pages, because Word split
+each long heading's date across lines. What changed:
+
+- **Headings.** `headingLayout` wraps a heading before its date when the date plus
+  a space would not fit beside it; the DOCX carries the same split. The fit ladder
+  skips any rung where a heading wraps, so every auto-fit lands at 9pt, like the
+  canonical one-pagers, with no short-wording swaps needed. A wrap prints only
+  when even the floor cannot hold a heading or autoFit is off, and
+  `fit.wrappedHeadings` names it. A spec's own `bodyPt` starts the ladder and the
+  ladder only steps down.
+- **Measuring.** Compared line by line with Word's export of the eight canonical
+  résumés, the builder's line ends differed in 18 places. pdfkit kerns its widths
+  and Word does not, and Word breaks after a hyphen where the builder never did.
+  With unkerned widths and hyphen breaks, all 467 lines matched.
+- **Pagination.** Neither builder sets widow control, so Word breaks a paragraph
+  between any two lines; the builder had moved whole paragraphs. Blank lines are
+  no longer kept with the next paragraph (Word leaves one at a page foot).
+- **Smaller fixes.** The nus rule drops the 1pt gap harvard's border needs and
+  runs 1.44pt past each margin, as Word draws it. The DOCX date uses a real
+  `<w:tab/>`. Markdown no longer prints ",  ·" for projects, which have no
+  location.
+
+`npm run resume:word-parity` (Windows with Word) is the end-to-end check. It
+renders 19 specs: the eight configs as shipped and auto-fitted, the tailored link,
+ai-engineer at a fixed 10.5pt, and general at deep detail on 3 pages. It opens
+each DOCX in Word and compares every paragraph's line count and starting page:
+1,460 lines, identical. Harvard is left out: an ai-engineer build matched, but its
+overflowing general build drifts by part of a line over a page. Harvard ships
+nothing.
+
+**Tier budgets.** Measured as Word measures, three texts gain a line at the 10pt
+reference: `stmicro-or.layout-agnostic`'s short, and the full wordings of
+`abbott-contract.hardening` and `amazon-vision.brief`. Word confirms all three.
+The STMicro short would break its 1-line budget, but no auto-fitted build can
+print STMicro above 9pt, because its heading forces the step down. Rahul's call:
+"Ensure the sizing does not cause the overflow." So an entry's bullets are
+budgeted at the largest rung its heading holds its dates at (`referenceBodyPt`):
+STMicro 9pt, both Abbott entries 9.5pt, everything else 10pt. The wording stands,
+and no pinned count moved. The one-pagers' foot-of-page whitespace at 9pt stays
+for now (Rahul, same day); 9.5pt needs a shorter STMicro heading.

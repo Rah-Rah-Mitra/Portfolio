@@ -139,6 +139,8 @@ describe('the shipped documents are a function of the content pool', () => {
       // retired for sr-reproduction; the APC rebuild and its verification take
       // the Seeq toolkit's place on three; cyber-security adds ADAM. general,
       // printed at full, did not move. Every DOCX holds each selected sentence.
+      // None moved on 2026-11-13, when the eight PDFs were re-exported through
+      // Word from the same DOCX: the words are what this hashes, not the exporter.
       'software-engineer': '76fc6de2283b310b',
       'solution-architect': 'aba783a09e7636ee',
       'ai-engineer': 'd19d734fc8d9dbfd',

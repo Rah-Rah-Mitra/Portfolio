@@ -7,8 +7,8 @@ import { z } from 'zod';
 import snapshot from './portfolio-snapshot.json' with { type: 'json' };
 import { configBySlug, pools, profile, resumeBlocks, resumeConfigs } from './resumeContent.mjs';
 import {
-  ENTRY_SECTION_TYPES, TIERS, TIER_BUDGETS, assemble, bulletLine, decodeSpec, encodeSpec, measureBulletLines, referenceLines,
-  renderResume, renderResumeMarkdown, requestedTier, resolveBullet, specSchema, tierFallbacks,
+  ENTRY_SECTION_TYPES, TIERS, TIER_BUDGETS, assemble, bulletLine, decodeSpec, encodeSpec, measureBulletLines, referenceEntry,
+  referenceLines, renderResume, renderResumeMarkdown, requestedTier, resolveBullet, specSchema, tierFallbacks,
 } from './resumeRender.mjs';
 import { checkResume, firstWord, framesIn, leadLemma, metricClasses, metricsIn, termsIn } from './resumeCheck.mjs';
 import { RESUME_GUIDE } from './resumeGuide.mjs';
@@ -159,8 +159,11 @@ export const checkSpec = (spec, fit = null) => {
   // first line, and leaving it out would undercount every project by a line.
   const lines = fit ? measureBulletLines(bullets.map(bulletLine), typography) : [];
   // Each sentence at the reference layout too, whatever this build fitted at:
-  // a tier's budget is defined there (R9), so it needs no fit to be judged.
-  const atReference = referenceLines(bullets.map((bullet) => bullet.text));
+  // a tier's budget is defined there (R9), so it needs no fit to be judged. The
+  // reference is its entry's (referenceBodyPt): 10pt, or less where the entry's
+  // heading forces every build that prints it smaller.
+  const atReference = referenceLines(bullets.map((bullet) => bullet.text),
+    bullets.map((bullet) => referenceEntry(pools, bullet.sectionType, bullet.entryId)));
   return checkResume(bullets.map((bullet, index) => ({ ...bullet, referenceLines: atReference[index], ...(fit ? { lines: lines[index] } : {}) })), {
     tierBudgets: TIER_BUDGETS,
     candidates: swapCandidates(spec, bullets.map((bullet) => bullet.ref)),
@@ -281,7 +284,7 @@ export const decoratedBlocks = ({ tier } = {}) => {
   // One traversal carrying the ref with the bullet: a second parallel walk for
   // the ids would be a second thing to keep in the same order.
   const items = blocks.sections.flatMap((section) => section.entries
-    .flatMap((entry) => entry.bullets.map((bullet) => ({ bullet, ref: `${entry.id}.${bullet.id}` }))));
+    .flatMap((entry) => entry.bullets.map((bullet) => ({ bullet, ref: `${entry.id}.${bullet.id}`, entry: referenceEntry(pools, section.type, entry.id) }))));
   // With a tier, each bullet is the one sentence that tier prints (falling back
   // as a build would), which is all an agent tailoring at that length needs;
   // without one, every stored tier and its line cost.
@@ -289,10 +292,11 @@ export const decoratedBlocks = ({ tier } = {}) => {
     ? resolveBullet(pool.get(ref), {}, tier, ref)
     : { text: defaultText(bullet), tierUsed: 'full' }));
   const texts = resolved.map((row) => row.text);
-  const lines = referenceLines(texts);
+  const lines = referenceLines(texts, items.map((item) => item.entry));
   const tierKeys = items.map(({ bullet }) => TIERS.filter((key) => bullet.variants[key]));
   const tierTexts = tierKeys.flatMap((keys, index) => keys.map((key) => items[index].bullet.variants[key]));
-  const tierCounts = referenceLines(tierTexts);
+  const tierEntries = tierKeys.flatMap((keys, index) => keys.map(() => items[index].entry));
+  const tierCounts = referenceLines(tierTexts, tierEntries);
   let cursor = 0;
   items.forEach(({ bullet, ref }, index) => {
     bullet.lead = firstWord(texts[index]).replace(/[^A-Za-z-]+$/, '');
@@ -321,7 +325,7 @@ export const decoratedBlocks = ({ tier } = {}) => {
         const source = pool.get(`${entry.id}.${bullet.id}`);
         const phrasings = Object.entries(source?.phrasings ?? {});
         if (!phrasings.length) continue;
-        const measured = referenceLines(phrasings.map(([, item]) => item.text));
+        const measured = referenceLines(phrasings.map(([, item]) => item.text), phrasings.map(() => referenceEntry(pools, section.type, entry.id)));
         bullet.phrasings = Object.fromEntries(phrasings.map(([id, item], index) => [id, {
           text: item.text,
           note: item.note,

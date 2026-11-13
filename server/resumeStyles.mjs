@@ -14,10 +14,37 @@
 import { bulletLine } from './resumeAssemble.mjs';
 
 // ── shared primitives ─────────────────────────────────────────────────────
-export const measure = (doc, text, font, size, tracking = 0) => {
+// Type is set as Word sets it: unkerned. Neither builder writes w:kern, so Word
+// lays a résumé out with each glyph's own advance, while pdfkit kerns its
+// Standard-14 fonts by default, both in what it measures and in what it draws.
+// Kerned, a measured line came out a fraction of a point short of Word's, so the
+// builder kept a word Word wrapped ("comparing 3" with 0.4pt to spare) and its
+// line ends drifted from the DOCX it ships beside; drawn kerned, a comma tucked
+// under a T ("BERT,") where Word's sits clear of it. useFont switches pdfkit's
+// kerning off for each font a document selects (pdfkit builds a font object per
+// document, so nothing outside that document changes): what the builder
+// measures is then what it draws, and both are Word's. With the hyphen breaks in
+// wrapRuns this matches every line end of Word's export of the eight canonical
+// résumés (467 lines, 2026-11-13; scripts/resume/word_parity.mjs re-checks it).
+export const useFont = (doc, font, size) => {
   doc.font(font).fontSize(size);
+  const afm = doc._font?.font;
+  if (afm && typeof afm.getKernPair === 'function' && !afm.unkerned) {
+    afm.getKernPair = () => 0;
+    afm.unkerned = true;
+  }
+  return doc;
+};
+
+export const measure = (doc, text, font, size, tracking = 0) => {
+  useFont(doc, font, size);
   return doc.widthOfString(text, tracking ? { characterSpacing: tracking } : undefined);
 };
+
+// Word breaks a line after a hyphen that joins two letters or digits ("sign-" /
+// "ups", "5-" / "stage"); without that break opportunity the builder pushed the
+// whole compound down and its lines disagreed with Word's.
+const HYPHEN_BREAK = /(?<=[A-Za-z0-9]-)(?=[A-Za-z0-9])/;
 
 // Greedy word wrap. We do our own so line boxes are ours to place, which is
 // what makes the page count exact rather than discovered after the fact.
@@ -33,7 +60,8 @@ export const wrapRuns = (doc, runs, firstWidth, restWidth) => {
     width = restWidth;
   };
   for (const run of runs) {
-    const words = run.text.split(/(\s+)/).filter((part) => part !== '');
+    const words = run.text.split(/(\s+)/).filter((part) => part !== '')
+      .flatMap((part) => (part.trim() ? part.split(HYPHEN_BREAK) : [part]));
     for (const word of words) {
       const w = measure(doc, word, run.font, run.size);
       if (used + w > width && used > 0 && word.trim() !== '') {
@@ -49,12 +77,74 @@ export const wrapRuns = (doc, runs, firstWidth, restWidth) => {
 };
 
 // A block is one Word paragraph: its wrapped lines plus its spacing rules.
-export const block = (lines, { size, spaceBefore = 0, spaceAfter = 0, keepWithNext = false, rule = false, indent = 0, hanging = 0, align = 'left', rightRun = null }) => ({
-  lines, size, spaceBefore, spaceAfter, keepWithNext, rule, indent, hanging, align, rightRun,
+export const block = (lines, { size, spaceBefore = 0, spaceAfter = 0, keepWithNext = false, rule = false, indent = 0, hanging = 0, align = 'left', rightRun = null, heading = null, wrapped = false }) => ({
+  lines, size, spaceBefore, spaceAfter, keepWithNext, rule, indent, hanging, align, rightRun, heading, wrapped,
 });
 
 const one = (doc, text, font, size, extra = {}) =>
   [[{ text, font, size, width: measure(doc, text, font, size), ...extra }]];
+
+const lineText = (line) => line.map((run) => run.text).join('');
+
+/**
+ * An entry heading and its right-flush column (the dates, or harvard's
+ * location), laid out the way the DOCX will print it.
+ *
+ * Word keeps the two on one line only while the text leaves room for the right
+ * column; past that it wraps at the tab and splits the date itself ("… (NUS
+ * Capstone) Aug" over "2026 – Present"), and the builder used to draw the text
+ * straight over the date. Here the text wraps first, to what the right column
+ * and a space leave of line 1, so the date keeps line 1 and the rest of the text
+ * runs on underneath. `wrapped` says it had to: the fit ladder steps the type
+ * down rather than print that while a smaller size holds the heading on one
+ * line. A space is the margin because at less, Word prints the date glued to the
+ * text ("(NUS Capstone)Aug 2026"), which verify_resumes.py fails.
+ *
+ * `first` and `rest` are the same split as text, for the DOCX: `first + rest` is
+ * the heading exactly (wrapRuns keeps a line's trailing space and drops the next
+ * line's leading one). That trailing space stays before the tab, where it fits:
+ * the room above already set a space aside, and dropping it ran the words
+ * together for anything that reads the DOCX as text ("STMicroelectronics(NUS").
+ *
+ * @param {any} doc a pdfkit document, for its font metrics
+ * @param {{ text: string, font: string, size: number, right?: string | null, rightFont?: string, contentWidth: number }} options
+ */
+export const headingLayout = (doc, { text, font, size, right = null, rightFont = font, contentWidth }) => {
+  const room = right ? contentWidth - measure(doc, right, rightFont, size) - measure(doc, ' ', font, size) : contentWidth;
+  const lines = wrapRuns(doc, [{ text, font, size }], room, contentWidth);
+  return {
+    lines,
+    wrapped: Boolean(right) && lines.length > 1,
+    first: lineText(lines[0] ?? []),
+    rest: lines.slice(1).map(lineText).join(''),
+  };
+};
+
+/** headingLayout as a block, keep-with-next like every entry line. */
+const headingBlock = (doc, { text, font, size, right, rightFont, contentWidth, ...options }) => {
+  const layout = headingLayout(doc, { text, font, size, right, rightFont, contentWidth });
+  return block(layout.lines, {
+    size,
+    keepWithNext: true,
+    rightRun: right ? { text: right, font: rightFont, size } : null,
+    heading: text,
+    wrapped: layout.wrapped,
+    ...options,
+  });
+};
+
+/**
+ * The DOCX runs of a heading: the text's first line, a tab to the right-flush
+ * column, then a line break and the rest when headingLayout had to wrap. The
+ * break is explicit so Word prints the split the PDF measured rather than
+ * choosing its own, which split the date.
+ */
+const headingRuns = (docx, layout, right, textRun, rightRun) => {
+  if (!right) return [textRun(layout.first + layout.rest)];
+  const runs = [textRun(layout.first), rightRun([new docx.Tab(), right])];
+  if (layout.rest) runs.push(textRun(layout.rest, { break: 1 }));
+  return runs;
+};
 
 // ── harvard ───────────────────────────────────────────────────────────────
 // Calibrated by extracting glyph positions from the Word-built
@@ -93,6 +183,8 @@ const harvard = {
     { bodyPt: 10, marginIn: 0.5 },
   ],
 
+  // A single border at w:space 1 sits 1pt below the text box.
+  ruleGap: 1,
   drawRule(doc, x, y, width) {
     doc.moveTo(x, y).lineTo(x + width, y).lineWidth(0.75).strokeColor('#000000').stroke();
   },
@@ -146,15 +238,13 @@ const harvard = {
         // `role` happens to be set — the Python builder makes the same one.
         const twoLine = Boolean(item.role) && item.sectionType !== 'projects';
         const rightOne = twoLine ? item.location : item.dateLabel;
-        blocks.push(block(
-          one(doc, item.organization, this.bold, bodyPt),
-          { size: bodyPt, keepWithNext: true, rightRun: rightOne ? { text: rightOne, font: this.regular, size: bodyPt } : null },
-        ));
+        blocks.push(headingBlock(doc, {
+          text: item.organization, font: this.bold, size: bodyPt, right: rightOne || null, rightFont: this.regular, contentWidth,
+        }));
         if (twoLine) {
-          blocks.push(block(
-            one(doc, item.role, this.italic, bodyPt),
-            { size: bodyPt, spaceAfter: 1, keepWithNext: true, rightRun: { text: item.dateLabel, font: this.regular, size: bodyPt } },
-          ));
+          blocks.push(headingBlock(doc, {
+            text: item.role, font: this.italic, size: bodyPt, right: item.dateLabel || null, rightFont: this.regular, contentWidth, spaceAfter: 1,
+          }));
         }
         return;
       }
@@ -172,9 +262,10 @@ const harvard = {
       contentWidth, contentWidth - this.bulletIndent);
   },
 
-  docxChildren({ docx, items, profile, bodyPt, contentTwips }) {
-    const { AlignmentType, BorderStyle, ExternalHyperlink, Paragraph, Tab, TabStopType, TextRun } = docx;
+  docxChildren({ docx, doc, items, profile, bodyPt, contentTwips }) {
+    const { AlignmentType, BorderStyle, ExternalHyperlink, Paragraph, TabStopType, TextRun } = docx;
     const TWIP = 20;
+    const contentWidth = contentTwips / TWIP;
     const size = Math.round(bodyPt * 2);
     const single = { line: 240, lineRule: 'auto' };
     const font = this.docxFont;
@@ -227,20 +318,16 @@ const harvard = {
       if (item.kind === 'entry') {
         const twoLine = Boolean(item.role) && item.sectionType !== 'projects';
         const rightOne = twoLine ? item.location : item.dateLabel;
-        children.push(new Paragraph({
-          spacing: { ...single, before: 0, after: 0 },
+        const rightRun = (parts) => new TextRun({ size, font, children: parts });
+        const line = (text, textFont, right, emphasis, after) => new Paragraph({
+          spacing: { ...single, before: 0, after },
           keepNext: true,
           tabStops: [{ type: TabStopType.RIGHT, position: contentTwips }],
-          children: [run(item.organization, { bold: true }), new TextRun({ size, font, children: [new Tab(), rightOne] })],
-        }));
-        if (twoLine) {
-          children.push(new Paragraph({
-            spacing: { ...single, before: 0, after: 1 * TWIP },
-            keepNext: true,
-            tabStops: [{ type: TabStopType.RIGHT, position: contentTwips }],
-            children: [run(item.role, { italics: true }), new TextRun({ size, font, children: [new Tab(), item.dateLabel] })],
-          }));
-        }
+          children: headingRuns(docx, headingLayout(doc, { text, font: textFont, size: bodyPt, right, rightFont: this.regular, contentWidth }),
+            right, (part, extra = {}) => run(part, { ...emphasis, ...extra }), rightRun),
+        });
+        children.push(line(item.organization, this.bold, rightOne || null, { bold: true }, 0));
+        if (twoLine) children.push(line(item.role, this.italic, item.dateLabel || null, { italics: true }, 1 * TWIP));
         return;
       }
       children.push(new Paragraph({
@@ -272,6 +359,9 @@ const BULLET_LEFT = 39;           // w:ind w:left="780" twips = 0.5417in = 39pt
 const nusEntryHead = (item) => (item.sectionType === 'national-service'
   ? `${item.organization}, ${item.role}`
   : `${item.role}, ${item.organization}`);
+
+/** The nus line that carries an entry's dates: education and role-less entries print the organization alone. */
+export const nusDatedHeading = (item) => (item.sectionType === 'education' || !item.role ? item.organization : nusEntryHead(item));
 
 const nus = {
   id: 'nus',
@@ -305,13 +395,18 @@ const nus = {
     { bodyPt: 8.5, marginIn: null },
   ],
 
-  // thinThickSmallGap at w:sz 18, as Word draws it: a 0.72pt hairline, a
-  // 0.72pt gap, then a 2.16pt rule, the band starting 2.04pt below the
-  // baseline. `y` arrives at the bottom of the text box, which is 2.04pt below
-  // the 9.5pt baseline, so the band starts there.
+  // thinThickSmallGap at w:sz 18, as Word draws it under the text: a 2.16pt
+  // rule, a 0.72pt gap, then a 0.72pt hairline, the band starting 2.04pt below
+  // the baseline. `y` arrives at the bottom of the text box, which is 2.04pt
+  // below the 9.5pt baseline, so the band starts there: w:space 0, no gap (the
+  // 1pt harvard's border asks for was once applied here too, dropping the rule
+  // a point below Word's). Word also runs a paragraph border 1.44pt past each
+  // margin (x 34.56-560.86 on a 36-559.28 text column).
+  ruleGap: 0,
   drawRule(doc, x, y, width) {
-    doc.rect(x, y, width, 2.16).fillColor('#000000').fill();
-    doc.rect(x, y + 2.88, width, 0.72).fillColor('#000000').fill();
+    const overhang = 1.44;
+    doc.rect(x - overhang, y, width + overhang * 2, 2.16).fillColor('#000000').fill();
+    doc.rect(x - overhang, y + 2.88, width + overhang * 2, 0.72).fillColor('#000000').fill();
   },
 
   // Indents for a literal bullet: the text column is fixed at 780 twips and the
@@ -324,7 +419,11 @@ const nus = {
 
   buildBlocks({ doc, items, profile, bodyPt, contentWidth }) {
     const blocks = [];
-    const spacer = (keepWithNext = false) => block([[]], { size: bodyPt, keepWithNext });
+    // A blank line is its own paragraph, NOT kept with the next, exactly like
+    // docx_base.blank: at a page break Word leaves it at the foot of the page
+    // and starts the next one on the heading. Kept-with-next, the builder carried
+    // the blank line over and opened the page a line lower than Word.
+    const spacer = () => block([[]], { size: bodyPt });
     const { indent, hanging } = this.bulletIndents(doc, bodyPt);
 
     blocks.push(block(one(doc, profile.name.toUpperCase(), this.bold, this.namePt), { size: this.namePt, align: 'right' }));
@@ -346,7 +445,7 @@ const nus = {
     let firstInSection = false;
     for (const item of items) {
       if (item.kind === 'section') {
-        blocks.push(spacer(true));
+        blocks.push(spacer());
         // 3.75pt of spaceAfter is the rule itself. A bordered paragraph in
         // Word is taller than its text by the whole border band, and
         // thinThickSmallGap draws three things for one w:sz — measured off the
@@ -368,20 +467,13 @@ const nus = {
         // An inline entry is printed inside its own bullet, so it has no line
         // and no blank line of its own: the master CV's projects run as a list.
         if (item.inline) continue;
-        if (!firstInSection) blocks.push(spacer(true));
+        if (!firstInSection) blocks.push(spacer());
         firstInSection = false;
-        const line = (text, right) => block(
-          one(doc, text, this.bold, bodyPt),
-          { size: bodyPt, keepWithNext: true, rightRun: right ? { text: right, font: this.bold, size: bodyPt } : null },
-        );
-        if (item.sectionType === 'education') {
-          blocks.push(line(item.organization, item.dateLabel));
-          if (item.role) blocks.push(line(item.role, null));
-        } else if (!item.role) {
-          blocks.push(line(item.organization, item.dateLabel));
-        } else {
-          blocks.push(line(nusEntryHead(item), item.dateLabel));
-        }
+        const line = (text, right) => headingBlock(doc, {
+          text, font: this.bold, size: bodyPt, right: right || null, rightFont: this.bold, contentWidth,
+        });
+        blocks.push(line(nusDatedHeading(item), item.dateLabel));
+        if (item.sectionType === 'education' && item.role) blocks.push(line(item.role, null));
         continue;
       }
       blocks.push(block(
@@ -399,8 +491,9 @@ const nus = {
       contentWidth - indent, contentWidth - indent - hanging);
   },
 
-  docxChildren({ docx, items, profile, bodyPt, contentTwips }) {
-    const { AlignmentType, BorderStyle, ExternalHyperlink, Paragraph, Tab, TabStopType, TextRun } = docx;
+  docxChildren({ docx, doc, items, profile, bodyPt, contentTwips }) {
+    const { AlignmentType, BorderStyle, ExternalHyperlink, Paragraph, TabStopType, TextRun } = docx;
+    const contentWidth = contentTwips / 20;
     const size = Math.round(bodyPt * 2);
     const single = { line: 240, lineRule: 'auto' };
     const font = this.docxFont;
@@ -450,22 +543,18 @@ const nus = {
         if (item.inline) continue;
         if (!firstInSection) children.push(spacer());
         firstInSection = false;
+        // A real <w:tab/> before the date, as nus_style.py writes it (this used
+        // to be a literal tab character inside <w:t>), and the PDF's own split
+        // when the heading cannot hold its date on one line.
         const line = (text, right) => new Paragraph({
           ...plain,
           keepNext: true,
           tabStops: [{ type: TabStopType.RIGHT, position: contentTwips }],
-          children: right
-            ? [run(text, { bold: true }), run(`\t${right}`, { bold: true })]
-            : [run(text, { bold: true })],
+          children: headingRuns(docx, headingLayout(doc, { text, font: this.bold, size: bodyPt, right: right || null, contentWidth }),
+            right || null, (part, extra = {}) => run(part, { bold: true, ...extra }), (parts) => new TextRun({ size, font, bold: true, children: parts })),
         });
-        if (item.sectionType === 'education') {
-          children.push(line(item.organization, item.dateLabel));
-          if (item.role) children.push(line(item.role, null));
-        } else if (!item.role) {
-          children.push(line(item.organization, item.dateLabel));
-        } else {
-          children.push(line(nusEntryHead(item), item.dateLabel));
-        }
+        children.push(line(nusDatedHeading(item), item.dateLabel));
+        if (item.sectionType === 'education' && item.role) children.push(line(item.role, null));
         continue;
       }
       children.push(new Paragraph({

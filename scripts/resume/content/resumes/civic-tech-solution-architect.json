@@ -61,7 +61,11 @@
         {
           "id": "amazon-vision",
           "bullets": [
-            "sr-reproduction"
+            "sr-reproduction",
+            {
+              "id": "recognition",
+              "tier": "short"
+            }
           ]
         }
       ]

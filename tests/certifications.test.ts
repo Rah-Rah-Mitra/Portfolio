@@ -117,4 +117,10 @@ describe('proof window', () => {
     );
     expect(existsSync(join('public', achievement?.proofUrl ?? ''))).toBe(true);
   });
+
+  it('links the BlendED evaluation to the report on disk', () => {
+    const achievement = unifiedPortfolioData.achievements.find((item) => item.title.includes('BlendED'));
+    expect(achievement?.proofUrl).toBe('/certificates/blended-amazon-robotics-pbl-evaluation-2026.pdf');
+    expect(existsSync(join('public', achievement?.proofUrl ?? ''))).toBe(true);
+  });
 });

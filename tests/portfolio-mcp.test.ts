@@ -195,7 +195,8 @@ describe('api/mcp', () => {
     expect(report.version).toBe(2);
     // 16: PA's stack split out of pa.churp for the pro bono line.
     // 17 since Nov 2026: the APC rebuild and its verification replaced the Seeq toolkit.
-    expect(report.metrics.bullets).toBe(17);
+    // 18 since 2026-11-14: amazon-vision.recognition, from the BlendED evaluation.
+    expect(report.metrics.bullets).toBe(18);
     // The 2026-11 pass spread the openers; "Built" is no longer the top one on
     // any résumé. What matters here is that the field is still reported.
     expect(report.metrics.topOpener.openers.length).toBeGreaterThan(0);

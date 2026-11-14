@@ -28,9 +28,10 @@ describe('the tier guard', () => {
   const rows = tierTexts();
 
   it('has tier texts to guard', () => {
-    // 9 standard and 7 short from master-cv-improvements.md (8 Nov 2026).
-    expect(rows.filter((row) => row.tier === 'standard')).toHaveLength(9);
-    expect(rows.filter((row) => row.tier === 'short')).toHaveLength(7);
+    // 9 standard and 7 short from master-cv-improvements.md (8 Nov 2026), and
+    // one of each since 2026-11-14 for amazon-vision.recognition.
+    expect(rows.filter((row) => row.tier === 'standard')).toHaveLength(10);
+    expect(rows.filter((row) => row.tier === 'short')).toHaveLength(8);
   });
 
   // At each entry's reference size (referenceBodyPt): 10pt, or 9pt for STMicro

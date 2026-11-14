@@ -17,6 +17,16 @@ export const softwareEngineerData: PortfolioData = {
   instagramUrl: SITE_CONFIG.social.instagram,
   achievements: [
     {
+      id: 9,
+      title: "Top Score: BlendED x Amazon Robotics Computer Vision Project",
+      description: "Scored 100/100 in BlendED's Demonstrated Capability Report for the Amazon Robotics computer vision project (Image Enhancement track), at its highest tier, System-Level Insight. Project lead Dan Shao, VP of Computer Vision, Machine Learning and AI at Zelig, credited me with leading much of the team's research into state-of-the-art super-resolution methods, named me one of the project's biggest contributors and recommended me highly.",
+      date: "2026 Nov",
+      category: "Research Recognition",
+      tags: ["Computer Vision", "Super-Resolution", "Amazon Robotics", "Recommendation", "System-Level Insight"],
+      proofUrl: '/certificates/blended-amazon-robotics-pbl-evaluation-2026.pdf',
+      proofLabel: 'View evaluation and recommendation',
+    },
+    {
       id: 8,
       title: "Finalist: Singapore Defence Tech Hackathon 2026 (Swarmline)",
       description: "I led our five-person team to the finals from 1,300+ applicants with Swarmline, decentralised coordination software for interceptor drones, and we presented it to Singapore's Chief Defence Scientist. I directed the team's architecture of the swarm coordination, implemented the deterministic Unreal Engine 5.8 C++ simulation with Claude Code, and built the jammed-link comparison: with the ground link jammed in a simulated search task, 30 drones confirmed all 8 walking targets in every run, where an operator-in-the-loop baseline confirmed 2.1 on average.",
@@ -1373,7 +1383,10 @@ const experienceDetailById: Record<string, Omit<ExperienceRecord, 'id' | 'dateLa
     organization: 'BlendED x Amazon Robotics (AI+X Global Challenge)',
     location: 'Singapore',
     scope: 'Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.',
-    outcomes: ['Matched reported results at 8x and came within 0.78 dB at 2x and 4x; fine-tuning recovered up to 0.7 dB under real-world blur.'],
+    outcomes: [
+      'Matched reported results at 8x and came within 0.78 dB at 2x and 4x; fine-tuning recovered up to 0.7 dB under real-world blur.',
+      "Named by the project lead as one of the project's biggest contributors.",
+    ],
   },
   // One merged Abbott record used to cover both roles. Split to match the
   // documents. Both read in the past tense since the 8 Nov 2026 master CV, which

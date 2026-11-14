@@ -724,7 +724,10 @@ describe('build_tailored_resume', () => {
     // The real build measured, so it says so and the rule is free to fire. 9pt
     // since Nov 2026: a one-page build fits short-first, giving three bullets
     // their short wording before it steps the type (it reached 8.5 before).
-    expect(built.check.metrics.typography).toEqual({ bodyPt: 9, marginIn: 0.5 });
+    // 8.5 again since 2026-11-14: cyber-security's ids now include
+    // amazon-vision.recognition, and at deep detail it takes its two-line full
+    // wording, which no short swap absorbs at 9pt.
+    expect(built.check.metrics.typography).toEqual({ bodyPt: 8.5, marginIn: 0.5 });
     expect(built.fit.swaps.length).toBeGreaterThan(0);
     expect(built.check.metrics.maxBulletLines).toBe(4);
 
@@ -850,7 +853,8 @@ describe('export_profile', () => {
 
     const selecting = resumeConfigs.filter((config) => (config.sections as SpecSection[]).some((section) =>
       (section.entries ?? []).some((entry) => entry.id === 'abbott-intern'
-        && ((entry as { bullets?: string[] }).bullets ?? []).includes('digital-twin'))));
+        && ((entry as { bullets?: Array<string | { id: string }> }).bullets ?? [])
+          .some((bullet) => (typeof bullet === 'string' ? bullet : bullet.id) === 'digital-twin'))));
     expect(selecting.length).toBe(6);
 
     // The digest must say it is a selection rather than an index, or the next

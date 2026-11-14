@@ -17,7 +17,7 @@ export const experienceResponsibilities: Record<string, string[]> = {
     'Formulated a 4-stage shelf-ranking pipeline: movement profiling from pick frequency, dwell time, and demand; filtering on packaging zone, fit, capacity, and restricted areas; Golden Region priority for fast movers; and logged rationale per decision.',
   ],
   'career-amazon-vision': [
-    'Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors, mentored by Zelig CTO Dan Shao (ex-iRobot).',
+    'Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors, mentored by Dan Shao, VP of Computer Vision, ML and AI at Zelig.',
     'Reproduced a published UNet super-resolution model in PyTorch from broken author code, recovering its undocumented evaluation protocol and training 12 models, matching reported results at 8x and landing within 0.78 dB at 2x and 4x.',
     'Diagnosed a robustness gap where fixed-blur super-resolution models lost most PSNR gains under unseen blur, then added randomised-blur training and fine-tuning, recovering up to 0.7 dB across lens, out-of-focus, and resampling blur.',
     'Launched 3 trained models as a public web app via a Flask inference API on a Colab T4 GPU behind a secure tunnel on a reserved domain.',

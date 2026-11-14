@@ -769,3 +769,30 @@ budgeted at the largest rung its heading holds its dates at (`referenceBodyPt`):
 STMicro 9pt, both Abbott entries 9.5pt, everything else 10pt. The wording stands,
 and no pinned count moved. The one-pagers' foot-of-page whitespace at 9pt stays
 for now (Rahul, same day); 9.5pt needs a shorter STMicro heading.
+
+## 21. The BlendED evaluation and recommendation, 2026-11-14
+
+BlendED issued a Demonstrated Capability Report for the Amazon Robotics computer
+vision project (Image Enhancement track), with project lead Dan Shao's
+recommendation letter of 13 Nov 2026. It records 100/100 at the top tier (Level 4,
+System-Level Insight), credits Rahul with leading "much of the team's research into
+state-of-the-art super-resolution methods", and calls him "one of the biggest
+contributors to the project". It ships at
+`public/certificates/blended-amazon-robotics-pbl-evaluation-2026.pdf` and is linked
+from the Proof window.
+
+- **Mentor title.** The letter gives her title as VP of Computer Vision, Machine
+  Learning and AI at ZELIG. `amazon-vision.brief` now reads "mentored by Dan Shao,
+  VP of Computer Vision, ML and AI at Zelig" (it was "Zelig CTO Dan Shao
+  (ex-iRobot)"), so the CV and the letter agree when they are read side by side.
+- **Recognition bullet.** `amazon-vision.recognition` (rank 6, requires
+  `sr-reproduction`). Every tier is worded from the letter only. Rahul asked for it
+  to stay modest: no score and no "top tier" on a résumé; the score belongs to the
+  portfolio. The seven one-pagers print its 1-line `short` and general prints
+  `full`. Following résumé convention, the recommendation itself is never quoted
+  and never offered on the page.
+- **Not changed (Rahul's call).** The letter describes an 8-week online program of
+  48 research hours, with tracks in stereo vision, image enhancement and human
+  posture detection. The entry keeps Jul 2026 – Oct 2026 and its "3 workstreams
+  (camera ISP, super-resolution, image restoration)": the extra months were the
+  deployment work, and the workstreams were the sub-areas of his track.

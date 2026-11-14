@@ -265,14 +265,15 @@
       "location": "Singapore",
       "scope": "Vision systems for robotic perception image quality: camera ISP, super-resolution, and restoration.",
       "responsibilities": [
-        "Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors, mentored by Zelig CTO Dan Shao (ex-iRobot).",
+        "Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors, mentored by Dan Shao, VP of Computer Vision, ML and AI at Zelig.",
         "Reproduced a published UNet super-resolution model in PyTorch from broken author code, recovering its undocumented evaluation protocol and training 12 models, matching reported results at 8x and landing within 0.78 dB at 2x and 4x.",
         "Diagnosed a robustness gap where fixed-blur super-resolution models lost most PSNR gains under unseen blur, then added randomised-blur training and fine-tuning, recovering up to 0.7 dB across lens, out-of-focus, and resampling blur.",
         "Launched 3 trained models as a public web app via a Flask inference API on a Colab T4 GPU behind a secure tunnel on a reserved domain.",
         "Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods, organised around camera information loss and recovery, comparing 4 model families on fidelity and hallucination risk."
       ],
       "outcomes": [
-        "Matched reported results at 8x and came within 0.78 dB at 2x and 4x; fine-tuning recovered up to 0.7 dB under real-world blur."
+        "Matched reported results at 8x and came within 0.78 dB at 2x and 4x; fine-tuning recovered up to 0.7 dB under real-world blur.",
+        "Named by the project lead as one of the project's biggest contributors."
       ]
     },
     {

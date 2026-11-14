@@ -141,14 +141,20 @@ describe('the shipped documents are a function of the content pool', () => {
       // printed at full, did not move. Every DOCX holds each selected sentence.
       // None moved on 2026-11-13, when the eight PDFs were re-exported through
       // Word from the same DOCX: the words are what this hashes, not the exporter.
-      'software-engineer': '76fc6de2283b310b',
-      'solution-architect': 'aba783a09e7636ee',
-      'ai-engineer': 'd19d734fc8d9dbfd',
-      'operations-research-engineer': '9fd2210f3ca8ad8b',
-      'cyber-security': '0e1dbf4659b84519',
-      'civic-tech-solution-architect': '1892d5c4c796daa0',
-      highlights: '01704a999c628ac0',
-      general: '7a9bee35e064583d',
+      // All eight moved on 2026-11-14, rebuilt in place through Word, for the
+      // BlendED evaluation: amazon-vision.recognition joins every résumé (short
+      // on the one-pagers, full on general), general's brief names Dan Shao by
+      // her letter's title, and the fit gave software-engineer pa.churp's short
+      // and highlights abbott-intern.digital-twin's short. Every DOCX holds each
+      // selected sentence verbatim (159 checked).
+      'software-engineer': 'a6f91f41ebdf1953',
+      'solution-architect': '58f32b1fcb264646',
+      'ai-engineer': '83e48648d2b056c2',
+      'operations-research-engineer': 'fe7229ef035a0fce',
+      'cyber-security': '0375f1757dcf595d',
+      'civic-tech-solution-architect': '60b3ab647aaa2308',
+      highlights: '10a403a31a31def0',
+      general: '31eabf53768a7d32',
     });
   });
 

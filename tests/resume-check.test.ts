@@ -475,13 +475,16 @@ describe('the real corpus', () => {
     // "Build" gone (datalayer reads "Built", in the CV's tense) "Built" is top.
     // 53 since amazon-vision.isp was retired (Nov 2026, Upgrade 7), and with its
     // "Built vision systems" gone "Led" (stack, sparks, maritime) is top again.
-    expect(report.metrics.bullets).toBe(53);
+    // 54 since 2026-11-14: amazon-vision.recognition, worded from the BlendED
+    // evaluation (docs/resume-detail-gaps.md §21).
+    expect(report.metrics.bullets).toBe(54);
     expect(report.metrics.topOpener).toEqual({ openers: ['Led'], count: 3 });
     // 0.63 with the outcome/scale classifier (Nov 2026): dB, °C and "N of M" are
     // read now, a decimal before a unit is no longer masked as a version, and
     // dryers and defects joined the population nouns, so robustness ("up to
     // 0.7 dB") and relaxation ("2 QP defects") count.
-    expect(report.metrics.metricCoverage).toBe(0.63);
+    // 0.62 since 2026-11-14: amazon-vision.recognition carries no measurement.
+    expect(report.metrics.metricCoverage).toBe(0.62);
     // Was the headline finding: seven of ten project bullets opened "Built", and
     // 24% of the pool carried a measurement. The 2026-11 pass spread the openers
     // and wrote the measurements in digits, so this rule now finds nothing in
@@ -566,13 +569,18 @@ describe('the real corpus', () => {
       // the internship without the zero-failure pipeline): advisory, and
       // highlights is clear. ai-engineer and civic take a frame-repeat from the
       // standard wordings' trailing participles.
-      'software-engineer': { bullets: 18, top: 1, codes: 'no-outcome-entry,unquantified,unused-evidence' },
-      'solution-architect': { bullets: 16, top: 2, codes: 'no-outcome-entry,unquantified,verb-family-cap' },
-      'ai-engineer': { bullets: 15, top: 1, codes: 'frame-repeat,no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
-      'operations-research-engineer': { bullets: 15, top: 1, codes: 'no-outcome-entry,unquantified,unused-evidence' },
-      'cyber-security': { bullets: 16, top: 1, codes: 'no-outcome-entry,unquantified,unused-evidence' },
-      'civic-tech-solution-architect': { bullets: 14, top: 1, codes: 'frame-repeat,no-outcome-entry,unquantified,unused-evidence' },
-      highlights: { bullets: 17, top: 2, codes: 'unquantified,unused-evidence' },
+      // 2026-11-14, the BlendED evaluation: amazon-vision.recognition joins all
+      // eight (+1 bullet each). software-engineer's fit swapped pa.churp to its
+      // short "Built and deployed Churp", a second "Built" (top 2), and on
+      // solution-architect R7 notes that the recognition line names none of the
+      // brief's terms: advisory, the line is about the work rather than its tools.
+      'software-engineer': { bullets: 19, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence' },
+      'solution-architect': { bullets: 17, top: 2, codes: 'no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
+      'ai-engineer': { bullets: 16, top: 1, codes: 'frame-repeat,no-outcome-entry,unquantified,unused-evidence,verb-family-cap' },
+      'operations-research-engineer': { bullets: 16, top: 1, codes: 'no-outcome-entry,unquantified,unused-evidence' },
+      'cyber-security': { bullets: 17, top: 1, codes: 'no-outcome-entry,unquantified,unused-evidence' },
+      'civic-tech-solution-architect': { bullets: 15, top: 1, codes: 'frame-repeat,no-outcome-entry,unquantified,unused-evidence' },
+      highlights: { bullets: 18, top: 2, codes: 'unquantified,unused-evidence' },
       // R8 counts a verb family anywhere in the sentence, not just as an opener:
       // "Built", "Build", "building" and "hackathon build" are four uses of one
       // family that R1's per-section opener tally cannot see. The master CV now
@@ -592,7 +600,7 @@ describe('the real corpus', () => {
       // repeat back. The three family caps hold (build, train, design).
       // 18:31: the shorter wording drops one family cap and the unused-evidence
       // note, and "Led" (stack, sparks, maritime) is the top opener again.
-      general: { bullets: 40, top: 2, codes: 'frame-repeat,unquantified,verb-family-cap,verb-family-cap' },
+      general: { bullets: 41, top: 2, codes: 'frame-repeat,unquantified,verb-family-cap,verb-family-cap' },
     });
   });
 

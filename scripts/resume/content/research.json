@@ -29,7 +29,7 @@
           "id": "brief",
           "rank": 1,
           "text": {
-            "full": "Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors, mentored by Zelig CTO Dan Shao (ex-iRobot)."
+            "full": "Tackled an Amazon Robotics brief spanning 3 workstreams (camera ISP, super-resolution, image restoration) to make low-cost cameras rival far pricier sensors, mentored by Dan Shao, VP of Computer Vision, ML and AI at Zelig."
           },
           "phrasings": {
             "no-mentor": {
@@ -72,6 +72,18 @@
             "standard": "Authored and presented a super-resolution literature review across multi-image, video and single-image methods, comparing 4 model families on fidelity and hallucination risk.",
             "full": "Authored and presented a super-resolution literature review spanning multi-image, video, and single-image methods, organised around camera information loss and recovery, comparing 4 model families on fidelity and hallucination risk."
           }
+        },
+        {
+          "id": "recognition",
+          "rank": 6,
+          "text": {
+            "short": "Recognised by the project lead as one of the project's biggest contributors.",
+            "standard": "Recognised by the project lead as one of the project's biggest contributors, having led much of the team's super-resolution research.",
+            "full": "Recognised by the project lead as one of the project's biggest contributors, having led much of the team's research into super-resolution methods."
+          },
+          "requires": [
+            "sr-reproduction"
+          ]
         }
       ]
     }

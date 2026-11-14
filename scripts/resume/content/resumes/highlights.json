@@ -46,7 +46,10 @@
         {
           "id": "abbott-intern",
           "bullets": [
-            "digital-twin",
+            {
+              "id": "digital-twin",
+              "tier": "short"
+            },
             "pipeline"
           ]
         },
@@ -74,6 +77,10 @@
             {
               "id": "sr-reproduction",
               "tier": "standard"
+            },
+            {
+              "id": "recognition",
+              "tier": "short"
             }
           ]
         }

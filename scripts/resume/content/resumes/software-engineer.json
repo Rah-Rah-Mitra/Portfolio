@@ -53,7 +53,10 @@
         {
           "id": "pa",
           "bullets": [
-            "churp",
+            {
+              "id": "churp",
+              "tier": "short"
+            },
             "stack",
             "singpass"
           ]
@@ -70,6 +73,10 @@
             {
               "id": "sr-reproduction",
               "tier": "standard"
+            },
+            {
+              "id": "recognition",
+              "tier": "short"
             }
           ]
         }
